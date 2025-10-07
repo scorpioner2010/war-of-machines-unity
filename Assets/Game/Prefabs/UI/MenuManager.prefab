@@ -63,3 +63,5 @@ MonoBehaviour:
     controller: {fileID: 0}
   - type: 9
     controller: {fileID: 0}
+  - type: 10
+    controller: {fileID: 0}

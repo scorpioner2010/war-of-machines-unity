@@ -14,8 +14,10 @@ namespace Game.Scripts.UI.MainMenu
     public class MainMenu : MonoBehaviour
     {
         [SerializeField] private GameObject mainMenu;
+        
         [SerializeField] private Button customGameButton;
         [SerializeField] private Button settingsButton;
+        [SerializeField] private Button developmentTreeButton;
         
         [SerializeField] private GameObject customGamePanel;
         [SerializeField] private GameObject settingsPanel;
@@ -37,6 +39,16 @@ namespace Game.Scripts.UI.MainMenu
             settingsButton.onClick.AddListener(()=>
             {
                 MenuManager.OpenMenu(MenuType.Settings);
+            });
+            
+            developmentTreeButton.onClick.AddListener(()=>
+            {
+                MenuManager.OpenMenu(MenuType.DevelopmentTree);
+                DevelopmentTree tree = Singleton<DevelopmentTree>.Instance;
+                if (tree != null)
+                {
+                    tree.Init();
+                }
             });
             
             mainMenu.gameObject.OnEnableAsObservable().Subscribe(OnEnableMenu).AddTo(this);

@@ -43,6 +43,7 @@ namespace Game.Scripts.Networking.Lobby
 
             for (int i = 0; i < bots; i++)
             {
+                continue;
                 Player bot = new Player();
                 int lengthName = GameplayAssistant.GetRandomInt(3, 5);
                 bot.loginName = GameplayAssistant.GenerateName(lengthName);
