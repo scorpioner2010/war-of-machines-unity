@@ -1,12 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
+// TreeGrid.cs
 using UnityEngine;
 
 public class TreeGrid : MonoBehaviour
 {
     public Vehicle vehicleType;
-    public void Init(Vehicle  vehicle)
+
+    public void Init(Vehicle vehicle)
     {
-        vehicleType =  vehicle;
+        vehicleType = vehicle;
     }
 }

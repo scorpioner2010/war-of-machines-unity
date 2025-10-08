@@ -8,14 +8,5 @@ public class TreeItem : MonoBehaviour
     public TMP_Text vehicleName;
     public TMP_Text level;
     public Image image;
-    
     public Vehicle vehicleType;
-}
-
-public enum Vehicle
-{
-    None = 0,
-    Scout = 1,
-    Guardian = 2,
-    Colossus = 3,
 }

@@ -854,7 +854,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e00f80e765ce13b4182a90a303f8fa46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  verticalLayoutGroups: []
 --- !u!114 &60771033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10562,11 +10561,12 @@ MonoBehaviour:
   animationPanel: {fileID: 808617897}
   fractionTreePrefab: {fileID: 6962090755101031679, guid: 91b8e8671b7ceb74a876ececa1e7d9ca,
     type: 3}
-  startVehicleContainerPrefab: {fileID: 6707247953551227933, guid: 1bb4ac6f4525e0947b6a9fb2564c2a59,
+  starterContainerPrefab: {fileID: 6707247953551227933, guid: 1bb4ac6f4525e0947b6a9fb2564c2a59,
     type: 3}
   factionContainerPrefab: {fileID: 5745639412630700124, guid: f45bf5a80efebcc4bad52942c4cfe33c,
     type: 3}
-  treeGrid: {fileID: 465011443281880905, guid: 0a718985bcfc39a409ca36f1cd027b0d, type: 3}
+  treeGridPrefab: {fileID: 465011443281880905, guid: 0a718985bcfc39a409ca36f1cd027b0d,
+    type: 3}
   treeItemPrefab: {fileID: 5488277571310503052, guid: 3c6edf47415a0454d8f19fa6d1d42b5a,
     type: 3}
   buttonsContainer: {fileID: 60771031}
