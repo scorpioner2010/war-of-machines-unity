@@ -47,7 +47,7 @@ namespace Game.Scripts.UI.MainMenu
                 DevelopmentTree tree = Singleton<DevelopmentTree>.Instance;
                 if (tree != null)
                 {
-                    tree.Init();
+                    //tree.Init();
                 }
             });
             

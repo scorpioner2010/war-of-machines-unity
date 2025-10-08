@@ -8209,7 +8209,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &984086439
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10559,15 +10559,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae713be7e8a7b104fbbdb8b108f89fd6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buttonBack: {fileID: 2107131025}
+  animationPanel: {fileID: 808617897}
+  fractionTreePrefab: {fileID: 6962090755101031679, guid: 91b8e8671b7ceb74a876ececa1e7d9ca,
+    type: 3}
+  startVehicleContainerPrefab: {fileID: 6707247953551227933, guid: 1bb4ac6f4525e0947b6a9fb2564c2a59,
+    type: 3}
+  factionContainerPrefab: {fileID: 5745639412630700124, guid: f45bf5a80efebcc4bad52942c4cfe33c,
+    type: 3}
+  treeGrid: {fileID: 465011443281880905, guid: 0a718985bcfc39a409ca36f1cd027b0d, type: 3}
+  treeItemPrefab: {fileID: 5488277571310503052, guid: 3c6edf47415a0454d8f19fa6d1d42b5a,
+    type: 3}
   buttonsContainer: {fileID: 60771031}
   factionButtonPrefab: {fileID: 7252929660606042418, guid: 3ac8aecddae8ed6469d45e2412a8ef82,
     type: 3}
-  factionContainer: {fileID: 5745639412630700124, guid: f45bf5a80efebcc4bad52942c4cfe33c,
-    type: 3}
-  treeGrid: {fileID: 465011443281880905, guid: 0a718985bcfc39a409ca36f1cd027b0d, type: 3}
-  treeItemPrefab: {fileID: 1429024575771356537, guid: fa841c3f9facf8747b8487c9b3b828d4,
-    type: 3}
+  buttonBack: {fileID: 2107131025}
 --- !u!1 &1173799527
 GameObject:
   m_ObjectHideFlags: 0
@@ -13961,7 +13966,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 1510332974}
   _networkObjectCache: {fileID: 0}
   playerPrefabOptions:
-  - {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194, type: 3}
+  - {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e, type: 3}
   scenes: 00000000
   lobbyManager: {fileID: 970225864}
   sceneOffsetX: 0
@@ -19937,7 +19942,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da7d804b5d3773e47b81d159d7e65980, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isTestMode: 0
+  isTestMode: 1
   maxPlayersForFindRoom: 5
   findRoomSeconds: 1
 --- !u!4 &2068572094

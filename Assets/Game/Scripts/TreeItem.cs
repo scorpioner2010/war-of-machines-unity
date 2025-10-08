@@ -5,19 +5,11 @@ using UnityEngine.UI;
 public class TreeItem : MonoBehaviour
 {
     public Button button;
-    public TMP_Text text;
+    public TMP_Text vehicleName;
+    public TMP_Text level;
     public Image image;
-    public Vehicle vehicle;
-
-    public void Init(Vehicle type)
-    {
-        vehicle =  type;
-
-        if (vehicle == Vehicle.None)
-        {
-            button.gameObject.SetActive(false);
-        }
-    }
+    
+    public Vehicle vehicleType;
 }
 
 public enum Vehicle
