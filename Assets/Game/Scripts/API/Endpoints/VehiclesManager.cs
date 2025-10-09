@@ -150,7 +150,6 @@ namespace Game.Scripts.API
             if (req.result != UnityWebRequest.Result.Success)
                 return (false, resp, default);
 
-            // Кореневий об'єкт -> годиться для JsonUtility
             var graph = JsonUtility.FromJson<VehicleGraph>(resp);
             return (true, resp, graph);
         }
@@ -171,9 +170,10 @@ namespace Game.Scripts.API
         public string factionName;  // текстове ім'я
 
         // НОВЕ з сервера
-        public string @class;       // "Scout" | "Guardian" | "Colossus"  (зарезервоване слово -> @class)
+        public string @class;       // "Scout" | "Guardian" | "Colossus"
         public int level;           // 1..4
         public int purchaseCost;    // валюта гри
+        public bool isVisible;      // 🔹 нове поле (чи видно в гілці розвитку / каталозі)
 
         // Бойові параметри
         public int hp;
@@ -191,7 +191,7 @@ namespace Game.Scripts.API
         public float traverseSpeed;
         public float turretTraverseSpeed;
 
-        // Броня (рядком "Front/Side/Rear", напр. "100/50/30")
+        // Броня
         public string turretArmor;
         public string hullArmor;
 
@@ -207,7 +207,6 @@ namespace Game.Scripts.API
         }
     }
 
-    /// <summary>DTO для /vehicles/{id}/research-from</summary>
     [Serializable]
     public class ResearchFromLink
     {
@@ -215,7 +214,6 @@ namespace Game.Scripts.API
         public int requiredXp;
     }
 
-    /// <summary>Граф для побудови дерева на клієнті</summary>
     [Serializable]
     public class VehicleGraph
     {
@@ -229,17 +227,18 @@ namespace Game.Scripts.API
         public int id;
         public string code;
         public string name;
-        public string @class;    // "Scout" | "Guardian" | "Colossus"
-        public int level;        // 1..4
-        public string branch;    // "tracked" | "biped"
+        public string @class;
+        public int level;
+        public string branch;
         public string factionCode;
+        public bool isVisible;   // 🔹 нове поле
     }
 
     [Serializable]
     public class VehicleEdge
     {
-        public int fromId;       // predecessor
-        public int toId;         // successor
-        public int requiredXp;   // XP на предку
+        public int fromId;
+        public int toId;
+        public int requiredXp;
     }
 }

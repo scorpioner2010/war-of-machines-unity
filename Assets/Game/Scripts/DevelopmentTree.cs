@@ -65,26 +65,28 @@ public class DevelopmentTree : MonoBehaviour
     {
         if (isInitialized == false)
         {
-            await LoadDataFromServer();
             isInitialized = true;
+            bool result = await LoadDataFromServer();
+            isInitialized = result;
         }
         
         await UpdateUI();
     }
 
     // отримання всіх потрібних даних із сервера
-    private async UniTask LoadDataFromServer()
+    private async UniTask<bool> LoadDataFromServer()
     {
         // очищаємо попередні дані
         _factionNameByCode.Clear();
 
-        var (ok, _, items) = await VehiclesManager.GetAll();
+        (bool ok, _, VehicleLite[] items) = await VehiclesManager.GetAll();
+        
         if (!ok || items == null || items.Length == 0)
         {
             Debug.LogWarning("No vehicle data received from server!");
             _graphs = Array.Empty<VehicleGraph>();
             _factionCodes = Array.Empty<string>();
-            return;
+            return ok;
         }
 
         // формуємо словник назв фракцій
@@ -107,9 +109,10 @@ public class DevelopmentTree : MonoBehaviour
 
         // отримуємо графи для кожної фракції
         List<VehicleGraph> graphs = new();
+        
         foreach (string faction in _factionCodes)
         {
-            var (okGraph, _, graph) = await VehiclesManager.GetGraph(faction);
+            (bool okGraph, _, VehicleGraph graph) = await VehiclesManager.GetGraph(faction);
             if (okGraph && graph != null && graph.nodes != null && graph.nodes.Length > 0)
             {
                 graphs.Add(graph);
@@ -122,6 +125,8 @@ public class DevelopmentTree : MonoBehaviour
         }
 
         _graphs = graphs.ToArray();
+
+        return true;
     }
 
     // оновлює весь UI (будує кнопки, дерева, стрілки)
@@ -265,6 +270,7 @@ public class DevelopmentTree : MonoBehaviour
         item.vehicleName.text = node.name;
         item.vehicleType = ParseVehicleClass(node.@class);
         item.level.text = node.level.ToString();
+        item.isClose.SetActive(!node.isVisible);
 
         RectTransform rt = item.GetComponent<RectTransform>();
         nodeMap[node.id] = rt;

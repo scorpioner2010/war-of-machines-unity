@@ -1,3 +1,4 @@
+using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Audio;
 using Game.Scripts.Core.Services;
@@ -21,7 +22,13 @@ namespace Game.Scripts.UI.MainMenu
         
         [SerializeField] private GameObject customGamePanel;
         [SerializeField] private GameObject settingsPanel;
+        
         [SerializeField] private TMP_Text user;
+        [SerializeField] private TMP_Text bolts;
+        [SerializeField] private TMP_Text freeXp;
+        [SerializeField] private TMP_Text xp;
+        [SerializeField] private TMP_Text adamant;
+        [SerializeField] private TMP_Text mmr;
         
         [SerializeField] private GameObject[] mainMenuObjects;
 
@@ -57,8 +64,32 @@ namespace Game.Scripts.UI.MainMenu
         private void OnEnableMenu<T>(T obj)
         {
             IPlayerClientInfo player = ServiceLocator.Get<IPlayerClientInfo>();
-            user.text = player.Profile.username;
+            PlayerProfile profile = player.Profile;
+
+            user.text = profile.username;
+            mmr.text = profile.mmr.ToString();
+            bolts.text = profile.bolts.ToString();
+            adamant.text = profile.adamant.ToString();
+            freeXp.text = profile.freeXp.ToString();
+
+            int currentRobot = profile.activeVehicleId;
+            OwnedVehicleDto active = null;
+
+            foreach (OwnedVehicleDto dto in profile.ownedVehicles)
+            {
+                if (currentRobot == dto.vehicleId)
+                {
+                    active = dto;
+                    break;
+                }
+            }
+
+            if (active != null)
+            {
+                xp.text = active.xp.ToString();
+            }
         }
+
 
         public void SetActive(bool isActive)
         {

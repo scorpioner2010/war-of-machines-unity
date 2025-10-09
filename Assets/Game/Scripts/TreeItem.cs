@@ -9,4 +9,5 @@ public class TreeItem : MonoBehaviour
     public TMP_Text level;
     public Image image;
     public Vehicle vehicleType;
+    public GameObject isClose;
 }

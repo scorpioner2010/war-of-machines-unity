@@ -19,6 +19,7 @@ namespace Game.Scripts.API.ServerManagers
     {
         private static ProfileServer _in;
         public static List<PlayerDataAPIInfo> PlayersDataAPIInfos = new();
+        public DevelopmentTree  developmentTree;
 
         private void Awake() => _in = this;
         private bool _isEnter;
@@ -93,6 +94,7 @@ namespace Game.Scripts.API.ServerManagers
                 clientInfo.SetPlayerData(profile);
                 clientInfo.SetClientId(target.ClientId);
                 RobotView.Spawn();
+                developmentTree.Init();
             }
             else
             {

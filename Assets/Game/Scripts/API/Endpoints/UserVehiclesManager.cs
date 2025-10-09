@@ -2,21 +2,15 @@ using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Game.Scripts.API.Helpers;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Game.Scripts.API.Endpoints
 {
-    /// <summary>
-    /// Робота з інвентарем гравця:
-    ///   GET    /user-vehicles/me
-    ///   PUT    /user-vehicles/me/active/{vehicleId}
-    ///   POST   /user-vehicles/me/add-by-code/{code}
-    ///   DELETE /user-vehicles/me/{vehicleId}
-    /// </summary>
     public abstract class UserVehiclesManager
     {
         // GET /user-vehicles/me
-        public static async UniTask<(bool isSuccess, string message, UserVehicleEntry[] items)> GetMyVehicles(string token)
+        public static async UniTask<(bool ok, string msg, UserVehicleResponse response)> GetMyVehicles(string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me";
 
@@ -29,19 +23,19 @@ namespace Game.Scripts.API.Endpoints
 
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
-            string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            string resp = req.downloadHandler?.text ?? string.Empty;
 
             if (req.result == UnityWebRequest.Result.Success)
             {
-                var arr = JsonHelper.FromJson<UserVehicleEntry>(resp);
-                return (true, resp, arr);
+                var obj = JsonUtility.FromJson<UserVehicleResponseWrapper>("{\"data\":" + resp + "}");
+                return (true, resp, obj.data);
             }
 
-            return (false, resp, Array.Empty<UserVehicleEntry>());
+            return (false, resp, null);
         }
 
         // PUT /user-vehicles/me/active/{vehicleId}
-        public static async UniTask<(bool isSuccess, string message)> SetActive(int vehicleId, string token)
+        public static async UniTask<(bool ok, string msg)> SetActive(int vehicleId, string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me/active/" + vehicleId;
 
@@ -56,32 +50,12 @@ namespace Game.Scripts.API.Endpoints
 
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
-            string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
-            return (req.result == UnityWebRequest.Result.Success, resp);
-        }
-
-        // POST /user-vehicles/me/add-by-code/{code}
-        public static async UniTask<(bool isSuccess, string message)> AddByCode(string code, string token)
-        {
-            string url = HttpLink.APIBase + "/user-vehicles/me/add-by-code/" + UnityWebRequest.EscapeURL(code);
-
-            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
-            {
-                uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes("{}")),
-                downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
-            };
-            req.SetRequestHeader("Content-Type", "application/json");
-            req.SetRequestHeader("Authorization", "Bearer " + token);
-
-            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
-
-            string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            string resp = req.downloadHandler?.text ?? string.Empty;
             return (req.result == UnityWebRequest.Result.Success, resp);
         }
 
         // DELETE /user-vehicles/me/{vehicleId}
-        public static async UniTask<(bool isSuccess, string message)> Remove(int vehicleId, string token)
+        public static async UniTask<(bool ok, string msg)> Remove(int vehicleId, string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me/" + vehicleId;
 
@@ -94,12 +68,70 @@ namespace Game.Scripts.API.Endpoints
 
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
-            string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            string resp = req.downloadHandler?.text ?? string.Empty;
             return (req.result == UnityWebRequest.Result.Success, resp);
+        }
+
+        // POST /user-vehicles/{vehicleId}/convert-freexp
+        public static async UniTask<(bool ok, string msg)> ConvertFreeXp(int vehicleId, int amount, string token)
+        {
+            string url = HttpLink.APIBase + "/user-vehicles/" + vehicleId + "/convert-freexp";
+            string json = "{\"amount\":" + amount + "}";
+
+            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
+            {
+                uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
+                downloadHandler = new DownloadHandlerBuffer(),
+                certificateHandler = new AcceptAllCertificates()
+            };
+            req.SetRequestHeader("Content-Type", "application/json");
+            req.SetRequestHeader("Authorization", "Bearer " + token);
+
+            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+
+            string resp = req.downloadHandler?.text ?? string.Empty;
+            return (req.result == UnityWebRequest.Result.Success, resp);
+        }
+
+        // GET /user-vehicles/xp
+        public static async UniTask<(bool ok, string msg, VehicleXpResponse data)> GetXpInfo(string token)
+        {
+            string url = HttpLink.APIBase + "/user-vehicles/xp";
+
+            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
+            {
+                downloadHandler = new DownloadHandlerBuffer(),
+                certificateHandler = new AcceptAllCertificates()
+            };
+            req.SetRequestHeader("Authorization", "Bearer " + token);
+
+            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+
+            string resp = req.downloadHandler?.text ?? string.Empty;
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                var data = JsonUtility.FromJson<VehicleXpResponse>(resp);
+                return (true, resp, data);
+            }
+
+            return (false, resp, null);
         }
     }
 
-    // ---- Models ----
+    [Serializable]
+    public class UserVehicleResponse
+    {
+        public int freeXp;
+        public UserVehicleEntry[] vehicles;
+    }
+
+    [Serializable]
+    public class UserVehicleResponseWrapper
+    {
+        public UserVehicleResponse data;
+    }
+
     [Serializable]
     public class UserVehicleEntry
     {
@@ -107,6 +139,23 @@ namespace Game.Scripts.API.Endpoints
         public int vehicleId;
         public string vehicleCode;
         public string vehicleName;
+        public int xp;
+        public bool isActive;
+    }
+
+    [Serializable]
+    public class VehicleXpResponse
+    {
+        public int freeXp;
+        public VehicleXpItem[] vehicles;
+    }
+
+    [Serializable]
+    public class VehicleXpItem
+    {
+        public int vehicleId;
+        public string vehicleName;
+        public int xp;
         public bool isActive;
     }
 }
