@@ -6907,6 +6907,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 808617897}
+  - component: {fileID: 808617899}
+  - component: {fileID: 808617898}
   m_Layer: 0
   m_Name: AnimationPanel
   m_TagString: Untagged
@@ -6935,6 +6937,44 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &808617898
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 808617896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.6509434, g: 0.6509434, b: 0.6509434, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &808617899
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 808617896}
+  m_CullTransparentMesh: 1
 --- !u!1 &812192804
 GameObject:
   m_ObjectHideFlags: 0
@@ -10524,6 +10564,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1171468198}
   - component: {fileID: 1171468199}
+  - component: {fileID: 1171468200}
   m_Layer: 0
   m_Name: DevelopmentTree
   m_TagString: Untagged
@@ -10573,6 +10614,23 @@ MonoBehaviour:
   factionButtonPrefab: {fileID: 7252929660606042418, guid: 3ac8aecddae8ed6469d45e2412a8ef82,
     type: 3}
   buttonBack: {fileID: 2107131025}
+  arrowDrawer: {fileID: 1171468200}
+  arrowsLayerPrefab: {fileID: 7876436001186824432, guid: 83fd06bf7ddff6340b2087f023d1cccb,
+    type: 3}
+--- !u!114 &1171468200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1171468197}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30c442a19768c8c45a7a15f87cff8540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  arrowPrefab: {fileID: 4877072647523442535, guid: 3659b8a4f8f3a6b49ac1ecc575fb564b,
+    type: 3}
 --- !u!1 &1173799527
 GameObject:
   m_ObjectHideFlags: 0
