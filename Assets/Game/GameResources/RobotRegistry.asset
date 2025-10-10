@@ -13,35 +13,35 @@ MonoBehaviour:
   m_Name: RobotRegistry
   m_EditorClassIdentifier: 
   items:
-  - id: 1
+  - code: ia_l1_starter
     prefab: {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
       type: 3}
     icon: {fileID: 21300000, guid: 51dde97bd028a324a885abc84151b692, type: 3}
-  - id: 2
+  - code: nv_l1_starter
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: 6ebfe44f9956af54d8430024bb3fc86a, type: 3}
-  - id: 3
+  - code: ia_l2_scout
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
-  - id: 4
+  - code: ia_l2_guardian
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
-  - id: 5
+  - code: ia_l2_colossus
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
-  - id: 6
+  - code: nv_l2_scout
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: fec04ea2506d2c1458d0882f17a11c40, type: 3}
-  - id: 7
+  - code: nv_l2_guardian
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: fec04ea2506d2c1458d0882f17a11c40, type: 3}
-  - id: 8
+  - code: nv_l2_colossus
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: fec04ea2506d2c1458d0882f17a11c40, type: 3}

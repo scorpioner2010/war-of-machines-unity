@@ -153,7 +153,7 @@ namespace Game.Scripts.Networking.Lobby
             {
                 if (player.isBot == false)
                 {
-                    HideLoadingFindPlayers(player.Connection);
+                    HideLoadingFindPlayers(player.Connection, false);
                 }
             }
 
@@ -179,13 +179,16 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             // 4) Приховуємо індикатор пошуку на клієнті
-            HideLoadingFindPlayers(connection);
+            HideLoadingFindPlayers(connection, true);
         }
         
         [TargetRpc]
-        public void HideLoadingFindPlayers(NetworkConnection target)
+        public void HideLoadingFindPlayers(NetworkConnection target, bool isCancel)
         {
-            MenuManager.OpenMenu(MenuType.MainMenu);
+            if (isCancel)
+            {
+                MenuManager.OpenMenu(MenuType.MainMenu);
+            }
         }
         
         [ServerRpc(RequireOwnership = false)]

@@ -16,8 +16,7 @@ namespace Game.Scripts.API
     /// </summary>
     public abstract class VehiclesManager
     {
-        public static async UniTask<(bool isSuccess, string message, VehicleLite[] items)>
-            GetAll(string faction = null, string branch = null)
+        public static async UniTask<(bool isSuccess, string message, VehicleLite[] items)> GetAll(string faction = null, string branch = null)
         {
             string url = HttpLink.APIBase + "/vehicles";
 
@@ -103,8 +102,7 @@ namespace Game.Scripts.API
         /// Хто може відкрити цей танк (і скільки XP потрібно на предку).
         /// GET /vehicles/{id}/research-from
         /// </summary>
-        public static async UniTask<(bool isSuccess, string message, ResearchFromLink[] items)>
-            GetResearchFrom(int vehicleId)
+        public static async UniTask<(bool isSuccess, string message, ResearchFromLink[] items)> GetResearchFrom(int vehicleId)
         {
             string url = HttpLink.APIBase + "/vehicles/" + vehicleId + "/research-from";
 

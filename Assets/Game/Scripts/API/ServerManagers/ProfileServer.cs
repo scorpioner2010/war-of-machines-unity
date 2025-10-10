@@ -11,6 +11,7 @@ using Game.Scripts.Player.Data;
 using Game.Scripts.Server;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
+using Game.Scripts.UI.Tree;
 using NewDropDude.Script.API.ServerManagers;
 using UnityEngine;
 
@@ -23,8 +24,7 @@ namespace Game.Scripts.API.ServerManagers
         public DevelopmentTree  developmentTree;
 
         private void Awake() => _in = this;
-        private bool _isEnter;
-
+        
         public static PlayerProfile GetProfileByClientId(int clientId)
         {
             foreach (PlayerDataAPIInfo dataAPIInfo in PlayersDataAPIInfos)
@@ -69,7 +69,7 @@ namespace Game.Scripts.API.ServerManagers
             NetworkConnection senderConn = ServerManager.Clients[clientId];
             
             AddPlayerDataAPI(data.profile, clientId);
-            TargetLoginResponseRpc(senderConn, data.isSuccess, data.message, data.profile);
+            TargetRpcUpdateProfile(senderConn, data.isSuccess, data.message, data.profile);
         }
 
         
@@ -85,7 +85,7 @@ namespace Game.Scripts.API.ServerManagers
         }
         
         [TargetRpc]
-        private void TargetLoginResponseRpc(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
+        private void TargetRpcUpdateProfile(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
         {
             Loading.Hide();
             
@@ -94,20 +94,13 @@ namespace Game.Scripts.API.ServerManagers
                 IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
                 clientInfo.SetPlayerData(profile);
                 clientInfo.SetClientId(target.ClientId);
-                RobotView.GenerateIcons(clientInfo);
-                
+                RobotView.GenerateIcons();
+                MainMenu.In.UpdatePlayerInfo(clientInfo.Profile);
                 developmentTree.Init();
             }
             else
             {
-                PopupInfo.ShowText(errorMessage, Color.red);
-            }
-
-            if (_isEnter == false)
-            {
-                MenuManager.CloseMenu(MenuType.Auth);
-                MenuManager.OpenMenu(MenuType.MainMenu);
-                _isEnter = true;
+                Popup.ShowText(errorMessage, Color.red);
             }
         }
     }

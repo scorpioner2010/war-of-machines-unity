@@ -4,6 +4,7 @@ using Game.Scripts.Audio;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
 using Game.Scripts.Player.Data;
+using Game.Scripts.UI.Tree;
 using TMPro;
 using UniRx;
 using UniRx.Triggers;
@@ -58,14 +59,18 @@ namespace Game.Scripts.UI.MainMenu
                 }
             });
             
-            mainMenu.gameObject.OnEnableAsObservable().Subscribe(OnEnableMenu).AddTo(this);
+            //mainMenu.gameObject.OnEnableAsObservable().Subscribe(OnEnableMenu).AddTo(this);
+            MenuManager.OnEnable += type =>
+            {
+                if (type == MenuType.MainMenu)
+                {
+                    ProfileServer.UpdateProfile();
+                }
+            };
         }
 
-        private void OnEnableMenu<T>(T obj)
+        public void UpdatePlayerInfo(PlayerProfile profile)
         {
-            IPlayerClientInfo player = ServiceLocator.Get<IPlayerClientInfo>();
-            PlayerProfile profile = player.Profile;
-
             user.text = profile.username;
             mmr.text = profile.mmr.ToString();
             bolts.text = profile.bolts.ToString();
@@ -79,8 +84,7 @@ namespace Game.Scripts.UI.MainMenu
                 xp.text = active.xp.ToString();
             }
         }
-
-
+        
         public void SetActive(bool isActive)
         {
             foreach (GameObject obj in mainMenuObjects)

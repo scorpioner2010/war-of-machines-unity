@@ -2,19 +2,52 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Component.Transforming;
+using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Observing;
+using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Player.Data;
 using NaughtyAttributes;
+using NewDropDude.Script.API.ServerManagers;
 using UnityEngine;
+using UnityEngine.UI;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Cysharp.Threading.Tasks;
+using FishNet.Object;
+using Game.Scripts.API;
+using Game.Scripts.Core.Helpers;
+using Game.Scripts.Core.Services;
+using Game.Scripts.MenuController;
+using Game.Scripts.Player.Data;
+using Game.Scripts.UI.Helpers;
+using Game.Scripts.UI.Screens;
+using NaughtyAttributes;
+using TMPro;
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+using FishNet.Connection;
+using FishNet.Object;
+using Game.Scripts.API.Endpoints;
+using Game.Scripts.API.ServerManagers;
+using Game.Scripts.MenuController;
+using Game.Scripts.Server;
+using Game.Scripts.UI.Helpers;
+using Game.Scripts.UI.MainMenu;
+using NewDropDude.Script.API.ServerManagers;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UI;
 
 namespace Game.Scripts.UI.MainMenu
 {
-    public class RobotView : MonoBehaviour
+    public class RobotView : NetworkBehaviour
     {
         public Transform spawnPosition;
         public GameObject rootSpawnPlace;
@@ -28,29 +61,33 @@ namespace Game.Scripts.UI.MainMenu
         
         private void Awake() => _in = this;
 
-        public static void GenerateIcons(IPlayerClientInfo clientInfo)
+        public static void GenerateIcons()
         {
+            Despawn();
+            
+            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
             OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
             
             foreach (OwnedVehicleDto vehicle in clientInfo.Profile.ownedVehicles)
             {
-                Sprite sprite = ResourceManager.GetIcon(vehicle.vehicleId);
-                    
+                Sprite sprite = ResourceManager.GetIcon(vehicle.code);
                 if (selected.vehicleId == vehicle.vehicleId)
                 {
-                    MakeIcons(sprite, true);
+                    MakeIcons(sprite, true, vehicle.vehicleId);
                 }
                 else
                 {
-                    MakeIcons(sprite, false);
+                    MakeIcons(sprite, false, vehicle.vehicleId);
                 }
             }
             
-            TankRoot vehicleRoot = ResourceManager.GetPrefab(selected.vehicleId);
+            TankRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
             Spawn(vehicleRoot);
+
+            UpdateUI();
         }
         
-        private static async void MakeIcons(Sprite sprite, bool isSelect)
+        private static void MakeIcons(Sprite sprite, bool isSelect, int id)
         {
             VehicleButton button = Instantiate(_in.vehicleButtonPrefab, _in.vehicleContainer.transform);
             button.vehicleImage.sprite = sprite;
@@ -58,14 +95,58 @@ namespace Game.Scripts.UI.MainMenu
             
             button.button.onClick.AddListener(() =>
             {
-                Debug.LogError("select");
-                //select
+                IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+                OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
+                
+                if (id == selected.vehicleId)
+                {
+                    return;
+                }
+                
+                Helpers.Loading.Show();
+                _in.SelectRPC(_in.ClientManager.Connection.ClientId, id);
             });
             
             _in._buttons.Add(button.button);
+        }
+        
+        [ServerRpc(RequireOwnership = false)]
+        private void SelectRPC(int clientID, int code)
+        {
+            Select(clientID, code);
+        }
+            
+        private async void Select(int clientID, int id)
+        {
+            string token = RegisterServer.GetToken(clientID);
+            (bool ok, string msg) result =  await UserVehiclesManager.SetActive(id, token);
+            NetworkConnection senderConn = ServerManager.Clients[clientID];
+            TargetRpcSelect(senderConn, result.ok, result.msg);
+        }
+        
+        [TargetRpc]
+        private void TargetRpcSelect(NetworkConnection target, bool success, string errorMessage)
+        {
+            if (success)
+            {
+                ProfileServer.UpdateProfile();
+            }
+            else
+            {
+                Popup.ShowText(errorMessage, Color.red);
+            }
+            
+            UpdateUI();
+            Helpers.Loading.Hide();
+        }
+        
+        [Button]
+        public static async void UpdateUI()
+        {
+            await UniTask.DelayFrame(1);
             List<Transform> l = new();
             l.Add(_in.vehicleContainer);
-            await GameplayAssistant.RebuildAllLayouts(l);
+            GameplayAssistant.RebuildAllLayouts(l).Forget();
         }
         
         public static async void Spawn(TankRoot  tankRoot)
@@ -85,18 +166,20 @@ namespace Game.Scripts.UI.MainMenu
             _in._tankRoot.transform.position = _in.spawnPosition.position;
             _in._tankRoot.transform.rotation = _in.spawnPosition.rotation;
         }
-
-        [Button]
+        
         public static void Despawn()
         {
-            Destroy(_in._tankRoot.gameObject);
-
+            if (_in._tankRoot != null)
+            {
+                Destroy(_in._tankRoot.gameObject);
+            }
+            
             foreach (Button button in _in._buttons)
             {
-                Destroy(button);
+                Destroy(button.gameObject);
             }
-            _in._buttons.Clear();
             
+            _in._buttons.Clear();
             _in.rootSpawnPlace.SetActive(false);
         }
         

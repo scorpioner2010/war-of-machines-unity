@@ -7,6 +7,7 @@ using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
 using Game.Scripts.API.Models;
+using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
@@ -30,11 +31,6 @@ namespace Game.Scripts.Networking.Lobby
     public class PlayerSpawner : NetworkBehaviour
     {
         public static PlayerSpawner In;
-        
-        [SerializeField] private TankRoot[] playerPrefabOptions;
-        
-        private TankRoot PlayerPrefab => playerPrefabOptions.RandomElement();
-
         public GameMaps[] scenes;
         
         [SerializeField] private LobbyManager lobbyManager;
@@ -159,8 +155,7 @@ namespace Game.Scripts.Networking.Lobby
         
         public void ReturnToMainMenu()
         {
-            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-            RobotView.GenerateIcons(clientInfo);
+            RobotView.GenerateIcons();
             MainMenu.In.SetActive(true);
             MenuManager.CloseMenu(MenuType.GameplayHUD);
          
@@ -258,9 +253,9 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
             
-            TankRoot tankRoot = Instantiate(PlayerPrefab, spawnPoint.transform.position, Quaternion.identity);
-            ServerManager.Spawn(tankRoot.networkObject, LocalConnection, _additiveServerScene);
-            player.playerRoot = tankRoot;
+            //TankRoot tankRoot = Instantiate(PlayerPrefab, spawnPoint.transform.position, Quaternion.identity);
+            //ServerManager.Spawn(tankRoot.networkObject, LocalConnection, _additiveServerScene);
+            //player.playerRoot = tankRoot;
             //player.playerRoot.characterInit.Init(0, InitValue.Bot, player.loginName, serverRoom.roomId, _additiveServerScene);
         }
         
@@ -281,8 +276,9 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene);
-            
-            TankRoot tankRoot = Instantiate(PlayerPrefab, spawnPoint.transform.position, Quaternion.identity);
+            PlayerProfile profile = ProfileServer.GetProfileByClientId(connection.ClientId);
+            TankRoot vehicle = ResourceManager.GetPrefab(profile.activeVehicleCode);
+            TankRoot tankRoot = Instantiate(vehicle, spawnPoint.transform.position, Quaternion.identity);
             ServerManager.Spawn(tankRoot.networkObject, connection, _additiveServerScene);
             
             Player player = serverRoom.GetPlayerBuyConnection(connection);

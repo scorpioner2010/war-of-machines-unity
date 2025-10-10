@@ -145,11 +145,12 @@ namespace NewDropDude.Script.API.ServerManagers
             
             if (success)
             {
-                ProfileServer.UpdateProfile();
+                MenuManager.CloseMenu(MenuType.Auth);
+                MenuManager.OpenMenu(MenuType.MainMenu);
             }
             else
             {
-                PopupInfo.ShowText(errorMessage, Color.red);
+                Popup.ShowText(errorMessage, Color.red);
             }
             
             string userLogin = userLoginInputField.text.Trim();
@@ -164,11 +165,11 @@ namespace NewDropDude.Script.API.ServerManagers
         {
             if (success)
             {
-                PopupInfo.ShowText("Success!", Color.green);
+                Popup.ShowText("Success!", Color.green);
             }
             else
             {
-                PopupInfo.ShowText(errorMessage, Color.red);
+                Popup.ShowText(errorMessage, Color.red);
             }
             
             Loading.Hide();

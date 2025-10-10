@@ -11,7 +11,7 @@ public class RobotRegistry : ScriptableObject
     [Serializable]
     public class Item
     {
-        public int id;
+        public string code;
         public TankRoot prefab;
         [ShowAssetPreview(64, 64)]
         public Sprite icon;
@@ -19,11 +19,11 @@ public class RobotRegistry : ScriptableObject
 
     public List<Item> items = new ();
 
-    public TankRoot GetPrefab(int id)
+    public TankRoot GetPrefab(string code)
     {
         foreach (Item it in items)
         {
-            if (it.id == id)
+            if (it.code == code)
             {
                 return it.prefab;
             }
@@ -32,11 +32,11 @@ public class RobotRegistry : ScriptableObject
         return null;
     }
     
-    public Sprite GetIcon(int id)
+    public Sprite GetIcon(string code)
     {
         foreach (Item it in items)
         {
-            if (it.id == id)
+            if (it.code == code)
             {
                 return it.icon;
             }

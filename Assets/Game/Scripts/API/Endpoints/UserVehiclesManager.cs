@@ -117,6 +117,61 @@ namespace Game.Scripts.API.Endpoints
 
             return (false, resp, null);
         }
+
+        // POST /user-vehicles/me/buy/{code}
+        // Купівля техніки за кодом: списує Bolts на бекенді та додає машину гравцеві
+        public static async UniTask<(bool ok, string msg, BuyVehicleResult data)> Buy(string code, string token)
+        {
+            string url = HttpLink.APIBase + "/user-vehicles/me/buy/" + code;
+
+            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
+            {
+                uploadHandler = new UploadHandlerRaw(new byte[0]),
+                downloadHandler = new DownloadHandlerBuffer(),
+                certificateHandler = new AcceptAllCertificates()
+            };
+            req.SetRequestHeader("Authorization", "Bearer " + token);
+
+            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+
+            string resp = req.downloadHandler?.text ?? string.Empty;
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                var data = JsonUtility.FromJson<BuyVehicleResult>(resp);
+                return (true, resp, data);
+            }
+
+            return (false, resp, null);
+        }
+
+        // POST /user-vehicles/me/sell/{vehicleId}
+        // Продаж техніки за 50% від ціни
+        public static async UniTask<(bool ok, string msg, SellVehicleResult data)> Sell(int vehicleId, string token)
+        {
+            string url = HttpLink.APIBase + "/user-vehicles/me/sell/" + vehicleId;
+
+            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
+            {
+                uploadHandler = new UploadHandlerRaw(new byte[0]),
+                downloadHandler = new DownloadHandlerBuffer(),
+                certificateHandler = new AcceptAllCertificates()
+            };
+            req.SetRequestHeader("Authorization", "Bearer " + token);
+
+            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+
+            string resp = req.downloadHandler?.text ?? string.Empty;
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                // очікуємо JSON: { ok, soldVehicleId, refundBolts, newBolts }
+                var data = JsonUtility.FromJson<SellVehicleResult>(resp);
+                return (true, resp, data);
+            }
+
+            return (false, resp, null);
+        }
     }
 
     [Serializable]
@@ -157,5 +212,23 @@ namespace Game.Scripts.API.Endpoints
         public string vehicleName;
         public int xp;
         public bool isActive;
+    }
+
+    [Serializable]
+    public class BuyVehicleResult
+    {
+        public bool ok;
+        public int userVehicleId;
+        public int vehicleId;
+        public int newBolts;
+    }
+
+    [Serializable]
+    public class SellVehicleResult
+    {
+        public bool ok;
+        public int soldVehicleId;
+        public int refundBolts;
+        public int newBolts;
     }
 }
