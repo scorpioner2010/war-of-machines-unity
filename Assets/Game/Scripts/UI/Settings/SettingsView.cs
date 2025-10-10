@@ -65,7 +65,7 @@ namespace Game.Scripts.UI.Settings
             BackButton.onClick.AddListener(OnBackClicked);
 
             // Show the first tab by default
-            ShowTab(TabType.General);
+            ShowTab(TabType.Video);
         }
 
         private void OnApplyClicked()

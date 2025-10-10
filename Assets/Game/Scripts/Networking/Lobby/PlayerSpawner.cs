@@ -6,9 +6,12 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
+using Game.Scripts.API.Models;
 using Game.Scripts.Core.Helpers;
+using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
+using Game.Scripts.Player.Data;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.MainMenu;
 using Game.Scripts.World.Spawns;
@@ -156,10 +159,11 @@ namespace Game.Scripts.Networking.Lobby
         
         public void ReturnToMainMenu()
         {
-            RobotView.Spawn();
+            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+            RobotView.GenerateIcons(clientInfo);
             MainMenu.In.SetActive(true);
             MenuManager.CloseMenu(MenuType.GameplayHUD);
-            
+         
             foreach (TankRoot root in FindObjectsByType<TankRoot>(FindObjectsSortMode.None))
             {
                 if(root.OwnerId == ClientManager.Connection.ClientId)

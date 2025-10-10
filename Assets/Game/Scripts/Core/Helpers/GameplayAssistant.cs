@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Game.Scripts.Core.Services;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace Game.Scripts.Core.Helpers
@@ -22,6 +24,34 @@ namespace Game.Scripts.Core.Helpers
     public static class GameplayAssistant
     {
         private static readonly System.Random RandomObject = new();
+        
+        public static async UniTask RebuildAllLayouts(List<Transform> roots)
+        {
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+            Canvas.ForceUpdateCanvases();
+
+            foreach (Transform root in roots)
+            {
+                ForceRebuildRecursive(root);
+            }
+
+            Canvas.ForceUpdateCanvases();
+        }
+        
+        private static void ForceRebuildRecursive(Transform t)
+        {
+            for (int i = 0; i < t.childCount; i++)
+            {
+                ForceRebuildRecursive(t.GetChild(i));
+            }
+
+            RectTransform rt = t as RectTransform ?? t.GetComponent<RectTransform>();
+        
+            if (rt != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+            }
+        }
         
         [Obsolete("Obsolete")]
         public static void RunWithDelay(float time, Action logic)

@@ -75,6 +75,34 @@ namespace Game.Scripts.API.Models
         public string activeVehicleName;
 
         public OwnedVehicleDto[] ownedVehicles;
+        
+        public OwnedVehicleDto GetSelected()
+        {
+            OwnedVehicleDto active = null;
+
+            foreach (OwnedVehicleDto dto in ownedVehicles)
+            {
+                if (activeVehicleId == dto.vehicleId)
+                {
+                    return dto;
+                }
+            }
+            
+            return null;
+        }
+
+        public bool IsHave(int idVehicle)
+        {
+            foreach (OwnedVehicleDto vehicleDto in ownedVehicles)
+            {
+                if (vehicleDto.vehicleId == idVehicle)
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
     }
 
     [System.Serializable]
@@ -84,6 +112,6 @@ namespace Game.Scripts.API.Models
         public string code;
         public string name;
         public bool isActive;
-        public int xp;  // 🔹 нове поле
+        public int xp;
     }
 }

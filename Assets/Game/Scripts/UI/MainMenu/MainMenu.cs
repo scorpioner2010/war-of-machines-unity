@@ -71,18 +71,8 @@ namespace Game.Scripts.UI.MainMenu
             bolts.text = profile.bolts.ToString();
             adamant.text = profile.adamant.ToString();
             freeXp.text = profile.freeXp.ToString();
-
-            int currentRobot = profile.activeVehicleId;
-            OwnedVehicleDto active = null;
-
-            foreach (OwnedVehicleDto dto in profile.ownedVehicles)
-            {
-                if (currentRobot == dto.vehicleId)
-                {
-                    active = dto;
-                    break;
-                }
-            }
+            
+            OwnedVehicleDto active = profile.GetSelected();
 
             if (active != null)
             {

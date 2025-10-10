@@ -8,23 +8,36 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Game.Scripts.API;
+using Game.Scripts.Core.Helpers;
+using System.Collections.Generic;
+using FishNet.Connection;
+using FishNet.Object;
+using Game.Scripts.API.Endpoints;
+using Game.Scripts.API.Models;
+using Game.Scripts.Core.Helpers;
+using Game.Scripts.Core.Services;
+using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.MenuController;
+using Game.Scripts.Player.Data;
+using Game.Scripts.Server;
+using Game.Scripts.UI.Helpers;
+using Game.Scripts.UI.MainMenu;
+using NewDropDude.Script.API.ServerManagers;
+using UnityEngine;
 
 public class DevelopmentTree : MonoBehaviour
 {
-    [Header("Prefabs and References")]
     public Transform animationPanel;
     public Transform fractionTreePrefab;
     public Transform starterContainerPrefab;
     public FactionContainer factionContainerPrefab;
     public TreeGrid treeGridPrefab;
     public TreeItem treeItemPrefab;
-
-    [Header("UI Buttons")]
+    
     public Transform buttonsContainer;
     public Button factionButtonPrefab;
     public Button buttonBack;
-
-    [Header("Arrows")]
+    
     public ArrowDrawer arrowDrawer;
     public RectTransform arrowsLayerPrefab;
 
@@ -54,7 +67,7 @@ public class DevelopmentTree : MonoBehaviour
         {
             buttonBack.onClick.AddListener(() =>
             {
-                Game.Scripts.MenuController.MenuManager.OpenMenu(Game.Scripts.MenuController.MenuType.MainMenu);
+                MenuManager.OpenMenu(MenuType.MainMenu);
             });
         }
     }
@@ -83,7 +96,7 @@ public class DevelopmentTree : MonoBehaviour
         
         if (!ok || items == null || items.Length == 0)
         {
-            Debug.LogWarning("No vehicle data received from server!");
+            Debug.LogError("No vehicle data received from server!");
             _graphs = Array.Empty<VehicleGraph>();
             _factionCodes = Array.Empty<string>();
             return ok;
@@ -119,7 +132,7 @@ public class DevelopmentTree : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"Failed to get graph for faction: {faction}");
+                Debug.LogError($"Failed to get graph for faction: {faction}");
                 graphs.Add(new VehicleGraph { nodes = Array.Empty<VehicleNode>(), edges = Array.Empty<VehicleEdge>() });
             }
         }
@@ -137,7 +150,7 @@ public class DevelopmentTree : MonoBehaviour
 
         if (_factionCodes == null || _factionCodes.Length == 0 || _graphs == null || _graphs.Length == 0)
         {
-            Debug.LogWarning("No data to build UI!");
+            Debug.LogError("No data to build UI!");
             return;
         }
 
@@ -172,7 +185,7 @@ public class DevelopmentTree : MonoBehaviour
             SetActiveContainer(0);
         }
 
-        await RebuildAllLayouts();
+        await GameplayAssistant.RebuildAllLayouts(_fractionRoots);
         await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
         DrawArrowsAll();
     }
@@ -184,11 +197,6 @@ public class DevelopmentTree : MonoBehaviour
         {
             _fractionRoots[i].gameObject.SetActive(i == number);
         }
-    }
-
-    public Sprite GetSpriteByName(string spriteName)
-    {
-        return null; // TODO: реалізувати
     }
 
     // будує дерево UI для однієї фракції
@@ -266,13 +274,26 @@ public class DevelopmentTree : MonoBehaviour
     private void CreateTreeItemFromNode(Transform parent, VehicleNode node, Dictionary<int, RectTransform> nodeMap)
     {
         TreeItem item = Instantiate(treeItemPrefab, parent);
-        item.image.sprite = GetSpriteByName(node.code);
         item.vehicleName.text = node.name;
         item.vehicleType = ParseVehicleClass(node.@class);
         item.level.text = node.level.ToString();
         item.isClose.SetActive(!node.isVisible);
-
-        RectTransform rt = item.GetComponent<RectTransform>();
+        item.price.text = "0";
+        
+        IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+        bool isHave = clientInfo.Profile.IsHave(node.id);
+        item.isHave.gameObject.SetActive(isHave);
+        
+        Sprite sprite = ResourceManager.GetIcon(node.id);
+        item.image.sprite = sprite;
+        
+        item.button.onClick.AddListener(() =>
+        {
+            Debug.LogError("Buy");
+        });
+        
+        
+        RectTransform rt = item.rectTransform;
         nodeMap[node.id] = rt;
     }
 
@@ -286,7 +307,7 @@ public class DevelopmentTree : MonoBehaviour
     // перемальовує стрілки лише для активної фракції
     private async UniTask RedrawActive(int index)
     {
-        await RebuildAllLayouts();
+        await GameplayAssistant.RebuildAllLayouts(_fractionRoots);
         await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
 
         if (arrowDrawer == null || index < 0 || index >= _views.Count)
@@ -312,32 +333,7 @@ public class DevelopmentTree : MonoBehaviour
             arrowDrawer.Draw(v.Edges, v.NodeMap, v.ArrowsLayer);
         }
     }
-
-    // примусове оновлення LayoutGroup'ів
-    private async UniTask RebuildAllLayouts()
-    {
-        await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
-        Canvas.ForceUpdateCanvases();
-
-        foreach (Transform root in _fractionRoots)
-        {
-            ForceRebuildRecursive(root);
-        }
-
-        Canvas.ForceUpdateCanvases();
-    }
-
-    // рекурсивне оновлення LayoutRebuilder
-    private void ForceRebuildRecursive(Transform t)
-    {
-        for (int i = 0; i < t.childCount; i++)
-            ForceRebuildRecursive(t.GetChild(i));
-
-        RectTransform rt = t as RectTransform ?? t.GetComponent<RectTransform>();
-        if (rt != null)
-            LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
-    }
-
+    
     // очищення UI
     private void WipeUI()
     {

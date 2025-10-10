@@ -5,6 +5,7 @@ using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Player.Data;
 using Game.Scripts.Server;
@@ -93,7 +94,8 @@ namespace Game.Scripts.API.ServerManagers
                 IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
                 clientInfo.SetPlayerData(profile);
                 clientInfo.SetClientId(target.ClientId);
-                RobotView.Spawn();
+                RobotView.GenerateIcons(clientInfo);
+                
                 developmentTree.Init();
             }
             else
