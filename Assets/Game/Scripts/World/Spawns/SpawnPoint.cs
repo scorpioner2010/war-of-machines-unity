@@ -32,7 +32,7 @@ namespace Game.Scripts.World.Spawns
 
         public static SpawnPoint GetFreePoint(Scene scene)
         {
-            List<SpawnPoint> allPoints = PlayerSpawner.FindObjectsInScene<SpawnPoint>(scene);
+            List<SpawnPoint> allPoints = GameplaySpawner.FindObjectsInScene<SpawnPoint>(scene);
             List<SpawnPoint> freePoints = new();
 
             foreach (SpawnPoint point in allPoints)

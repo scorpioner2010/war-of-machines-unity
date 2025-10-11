@@ -278,7 +278,7 @@ namespace Game.Scripts.Networking.Lobby
 
         private void LoadScene(ServerRoom serverRoom)
         {
-            int offset = PlayerSpawner.In.sceneOffsetX;
+            int offset = GameplaySpawner.In.sceneOffsetX;
             
             List<NetworkConnection> connections = new();
             

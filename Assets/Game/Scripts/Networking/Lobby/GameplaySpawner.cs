@@ -28,10 +28,11 @@ namespace Game.Scripts.Networking.Lobby
         Test = 0,
     }
     
-    public class PlayerSpawner : NetworkBehaviour
+    public class GameplaySpawner : NetworkBehaviour
     {
-        public static PlayerSpawner In;
+        public static GameplaySpawner In;
         public GameMaps[] scenes;
+        public GameplayTimer gameplayTimerPrefab;
         
         [SerializeField] private LobbyManager lobbyManager;
 
@@ -163,7 +164,7 @@ namespace Game.Scripts.Networking.Lobby
             {
                 if(root.OwnerId == ClientManager.Connection.ClientId)
                 {
-                    //Destroy(root.playerCamera.gameObject);
+                    //Destroy from gameplay
                 }
             }
             
@@ -235,16 +236,25 @@ namespace Game.Scripts.Networking.Lobby
                 }
                 
                 LobbyRooms.UpdateRoomStatusInGame(serverRoom.roomId);
-                
+                SpawnTimer(serverRoom);
                 //ScoreBoard timer = Instantiate(scoreBoard, Vector3.zero, Quaternion.identity);
                 //timer.serverRoom = serverRoom;
                 //timer.GetComponent<RoomConditionRebuilder>().SetupRoomID(serverRoom.roomId);
                 //ServerManager.Spawn(timer.gameObject, scene: _additiveServerScene);
             }
         }
+
+        private void SpawnTimer(ServerRoom serverRoom)
+        {
+            GameplayTimer timer = Instantiate(gameplayTimerPrefab, Vector3.zero, Quaternion.identity);
+            ServerManager.Spawn(timer.networkObject, LocalConnection, _additiveServerScene);
+            serverRoom.gameplayTimer =  timer;
+        }
         
         private void SpawnBot(ServerRoom serverRoom, Player player)
         {
+            return;
+            
             SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene);
             
             if (spawnPoint == null)

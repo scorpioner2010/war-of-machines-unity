@@ -21,7 +21,16 @@ namespace Game.Scripts.Networking.Lobby
         public List<Player> players = new ();
         public bool isAutoRoom;
         public event Action<ServerRoom> OnTimeIsUp;
-        
+        public GameplayTimer gameplayTimer;
+
+        private void OnDestroy()
+        {
+            if (gameplayTimer != null)
+            {
+                Destroy(gameplayTimer.gameObject);
+            }
+        }
+
         private void SyncedTimeOnChange(float newTime)
         {
             players.RemoveAllNull();
