@@ -18,7 +18,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Update()
         {
-            if (!isActive || !tankRoot.HasOwnership())
+            if (!isActive || !tankRoot.IsOwner)
                 return;
 
             Transform t = tankRoot.objectMover.transform;

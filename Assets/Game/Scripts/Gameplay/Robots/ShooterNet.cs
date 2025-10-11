@@ -41,7 +41,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void PredictAndRequest()
         {
-            if (!tankRoot.HasOwnership())
+            if (!tankRoot.IsOwner)
             {
                 return;
             }
@@ -208,7 +208,7 @@ namespace Game.Scripts.Gameplay.Robots
         [ObserversRpc(ExcludeOwner = true)]
         private void FireObserversRpc(int shotId, Vector3 startPos, Vector3 aimPoint, uint clientTick)
         {
-            if (tankRoot.HasOwnership())
+            if (IsOwner)
             {
                 return;
             }

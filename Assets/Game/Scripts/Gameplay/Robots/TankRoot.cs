@@ -1,4 +1,5 @@
 using FishNet.Object;
+using Game.Script.Player.UI;
 using Game.Scripts.Gameplay.Robots.t1;
 using Game.Scripts.Gameplay.Robots.t2;
 using Game.Scripts.UI.HUD;
@@ -22,13 +23,9 @@ namespace Game.Scripts.Gameplay.Robots
         public WeaponReloadController weaponReloadController;
         public CaterpillarTrack caterpillarTrack;
         public RobotFootAnimator footAnimator;
+        public NickNameView nickNameView;
 
         public bool IsMenu { get; set; }
-
-        public bool HasOwnership()
-        {
-            return IsOwner;
-        }
 
         public override void OnStartServer()
         {
@@ -44,7 +41,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             IsMenu = isMenu;
 
-            if (!HasOwnership())
+            if (!IsOwner)
             {
                 return;
             }

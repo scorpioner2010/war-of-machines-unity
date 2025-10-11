@@ -2403,7 +2403,7 @@ GameObject:
   - component: {fileID: 1771415518}
   - component: {fileID: 1771415517}
   m_Layer: 0
-  m_Name: Camera
+  m_Name: GameplayCamera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2422,6 +2422,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 0}
+  gameplayCamera: {fileID: 1771415520}
 --- !u!114 &1771415518
 MonoBehaviour:
   m_ObjectHideFlags: 0

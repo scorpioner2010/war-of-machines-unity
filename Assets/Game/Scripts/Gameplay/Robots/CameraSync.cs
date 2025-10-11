@@ -6,6 +6,7 @@ namespace Game.Scripts.Gameplay.Robots
     {
         public static CameraSync In;
         public Transform target;
+        public Camera gameplayCamera;
         
         private void Awake()
         {

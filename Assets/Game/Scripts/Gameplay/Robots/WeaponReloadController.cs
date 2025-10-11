@@ -36,7 +36,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Update()
         {
-            if (tankRoot.HasOwnership() && _clientReloadRemain > 0f)
+            if (IsOwner && _clientReloadRemain > 0f)
             {
                 _clientReloadRemain -= Time.deltaTime;
             }
@@ -80,7 +80,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (tankRoot.HasOwnership())
+            if (IsOwner)
             {
                 ApplyHud();
 

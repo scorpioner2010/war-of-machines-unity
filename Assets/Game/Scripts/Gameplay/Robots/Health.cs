@@ -1,3 +1,4 @@
+using System;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
@@ -10,12 +11,9 @@ namespace Game.Scripts.Gameplay.Robots
     public class Health : NetworkBehaviour
     {
         [Min(1f)] public float maxHealth = 100f;
-        public bool destroyOnDeath = false;
-        public float respawnDelay = -1f;
 
-        public UnityEvent onDamaged;
+        public Action<float, float, float> OnDamaged;
         public UnityEvent onDeath;
-        public UnityEvent onRespawn;
 
         private readonly SyncVar<float> _hp = new();
         private readonly SyncVar<bool> _dead = new();
@@ -39,22 +37,11 @@ namespace Game.Scripts.Gameplay.Robots
 
             colliders = list.ToArray();
         }
-
         
-        public float Current
-        {
-            get { return _hp.Value; }
-        }
+        public float Current => _hp.Value;
+        public bool IsDead => _dead.Value;
 
-        public bool IsDead
-        {
-            get { return _dead.Value; }
-        }
-
-        private void Awake()
-        {
-            _hp.OnChange += OnHpChanged;
-        }
+        private void Awake() => _hp.OnChange += OnHpChanged;
 
         public override void OnStartServer()
         {
@@ -72,7 +59,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (!IsServer)
             {
-                Debug.Log($"[Health:{name}][client] HP change {prev:0.##} -> {next:0.##}");
+                //Debug.Log($"[Health:{name}][client] HP change {prev:0.##} -> {next:0.##}");
             }
         }
 
@@ -88,33 +75,16 @@ namespace Game.Scripts.Gameplay.Robots
             float newHp = Mathf.Max(0f, old - dmg);
             _hp.Value = newHp;
 
-            Debug.Log($"[Health:{name}] DAMAGE {dmg:0.##}  {old:0.##} -> {newHp:0.##}");
+            //Debug.Log($"[Health:{name}] DAMAGE {dmg:0.##}  {old:0.##} -> {newHp:0.##}");
 
-            DamagedObserversRpc(dmg, _hp.Value);
+            DamagedObserversRpc(dmg, _hp.Value, maxHealth);
 
             if (_hp.Value <= 0f)
             {
                 _dead.Value = true;
-                Debug.Log($"[Health:{name}] DEAD");
+                //Debug.Log($"[Health:{name}] DEAD");
                 DeathServer();
             }
-        }
-
-        [Server]
-        public void ServerHeal(float amount)
-        {
-            if (!IsServer || amount <= 0f || _dead.Value)
-            {
-                return;
-            }
-
-            float old = _hp.Value;
-            float newHp = Mathf.Min(maxHealth, old + amount);
-            _hp.Value = newHp;
-
-            Debug.Log($"[Health:{name}] HEAL {amount:0.##}  {old:0.##} -> {newHp:0.##}");
-
-            DamagedObserversRpc(-amount, _hp.Value);
         }
 
         [Server]
@@ -123,41 +93,13 @@ namespace Game.Scripts.Gameplay.Robots
             SetCollidersEnabled(false);
             DiedObserversRpc();
             TurnOffObject();
-
-            if (destroyOnDeath)
-            {
-                Invoke(nameof(DestroyServerObject), 2f);
-            }
-            else if (respawnDelay >= 0f)
-            {
-                Invoke(nameof(RespawnServer), respawnDelay);
-            }
         }
 
         private void TurnOffObject()
         {
             gameObject.SetActive(false);
         }
-
-        [Server]
-        private void DestroyServerObject()
-        {
-            Despawn();
-        }
-
-        [Server]
-        private void RespawnServer()
-        {
-            float old = _hp.Value;
-            _hp.Value = Mathf.Max(1f, maxHealth);
-            _dead.Value = false;
-
-            SetCollidersEnabled(true);
-            Debug.Log($"[Health:{name}] RESPAWN  {old:0.##} -> {_hp.Value:0.##}");
-
-            RespawnObserversRpc();
-        }
-
+        
         private void SetCollidersEnabled(bool v)
         {
             if (colliders == null)
@@ -175,21 +117,15 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [ObserversRpc(BufferLast = false)]
-        private void DamagedObserversRpc(float amount, float newHp)
+        private void DamagedObserversRpc(float amount, float newHp, float maxHp)
         {
-            onDamaged?.Invoke();
+            OnDamaged?.Invoke(amount, newHp, maxHp);
         }
 
         [ObserversRpc(BufferLast = false)]
         private void DiedObserversRpc()
         {
             onDeath?.Invoke();
-        }
-
-        [ObserversRpc(BufferLast = false)]
-        private void RespawnObserversRpc()
-        {
-            onRespawn?.Invoke();
         }
     }
 }

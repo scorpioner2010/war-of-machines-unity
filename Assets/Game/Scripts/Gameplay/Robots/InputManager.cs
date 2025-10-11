@@ -61,7 +61,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _moveServer;
                 }
-                if (tankRoot.HasOwnership())
+                if (IsOwner)
                 {
                     return _moveLocal;
                 }
@@ -77,7 +77,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _shootServer;
                 }
-                if (tankRoot.HasOwnership())
+                if (IsOwner)
                 {
                     return _shootLocal;
                 }
@@ -93,7 +93,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _actionServer;
                 }
-                if (tankRoot.HasOwnership())
+                if (IsOwner)
                 {
                     return _actionLocal;
                 }
@@ -106,7 +106,7 @@ namespace Game.Scripts.Gameplay.Robots
             get
             {
                 if (IsServer) return _moveServer;
-                if (tankRoot.HasOwnership()) return _moveLocal;
+                if (IsOwner) return _moveLocal;
                 return _animMove.Value;
             }
         }
@@ -116,7 +116,7 @@ namespace Game.Scripts.Gameplay.Robots
             get
             {
                 if (IsServer) return _shootServer;
-                if (tankRoot.HasOwnership()) return _shootLocal;
+                if (IsOwner) return _shootLocal;
                 return _animShoot.Value;
             }
         }
@@ -126,14 +126,14 @@ namespace Game.Scripts.Gameplay.Robots
             get
             {
                 if (IsServer) return _actionServer;
-                if (tankRoot.HasOwnership()) return _actionLocal;
+                if (IsOwner) return _actionLocal;
                 return _animAction.Value;
             }
         }
 
         private void Update()
         {
-            if (!tankRoot.HasOwnership())
+            if (!IsOwner)
             {
                 return;
             }

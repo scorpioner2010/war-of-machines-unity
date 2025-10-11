@@ -293,7 +293,7 @@ namespace Game.Scripts.Networking.Lobby
             
             Player player = serverRoom.GetPlayerBuyConnection(connection);
             player.playerRoot = tankRoot;
-            player.playerRoot.characterInit.ServerInit(connection.ClientId, serverRoom.maxPlayers, InitValue.Player, player.loginName, _additiveServerScene);
+            player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, _additiveServerScene);
         }
 
         [ObserversRpc]

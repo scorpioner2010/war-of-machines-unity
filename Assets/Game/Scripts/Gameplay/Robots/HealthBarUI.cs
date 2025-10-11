@@ -15,7 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
         private void Start()
         {
             // Працюємо тільки для локального власника
-            if (!tankRoot.HasOwnership())
+            if (!tankRoot.IsOwner)
             {
                 enabled = false;
                 return;

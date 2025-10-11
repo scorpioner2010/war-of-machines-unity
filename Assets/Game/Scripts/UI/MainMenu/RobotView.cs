@@ -67,18 +67,24 @@ namespace Game.Scripts.UI.MainMenu
             
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
             OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
+
+            List<RobotList> list = new();
             
             foreach (OwnedVehicleDto vehicle in clientInfo.Profile.ownedVehicles)
             {
-                Sprite sprite = ResourceManager.GetIcon(vehicle.code);
-                if (selected.vehicleId == vehicle.vehicleId)
-                {
-                    MakeIcons(sprite, true, vehicle.vehicleId);
-                }
-                else
-                {
-                    MakeIcons(sprite, false, vehicle.vehicleId);
-                }
+                RobotList robotList = new RobotList();
+                robotList.icon = ResourceManager.GetIcon(vehicle.code);
+                robotList.id = vehicle.vehicleId;
+                robotList.isSelected = selected.vehicleId == vehicle.vehicleId;
+                robotList.name = vehicle.name;
+                list.Add(robotList);
+            }
+            
+            list = list.OrderBy(x => x.name).ToList();
+
+            foreach (RobotList robotList in list)
+            {
+                MakeIcons(robotList.icon, robotList.isSelected, robotList.id);
             }
             
             TankRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
@@ -201,5 +207,14 @@ namespace Game.Scripts.UI.MainMenu
             // 2) NetworkObject — останнім
             GameplayAssistant.DestroyAll<NetworkObject>(root);
         }
+    }
+    
+    [Serializable]
+    public class RobotList
+    {
+        public string name;
+        public int id;
+        public Sprite icon;
+        public bool isSelected;
     }
 }
