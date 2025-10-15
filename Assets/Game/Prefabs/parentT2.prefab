@@ -120,7 +120,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -267,7 +267,7 @@ MonoBehaviour:
   _componentIndexCache: 3
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   rotationSpeed: 50
   maxLocalYaw: 0
   startAlignedToChassis: 1
@@ -329,7 +329,7 @@ MonoBehaviour:
   _componentIndexCache: 5
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   gun: {fileID: 4193322498039211549}
   smoothSpeed: 50
   minPitch: -30
@@ -355,7 +355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5987f9551384272479bbd4abf8ab2314, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   smoothSpeed: 20
   hideWhenBehindCamera: 1
   clampToCanvas: 1
@@ -376,7 +376,7 @@ MonoBehaviour:
   _componentIndexCache: 6
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   projectilePrefab: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
     type: 3}
   muzzleTransform: {fileID: 8952852033910042811}
@@ -460,7 +460,7 @@ MonoBehaviour:
   _componentIndexCache: 7
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   reloadTime: 2
   totalAmmo: 10
   onShot:
@@ -566,7 +566,7 @@ MonoBehaviour:
   _componentIndexCache: 9
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
 --- !u!114 &271880699550436314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -579,7 +579,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5654b776c9481674196bf442d87b136a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   controller: {fileID: 1699867880869822920}
   rotateSpeed: 1.5
   acceleration: 5
@@ -598,7 +598,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3a559416ea40cc4bac26208109b3c58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   mesh:
   - {fileID: 1813136458937377862}
   - {fileID: 1915172692120381114}
@@ -641,7 +641,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d2785b136e27bd4885bd218c26c18ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   isActive: 0
 --- !u!143 &1699867880869822920
 CharacterController:
@@ -1189,7 +1189,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -1261,7 +1261,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee5f3a5442a81d94e87320844b11dfdc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   maxPitchAngle: 300
   accelerationMultiplier: 0.2
   springConstant: 100
@@ -1431,7 +1431,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -2164,7 +2164,7 @@ MonoBehaviour:
   weaponReloadController: {fileID: 3855264161025134098}
   caterpillarTrack: {fileID: 4526065669619433319}
   footAnimator: {fileID: 0}
-  nickNameView: {fileID: 3572072622275958224}
+  vehicleHUD: {fileID: 3572072622275958224}
 --- !u!114 &-2008785619023378557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2215,7 +2215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19fd1eb95597e27479e07615e10677ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   smoothSpeed: 10
 --- !u!114 &4814927226351074180
 MonoBehaviour:
@@ -2260,7 +2260,7 @@ MonoBehaviour:
   - {fileID: 6264627073132632711}
   - {fileID: 6603075169660441860}
   - {fileID: 980925288584698060}
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 2321927772602250882}
   forTurnOff:
   - {fileID: 7005523347427859593}
   - {fileID: 7099114696963006069}
@@ -2384,7 +2384,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -2768,7 +2768,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -2963,7 +2963,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3158,7 +3158,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3347,7 +3347,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3542,7 +3542,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3737,7 +3737,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3938,7 +3938,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -4133,7 +4133,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -4328,7 +4328,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -4517,7 +4517,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -4712,7 +4712,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -4913,7 +4913,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -5108,7 +5108,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -5257,6 +5257,17 @@ PrefabInstance:
       propertyPath: tankRoot
       value: 
       objectReference: {fileID: 2321927772602250882}
+    - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: vehicleRoot
+      value: 
+      objectReference: {fileID: 2321927772602250882}
+    - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: floatingTextPrefab
+      value: 
+      objectReference: {fileID: 1599035085840930297, guid: 63a614522a9b5fd48bab655eaaf47a3f,
+        type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5443,7 +5454,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -5638,7 +5649,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -5833,7 +5844,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -6034,7 +6045,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -6229,7 +6240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -8558,7 +8569,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -8747,7 +8758,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -8942,7 +8953,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -9137,7 +9148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 2321927772602250882}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500

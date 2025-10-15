@@ -160,7 +160,7 @@ namespace Game.Scripts.Networking.Lobby
             MainMenu.In.SetActive(true);
             MenuManager.CloseMenu(MenuType.GameplayHUD);
          
-            foreach (TankRoot root in FindObjectsByType<TankRoot>(FindObjectsSortMode.None))
+            foreach (VehicleRoot root in FindObjectsByType<VehicleRoot>(FindObjectsSortMode.None))
             {
                 if(root.OwnerId == ClientManager.Connection.ClientId)
                 {
@@ -287,12 +287,12 @@ namespace Game.Scripts.Networking.Lobby
 
             SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene);
             PlayerProfile profile = ProfileServer.GetProfileByClientId(connection.ClientId);
-            TankRoot vehicle = ResourceManager.GetPrefab(profile.activeVehicleCode);
-            TankRoot tankRoot = Instantiate(vehicle, spawnPoint.transform.position, Quaternion.identity);
-            ServerManager.Spawn(tankRoot.networkObject, connection, _additiveServerScene);
+            VehicleRoot vehicle = ResourceManager.GetPrefab(profile.activeVehicleCode);
+            VehicleRoot vehicleRoot = Instantiate(vehicle, spawnPoint.transform.position, Quaternion.identity);
+            ServerManager.Spawn(vehicleRoot.networkObject, connection, _additiveServerScene);
             
             Player player = serverRoom.GetPlayerBuyConnection(connection);
-            player.playerRoot = tankRoot;
+            player.playerRoot = vehicleRoot;
             player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, _additiveServerScene);
         }
 

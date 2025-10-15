@@ -5,7 +5,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class RobotHullRotation : NetworkBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
 
         public float rotationSpeed = 30f;
         public float maxLocalYaw = 0f;
@@ -17,7 +17,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void Init()
         {
-            _chassisTransform = tankRoot.objectMover.transform;
+            _chassisTransform = vehicleRoot.objectMover.transform;
 
             if (startAlignedToChassis)
             {

@@ -5,7 +5,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class HealthBarUI : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         public float smoothSpeed = 10f;
 
         private float _display01;
@@ -15,7 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
         private void Start()
         {
             // Працюємо тільки для локального власника
-            if (!tankRoot.IsOwner)
+            if (!vehicleRoot.IsOwner)
             {
                 enabled = false;
                 return;
@@ -28,7 +28,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float cur01 = Mathf.Clamp01(tankRoot.health.Current / Mathf.Max(1f, tankRoot.health.maxHealth));
+            float cur01 = Mathf.Clamp01(vehicleRoot.health.Current / Mathf.Max(1f, vehicleRoot.health.maxHealth));
             _display01 = cur01;
             _healthBar.slider.value = _display01;
             RefreshLabel();
@@ -43,7 +43,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float target01 = Mathf.Clamp01(tankRoot.health.Current / Mathf.Max(1f, tankRoot.health.maxHealth));
+            float target01 = Mathf.Clamp01(vehicleRoot.health.Current / Mathf.Max(1f, vehicleRoot.health.maxHealth));
 
             if (smoothSpeed > 0f)
             {
@@ -61,8 +61,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void RefreshLabel()
         {
-            int cur = Mathf.RoundToInt(tankRoot.health.Current);
-            int max = Mathf.RoundToInt(tankRoot.health.maxHealth);
+            int cur = Mathf.RoundToInt(vehicleRoot.health.Current);
+            int max = Mathf.RoundToInt(vehicleRoot.health.maxHealth);
             _healthBar.label.text = $"{cur} / {max}";
         }
     }

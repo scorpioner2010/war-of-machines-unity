@@ -6,7 +6,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class WeaponAimAtCamera : NetworkBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
 
         public Transform gun;
         public float smoothSpeed = 10f;

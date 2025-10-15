@@ -4,7 +4,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class ObjectMover : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         public CharacterController controller;
 
         public float rotateSpeed = 2f;
@@ -19,12 +19,12 @@ namespace Game.Scripts.Gameplay.Robots
         private void FixedUpdate()
         {
             // Тільки сервер рухає; клієнти отримують NetworkTransform
-            if (!tankRoot.IsServer)
+            if (!vehicleRoot.IsServer)
             {
                 return;
             }
 
-            Vector2 mi = tankRoot.inputManager.Move;
+            Vector2 mi = vehicleRoot.inputManager.Move;
             Rotate(mi);
 
             Vector3 desired = transform.forward * (mi.y * maxSpeed);

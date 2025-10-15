@@ -7,12 +7,12 @@ using UnityEngine;
 public class DeathLogic : MonoBehaviour
 {
     public Collider[] colliders;
-    public TankRoot tankRoot;
+    public VehicleRoot vehicleRoot;
     public GameObject[] forTurnOff;
 
     private void Start()
     {
-        tankRoot.health.onDeath.AddListener(Death);
+        vehicleRoot.health.onDeath.AddListener(Death);
     }
 
     [Button]
@@ -54,7 +54,7 @@ public class DeathLogic : MonoBehaviour
 
     private void Death()
     {
-        tankRoot.inputManager.SetControlsBlocked(true);
+        vehicleRoot.inputManager.SetControlsBlocked(true);
         
         foreach (Collider coll in colliders)
         {

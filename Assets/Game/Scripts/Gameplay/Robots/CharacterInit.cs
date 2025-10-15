@@ -19,7 +19,7 @@ namespace Game.Scripts.Gameplay.Robots
 
     public class CharacterInit : NetworkBehaviour
     {
-        public TankRoot playerRoot;
+        public VehicleRoot playerRoot;
 
         private readonly SyncVar<int> _amountPlayersInRoom = new ();
         public readonly SyncVar<string> LoginName = new ("");
@@ -58,10 +58,10 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 await UniTask.Delay(500);
 
-                TankRoot[] players = FindObjectsByType<TankRoot>(FindObjectsSortMode.None);
+                VehicleRoot[] players = FindObjectsByType<VehicleRoot>(FindObjectsSortMode.None);
                 
                 bool allNicksSet = true;
-                foreach (TankRoot root in players)
+                foreach (VehicleRoot root in players)
                 {
                     if (string.IsNullOrEmpty(root.characterInit.LoginName.Value))
                     {
@@ -74,12 +74,12 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     Camera cam = CameraSync.In.gameplayCamera;
 
-                    foreach (TankRoot root in players)
+                    foreach (VehicleRoot root in players)
                     {
                         if (OwnerId != root.OwnerId)
                         {
-                            root.nickNameView.SetCamera(cam);
-                            root.nickNameView.SetNick(root.characterInit.LoginName.Value);
+                            root.vehicleHUD.SetCamera(cam);
+                            root.vehicleHUD.SetNick(root.characterInit.LoginName.Value);
                         }
                     }
 

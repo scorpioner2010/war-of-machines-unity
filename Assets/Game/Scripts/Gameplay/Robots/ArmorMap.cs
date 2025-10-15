@@ -5,7 +5,7 @@ namespace Game.Scripts.Gameplay.Robots
     [DisallowMultipleComponent]
     public class ArmorMap : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         public Texture2D thicknessMap;
         [Min(0f)] public float minMm = 0;
         [Min(0f)] public float maxMm = 500;

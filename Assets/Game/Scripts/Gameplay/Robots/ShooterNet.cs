@@ -7,7 +7,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class ShooterNet : NetworkBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
 
         public Projectile projectilePrefab;
         public Transform muzzleTransform;
@@ -41,13 +41,13 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void PredictAndRequest()
         {
-            if (!tankRoot.IsOwner)
+            if (!vehicleRoot.IsOwner)
             {
                 return;
             }
 
             Vector3 startPos = muzzleTransform.position;
-            Vector3 aimPoint = tankRoot.weaponAimAtCamera.CurrentAimPoint;
+            Vector3 aimPoint = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
             int shotId = ++_shotSeq;
 
             // 1) миттєвий візуал на клієнті
@@ -165,9 +165,9 @@ namespace Game.Scripts.Gameplay.Robots
                 string tgtGo = hr.collider != null ? hr.collider.gameObject.name : "null";
                 string tgtRoot = "n/a";
                 var armor = hr.collider != null ? hr.collider.GetComponentInParent<ArmorMap>() : null;
-                if (armor != null && armor.tankRoot != null)
+                if (armor != null && armor.vehicleRoot != null)
                 {
-                    tgtRoot = armor.tankRoot.name;
+                    tgtRoot = armor.vehicleRoot.name;
                 }
 
                 Debug.Log($"[ShooterNet] shotId={shotId} hit={hr.hit} pen={hr.penetrated} dmg={hr.damage} targetGO={tgtGo} targetTank={tgtRoot} netObjId={targetId}");

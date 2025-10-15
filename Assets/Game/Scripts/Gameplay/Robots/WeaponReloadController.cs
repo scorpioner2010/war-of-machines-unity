@@ -9,7 +9,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class WeaponReloadController : NetworkBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
 
         public float reloadTime = 2f;
         public int totalAmmo = 10;
@@ -86,11 +86,11 @@ namespace Game.Scripts.Gameplay.Robots
 
                 bool localGate = (_clientReloadRemain > 0f);
 
-                if (!localGate && !_isReloading.Value && _ammoLeft.Value > 0 && tankRoot.inputManager.Shoot)
+                if (!localGate && !_isReloading.Value && _ammoLeft.Value > 0 && vehicleRoot.inputManager.Shoot)
                 {
                     // Миттєвий локальний візуал + запит на сервер через ShooterNet
                     _clientReloadRemain = Mathf.Max(_clientReloadRemain, reloadTime);
-                    tankRoot.shooterNet.PredictAndRequest();
+                    vehicleRoot.shooterNet.PredictAndRequest();
 
                     // Паралельно офіційний запит на сервер для списання патронів/таймера
                     RequestFireServerRpc();

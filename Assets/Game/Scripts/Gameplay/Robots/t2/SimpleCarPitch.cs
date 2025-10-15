@@ -4,7 +4,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
 {
     public class SimpleCarPitch : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         
         public float maxPitchAngle = 10f;
         public float accelerationMultiplier = 0.1f;
@@ -21,7 +21,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
 
         private void Update()
         {
-            if (tankRoot.IsServer == false)
+            if (vehicleRoot.IsServer == false)
             {
                 return;
             }

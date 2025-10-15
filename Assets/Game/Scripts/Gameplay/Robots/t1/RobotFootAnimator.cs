@@ -6,7 +6,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
 {
     public class RobotFootAnimator : MonoBehaviour
     {
-        public TankRoot playerRoot;
+        public VehicleRoot playerRoot;
         
         public FootPlacer leftFoot;
         public FootPlacer rightFoot;

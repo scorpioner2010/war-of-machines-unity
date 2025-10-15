@@ -7,7 +7,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class InputManager : NetworkBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
 
         private Vector2 _moveServer;
         private bool _shootServer;
@@ -256,8 +256,8 @@ namespace Game.Scripts.Gameplay.Robots
             float yawDeg = DequantizeAngle01(yawQ);
             float pitchDeg = DequantizeAngle01(pitchQ);
 
-            tankRoot.robotHullRotation.SetTargetYawServer(yawDeg);
-            tankRoot.weaponAimAtCamera.SetTargetPitchServer(pitchDeg);
+            vehicleRoot.robotHullRotation.SetTargetYawServer(yawDeg);
+            vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(pitchDeg);
         }
 
         private void ComputeLocalYawPitch(out float yawDeg, out float pitchDeg)
@@ -265,7 +265,7 @@ namespace Game.Scripts.Gameplay.Robots
             yawDeg = 0f;
             pitchDeg = 0f;
 
-            Transform chassis = tankRoot.objectMover.transform;
+            Transform chassis = vehicleRoot.objectMover.transform;
             Vector3 chassisFwd = chassis.forward; chassisFwd.y = 0f;
 
             Transform camTr = CameraSync.In != null ? CameraSync.In.transform : null;
@@ -284,7 +284,7 @@ namespace Game.Scripts.Gameplay.Robots
                 camFwdFlat.Normalize();
                 _turretYawLocal = Vector3.SignedAngle(chassisFwd, camFwdFlat, Vector3.up);
 
-                float maxLocalYaw = tankRoot.robotHullRotation.maxLocalYaw;
+                float maxLocalYaw = vehicleRoot.robotHullRotation.maxLocalYaw;
                 if (maxLocalYaw > 0f)
                 {
                     float half = Mathf.Abs(maxLocalYaw);
@@ -292,14 +292,14 @@ namespace Game.Scripts.Gameplay.Robots
                 }
             }
 
-            Transform gun = tankRoot.weaponAimAtCamera.gun;
-            WeaponAimAtCamera.Axis pitchAxis = tankRoot.weaponAimAtCamera.localPitchAxis;
-            WeaponAimAtCamera.Axis fwdAxis = tankRoot.weaponAimAtCamera.localForwardAxis;
+            Transform gun = vehicleRoot.weaponAimAtCamera.gun;
+            WeaponAimAtCamera.Axis pitchAxis = vehicleRoot.weaponAimAtCamera.localPitchAxis;
+            WeaponAimAtCamera.Axis fwdAxis = vehicleRoot.weaponAimAtCamera.localForwardAxis;
 
             Ray camRay = new Ray(camTr.position, camTr.forward);
-            float maxDist = tankRoot.weaponAimAtCamera.maxAimDistance;
+            float maxDist = vehicleRoot.weaponAimAtCamera.maxAimDistance;
             Vector3 cameraAimPoint = camTr.position + camTr.forward * maxDist;
-            if (Physics.Raycast(camRay, out RaycastHit camHit, maxDist, tankRoot.weaponAimAtCamera.aimMask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(camRay, out RaycastHit camHit, maxDist, vehicleRoot.weaponAimAtCamera.aimMask, QueryTriggerInteraction.Ignore))
             {
                 cameraAimPoint = camHit.point;
             }
@@ -313,12 +313,12 @@ namespace Game.Scripts.Gameplay.Robots
 
             float deltaPitch = Vector3.SignedAngle(fwdProj, dirProj, rightPitchWorld);
             Vector3 localPitchAxisVec = AxisToVector(pitchAxis);
-            float currentPitch = ExtractSignedAngleAroundLocalAxis(gun.localRotation, tankRoot.weaponAimAtCamera.InitialLocalRotation, localPitchAxisVec);
+            float currentPitch = ExtractSignedAngleAroundLocalAxis(gun.localRotation, vehicleRoot.weaponAimAtCamera.InitialLocalRotation, localPitchAxisVec);
 
             _gunPitchLocal = Mathf.Clamp(
-                currentPitch + deltaPitch + tankRoot.weaponAimAtCamera.pitchOffset,
-                tankRoot.weaponAimAtCamera.minPitch,
-                tankRoot.weaponAimAtCamera.maxPitch
+                currentPitch + deltaPitch + vehicleRoot.weaponAimAtCamera.pitchOffset,
+                vehicleRoot.weaponAimAtCamera.minPitch,
+                vehicleRoot.weaponAimAtCamera.maxPitch
             );
 
             yawDeg = _turretYawLocal;

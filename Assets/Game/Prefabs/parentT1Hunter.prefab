@@ -120,7 +120,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -473,7 +473,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -598,7 +598,7 @@ MonoBehaviour:
   _componentIndexCache: 3
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   rotationSpeed: 50
   maxLocalYaw: 0
   startAlignedToChassis: 1
@@ -660,7 +660,7 @@ MonoBehaviour:
   _componentIndexCache: 5
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   gun: {fileID: 8401235163935933454}
   smoothSpeed: 50
   minPitch: -60
@@ -686,7 +686,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5987f9551384272479bbd4abf8ab2314, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   smoothSpeed: 20
   hideWhenBehindCamera: 1
   clampToCanvas: 1
@@ -707,7 +707,7 @@ MonoBehaviour:
   _componentIndexCache: 6
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   projectilePrefab: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
     type: 3}
   muzzleTransform: {fileID: 1529863960069715363}
@@ -791,7 +791,7 @@ MonoBehaviour:
   _componentIndexCache: 7
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   reloadTime: 2
   totalAmmo: 10
   onShot:
@@ -965,7 +965,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -1137,7 +1137,7 @@ MonoBehaviour:
   weaponReloadController: {fileID: 2411042778565667645}
   caterpillarTrack: {fileID: 0}
   footAnimator: {fileID: 3255222161953777300}
-  nickNameView: {fileID: 3362392733163342225}
+  vehicleHUD: {fileID: 3362392733163342225}
 --- !u!114 &-3806935235157792045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1188,7 +1188,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19fd1eb95597e27479e07615e10677ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   smoothSpeed: 10
 --- !u!114 &4431787478038301119
 MonoBehaviour:
@@ -1217,7 +1217,7 @@ MonoBehaviour:
   - {fileID: 9110561440462134208}
   - {fileID: 4434917365862437182}
   - {fileID: 9210437389913318608}
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   forTurnOff: []
 --- !u!1 &1476538492309367418
 GameObject:
@@ -1318,7 +1318,7 @@ MonoBehaviour:
   _componentIndexCache: 9
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
 --- !u!114 &6204458581192626764
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1331,7 +1331,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5654b776c9481674196bf442d87b136a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   controller: {fileID: 7605531651926363149}
   rotateSpeed: 2
   acceleration: 30
@@ -1372,7 +1372,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d2785b136e27bd4885bd218c26c18ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 5798367828239414435}
   isActive: 0
 --- !u!143 &7605531651926363149
 CharacterController:
@@ -2416,7 +2416,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -2562,7 +2562,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -2708,7 +2708,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -2935,7 +2935,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3219,7 +3219,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3629,7 +3629,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 5798367828239414435}
+  vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   minMm: 0
   maxMm: 500
@@ -3742,11 +3742,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4812052139967044082}
     m_Modifications:
-    - target: {fileID: 527776816946263243, guid: 9043c1ae5d088df4690974177aa623d2,
-        type: 3}
-      propertyPath: m_PresetInfoIsWorld
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3163261354685738656, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: m_Name
@@ -3857,6 +3852,17 @@ PrefabInstance:
       propertyPath: tankRoot
       value: 
       objectReference: {fileID: 5798367828239414435}
+    - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: vehicleRoot
+      value: 
+      objectReference: {fileID: 5798367828239414435}
+    - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: floatingTextPrefab
+      value: 
+      objectReference: {fileID: 1599035085840930297, guid: 63a614522a9b5fd48bab655eaaf47a3f,
+        type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

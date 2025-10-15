@@ -12,14 +12,14 @@ public class RobotRegistry : ScriptableObject
     public class Item
     {
         public string code;
-        public TankRoot prefab;
+        public VehicleRoot prefab;
         [ShowAssetPreview(64, 64)]
         public Sprite icon;
     }
 
     public List<Item> items = new ();
 
-    public TankRoot GetPrefab(string code)
+    public VehicleRoot GetPrefab(string code)
     {
         foreach (Item it in items)
         {

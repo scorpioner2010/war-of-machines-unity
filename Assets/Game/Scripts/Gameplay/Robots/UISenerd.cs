@@ -5,7 +5,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class UISenerd : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         public bool isActive;
 
         private Vector3 _prevPos;
@@ -13,15 +13,15 @@ namespace Game.Scripts.Gameplay.Robots
         public void Init()
         {
             isActive = true;
-            _prevPos = tankRoot.objectMover.transform.position;
+            _prevPos = vehicleRoot.objectMover.transform.position;
         }
 
         private void Update()
         {
-            if (!isActive || !tankRoot.IsOwner)
+            if (!isActive || !vehicleRoot.IsOwner)
                 return;
 
-            Transform t = tankRoot.objectMover.transform;
+            Transform t = vehicleRoot.objectMover.transform;
             Vector3 delta = t.position - _prevPos;
             float speed = new Vector2(delta.x, delta.z).magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
             _prevPos = t.position;

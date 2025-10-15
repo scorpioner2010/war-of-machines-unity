@@ -9,7 +9,7 @@ namespace Game.Scripts.Networking.Lobby
     {
         public string loginName;
         public NetworkConnection Connection;
-        public TankRoot playerRoot;
+        public VehicleRoot playerRoot;
         public bool isBot;
         public bool randomPlayerConnected; //for random game
     }

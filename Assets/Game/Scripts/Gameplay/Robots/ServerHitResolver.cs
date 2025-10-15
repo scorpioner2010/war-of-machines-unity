@@ -111,7 +111,7 @@ namespace Game.Scripts.Gameplay.Robots
                 if (hr.hit)
                 {
                     string targetName = (hr.collider != null) ? hr.collider.gameObject.name : "null";
-                    string armorRoot = (hr.armor != null && hr.armor.tankRoot != null) ? hr.armor.tankRoot.name : "n/a";
+                    string armorRoot = (hr.armor != null && hr.armor.vehicleRoot != null) ? hr.armor.vehicleRoot.name : "n/a";
                     string layerName = (hr.collider != null) ? LayerMask.LayerToName(hr.collider.gameObject.layer) : "n/a";
 
                     Debug.Log(

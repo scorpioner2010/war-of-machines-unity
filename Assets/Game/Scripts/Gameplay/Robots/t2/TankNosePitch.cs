@@ -11,7 +11,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
     /// </summary>
     public class TankNosePitch : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         
         [Header("References")]
         public Transform baseTransform;            // хто задає forward та позицію (зазвичай шасі)
@@ -71,7 +71,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
 
         private void Update()
         {
-            if (tankRoot.IsServer)
+            if (vehicleRoot.IsServer)
             {
                 return;
             }

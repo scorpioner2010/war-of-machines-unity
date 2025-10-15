@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class TankRoot : NetworkBehaviour
+    public class VehicleRoot : NetworkBehaviour
     {
         public NetworkObject networkObject;
         public CharacterInit characterInit;
@@ -23,7 +23,7 @@ namespace Game.Scripts.Gameplay.Robots
         public WeaponReloadController weaponReloadController;
         public CaterpillarTrack caterpillarTrack;
         public RobotFootAnimator footAnimator;
-        public NickNameView nickNameView;
+        public VehicleHUD vehicleHUD;
 
         public bool IsMenu { get; set; }
 

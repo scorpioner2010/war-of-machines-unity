@@ -6,20 +6,29 @@ using UnityEngine.UI;
 
 namespace Game.Script.Player.UI
 {
-    public class NickNameView : MonoBehaviour
+    public class VehicleHUD : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         private Camera _mainCamera;
         [SerializeField] private TMP_Text nickName;
         [SerializeField] private Image hpView;
-
+        public FloatingText floatingTextPrefab;
+        
         private void Start()
         {
-            tankRoot.health.OnDamaged += (f, f1, arg3) =>
+            vehicleRoot.health.OnDamaged += (dmg, f1, arg3) =>
             {
                 float cur01 = Mathf.Clamp01(f1 / Mathf.Max(1f, arg3));
                 hpView.fillAmount = cur01;
+                ShowFloatingText(dmg);
             };
+        }
+        
+        private void ShowFloatingText(float dmg)
+        {
+            FloatingText t = Instantiate(floatingTextPrefab, transform.position, Quaternion.identity, transform);
+            string damage = Mathf.RoundToInt(dmg).ToString();
+            t.SetText(damage);
         }
 
         public void SetNick(string nick)

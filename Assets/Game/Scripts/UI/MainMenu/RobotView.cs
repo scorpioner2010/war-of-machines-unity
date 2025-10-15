@@ -54,7 +54,7 @@ namespace Game.Scripts.UI.MainMenu
         public Transform vehicleContainer;
         public VehicleButton vehicleButtonPrefab;
 
-        private TankRoot _tankRoot;
+        private VehicleRoot _vehicleRoot;
         private List<Button> _buttons = new();
         
         private static RobotView _in;
@@ -87,7 +87,7 @@ namespace Game.Scripts.UI.MainMenu
                 MakeIcons(robotList.icon, robotList.isSelected, robotList.id);
             }
             
-            TankRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
+            VehicleRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
             Spawn(vehicleRoot);
 
             UpdateUI();
@@ -155,29 +155,29 @@ namespace Game.Scripts.UI.MainMenu
             GameplayAssistant.RebuildAllLayouts(l).Forget();
         }
         
-        public static async void Spawn(TankRoot  tankRoot)
+        public static async void Spawn(VehicleRoot  vehicleRoot)
         {
             _in.rootSpawnPlace.SetActive(true);
-            _in._tankRoot = Instantiate(tankRoot, _in.spawnPosition.transform, true);
-            _in._tankRoot.gameObject.SetActive(false);
+            _in._vehicleRoot = Instantiate(vehicleRoot, _in.spawnPosition.transform, true);
+            _in._vehicleRoot.gameObject.SetActive(false);
             
             // Прибираємо FishNet-компоненти (лишаємо твої скрипти).
-            _in.StripFishNetRuntime(_in._tankRoot.gameObject);
+            _in.StripFishNetRuntime(_in._vehicleRoot.gameObject);
 
-            _in._tankRoot.transform.position = Vector3.zero;
-            _in._tankRoot.transform.rotation = Quaternion.identity;
+            _in._vehicleRoot.transform.position = Vector3.zero;
+            _in._vehicleRoot.transform.rotation = Quaternion.identity;
 
-            await _in.ActivateAndInitNextFrame(_in._tankRoot);
+            await _in.ActivateAndInitNextFrame(_in._vehicleRoot);
             
-            _in._tankRoot.transform.position = _in.spawnPosition.position;
-            _in._tankRoot.transform.rotation = _in.spawnPosition.rotation;
+            _in._vehicleRoot.transform.position = _in.spawnPosition.position;
+            _in._vehicleRoot.transform.rotation = _in.spawnPosition.rotation;
         }
         
         public static void Despawn()
         {
-            if (_in._tankRoot != null)
+            if (_in._vehicleRoot != null)
             {
-                Destroy(_in._tankRoot.gameObject);
+                Destroy(_in._vehicleRoot.gameObject);
             }
             
             foreach (Button button in _in._buttons)
@@ -189,7 +189,7 @@ namespace Game.Scripts.UI.MainMenu
             _in.rootSpawnPlace.SetActive(false);
         }
         
-        private async UniTask ActivateAndInitNextFrame(TankRoot go)
+        private async UniTask ActivateAndInitNextFrame(VehicleRoot go)
         {
             await UniTask.NextFrame();
             await UniTask.NextFrame();

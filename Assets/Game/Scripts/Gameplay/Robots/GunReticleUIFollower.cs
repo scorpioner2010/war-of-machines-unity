@@ -6,7 +6,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class GunReticleUIFollower : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
 
         public float smoothSpeed = 20f;
         public bool hideWhenBehindCamera = true;
@@ -63,7 +63,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             // 1) Кут між пушкою і камерою: якщо занадто різняться — ховаємо
-            Vector3 gunFwd = GetGunForwardWorld(tankRoot.weaponAimAtCamera.gun, tankRoot.weaponAimAtCamera.localForwardAxis).normalized;
+            Vector3 gunFwd = GetGunForwardWorld(vehicleRoot.weaponAimAtCamera.gun, vehicleRoot.weaponAimAtCamera.localForwardAxis).normalized;
             float angle = Vector3.Angle(gunFwd, cam.transform.forward);
             if (angle > hideWhenAngleGreaterThan)
             {
@@ -73,7 +73,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             // 2) ЛОКАЛЬНИЙ приціл (швидкий)
-            Vector3 worldAim = tankRoot.weaponAimAtCamera.CurrentAimPoint;
+            Vector3 worldAim = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
             bool ok = WorldToCanvasLocalPoint(worldAim, cam, out Vector2 localPoint);
             if (!ok)
             {
@@ -100,7 +100,7 @@ namespace Game.Scripts.Gameplay.Robots
             // 3) СЕРВЕРНИЙ приціл (повільніший, авторитетний)
             if (showServerReticle && _serverCrosshair != null)
             {
-                Vector3 srvAim = tankRoot.weaponAimAtCamera.ServerAimPoint;
+                Vector3 srvAim = vehicleRoot.weaponAimAtCamera.ServerAimPoint;
                 // якщо ще не оновлювався SyncVar (Vector3.zero), підстрахуємось локальним
                 if (srvAim == Vector3.zero)
                 {

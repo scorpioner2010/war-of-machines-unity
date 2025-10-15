@@ -14,7 +14,7 @@ namespace Game.Scripts.Debugs.TestScripts
 {
     public class LocalPlayTest : MonoBehaviour
     {
-        public TankRoot[] robots;
+        public VehicleRoot[] robots;
         public Button play;
 
         public TMP_InputField robotNumber;
@@ -39,21 +39,21 @@ namespace Game.Scripts.Debugs.TestScripts
             play.gameObject.SetActive(false);
             robotNumber.gameObject.SetActive(false);
         
-            TankRoot tankRoot = Instantiate(robots[number-1]);
+            VehicleRoot vehicleRoot = Instantiate(robots[number-1]);
         
-            tankRoot.gameObject.SetActive(false);
+            vehicleRoot.gameObject.SetActive(false);
             //tankRoot.SetMode(RunMode.Local);
 
             // Прибираємо FishNet-компоненти (лишаємо твої скрипти).
-            StripFishNetRuntime(tankRoot.gameObject);
+            StripFishNetRuntime(vehicleRoot.gameObject);
 
-            tankRoot.transform.position = Vector3.zero;
-            tankRoot.transform.rotation = Quaternion.identity;
+            vehicleRoot.transform.position = Vector3.zero;
+            vehicleRoot.transform.rotation = Quaternion.identity;
 
-            await ActivateAndInitNextFrame(tankRoot);
+            await ActivateAndInitNextFrame(vehicleRoot);
         }
 
-        private async UniTask ActivateAndInitNextFrame(TankRoot go)
+        private async UniTask ActivateAndInitNextFrame(VehicleRoot go)
         {
             await UniTask.NextFrame();
             await UniTask.NextFrame();

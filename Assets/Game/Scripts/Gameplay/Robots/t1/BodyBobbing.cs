@@ -4,7 +4,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
 {
     public class BodyBobbing : MonoBehaviour
     {
-        public TankRoot playerRoot;
+        public VehicleRoot playerRoot;
         
         public float bobbingAmplitude = 0.05f;
         public float bobbingFrequency = 1.0f;

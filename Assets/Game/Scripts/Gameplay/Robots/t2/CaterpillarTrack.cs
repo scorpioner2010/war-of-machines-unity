@@ -4,7 +4,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
 {
     public class CaterpillarTrack : MonoBehaviour
     {
-        public TankRoot tankRoot;
+        public VehicleRoot vehicleRoot;
         public Renderer[] mesh;
 
         public float forwardBackwardSpeed = 1.0f;
@@ -16,7 +16,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
 
         private void Update()
         {
-            Vector2 mv = tankRoot.inputManager.AnimMove;
+            Vector2 mv = vehicleRoot.inputManager.AnimMove;
             float forwardInput = mv.y;
             float turnInput = mv.x;
 

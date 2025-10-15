@@ -117,9 +117,9 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [ObserversRpc(BufferLast = false)]
-        private void DamagedObserversRpc(float amount, float newHp, float maxHp)
+        private void DamagedObserversRpc(float dmg, float newHp, float maxHp)
         {
-            OnDamaged?.Invoke(amount, newHp, maxHp);
+            OnDamaged?.Invoke(dmg, newHp, maxHp);
         }
 
         [ObserversRpc(BufferLast = false)]
