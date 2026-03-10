@@ -259,7 +259,6 @@ namespace Game.Scripts.Networking.Lobby
             
             if (spawnPoint == null)
             {
-                Debug.LogError("Не знайдено вільної точки спавну.");
                 return;
             }
             
@@ -281,7 +280,6 @@ namespace Game.Scripts.Networking.Lobby
 
             if (!_additiveServerScene.IsValid())
             {
-                Debug.LogError("Не вдалося валідувати адитивну сцену протягом відведеного часу.");
                 return;
             }
 

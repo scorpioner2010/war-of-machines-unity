@@ -77,7 +77,6 @@ namespace Game.Scripts.UI.Lobby
             }
             else
             {
-                UnityEngine.Debug.LogError("Failed to join room: " + errorMessage);
             }
         }
     }

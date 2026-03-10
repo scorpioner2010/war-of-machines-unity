@@ -12,7 +12,6 @@ namespace Game.Scripts.UI.Helpers
 
             if (screen == null)
             {
-                Debug.LogError(gameObject.name);
             }
             screen.SetActive(false);
         }

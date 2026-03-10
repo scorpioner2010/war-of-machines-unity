@@ -147,7 +147,6 @@ namespace Game.Scripts.UI.Settings
             
             _model.Save();
 
-            UnityEngine.Debug.Log("Settings applied and saved to PlayerPrefs.");
         }
 
         // Example helper to map language index to string

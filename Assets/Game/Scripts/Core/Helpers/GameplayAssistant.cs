@@ -453,7 +453,6 @@ namespace Game.Scripts.Core.Helpers
 
         private static Vector4[] MakeUnitSphere(int len)
         {
-            Debug.Assert(len > 2);
             var v = new Vector4[len * 3];
             for (int i = 0; i < len; i++)
             {

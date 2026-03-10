@@ -58,7 +58,6 @@ namespace Game.Scripts.UI.Settings
         {
             string json = JsonUtility.ToJson(this, true);
             File.WriteAllText(ConfigFilePath, json);
-            UnityEngine.Debug.Log("Settings applied and saved to file: " + ConfigFilePath);
         }
 
         // Якщо потрібно зберігати окремі розділи, можна викликати Save() після оновлення відповідних полів.

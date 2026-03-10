@@ -68,18 +68,16 @@ namespace Game.Scripts.API.Models
         public int mmr;
         public int bolts;
         public int adamant;
-        public int freeXp;  // 🔹 нове поле
+        public int freeXp;  // new field
 
         public int activeVehicleId;
         public string activeVehicleCode;
         public string activeVehicleName;
 
         public OwnedVehicleDto[] ownedVehicles;
-        
+
         public OwnedVehicleDto GetSelected()
         {
-            OwnedVehicleDto active = null;
-
             foreach (OwnedVehicleDto dto in ownedVehicles)
             {
                 if (activeVehicleId == dto.vehicleId)
@@ -87,7 +85,7 @@ namespace Game.Scripts.API.Models
                     return dto;
                 }
             }
-            
+
             return null;
         }
 
@@ -100,7 +98,7 @@ namespace Game.Scripts.API.Models
                     return true;
                 }
             }
-            
+
             return false;
         }
     }

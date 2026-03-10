@@ -101,9 +101,6 @@ namespace Game.Scripts.Audio
             }
             catch
             {
-                Debug.LogError(audioPreset);
-                Debug.LogError(element);
-                Debug.LogError(element.name);
             }
             
             return audioPreset;

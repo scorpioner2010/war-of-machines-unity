@@ -5,7 +5,6 @@ using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Services;
-using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Player.Data;
 using Game.Scripts.Server;
@@ -21,10 +20,10 @@ namespace Game.Scripts.API.ServerManagers
     {
         private static ProfileServer _in;
         public static List<PlayerDataAPIInfo> PlayersDataAPIInfos = new();
-        public DevelopmentTree  developmentTree;
+        public DevelopmentTree developmentTree;
 
         private void Awake() => _in = this;
-        
+
         public static PlayerProfile GetProfileByClientId(int clientId)
         {
             foreach (PlayerDataAPIInfo dataAPIInfo in PlayersDataAPIInfos)
@@ -43,7 +42,7 @@ namespace Game.Scripts.API.ServerManagers
             Loading.Show();
             _in.GetProfileServerRpc(_in.ClientManager.Connection.ClientId);
         }
-        
+
         [ServerRpc(RequireOwnership = false)]
         private void GetProfileServerRpc(int clientId)
         {
@@ -54,41 +53,40 @@ namespace Game.Scripts.API.ServerManagers
         {
             (bool isSuccess, string message, PlayerProfile profile) data;
             string token = RegisterServer.GetToken(clientId);
-            
+
             if (ServerSettings.In.isTestMode)
             {
                 PlayerProfile profile = new PlayerProfile();
                 profile.username = GameplayAssistant.GenerateName(10);
-                data = (true, "111",profile);
+                data = (true, "111", profile);
             }
             else
             {
                 data = await PlayersManager.GetMyProfile(token);
             }
-            
+
             NetworkConnection senderConn = ServerManager.Clients[clientId];
-            
+
             AddPlayerDataAPI(data.profile, clientId);
             TargetRpcUpdateProfile(senderConn, data.isSuccess, data.message, data.profile);
         }
 
-        
         private void AddPlayerDataAPI(PlayerProfile data, int clientId)
         {
             PlayersDataAPIInfos.RemoveAll(x => x.ClientId == clientId);
-            
+
             PlayersDataAPIInfos.Add(new PlayerDataAPIInfo
             {
                 PlayerDataAPI = data,
                 ClientId = clientId,
             });
         }
-        
+
         [TargetRpc]
         private void TargetRpcUpdateProfile(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
         {
             Loading.Hide();
-            
+
             if (success)
             {
                 IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();

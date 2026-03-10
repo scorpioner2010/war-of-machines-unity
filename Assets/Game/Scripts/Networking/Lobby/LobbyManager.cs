@@ -63,7 +63,6 @@ namespace Game.Scripts.Networking.Lobby
             NetworkConnection senderConn = ServerManager.Clients[clientID];
             if (senderConn == null)
             {
-                UnityEngine.Debug.LogError("RequestLoginServerRpc: Owner is null. Ensure this object is spawned with the correct owner.");
                 return;
             }
             

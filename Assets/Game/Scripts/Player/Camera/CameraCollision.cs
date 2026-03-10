@@ -14,12 +14,10 @@ namespace Game.Scripts.Player.Camera
         {
             if (mainCamera == null)
             {
-                UnityEngine.Debug.LogError("Основна камера не призначена!");
                 return;
             }
             if (focusPoint == null)
             {
-                UnityEngine.Debug.LogError("Точка фокусування не призначена!");
                 return;
             }
             mainCamera.nearClipPlane = 0.01f;

@@ -31,7 +31,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             HitResult hr = default;
 
-            Vector3 dir = (aimPoint - startPos);
+            Vector3 dir = aimPoint - startPos;
             float dist = dir.magnitude;
 
             if (float.IsNaN(dir.x) || float.IsNaN(dir.y) || float.IsNaN(dir.z))
@@ -60,7 +60,7 @@ namespace Game.Scripts.Gameplay.Robots
                 QueryTriggerInteraction.Ignore
             );
 
-            // Другий шанс: якщо не влучили в межах dist, спробувати довший рей до maxDistanceFallback
+            // Fallback: if we missed within dist, try a longer ray to maxDistanceFallback.
             if (!didHit && maxCastDist < maxDistanceFallback)
             {
                 didHit = Physics.Raycast(
@@ -96,7 +96,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 else
                 {
-                    // Нема ArmorMap — рахуємо як “тонку” поверхню (повне пробиття)
+                    // No ArmorMap: treat it as a thin surface with full penetration.
                     hr.penetrated = true;
                     hr.damage = 100f;
                 }
@@ -110,19 +110,7 @@ namespace Game.Scripts.Gameplay.Robots
 
                 if (hr.hit)
                 {
-                    string targetName = (hr.collider != null) ? hr.collider.gameObject.name : "null";
-                    string armorRoot = (hr.armor != null && hr.armor.vehicleRoot != null) ? hr.armor.vehicleRoot.name : "n/a";
-                    string layerName = (hr.collider != null) ? LayerMask.LayerToName(hr.collider.gameObject.layer) : "n/a";
-
-                    Debug.Log(
-                        $"[HitResolver] hit={hr.hit} pen={hr.penetrated} dmg={hr.damage} penReq={shellPenMm:0} base={hr.baseMm:0.0}mm los={hr.losMm:0.0}mm " +
-                        $"targetGO={targetName} tankRoot={armorRoot} layer={layerName} point={hr.point}"
-                    );
                     Debug.DrawRay(hr.point, hr.normal * 0.8f, Color.cyan, 2f);
-                }
-                else
-                {
-                    Debug.Log($"[HitResolver] MISS mask={hitMask.value} from={startPos} to={aimPoint}");
                 }
             }
 

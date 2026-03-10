@@ -56,7 +56,6 @@ namespace Game.Scripts.Gameplay.Robots
             // 2) завжди надсилаємо запит на сервер (жодних умов за sendRequest)
             if (!IsSpawned)
             {
-                Debug.LogWarning("[ShooterNet] PredictAndRequest called before IsSpawned");
                 return;
             }
 
@@ -98,7 +97,6 @@ namespace Game.Scripts.Gameplay.Robots
             // перевірка власника
             if (sender != base.Owner)
             {
-                Debug.LogWarning($"[ShooterNet] Reject shot: sender {sender.ClientId} is not owner {base.Owner?.ClientId}");
                 return;
             }
 
@@ -156,7 +154,6 @@ namespace Game.Scripts.Gameplay.Robots
                     string goName = hr.collider ? hr.collider.gameObject.name : "null";
                     string path = hr.collider ? GetPath(hr.collider.transform) : "null";
                     int oid = targetNetObj != null ? targetNetObj.ObjectId : 0;
-                    Debug.LogWarning($"[ShooterNet] shotId={shotId} hit but NO Health found. colliderGO={goName} path={path} netObjId={oid}");
                 }
             }
 
@@ -170,11 +167,9 @@ namespace Game.Scripts.Gameplay.Robots
                     tgtRoot = armor.vehicleRoot.name;
                 }
 
-                Debug.Log($"[ShooterNet] shotId={shotId} hit={hr.hit} pen={hr.penetrated} dmg={hr.damage} targetGO={tgtGo} targetTank={tgtRoot} netObjId={targetId}");
             }
             else
             {
-                Debug.Log($"[ShooterNet] shotId={shotId} MISS");
             }
 
             BroadcastHitObserversRpc(

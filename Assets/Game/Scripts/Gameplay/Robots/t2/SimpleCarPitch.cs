@@ -21,6 +21,8 @@ namespace Game.Scripts.Gameplay.Robots.t2
 
         private void Update()
         {
+            return;
+            
             if (vehicleRoot.IsServer == false)
             {
                 return;

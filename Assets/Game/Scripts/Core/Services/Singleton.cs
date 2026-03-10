@@ -35,7 +35,6 @@ namespace Game.Scripts.Core.Services
             
             if (allInstances.Length > 1)
             {
-                Debug.LogError($"The number of {typeof(TSingleton).Name} on the scene is greater than one!");
             }
             
             for (var i = 1; i < allInstances.Length; i++)

@@ -19,7 +19,6 @@ namespace Game.Scripts.UI.Robots
         {
             if (_in == null)
             {
-                Debug.LogError("error");
                 return;
             }
         
@@ -33,7 +32,6 @@ namespace Game.Scripts.UI.Robots
         {
             if (_in == null)
             {
-                Debug.LogError("error");
                 return;
             }
 
@@ -47,7 +45,6 @@ namespace Game.Scripts.UI.Robots
         { 
             if (_in == null)
             {
-                Debug.LogError("error");
                 return;
             }
 

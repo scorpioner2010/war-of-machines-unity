@@ -27,7 +27,6 @@ namespace Game.Scripts.UI.Helpers
                     server.gameObject.SetActive(false);
                     panel.gameObject.SetActive(false);
                     ServiceLocator.Register<IPlayerClientInfo>(new PlayerClientInfo());
-                    Debug.Log("Client started");
                 }
             return;
 #endif

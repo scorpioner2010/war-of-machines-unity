@@ -31,7 +31,6 @@ namespace Game.Scripts.Debugs.TestScripts
         
             if (number <= 0 || number > robots.Length)
             {
-                Debug.LogError("error");
                 robotNumber.text = "1";
                 return;
             }

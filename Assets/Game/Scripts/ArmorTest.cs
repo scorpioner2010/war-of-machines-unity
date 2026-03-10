@@ -17,7 +17,6 @@ public class ArmorTest : MonoBehaviour
                 if (map != null)
                 {
                     map.TryGetArmorLoS(hit, ray.direction, 5f, out var baseMm, out var losMm);
-                    Debug.LogError($"Armor {baseMm:F1}mm  LoS={losMm:F1}mm");
                 }
             }
         }
