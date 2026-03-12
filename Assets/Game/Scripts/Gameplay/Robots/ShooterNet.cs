@@ -89,7 +89,7 @@ namespace Game.Scripts.Gameplay.Robots
         [ServerRpc(RequireOwnership = true)]
         private void FireRequestServerRpc(int shotId, Vector3 startPos, Vector3 aimPoint, uint clientTick, NetworkConnection sender = null)
         {
-            if (!IsServer || sender == null)
+            if (!IsServerInitialized || sender == null)
             {
                 return;
             }

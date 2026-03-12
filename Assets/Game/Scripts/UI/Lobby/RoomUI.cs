@@ -21,6 +21,11 @@ namespace Game.Scripts.UI.Lobby
             leaveButton.onClick.AddListener(OnLeaveButtonClicked);
         }
 
+        private void OnDestroy()
+        {
+            leaveButton.onClick.RemoveListener(OnLeaveButtonClicked);
+        }
+
         private void OnLeaveButtonClicked()
         {
             LeaveRoom();
@@ -46,7 +51,7 @@ namespace Game.Scripts.UI.Lobby
                 return;
             }
           
-            playerCountText.text = "Players ready " + clientRoom.GetPlayerCountText();
+            playerCountText.text = $"Players ready {clientRoom.GetPlayerCountText()}";
         }
 
         public void LeaveRoom()

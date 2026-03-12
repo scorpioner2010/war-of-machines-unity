@@ -49,6 +49,40 @@ namespace Game.Scripts.API.ServerManagers
             RequestGetProfile(clientId);
         }
 
+        private static PlayerProfile CreateTestProfile()
+        {
+            const int vehicleId = 1;
+            const string vehicleCode = "ia_l1_starter";
+            const string vehicleName = "Starter";
+
+            OwnedVehicleDto selectedVehicle = new OwnedVehicleDto
+            {
+                vehicleId = vehicleId,
+                code = vehicleCode,
+                name = vehicleName,
+                isActive = true,
+                xp = 0
+            };
+
+            return new PlayerProfile
+            {
+                id = vehicleId,
+                username = GameplayAssistant.GenerateName(10),
+                isAdmin = false,
+                mmr = 1000,
+                bolts = 1000,
+                adamant = 100,
+                freeXp = 500,
+                activeVehicleId = vehicleId,
+                activeVehicleCode = vehicleCode,
+                activeVehicleName = vehicleName,
+                ownedVehicles = new[]
+                {
+                    selectedVehicle
+                }
+            };
+        }
+
         private async void RequestGetProfile(int clientId)
         {
             (bool isSuccess, string message, PlayerProfile profile) data;
@@ -56,9 +90,7 @@ namespace Game.Scripts.API.ServerManagers
 
             if (ServerSettings.In.isTestMode)
             {
-                PlayerProfile profile = new PlayerProfile();
-                profile.username = GameplayAssistant.GenerateName(10);
-                data = (true, "111", profile);
+                data = (true, "111", CreateTestProfile());
             }
             else
             {

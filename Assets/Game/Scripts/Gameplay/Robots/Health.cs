@@ -57,7 +57,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void OnHpChanged(float prev, float next, bool asServer)
         {
-            if (!IsServer)
+            if (!IsServerInitialized)
             {
                 //Debug.Log($"[Health:{name}][client] HP change {prev:0.##} -> {next:0.##}");
             }
@@ -66,7 +66,7 @@ namespace Game.Scripts.Gameplay.Robots
         [Server]
         public void ServerApplyDamage(float dmg)
         {
-            if (!IsServer || _dead.Value || dmg <= 0f)
+            if (!IsServerInitialized || _dead.Value || dmg <= 0f)
             {
                 return;
             }

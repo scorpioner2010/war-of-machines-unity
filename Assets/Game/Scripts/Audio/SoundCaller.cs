@@ -12,9 +12,8 @@ namespace Game.Scripts.Audio
         private static SoundCaller _in;
         public AudioPreset prefab;
         public AudioManager Manager;
-        
-        private GameObject _gmObj;
-        private bool StopPlay => InstanceFinder.IsServer && InstanceFinder.IsClient == false;
+
+        private bool StopPlay => InstanceFinder.IsServerStarted && InstanceFinder.IsClientStarted == false;
         
         private void Awake()
         {
@@ -22,16 +21,7 @@ namespace Game.Scripts.Audio
             Manager = new AudioManager();
         }
         
-        public static AudioManager GetAudioManager() 
-        {  
-            if (_in == null)
-            {
-                return null;
-            }
-
-            return _in.Manager;
-        }
-
+        public static AudioManager GetAudioManager() => _in?.Manager;
 
         public static AudioPreset GetAudioPreset()
         {
@@ -45,15 +35,15 @@ namespace Game.Scripts.Audio
 
         public static Transform GetTransform() => _in.transform;
         private void Start() => StartCoroutine(SetParametersVolume());
+
+        private static bool CanPlay()
+        {
+            return _in != null && !_in.StopPlay;
+        }
         
         public static AudioPreset PlayOneShot(string eventName, Transform parent)
         {
-            if (_in.StopPlay)
-            {
-                return null;
-            }
-            
-            if (_in == null)
+            if (!CanPlay())
             {
                 return null;
             }
@@ -64,12 +54,7 @@ namespace Game.Scripts.Audio
 
         public static void StopMusic()
         {
-            if (_in.StopPlay)
-            {
-                return;
-            }
-            
-            if (_in == null)
+            if (!CanPlay())
             {
                 return;
             }
@@ -79,12 +64,7 @@ namespace Game.Scripts.Audio
         
         public static AudioPreset PlayOneShot(string eventName, Vector3 position)
         {
-            if (_in.StopPlay)
-            {
-                return null;
-            }
-            
-            if (_in == null)
+            if (!CanPlay())
             {
                 return null;
             }
@@ -95,12 +75,7 @@ namespace Game.Scripts.Audio
 
         public static AudioPreset PlayOneShot(string eventName)
         {
-            if (_in.StopPlay)
-            {
-                return null;
-            }
-            
-            if (_in == null)
+            if (!CanPlay())
             {
                 return null;
             }
@@ -111,7 +86,7 @@ namespace Game.Scripts.Audio
         
         public static void PlayMusic(string eventName)
         {
-            if (_in.StopPlay)
+            if (!CanPlay())
             {
                 return;
             }
@@ -149,7 +124,7 @@ namespace Game.Scripts.Audio
                 PlayerPrefs.SetFloat(AudioManager.MusicVol, volume);
             }
             
-            if(type == SoundType.Ui)
+            if (type == SoundType.Ui)
             {
                 PlayerPrefs.SetFloat(AudioManager.UIVol, volume);
             }
@@ -157,7 +132,6 @@ namespace Game.Scripts.Audio
             if (type == SoundType.Sfx)
             {
                 PlayerPrefs.SetFloat(AudioManager.SfxVol, volume);
-                
             }
             
             Manager.Library.RemoveAllNull();

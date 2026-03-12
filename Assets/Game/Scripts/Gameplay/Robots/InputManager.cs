@@ -57,7 +57,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServer)
+                if (IsServerInitialized)
                 {
                     return _moveServer;
                 }
@@ -73,7 +73,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServer)
+                if (IsServerInitialized)
                 {
                     return _shootServer;
                 }
@@ -89,7 +89,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServer)
+                if (IsServerInitialized)
                 {
                     return _actionServer;
                 }
@@ -105,7 +105,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServer) return _moveServer;
+                if (IsServerInitialized) return _moveServer;
                 if (IsOwner) return _moveLocal;
                 return _animMove.Value;
             }
@@ -115,7 +115,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServer) return _shootServer;
+                if (IsServerInitialized) return _shootServer;
                 if (IsOwner) return _shootLocal;
                 return _animShoot.Value;
             }
@@ -125,7 +125,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServer) return _actionServer;
+                if (IsServerInitialized) return _actionServer;
                 if (IsOwner) return _actionLocal;
                 return _animAction.Value;
             }

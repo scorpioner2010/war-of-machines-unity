@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
-using Game.Scripts.Core.Helpers;
 using Game.Scripts.Server;
 using UnityEngine;
 
@@ -23,6 +22,8 @@ namespace Game.Scripts.Networking.Lobby
         public event Action<ServerRoom> OnTimeIsUp;
         public GameplayTimer gameplayTimer;
 
+        public bool IsEmpty => players.Count == 0;
+
         private void OnDestroy()
         {
             if (gameplayTimer != null)
@@ -33,7 +34,7 @@ namespace Game.Scripts.Networking.Lobby
 
         private void SyncedTimeOnChange(float newTime)
         {
-            players.RemoveAllNull();
+            players.RemoveAll(player => player == null);
             RoomController.UpdateTimer(newTime, players);
         }
 
@@ -50,16 +51,6 @@ namespace Game.Scripts.Networking.Lobby
 
             int bots = maxPlayers - players.Count;
 
-            for (int i = 0; i < bots; i++)
-            {
-                continue;
-                Player bot = new Player();
-                int lengthName = GameplayAssistant.GetRandomInt(3, 5);
-                bot.loginName = GameplayAssistant.GenerateName(lengthName);
-                bot.isBot = true;
-                AddPlayer(bot);
-            }
-
             if (bots > 0)
             {
                 OnTimeIsUp?.Invoke(this);
@@ -68,7 +59,7 @@ namespace Game.Scripts.Networking.Lobby
 
         public ClientRoom GetInfo()
         {
-            ClientRoom @new = new ClientRoom()
+            return new ClientRoom
             {
                 CreatedTime = CreatedTime,
                 selectedLocation = selectedLocation,
@@ -81,8 +72,6 @@ namespace Game.Scripts.Networking.Lobby
                 isInGame = isInGame,
                 handle = handle,
             };
-
-            return @new;
         }
         
         public void AddPlayer(Player player)
@@ -92,8 +81,11 @@ namespace Game.Scripts.Networking.Lobby
 
         public void RemovePlayer(Player player)
         {
-            players.RemoveAllNull();
-            players.Remove(player);
+            players.RemoveAll(item => item == null);
+            if (player != null)
+            {
+                players.Remove(player);
+            }
         }
         
         public int PlayersCount()
@@ -103,30 +95,34 @@ namespace Game.Scripts.Networking.Lobby
 
         public bool HasPlayer(NetworkConnection connection)
         {
-            if (players.Find(p => p.Connection == connection) != null)
+            if (connection == null)
             {
-                return true;
+                return false;
             }
 
-            return false;
+            return players.Find(p => p.Connection == connection) != null;
         }
         
         public bool HasPlayer(int clientId)
         {
-            if (players.Find(p => p.Connection.ClientId == clientId) != null)
+            for (int i = 0; i < players.Count; i++)
             {
-                return true;
+                Player player = players[i];
+                if (player != null && player.Connection != null && player.Connection.ClientId == clientId)
+                {
+                    return true;
+                }
             }
 
             return false;
         }
 
-        public Player GetPlayerBuyConnection(NetworkConnection connection)
+        public Player GetPlayerByConnection(NetworkConnection connection)
         {
             return players.Find(p => p.Connection == connection);
         }
         
-        public Player GetPlayerBuyName(string name)
+        public Player GetPlayerByName(string name)
         {
             return players.Find(p => p.loginName == name);
         }

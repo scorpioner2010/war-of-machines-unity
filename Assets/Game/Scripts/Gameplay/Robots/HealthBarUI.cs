@@ -21,7 +21,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            _healthBar = Singleton<HealthBar>.Instance;
+            _healthBar = Singleton<HealthBar>.CurrentOrNull;
             if (_healthBar == null)
             {
                 enabled = false;

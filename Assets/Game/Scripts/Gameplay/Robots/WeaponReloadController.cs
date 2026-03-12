@@ -41,7 +41,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _clientReloadRemain -= Time.deltaTime;
             }
 
-            if (IsServer && _isReloading.Value)
+            if (IsServerInitialized && _isReloading.Value)
             {
                 float dt = Time.deltaTime;
                 _serverTimer -= dt;
@@ -67,7 +67,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            _crosshair = Singleton<GunCrosshair>.Instance;
+            _crosshair = Singleton<GunCrosshair>.CurrentOrNull;
             _initialized = true;
 
             ApplyHud();
@@ -101,7 +101,7 @@ namespace Game.Scripts.Gameplay.Robots
         [ServerRpc(RequireOwnership = true)]
         private void RequestFireServerRpc(NetworkConnection sender = null)
         {
-            if (!IsServer || sender == null)
+            if (!IsServerInitialized || sender == null)
             {
                 return;
             }

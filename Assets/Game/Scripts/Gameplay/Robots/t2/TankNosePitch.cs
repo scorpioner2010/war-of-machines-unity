@@ -71,7 +71,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
 
         private void Update()
         {
-            if (vehicleRoot.IsServer)
+            if (vehicleRoot.IsServerInitialized)
             {
                 return;
             }

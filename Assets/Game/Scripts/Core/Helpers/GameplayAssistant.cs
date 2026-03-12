@@ -56,7 +56,7 @@ namespace Game.Scripts.Core.Helpers
         [Obsolete("Obsolete")]
         public static void RunWithDelay(float time, Action logic)
         {
-            Singleton<GameplayAssistantMember>.Instance.RunWithDelay(time, logic);
+            Singleton<GameplayAssistantMember>.Current.RunWithDelay(time, logic);
         }
         
         public static void DestroyAll<T>(GameObject root) where T : Component

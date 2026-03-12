@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using FishNet.Connection;
 using Object = UnityEngine.Object;
 
@@ -32,12 +31,14 @@ namespace Game.Scripts.Networking.Lobby
         
         public static ServerRoom GetRoomByHandle(int handle)
         {
-            ServerRoom singleOrDefault = Rooms.Values.SingleOrDefault(room => room.handle == handle);
-            
-            if (singleOrDefault != null)
+            foreach (ServerRoom room in Rooms.Values)
             {
-                return Rooms[singleOrDefault.roomId];
+                if (room.handle == handle)
+                {
+                    return room;
+                }
             }
+
             return null;
         }
 
@@ -74,7 +75,11 @@ namespace Game.Scripts.Networking.Lobby
         public static void AddPlayerToRoom(string roomId, Player player)
         {
             ServerRoom serverRoom = GetRoomById(roomId);
-         
+            if (serverRoom == null)
+            {
+                return;
+            }
+
             if (serverRoom.PlayersCount() >= serverRoom.maxPlayers)
             {
                 return;
@@ -86,17 +91,16 @@ namespace Game.Scripts.Networking.Lobby
         public static void RemovePlayerFromRoom(string roomId, string loginName)
         {
             ServerRoom serverRoom = GetRoomById(roomId);
+            if (serverRoom == null)
+            {
+                return;
+            }
             
-            Player player = serverRoom.GetPlayerBuyName(loginName);
+            Player player = serverRoom.GetPlayerByName(loginName);
             
             if (player != null)
             {
                 serverRoom.RemovePlayer(player);
-                
-                if (serverRoom.PlayersCount() == 0)
-                {
-                    Rooms.Remove(serverRoom.roomId);
-                }
             }
 
             if (serverRoom.GetPlayers().Count == 0)

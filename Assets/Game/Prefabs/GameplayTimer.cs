@@ -1,18 +1,9 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using FishNet.Object;
-using UnityEngine;
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Game.Scripts.Core.Services;
 using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Loading;
-using UnityEngine;
-using UEScene = UnityEngine.SceneManagement.Scene;
 
 public class GameplayTimer : NetworkBehaviour
 {
@@ -35,18 +26,12 @@ public class GameplayTimer : NetworkBehaviour
 
     private async void TimerStart()
     {
-        bool isTimerActive = true;
         Timer.Value = startTime;
         
-        while (isTimerActive)
+        while (Timer.Value >= 0)
         {
             await UniTask.Delay(1000);
             Timer.Value -= 1;
-
-            if (Timer.Value < 0)
-            {
-                isTimerActive = false;
-            }
         }
 
         TimeFinish();

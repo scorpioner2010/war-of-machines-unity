@@ -47,25 +47,5 @@ namespace Game.Scripts.Gameplay.Robots.t2
             transform.localPosition = Vector3.Lerp(transform.localPosition, targetLocalPos, Time.deltaTime * lerpSpeed);
         }
 
-        private void OnDrawGizmos()
-        {
-            return;
-            Vector3 origin = transform.position + Vector3.up * rayHeight;
-            Vector3 direction = Vector3.down * rayDistance;
-
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawLine(origin, origin + direction);
-
-            if (_didHit)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawSphere(_lastHit.point, 0.05f);
-            }
-            else
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawSphere(origin + direction, 0.05f);
-            }
-        }
     }
 }

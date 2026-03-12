@@ -43,12 +43,26 @@ namespace Game.Scripts.UI.MainMenu
             Despawn();
 
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+            if (clientInfo?.Profile == null || clientInfo.Profile.ownedVehicles == null || clientInfo.Profile.ownedVehicles.Length == 0)
+            {
+                return;
+            }
+
             OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
+            if (selected == null)
+            {
+                return;
+            }
 
             List<RobotList> list = new();
 
             foreach (OwnedVehicleDto vehicle in clientInfo.Profile.ownedVehicles)
             {
+                if (vehicle == null)
+                {
+                    continue;
+                }
+
                 RobotList robotList = new RobotList();
                 robotList.icon = ResourceManager.GetIcon(vehicle.code);
                 robotList.id = vehicle.vehicleId;
@@ -65,6 +79,11 @@ namespace Game.Scripts.UI.MainMenu
             }
 
             VehicleRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
+            if (vehicleRoot == null)
+            {
+                return;
+            }
+
             Spawn(vehicleRoot);
 
             UpdateUI();

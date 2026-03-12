@@ -19,7 +19,9 @@ namespace Game.Scripts.Gameplay.Robots
         private void Update()
         {
             if (!isActive || !vehicleRoot.IsOwner)
+            {
                 return;
+            }
 
             Transform t = vehicleRoot.objectMover.transform;
             Vector3 delta = t.position - _prevPos;

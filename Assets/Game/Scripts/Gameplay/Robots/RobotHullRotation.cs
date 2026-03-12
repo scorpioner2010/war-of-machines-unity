@@ -52,7 +52,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            if (!IsServer || _chassisTransform == null)
+            if (!IsServerInitialized || _chassisTransform == null)
             {
                 return;
             }

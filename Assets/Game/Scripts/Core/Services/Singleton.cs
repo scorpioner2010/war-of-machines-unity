@@ -8,6 +8,9 @@ namespace Game.Scripts.Core.Services
         [Obsolete("Obsolete")] public static TSingleton Instance => GetNotNull();
         private static TSingleton _cachedInstance;
 
+        public static TSingleton Current => GetRequired();
+        public static TSingleton CurrentOrNull => GetOptional();
+
         [Obsolete("Obsolete")]
         public static TSingleton GetCanBeNull()
         {
@@ -20,7 +23,16 @@ namespace Game.Scripts.Core.Services
             return GetInstance(false);
         }
 
-        [Obsolete("Obsolete")]
+        public static TSingleton GetOptional()
+        {
+            return GetInstance(true);
+        }
+
+        public static TSingleton GetRequired()
+        {
+            return GetInstance(false);
+        }
+
         private static TSingleton GetInstance(bool canBeNull)
         {
             if (_cachedInstance != null)
@@ -28,7 +40,7 @@ namespace Game.Scripts.Core.Services
                 return _cachedInstance;
             }
             
-            var allInstances = FindObjectsOfType<TSingleton>();
+            var allInstances = FindObjectsByType<TSingleton>(FindObjectsSortMode.None);
             var instance = allInstances.Length > 0
                 ? allInstances[0]
                 : GetInstanceIfNotFound(canBeNull);

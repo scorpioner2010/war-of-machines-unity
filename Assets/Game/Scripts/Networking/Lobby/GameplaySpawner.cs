@@ -53,6 +53,14 @@ namespace Game.Scripts.Networking.Lobby
             ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
         }
 
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+            UESceneManager.sceneLoaded -= HandleServerSceneLoaded;
+            SceneManager.OnLoadEnd -= HandleServerLoadEnd;
+            ServerManager.OnRemoteConnectionState -= OnRemoteConnectionState;
+        }
+
         private void OnRemoteConnectionState(NetworkConnection conn, RemoteConnectionStateArgs args)
         {
             if (args.ConnectionState == RemoteConnectionState.Stopped)
@@ -123,6 +131,19 @@ namespace Game.Scripts.Networking.Lobby
             GameplayGUI.In.pauseMenu.OnDisconnectPressed += ReturnToMainMenu;
         }
 
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            UESceneManager.sceneLoaded -= HandleClientSceneLoaded;
+            SceneManager.OnLoadEnd -= HandleClientLoadEnd;
+            SceneManager.OnUnloadEnd -= SceneManagerOnUnloadEnd;
+
+            if (GameplayGUI.In != null && GameplayGUI.In.pauseMenu != null)
+            {
+                GameplayGUI.In.pauseMenu.OnDisconnectPressed -= ReturnToMainMenu;
+            }
+        }
+
         private void HandleClientSceneLoaded(UEScene scene, LoadSceneMode mode)
         {
             if (!IsValidScene(scene))
@@ -184,7 +205,7 @@ namespace Game.Scripts.Networking.Lobby
 
             if (serverRoom != null)
             {
-                Player player = serverRoom.GetPlayerBuyConnection(conn);
+                Player player = serverRoom.GetPlayerByConnection(conn);
             
                 if (player != null)
                 {
@@ -197,6 +218,21 @@ namespace Game.Scripts.Networking.Lobby
 
         private bool IsValidScene(UEScene scene) => scene.IsValid() && scenes.Any(k => scene.name.Contains(k.ToString()));
 
+        private List<Player> GetRealPlayers(ServerRoom serverRoom)
+        {
+            List<Player> realPlayers = new List<Player>();
+
+            foreach (Player player in serverRoom.GetPlayers())
+            {
+                if (!player.isBot)
+                {
+                    realPlayers.Add(player);
+                }
+            }
+
+            return realPlayers;
+        }
+
         [ServerRpc(RequireOwnership = false)]
         private void NotifyServerSceneLoaded(int clientId)
         {
@@ -206,19 +242,19 @@ namespace Game.Scripts.Networking.Lobby
             }
             
             ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(conn);
-            Player playerByConnection = serverRoom.GetPlayerBuyConnection(conn);
-            playerByConnection.randomPlayerConnected = true;
-            
-            List<Player> realPlayers = new();
-
-            foreach (Player player in serverRoom.GetPlayers())
+            if (serverRoom == null)
             {
-                if (player.isBot == false)
-                {
-                    realPlayers.Add(player);
-                }
+                return;
             }
-            
+
+            Player playerByConnection = serverRoom.GetPlayerByConnection(conn);
+            if (playerByConnection == null)
+            {
+                return;
+            }
+
+            playerByConnection.randomPlayerConnected = true;
+            List<Player> realPlayers = GetRealPlayers(serverRoom);
             bool allLoaded = realPlayers.All(p => p.randomPlayerConnected);
             
             if (allLoaded) //виконується тільки тоді коли всі гравці загрузилися
@@ -253,19 +289,8 @@ namespace Game.Scripts.Networking.Lobby
         
         private void SpawnBot(ServerRoom serverRoom, Player player)
         {
+            // Bot spawning is not implemented in this demo yet.
             return;
-            
-            SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene);
-            
-            if (spawnPoint == null)
-            {
-                return;
-            }
-            
-            //TankRoot tankRoot = Instantiate(PlayerPrefab, spawnPoint.transform.position, Quaternion.identity);
-            //ServerManager.Spawn(tankRoot.networkObject, LocalConnection, _additiveServerScene);
-            //player.playerRoot = tankRoot;
-            //player.playerRoot.characterInit.Init(0, InitValue.Bot, player.loginName, serverRoom.roomId, _additiveServerScene);
         }
         
         private async void SpawnPlayer(ServerRoom serverRoom, NetworkConnection connection)
@@ -284,12 +309,32 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene);
+            if (spawnPoint == null)
+            {
+                return;
+            }
+
             PlayerProfile profile = ProfileServer.GetProfileByClientId(connection.ClientId);
+            if (profile == null)
+            {
+                return;
+            }
+
             VehicleRoot vehicle = ResourceManager.GetPrefab(profile.activeVehicleCode);
+            if (vehicle == null)
+            {
+                return;
+            }
+
             VehicleRoot vehicleRoot = Instantiate(vehicle, spawnPoint.transform.position, Quaternion.identity);
             ServerManager.Spawn(vehicleRoot.networkObject, connection, _additiveServerScene);
             
-            Player player = serverRoom.GetPlayerBuyConnection(connection);
+            Player player = serverRoom.GetPlayerByConnection(connection);
+            if (player == null)
+            {
+                return;
+            }
+
             player.playerRoot = vehicleRoot;
             player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, _additiveServerScene);
         }

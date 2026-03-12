@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Game.Scripts.Gameplay.Robots;
 using NaughtyAttributes;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class DeathLogic : MonoBehaviour
@@ -13,6 +12,14 @@ public class DeathLogic : MonoBehaviour
     private void Start()
     {
         vehicleRoot.health.onDeath.AddListener(Death);
+    }
+
+    private void OnDestroy()
+    {
+        if (vehicleRoot != null && vehicleRoot.health != null)
+        {
+            vehicleRoot.health.onDeath.RemoveListener(Death);
+        }
     }
 
     [Button]
@@ -58,8 +65,22 @@ public class DeathLogic : MonoBehaviour
         
         foreach (Collider coll in colliders)
         {
+            if (coll == null)
+            {
+                continue;
+            }
+
             coll.transform.parent = null;
-            coll.AddComponent<Rigidbody>();
+            if (coll is MeshCollider meshCollider && !meshCollider.convex)
+            {
+                meshCollider.convex = true;
+            }
+
+            if (!coll.TryGetComponent(out Rigidbody rigidbody))
+            {
+                rigidbody = coll.gameObject.AddComponent<Rigidbody>();
+            }
+
             coll.enabled = true;
 
             if (coll.TryGetComponent(out MeshRenderer obj))

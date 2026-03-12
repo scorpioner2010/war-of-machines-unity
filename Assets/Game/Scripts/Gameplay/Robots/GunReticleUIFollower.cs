@@ -29,7 +29,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void Init()
         {
-            GunCrosshair gunCrosshair = Singleton<GunCrosshair>.Instance;
+            GunCrosshair gunCrosshair = Singleton<GunCrosshair>.CurrentOrNull;
             if (gunCrosshair == null)
             {
                 return;

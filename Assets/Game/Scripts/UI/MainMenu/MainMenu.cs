@@ -1,13 +1,9 @@
 using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
-using Game.Scripts.Audio;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
-using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Tree;
 using TMPro;
-using UniRx;
-using UniRx.Triggers;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,15 +11,10 @@ namespace Game.Scripts.UI.MainMenu
 {
     public class MainMenu : MonoBehaviour
     {
-        [SerializeField] private GameObject mainMenu;
-        
         [SerializeField] private Button customGameButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button developmentTreeButton;
-        
-        [SerializeField] private GameObject customGamePanel;
-        [SerializeField] private GameObject settingsPanel;
-        
+
         [SerializeField] private TMP_Text user;
         [SerializeField] private TMP_Text bolts;
         [SerializeField] private TMP_Text freeXp;
@@ -52,14 +43,13 @@ namespace Game.Scripts.UI.MainMenu
             developmentTreeButton.onClick.AddListener(()=>
             {
                 MenuManager.OpenMenu(MenuType.DevelopmentTree);
-                DevelopmentTree tree = Singleton<DevelopmentTree>.Instance;
+                DevelopmentTree tree = Singleton<DevelopmentTree>.CurrentOrNull;
                 if (tree != null)
                 {
                     tree.Init();
                 }
             });
-            
-            //mainMenu.gameObject.OnEnableAsObservable().Subscribe(OnEnableMenu).AddTo(this);
+
             MenuManager.OnEnable += type =>
             {
                 if (type == MenuType.MainMenu)
@@ -100,11 +90,6 @@ namespace Game.Scripts.UI.MainMenu
             {
                 MenuManager.OpenMenu(MenuType.GameplayHUD);
             }
-        }
-
-        private void Exit()
-        {
-            Application.Quit();
         }
     }
 }

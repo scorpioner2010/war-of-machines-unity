@@ -69,7 +69,7 @@ namespace Game.Scripts.Gameplay.Robots
             CurrentAimPoint = gunAimPoint;
 
             // 2) крутить ТІЛЬКИ сервер
-            if (IsServer)
+            if (IsServerInitialized)
             {
                 float step = smoothSpeed * Time.deltaTime;
 

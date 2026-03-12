@@ -78,6 +78,11 @@ namespace Game.Scripts.API.Models
 
         public OwnedVehicleDto GetSelected()
         {
+            if (ownedVehicles == null || ownedVehicles.Length == 0)
+            {
+                return null;
+            }
+
             foreach (OwnedVehicleDto dto in ownedVehicles)
             {
                 if (activeVehicleId == dto.vehicleId)
@@ -86,11 +91,24 @@ namespace Game.Scripts.API.Models
                 }
             }
 
-            return null;
+            foreach (OwnedVehicleDto dto in ownedVehicles)
+            {
+                if (dto != null && dto.isActive)
+                {
+                    return dto;
+                }
+            }
+
+            return ownedVehicles[0];
         }
 
         public bool IsHave(int idVehicle)
         {
+            if (ownedVehicles == null)
+            {
+                return false;
+            }
+
             foreach (OwnedVehicleDto vehicleDto in ownedVehicles)
             {
                 if (vehicleDto.vehicleId == idVehicle)

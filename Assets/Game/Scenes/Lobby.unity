@@ -9136,7 +9136,6 @@ MonoBehaviour:
   roomUI: {fileID: 6011556031675177251}
   serverRoomPrefab: {fileID: 7643747213992215950, guid: de2eb0703db8c714cb4e4e5cbc051803,
     type: 3}
-  mainMenu: {fileID: 1290906187}
 --- !u!4 &970225865
 Transform:
   m_ObjectHideFlags: 0
@@ -13790,12 +13789,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b80b0ce36406448d8a699e224c8fe4bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainMenu: {fileID: 4297982674393131011}
   customGameButton: {fileID: 425987815}
   settingsButton: {fileID: 2100887777}
   developmentTreeButton: {fileID: 66673538}
-  customGamePanel: {fileID: 1003057509650547126}
-  settingsPanel: {fileID: 663677752}
   user: {fileID: 1005922427}
   bolts: {fileID: 204966871}
   freeXp: {fileID: 350126454}
@@ -22121,7 +22117,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da7d804b5d3773e47b81d159d7e65980, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isTestMode: 0
+  isTestMode: 1
   maxPlayersForFindRoom: 5
   findRoomSeconds: 1
 --- !u!4 &2068572094

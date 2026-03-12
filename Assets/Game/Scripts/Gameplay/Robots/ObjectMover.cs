@@ -19,7 +19,7 @@ namespace Game.Scripts.Gameplay.Robots
         private void FixedUpdate()
         {
             // Тільки сервер рухає; клієнти отримують NetworkTransform
-            if (!vehicleRoot.IsServer)
+            if (!vehicleRoot.IsServerInitialized)
             {
                 return;
             }
@@ -35,7 +35,9 @@ namespace Game.Scripts.Gameplay.Robots
             _hVel += step;
 
             if (_hVel.magnitude > maxSpeed)
+            {
                 _hVel = _hVel.normalized * maxSpeed;
+            }
 
             bool grounded = controller.isGrounded;
             _vVel = grounded ? -groundedSnap : _vVel - gravity * dt;
@@ -47,7 +49,9 @@ namespace Game.Scripts.Gameplay.Robots
         private void Rotate(Vector2 mi)
         {
             if (mi.x != 0f)
+            {
                 transform.Rotate(Vector3.up * mi.x * rotateSpeed);
+            }
         }
     }
 }
