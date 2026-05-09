@@ -14,7 +14,7 @@ public class GameplayTimer : NetworkBehaviour
     
     public override void OnStartServer()
     {
-        TimerStart();
+        RunTimer().Forget();
     }
 
     public override void OnStartClient()
@@ -25,7 +25,7 @@ public class GameplayTimer : NetworkBehaviour
         };
     }
 
-    private async void TimerStart()
+    private async UniTask RunTimer()
     {
         Timer.Value = startTime;
         

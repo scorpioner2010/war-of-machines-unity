@@ -6,13 +6,6 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.UI.Lobby
 {
-    public enum EndGameResult
-    {
-        Win = 0,
-        Lose = 1,
-        Draw = 2
-    }
-
     public class EndGameUI : MonoBehaviour
     {
         private const string WinText = "WIN";

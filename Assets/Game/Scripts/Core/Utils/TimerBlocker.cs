@@ -33,7 +33,12 @@ namespace Game.Scripts.Core.Utils
             }
         }
         
-        public async void Invoke(Action someLogic)
+        public void Invoke(Action someLogic)
+        {
+            InvokeAsync(someLogic).Forget();
+        }
+
+        private async UniTask InvokeAsync(Action someLogic)
         {
             if (_cts != null)
             {

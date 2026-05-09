@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using FishNet.Connection;
+using Game.Scripts.Gameplay.Robots;
 using Object = UnityEngine.Object;
 
 namespace Game.Scripts.Networking.Lobby
 {
     public static class LobbyRooms //only server
     {
-        public static readonly Dictionary<string, ServerRoom> Rooms = new ();
+        public static readonly Dictionary<string, ServerRoom> Rooms = new Dictionary<string, ServerRoom>();
 
         public static void AddRoom(ServerRoom serverRoom)
         {
@@ -20,7 +21,7 @@ namespace Game.Scripts.Networking.Lobby
         {
             foreach (ServerRoom room in Rooms.Values)
             {
-                if (room.isAutoRoom && room.IsFull() == false && room.isInGame == false)
+                if (room != null && room.isAutoRoom && room.IsFull() == false && room.isInGame == false)
                 {
                     return room;
                 }
@@ -33,7 +34,7 @@ namespace Game.Scripts.Networking.Lobby
         {
             foreach (ServerRoom room in Rooms.Values)
             {
-                if (room.handle == handle)
+                if (room != null && room.handle == handle)
                 {
                     return room;
                 }
@@ -55,6 +56,11 @@ namespace Game.Scripts.Networking.Lobby
         public static void UpdateRoomStatusInGame(string roomId)
         {
             ServerRoom serverRoom = GetRoomById(roomId);
+            if (serverRoom == null)
+            {
+                return;
+            }
+
             serverRoom.isInGame = true;
         }
 
@@ -64,7 +70,7 @@ namespace Game.Scripts.Networking.Lobby
             
             foreach (ServerRoom room in Rooms.Values)
             {
-                if (room.isInGame == isInGame)
+                if (room != null && room.isInGame == isInGame)
                 {
                     rooms.Add(room);
                 }
@@ -125,6 +131,11 @@ namespace Game.Scripts.Networking.Lobby
         {
             foreach (ServerRoom room in Rooms.Values)
             {
+                if (room == null)
+                {
+                    continue;
+                }
+
                 bool isHas = room.HasPlayer(conn);
                 
                 if (isHas)
@@ -141,7 +152,7 @@ namespace Game.Scripts.Networking.Lobby
 
             foreach (ServerRoom room in Rooms.Values)
             {
-                if (room.HasPlayer(conn))
+                if (room != null && room.HasPlayer(conn))
                 {
                     rooms.Add(room);
                 }
@@ -154,6 +165,11 @@ namespace Game.Scripts.Networking.Lobby
         {
             foreach (ServerRoom room in Rooms.Values)
             {
+                if (room == null)
+                {
+                    continue;
+                }
+
                 bool isHas = room.HasPlayer(clientId);
                 
                 if (isHas)
@@ -161,6 +177,24 @@ namespace Game.Scripts.Networking.Lobby
                     return room;
                 }
             }
+            return null;
+        }
+
+        public static ServerRoom GetRoomByVehicle(VehicleRoot vehicleRoot)
+        {
+            if (vehicleRoot == null)
+            {
+                return null;
+            }
+
+            foreach (ServerRoom room in Rooms.Values)
+            {
+                if (room != null && room.GetPlayerByVehicle(vehicleRoot) != null)
+                {
+                    return room;
+                }
+            }
+
             return null;
         }
     }

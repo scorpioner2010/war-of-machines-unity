@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using Game.Scripts.API;
@@ -43,9 +42,9 @@ namespace Game.Scripts.UI.Tree
         private VehicleLite[] _vehicleLites;
         private string[] _factionCodes;
 
-        private readonly List<Transform> _fractionRoots = new();
-        private readonly List<Button> _factionButtons = new();
-        private readonly Dictionary<string, string> _factionNameByCode = new(StringComparer.OrdinalIgnoreCase);
+        private readonly List<Transform> _fractionRoots = new List<Transform>();
+        private readonly List<Button> _factionButtons = new List<Button>();
+        private readonly Dictionary<string, string> _factionNameByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public bool isInitialized;
 
         private class FactionView
@@ -56,13 +55,18 @@ namespace Game.Scripts.UI.Tree
             public Dictionary<int, RectTransform> NodeMap;
         }
 
-        private readonly List<FactionView> _views = new();
+        private readonly List<FactionView> _views = new List<FactionView>();
 
         public VehicleLite GetVehicleLite(int id)
         {
+            if (_vehicleLites == null)
+            {
+                return null;
+            }
+
             foreach (VehicleLite vehicleLite in _vehicleLites)
             {
-                if (vehicleLite.id == id)
+                if (vehicleLite != null && vehicleLite.id == id)
                 {
                     return vehicleLite;
                 }
@@ -85,7 +89,12 @@ namespace Game.Scripts.UI.Tree
 
         // ініціалізація — отримує дані з сервера, а потім оновлює UI
         [Button]
-        public async void Init()
+        public void Init()
+        {
+            InitAsync().Forget();
+        }
+
+        private async UniTask InitAsync()
         {
             if (isInitialized == false)
             {
@@ -125,10 +134,10 @@ namespace Game.Scripts.UI.Tree
             }
 
             // отримуємо список кодів фракцій
-            _factionCodes = items.Select(v => v.factionCode).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            _factionCodes = BuildFactionCodes(items);
 
             // отримуємо графи для кожної фракції
-            List<VehicleGraph> graphs = new();
+            List<VehicleGraph> graphs = new List<VehicleGraph>();
         
             foreach (string faction in _factionCodes)
             {
@@ -151,6 +160,40 @@ namespace Game.Scripts.UI.Tree
         }
 
         // оновлює весь UI (будує кнопки, дерева, стрілки)
+        private static string[] BuildFactionCodes(VehicleLite[] items)
+        {
+            List<string> factionCodes = new List<string>();
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                VehicleLite item = items[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.factionCode))
+                {
+                    continue;
+                }
+
+                if (!ContainsFactionCode(factionCodes, item.factionCode))
+                {
+                    factionCodes.Add(item.factionCode);
+                }
+            }
+
+            return factionCodes.ToArray();
+        }
+
+        private static bool ContainsFactionCode(List<string> factionCodes, string factionCode)
+        {
+            for (int i = 0; i < factionCodes.Count; i++)
+            {
+                if (string.Equals(factionCodes[i], factionCode, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public async UniTask UpdateUI()
         {
             WipeUI();
@@ -211,7 +254,9 @@ namespace Game.Scripts.UI.Tree
         private async UniTask BuildFactionTreeUI(string factionCode, VehicleGraph graph)
         {
             if (graph == null || graph.nodes == null || graph.nodes.Length == 0)
+            {
                 return;
+            }
 
             // кореневий контейнер фракції
             Transform rootT = Instantiate(fractionTreePrefab, animationPanel);
@@ -231,13 +276,10 @@ namespace Game.Scripts.UI.Tree
             Transform starterContainer = Instantiate(starterContainerPrefab, rootT);
             starterContainer.name = "StarterContainer";
 
-            var nodeMap = new Dictionary<int, RectTransform>();
+            Dictionary<int, RectTransform> nodeMap = new Dictionary<int, RectTransform>();
 
             // шукаємо стартовий вузол
-            VehicleNode starter = graph.nodes
-                .Where(n => n.level == 1)
-                .OrderBy(n => n.code)
-                .FirstOrDefault() ?? graph.nodes.OrderBy(n => n.level).ThenBy(n => n.code).First();
+            VehicleNode starter = FindStarterNode(graph.nodes);
 
             CreateTreeItemFromNode(starterContainer, starter, nodeMap);
 
@@ -267,20 +309,120 @@ namespace Game.Scripts.UI.Tree
             grid.name = columnName;
             grid.Init(ParseVehicleClass(className));
 
-            IEnumerable<VehicleNode> nodes = graph.nodes
-                .Where(n => string.Equals(n.@class, className, StringComparison.OrdinalIgnoreCase) && n.level >= 2)
-                .OrderBy(n => n.level)
-                .ThenBy(n => n.code);
+            List<VehicleNode> nodes = GetColumnNodes(graph.nodes, className);
 
-            foreach (var n in nodes)
+            foreach (VehicleNode n in nodes)
             {
                 CreateTreeItemFromNode(grid.transform, n, nodeMap);
             }
         }
 
         // створює елемент дерева (машину)
+        private static VehicleNode FindStarterNode(VehicleNode[] nodes)
+        {
+            VehicleNode starter = null;
+            VehicleNode fallback = null;
+
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                VehicleNode node = nodes[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (node.level == 1 && IsBetterByCode(node, starter))
+                {
+                    starter = node;
+                }
+
+                if (IsBetterByLevelThenCode(node, fallback))
+                {
+                    fallback = node;
+                }
+            }
+
+            return starter ?? fallback;
+        }
+
+        private static List<VehicleNode> GetColumnNodes(VehicleNode[] nodes, string className)
+        {
+            List<VehicleNode> result = new List<VehicleNode>();
+
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                VehicleNode node = nodes[i];
+                if (node != null
+                    && node.level >= 2
+                    && string.Equals(node.@class, className, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Add(node);
+                }
+            }
+
+            result.Sort(CompareByLevelThenCode);
+            return result;
+        }
+
+        private static bool IsBetterByCode(VehicleNode candidate, VehicleNode current)
+        {
+            if (current == null)
+            {
+                return true;
+            }
+
+            return string.Compare(candidate.code, current.code, StringComparison.Ordinal) < 0;
+        }
+
+        private static bool IsBetterByLevelThenCode(VehicleNode candidate, VehicleNode current)
+        {
+            if (current == null)
+            {
+                return true;
+            }
+
+            int levelCompare = candidate.level.CompareTo(current.level);
+            if (levelCompare != 0)
+            {
+                return levelCompare < 0;
+            }
+
+            return string.Compare(candidate.code, current.code, StringComparison.Ordinal) < 0;
+        }
+
+        private static int CompareByLevelThenCode(VehicleNode left, VehicleNode right)
+        {
+            if (left == null && right == null)
+            {
+                return 0;
+            }
+
+            if (left == null)
+            {
+                return 1;
+            }
+
+            if (right == null)
+            {
+                return -1;
+            }
+
+            int levelCompare = left.level.CompareTo(right.level);
+            if (levelCompare != 0)
+            {
+                return levelCompare;
+            }
+
+            return string.Compare(left.code, right.code, StringComparison.Ordinal);
+        }
+
         private void CreateTreeItemFromNode(Transform parent, VehicleNode node, Dictionary<int, RectTransform> nodeMap)
         {
+            if (node == null)
+            {
+                return;
+            }
+
             TreeItem item = Instantiate(treeItemPrefab, parent);
             item.vehicleName.text = node.name;
             item.vehicleType = ParseVehicleClass(node.@class);
@@ -288,18 +430,23 @@ namespace Game.Scripts.UI.Tree
             item.isClose.SetActive(!node.isVisible);
             
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-            bool isHave = clientInfo.Profile.IsHave(node.id);
+            bool isHave = clientInfo != null && clientInfo.Profile != null && clientInfo.Profile.IsHave(node.id);
             item.isHave.gameObject.SetActive(isHave);
         
             Sprite sprite = ResourceManager.GetIcon(node.code);
             item.image.sprite = sprite;
             VehicleLite result = GetVehicleLite(node.id);
 
-            item.price.text = result.purchaseCost.ToString();
+            item.price.text = result != null ? result.purchaseCost.ToString() : "0";
         
             item.button.onClick.AddListener(() =>
             {
                 IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
+                if (info == null || info.Profile == null)
+                {
+                    return;
+                }
+
                 bool have = info.Profile.IsHave(node.id);
             
                 if (have)
@@ -309,13 +456,17 @@ namespace Game.Scripts.UI.Tree
             
                 int bolts = info.Profile.bolts;
                 VehicleLite lite = GetVehicleLite(node.id);
+                if (lite == null)
+                {
+                    return;
+                }
 
                 if (bolts >= lite.purchaseCost)
                 {
                     Popup.ShowText($"Do you want buy?\nprice: {lite.purchaseCost}", Color.green, () =>
                     {
                         Helpers.Loading.Show();
-                        BuyRPC(lite.code);
+                        BuyVehicleServerRpc(lite.code);
                     }, TypePopup.Confirm);
                 }
             });
@@ -326,17 +477,17 @@ namespace Game.Scripts.UI.Tree
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void BuyRPC(string code, NetworkConnection sender = null)
+        private void BuyVehicleServerRpc(string code, NetworkConnection sender = null)
         {
             if (sender == null)
             {
                 return;
             }
 
-            Buy(sender, code);
+            BuyVehicleAsync(sender, code).Forget();
         }
             
-        private async void Buy(NetworkConnection sender, string code)
+        private async UniTask BuyVehicleAsync(NetworkConnection sender, string code)
         {
             string token = ServerPlayerSessions.GetToken(sender.ClientId);
             if (string.IsNullOrEmpty(token))
@@ -368,8 +519,16 @@ namespace Game.Scripts.UI.Tree
         
         private Vehicle ParseVehicleClass(string cls)
         {
-            if (string.Equals(cls, "Guardian", StringComparison.OrdinalIgnoreCase)) return Vehicle.Guardian;
-            if (string.Equals(cls, "Colossus", StringComparison.OrdinalIgnoreCase)) return Vehicle.Colossus;
+            if (string.Equals(cls, "Guardian", StringComparison.OrdinalIgnoreCase))
+            {
+                return Vehicle.Guardian;
+            }
+
+            if (string.Equals(cls, "Colossus", StringComparison.OrdinalIgnoreCase))
+            {
+                return Vehicle.Colossus;
+            }
+
             return Vehicle.Scout;
         }
 
@@ -380,11 +539,15 @@ namespace Game.Scripts.UI.Tree
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
 
             if (arrowDrawer == null || index < 0 || index >= _views.Count)
+            {
                 return;
+            }
 
-            var v = _views[index];
+            FactionView v = _views[index];
             if (v.ArrowsLayer == null || v.Edges == null || v.Edges.Length == 0)
+            {
                 return;
+            }
 
             arrowDrawer.Draw(v.Edges, v.NodeMap, v.ArrowsLayer);
         }
@@ -392,12 +555,17 @@ namespace Game.Scripts.UI.Tree
         // перемальовує всі стрілки (для всіх фракцій)
         private void DrawArrowsAll()
         {
-            if (arrowDrawer == null) return;
+            if (arrowDrawer == null)
+            {
+                return;
+            }
 
-            foreach (var v in _views)
+            foreach (FactionView v in _views)
             {
                 if (v.ArrowsLayer == null || v.Edges == null || v.Edges.Length == 0)
+                {
                     continue;
+                }
 
                 arrowDrawer.Draw(v.Edges, v.NodeMap, v.ArrowsLayer);
             }
@@ -406,16 +574,26 @@ namespace Game.Scripts.UI.Tree
         // очищення UI
         private void WipeUI()
         {
-            foreach (Transform t in _fractionRoots.Where(t => t != null))
+            for (int i = 0; i < _fractionRoots.Count; i++)
             {
-                DestroyImmediate(t.gameObject);
+                Transform root = _fractionRoots[i];
+                if (root != null)
+                {
+                    DestroyImmediate(root.gameObject);
+                }
             }
+
             _fractionRoots.Clear();
 
-            foreach (Button b in _factionButtons.Where(b => b != null))
+            for (int i = 0; i < _factionButtons.Count; i++)
             {
-                DestroyImmediate(b.gameObject);
+                Button button = _factionButtons[i];
+                if (button != null)
+                {
+                    DestroyImmediate(button.gameObject);
+                }
             }
+
             _factionButtons.Clear();
         }
     }

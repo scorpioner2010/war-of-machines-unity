@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Game.Scripts.Core.Helpers;
+using Game.Scripts.Gameplay.SceneManagement;
 using Game.Scripts.Networking.Lobby;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -13,7 +14,12 @@ namespace Game.Scripts.World.Spawns
     {
         public readonly SyncVar<bool> IsNotFree = new (false);
 
-        private async void MarkPoint()
+        private void ReserveTemporarily()
+        {
+            ReserveTemporarilyAsync().Forget();
+        }
+
+        private async UniTask ReserveTemporarilyAsync()
         {
             IsNotFree.Value = true;
             await UniTask.Delay(5000);
@@ -24,10 +30,10 @@ namespace Game.Scripts.World.Spawns
         {
             MeshRenderer mesh = GetComponent<MeshRenderer>();
             
-            if(mesh != null)
-            {
-                mesh.enabled = false;
-            }
+                if (mesh != null)
+                {
+                    mesh.enabled = false;
+                }
         }
 
         public static SpawnPoint GetFreePoint(Scene scene)
@@ -37,7 +43,7 @@ namespace Game.Scripts.World.Spawns
 
         public static SpawnPoint GetFreePoint(Scene scene, MatchTeam team)
         {
-            List<SpawnPoint> allPoints = GameplaySpawner.FindObjectsInScene<SpawnPoint>(scene);
+            List<SpawnPoint> allPoints = SceneObjectFinder.FindInScene<SpawnPoint>(scene);
             List<SpawnPoint> preferredPoints = new List<SpawnPoint>();
             List<SpawnPoint> fallbackPoints = new List<SpawnPoint>();
 
@@ -57,12 +63,16 @@ namespace Game.Scripts.World.Spawns
             }
 
             List<SpawnPoint> freePoints = preferredPoints.Count > 0 ? preferredPoints : fallbackPoints;
+            if (freePoints.Count == 0)
+            {
+                return null;
+            }
             
             SpawnPoint random = freePoints.RandomElement();
 
             if (random != null)
             {
-                random.MarkPoint();
+                random.ReserveTemporarily();
             }
             
             return random;

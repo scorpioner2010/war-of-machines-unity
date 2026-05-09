@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
+using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Server;
 using UnityEngine;
 
@@ -19,7 +20,7 @@ namespace Game.Scripts.Networking.Lobby
         public DateTime CreatedTime;
         public string loadedSceneName;
         public int handle;
-        public List<Player> players = new ();
+        public List<Player> players = new List<Player>();
         public bool isAutoRoom;
         public event Action<ServerRoom> OnTimeIsUp;
         public GameplayTimer gameplayTimer;
@@ -29,6 +30,7 @@ namespace Game.Scripts.Networking.Lobby
         public int matchId;
 
         public bool IsEmpty => players.Count == 0;
+        public bool IsActiveMatch => isInGame && !matchRewardsSent;
 
         private void OnDestroy()
         {
@@ -40,11 +42,16 @@ namespace Game.Scripts.Networking.Lobby
 
         private void SyncedTimeOnChange(float newTime)
         {
-            players.RemoveAll(player => player == null);
+            RemoveNullPlayers();
             RoomController.UpdateTimer(newTime, players);
         }
 
-        public async void RunTimerAsync()
+        public void StartMatchmakingTimer()
+        {
+            RunMatchmakingTimer().Forget();
+        }
+
+        private async UniTask RunMatchmakingTimer()
         {
             float currentTime = ServerSettings.GetFindRoomSeconds();
             
@@ -63,12 +70,17 @@ namespace Game.Scripts.Networking.Lobby
         
         public void AddPlayer(Player player)
         {
+            if (player == null)
+            {
+                return;
+            }
+
             players.Add(player);
         }
 
         public void RemovePlayer(Player player)
         {
-            players.RemoveAll(item => item == null);
+            RemoveNullPlayers();
             if (player != null)
             {
                 players.Remove(player);
@@ -87,7 +99,7 @@ namespace Game.Scripts.Networking.Lobby
                 return false;
             }
 
-            return players.Find(p => p.Connection == connection) != null;
+            return GetPlayerByConnection(connection) != null;
         }
         
         public bool HasPlayer(int clientId)
@@ -106,17 +118,68 @@ namespace Game.Scripts.Networking.Lobby
 
         public Player GetPlayerByConnection(NetworkConnection connection)
         {
-            return players.Find(p => p.Connection == connection);
+            if (connection == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player != null && player.Connection == connection)
+                {
+                    return player;
+                }
+            }
+
+            return null;
         }
         
         public Player GetPlayerByName(string name)
         {
-            return players.Find(p => p.loginName == name);
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player != null && player.loginName == name)
+                {
+                    return player;
+                }
+            }
+
+            return null;
         }
 
         public Player GetPlayerByUserId(int userId)
         {
-            return players.Find(p => p != null && p.userId == userId);
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player != null && player.userId == userId)
+                {
+                    return player;
+                }
+            }
+
+            return null;
+        }
+
+        public Player GetPlayerByVehicle(VehicleRoot vehicleRoot)
+        {
+            if (vehicleRoot == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player != null && player.playerRoot == vehicleRoot)
+                {
+                    return player;
+                }
+            }
+
+            return null;
         }
 
         public List<Player> GetPlayers()
@@ -126,17 +189,39 @@ namespace Game.Scripts.Networking.Lobby
         
         public List<Player> GetRealPlayers()
         {
-            List<Player> realPlayers = new();
+            List<Player> realPlayers = new List<Player>();
 
             foreach (Player player in players)
             {
-                if (player.isBot == false)
+                if (player != null && player.isBot == false)
                 {
                     realPlayers.Add(player);
                 }
             }
 
             return realPlayers;
+        }
+
+        public bool AreAllRealPlayersLoaded()
+        {
+            bool hasRealPlayer = false;
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player == null || player.isBot)
+                {
+                    continue;
+                }
+
+                hasRealPlayer = true;
+                if (!player.randomPlayerConnected)
+                {
+                    return false;
+                }
+            }
+
+            return hasRealPlayer;
         }
 
         public void AssignTeams()
@@ -264,6 +349,17 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             return string.Empty;
+        }
+
+        private void RemoveNullPlayers()
+        {
+            for (int i = players.Count - 1; i >= 0; i--)
+            {
+                if (players[i] == null)
+                {
+                    players.RemoveAt(i);
+                }
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Game.Scripts.Core.Services;
 using UnityEditor;
@@ -293,7 +292,13 @@ namespace Game.Scripts.Core.Helpers
         public static string GetRandomCode(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, length).Select(s => s[RandomObject.Next(s.Length)]).ToArray());
+            char[] result = new char[length];
+            for (int i = 0; i < result.Length; i++)
+            {
+                result[i] = chars[RandomObject.Next(chars.Length)];
+            }
+
+            return new string(result);
         }
         
         #if UNITY_EDITOR

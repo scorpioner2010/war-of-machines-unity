@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -12,12 +11,12 @@ namespace Game.Scripts.Audio
         {
             foreach (AudionElement element in soundClips)
             {
-                element.name = element.clips.First().name;
+                element.name = GetFirstClipName(element);
             }
             
             foreach (AudionElement element in musicClips)
             {
-                element.name = element.clips.First().name;
+                element.name = GetFirstClipName(element);
             }
         }
         
@@ -43,6 +42,16 @@ namespace Game.Scripts.Audio
             }
             
             return null;
+        }
+
+        private static string GetFirstClipName(AudionElement element)
+        {
+            if (element == null || element.clips == null || element.clips.Length == 0 || element.clips[0] == null)
+            {
+                return string.Empty;
+            }
+
+            return element.clips[0].name;
         }
     }
     

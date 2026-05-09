@@ -43,7 +43,7 @@ namespace Game.Scripts.Networking.Lobby
                 room = CreateMatchmakingRoom(selectedLocation);
                 LobbyRooms.AddRoom(room);
                 room.OnTimeIsUp += StartGame;
-                room.RunTimerAsync();
+                room.StartMatchmakingTimer();
             }
 
             room.AddPlayer(player);
@@ -175,7 +175,7 @@ namespace Game.Scripts.Networking.Lobby
 
             foreach (Player player in room.GetPlayers())
             {
-                if (!player.isBot && player.Connection != null)
+                if (player != null && !player.isBot && player.Connection != null)
                 {
                     connections.Add(player.Connection);
                 }

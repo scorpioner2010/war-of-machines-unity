@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using FishNet.Component.Transforming;
 using FishNet.Connection;
@@ -31,7 +30,7 @@ namespace Game.Scripts.UI.MainMenu
         public VehicleButton vehicleButtonPrefab;
 
         private VehicleRoot _vehicleRoot;
-        private List<Button> _buttons = new();
+        private readonly List<Button> _buttons = new List<Button>();
 
         private static RobotView _in;
 
@@ -39,6 +38,11 @@ namespace Game.Scripts.UI.MainMenu
 
         public static void GenerateIcons()
         {
+            if (_in == null)
+            {
+                return;
+            }
+
             Despawn();
 
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
@@ -53,7 +57,7 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            List<RobotList> list = new();
+            List<RobotButtonData> list = new List<RobotButtonData>();
 
             foreach (OwnedVehicleDto vehicle in clientInfo.Profile.ownedVehicles)
             {
@@ -62,7 +66,7 @@ namespace Game.Scripts.UI.MainMenu
                     continue;
                 }
 
-                RobotList robotList = new RobotList();
+                RobotButtonData robotList = new RobotButtonData();
                 robotList.icon = ResourceManager.GetIcon(vehicle.code);
                 robotList.id = vehicle.vehicleId;
                 robotList.isSelected = selected.vehicleId == vehicle.vehicleId;
@@ -70,9 +74,9 @@ namespace Game.Scripts.UI.MainMenu
                 list.Add(robotList);
             }
 
-            list = list.OrderBy(x => x.name).ToList();
+            list.Sort(CompareByName);
 
-            foreach (RobotList robotList in list)
+            foreach (RobotButtonData robotList in list)
             {
                 MakeIcons(robotList.icon, robotList.isSelected, robotList.id);
             }
@@ -99,30 +103,30 @@ namespace Game.Scripts.UI.MainMenu
                 IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
                 OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
 
-                if (id == selected.vehicleId)
+                if (selected == null || id == selected.vehicleId)
                 {
                     return;
                 }
 
                 Helpers.Loading.Show();
-                _in.SelectRPC(id);
+                _in.SelectVehicleServerRpc(id);
             });
 
             _in._buttons.Add(button.button);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void SelectRPC(int code, NetworkConnection sender = null)
+        private void SelectVehicleServerRpc(int code, NetworkConnection sender = null)
         {
             if (sender == null)
             {
                 return;
             }
 
-            Select(sender, code);
+            SelectVehicleAsync(sender, code).Forget();
         }
 
-        private async void Select(NetworkConnection sender, int id)
+        private async UniTask SelectVehicleAsync(NetworkConnection sender, int id)
         {
             string token = ServerPlayerSessions.GetToken(sender.ClientId);
             if (string.IsNullOrEmpty(token))
@@ -152,16 +156,36 @@ namespace Game.Scripts.UI.MainMenu
         }
 
         [Button]
-        public static async void UpdateUI()
+        public static void UpdateUI()
         {
+            UpdateUIAsync().Forget();
+        }
+
+        private static async UniTask UpdateUIAsync()
+        {
+            if (_in == null || _in.vehicleContainer == null)
+            {
+                return;
+            }
+
             await UniTask.DelayFrame(1);
-            List<Transform> l = new();
+            List<Transform> l = new List<Transform>();
             l.Add(_in.vehicleContainer);
             GameplayAssistant.RebuildAllLayouts(l).Forget();
         }
 
-        public static async void Spawn(VehicleRoot vehicleRoot)
+        public static void Spawn(VehicleRoot vehicleRoot)
         {
+            SpawnAsync(vehicleRoot).Forget();
+        }
+
+        private static async UniTask SpawnAsync(VehicleRoot vehicleRoot)
+        {
+            if (_in == null || vehicleRoot == null)
+            {
+                return;
+            }
+
             _in.rootSpawnPlace.SetActive(true);
             _in._vehicleRoot = Instantiate(vehicleRoot, _in.spawnPosition.transform, true);
             _in._vehicleRoot.gameObject.SetActive(false);
@@ -178,8 +202,20 @@ namespace Game.Scripts.UI.MainMenu
             _in._vehicleRoot.transform.rotation = _in.spawnPosition.rotation;
         }
 
+        private static int CompareByName(RobotButtonData left, RobotButtonData right)
+        {
+            string leftName = left != null ? left.name : string.Empty;
+            string rightName = right != null ? right.name : string.Empty;
+            return string.Compare(leftName, rightName, StringComparison.Ordinal);
+        }
+
         public static void Despawn()
         {
+            if (_in == null)
+            {
+                return;
+            }
+
             if (_in._vehicleRoot != null)
             {
                 Destroy(_in._vehicleRoot.gameObject);
@@ -187,7 +223,10 @@ namespace Game.Scripts.UI.MainMenu
 
             foreach (Button button in _in._buttons)
             {
-                Destroy(button.gameObject);
+                if (button != null)
+                {
+                    Destroy(button.gameObject);
+                }
             }
 
             _in._buttons.Clear();
@@ -215,7 +254,7 @@ namespace Game.Scripts.UI.MainMenu
     }
 
     [Serializable]
-    public class RobotList
+    public class RobotButtonData
     {
         public string name;
         public int id;

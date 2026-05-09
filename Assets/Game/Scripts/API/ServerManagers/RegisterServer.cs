@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Transporting;
@@ -9,7 +10,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace NewDropDude.Script.API.ServerManagers
+namespace Game.Scripts.API.ServerManagers
 {
     public class RegisterServer : NetworkBehaviour
     {
@@ -20,7 +21,7 @@ namespace NewDropDude.Script.API.ServerManagers
         [SerializeField] private Button registerButton; 
         
         private const string LastLoginName = "LastLogin";
-        private static readonly string LastPasswordName = "LastPassword";
+        private const string LastPasswordName = "LastPassword";
 
         public static string LastLogin
         {
@@ -107,10 +108,10 @@ namespace NewDropDude.Script.API.ServerManagers
                 return;
             }
 
-            RequestLogin(userLogin, password, sender);
+            RequestLoginAsync(userLogin, password, sender).Forget();
         }
 
-        private async void RequestLogin(string userLogin, string password, NetworkConnection sender)
+        private async UniTask RequestLoginAsync(string userLogin, string password, NetworkConnection sender)
         {
             (bool isSuccess, string message, string token) result = await RegisterManager.SendLoginRequest(userLogin, password);
 
@@ -134,10 +135,10 @@ namespace NewDropDude.Script.API.ServerManagers
                 return;
             }
 
-            RequestRegister(userLogin, password, sender);
+            RequestRegisterAsync(userLogin, password, sender).Forget();
         }
         
-        private async void RequestRegister(string userLogin, string password, NetworkConnection sender)
+        private async UniTask RequestRegisterAsync(string userLogin, string password, NetworkConnection sender)
         {
             (bool isSuccess, string message) result = await RegisterManager.SendRegisterRequest(userLogin, password);
             TargetRegisterResponseRpc(sender, result.isSuccess, result.message);

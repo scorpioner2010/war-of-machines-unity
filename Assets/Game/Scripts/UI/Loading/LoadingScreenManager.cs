@@ -56,7 +56,12 @@ namespace Game.Scripts.UI.Loading
             ShowLoading();
         }
 
-        private async void OnGameplayLoadEnd(SceneLoadEndEventArgs obj)
+        private void OnGameplayLoadEnd(SceneLoadEndEventArgs obj)
+        {
+            HandleGameplayLoadEndAsync().Forget();
+        }
+
+        private async UniTask HandleGameplayLoadEndAsync()
         {
             RobotView.Despawn();
             HideLoading();
@@ -73,7 +78,12 @@ namespace Game.Scripts.UI.Loading
             MenuManager.OpenMenu(MenuType.LoadScreen);
         }
 
-        public static async void HideLoading()
+        public static void HideLoading()
+        {
+            HideLoadingAsync().Forget();
+        }
+
+        private static async UniTask HideLoadingAsync()
         {
             await UniTask.Delay(1000);
             MenuManager.CloseMenu(MenuType.LoadScreen);

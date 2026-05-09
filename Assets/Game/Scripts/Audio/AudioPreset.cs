@@ -29,10 +29,25 @@ namespace Game.Scripts.Audio
             }
         }
 
-        public async void Play(AudionElement element)
+        public void Play(AudionElement element)
+        {
+            PlayAsync(element).Forget();
+        }
+
+        private async UniTask PlayAsync(AudionElement element)
         {
             _element = element;
+            if (_element == null || _element.clips == null || _element.clips.Length == 0)
+            {
+                return;
+            }
+
             AudioClip clip = _element.clips.RandomElement();
+            if (clip == null)
+            {
+                return;
+            }
+
             _source.clip = clip;
             _source.time = 0;
             _source.Stop();

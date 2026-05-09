@@ -49,11 +49,11 @@ namespace Game.Scripts.Gameplay.Robots
             if (IsOwner)
             {
                 playerRoot.Init();
-                SetNickNameProcess();
+                SetNickNameProcessAsync().Forget();
             }
         }
 
-        private async void SetNickNameProcess()
+        private async UniTask SetNickNameProcessAsync()
         {
             bool isActiveProcess = true;
 
@@ -75,6 +75,11 @@ namespace Game.Scripts.Gameplay.Robots
                 
                 if (allNicksSet)
                 {
+                    if (CameraSync.In == null || CameraSync.In.gameplayCamera == null)
+                    {
+                        return;
+                    }
+
                     Camera cam = CameraSync.In.gameplayCamera;
 
                     foreach (VehicleRoot root in players)

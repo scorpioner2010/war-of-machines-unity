@@ -1,5 +1,6 @@
 using FishNet.Connection;
 using FishNet.Object;
+using Cysharp.Threading.Tasks;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Services;
@@ -23,6 +24,11 @@ namespace Game.Scripts.API.ServerManagers
 
         public static void UpdateProfile()
         {
+            if (_in == null)
+            {
+                return;
+            }
+
             Loading.Show();
             _in.GetProfileServerRpc();
         }
@@ -35,10 +41,10 @@ namespace Game.Scripts.API.ServerManagers
                 return;
             }
 
-            RequestGetProfile(sender);
+            RequestGetProfileAsync(sender).Forget();
         }
 
-        private async void RequestGetProfile(NetworkConnection sender)
+        private async UniTask RequestGetProfileAsync(NetworkConnection sender)
         {
             string token = ServerPlayerSessions.GetToken(sender.ClientId);
             if (string.IsNullOrEmpty(token))
