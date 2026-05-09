@@ -36,6 +36,7 @@ namespace Game.Scripts.Networking.Lobby
         private UEScene _additiveServerScene;
         public int sceneOffsetX;
         private const float SceneValidationTimeout = 10f;
+        private const int EndGameDelayMilliseconds = 2000;
 
         private void Awake()
         {
@@ -434,8 +435,18 @@ namespace Game.Scripts.Networking.Lobby
         [TargetRpc]
         private void TargetShowEndGameRpc(NetworkConnection target, EndGameResult result)
         {
-            EndGameUI.Show(result);
+            ShowEndGameDelayed(result).Forget();
+        }
+
+        private async UniTask ShowEndGameDelayed(EndGameResult result)
+        {
+            await UniTask.Delay(EndGameDelayMilliseconds, cancellationToken: this.GetCancellationTokenOnDestroy());
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
             MenuManager.OpenMenu(MenuType.EndGame);
+            EndGameUI.Show(result);
         }
 
         [ObserversRpc]

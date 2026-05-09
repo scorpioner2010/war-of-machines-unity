@@ -18,8 +18,12 @@ namespace Game.Scripts.UI.Lobby
         private const string WinText = "WIN";
         private const string LoseText = "LOSE";
         private const string DrawText = "DRAW";
+        private static readonly Color WinColor = new Color(0.24f, 0.82f, 0.34f);
+        private static readonly Color LoseColor = new Color(0.92f, 0.18f, 0.18f);
+        private static readonly Color DrawColor = new Color(0.24f, 0.52f, 1f);
 
         private static EndGameUI _in;
+        private static EndGameResult? _pendingResult;
 
         [SerializeField] private TMP_Text status;
         [SerializeField] private Button okButton;
@@ -27,6 +31,11 @@ namespace Game.Scripts.UI.Lobby
         private void Awake()
         {
             _in = this;
+
+            if (_pendingResult.HasValue)
+            {
+                SetResult(_pendingResult.Value);
+            }
 
             if (okButton != null)
             {
@@ -44,6 +53,10 @@ namespace Game.Scripts.UI.Lobby
 
         public static void Show(EndGameResult result)
         {
+            _pendingResult = result;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
             if (_in == null)
             {
                 return;
@@ -59,14 +72,17 @@ namespace Game.Scripts.UI.Lobby
                 if (result == EndGameResult.Win)
                 {
                     status.text = WinText;
+                    status.color = WinColor;
                 }
                 else if (result == EndGameResult.Lose)
                 {
                     status.text = LoseText;
+                    status.color = LoseColor;
                 }
                 else
                 {
                     status.text = DrawText;
+                    status.color = DrawColor;
                 }
             }
         }
