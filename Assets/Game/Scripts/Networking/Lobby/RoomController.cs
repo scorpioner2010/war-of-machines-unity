@@ -27,7 +27,7 @@ namespace Game.Scripts.Networking.Lobby
 
             if (play != null)
             {
-                play.onClick.AddListener(CreateRoomOrJoin);
+                play.onClick.AddListener(FindMatch);
             }
 
             if (cancel != null)
@@ -58,7 +58,7 @@ namespace Game.Scripts.Networking.Lobby
             FindGame.UpdateInfo(time, players);
         }
 
-        public void CreateRoomOrJoin()
+        public void FindMatch()
         {
             if (lobbyManager == null)
             {
@@ -66,7 +66,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
-            lobbyManager.CreateRoomOrJoinServerRpc(ServerSettings.In.maxPlayersForFindRoom, currentMap.ToString(), info.Profile.username, info.ClientId);
+            lobbyManager.FindMatchServerRpc(ServerSettings.In.maxPlayersForFindRoom, currentMap.ToString(), info.Profile.username, info.ClientId);
             MenuManager.OpenMenu(MenuType.FindGame);
         }
 

@@ -11,7 +11,6 @@ namespace Game.Scripts.UI.MainMenu
 {
     public class MainMenu : MonoBehaviour
     {
-        [SerializeField] private Button customGameButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button developmentTreeButton;
 
@@ -29,12 +28,7 @@ namespace Game.Scripts.UI.MainMenu
         private void Awake()
         {
             In = this;
-            
-            customGameButton.onClick.AddListener(()=>
-            {
-                MenuManager.OpenMenu(MenuType.CustomLobby);
-            });
-            
+
             settingsButton.onClick.AddListener(()=>
             {
                 MenuManager.OpenMenu(MenuType.Settings);

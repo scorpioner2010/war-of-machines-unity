@@ -442,11 +442,6 @@ MonoBehaviour:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 970225866}
   _networkObjectCache: {fileID: 0}
-  createRoomButton: {fileID: 0}
-  backCreateButton: {fileID: 0}
-  lobbyUI: {fileID: 0}
-  backLobbyButton: {fileID: 0}
-  roomUI: {fileID: 0}
   serverRoomPrefab: {fileID: 7643747213992215950, guid: de2eb0703db8c714cb4e4e5cbc051803,
     type: 3}
 --- !u!4 &970225865

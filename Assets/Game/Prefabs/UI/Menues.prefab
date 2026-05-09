@@ -81,9 +81,6 @@ Transform:
   - {fileID: 2360654978349032960}
   - {fileID: 2267276540612041068}
   - {fileID: 8314288091260218536}
-  - {fileID: 2523014881974953463}
-  - {fileID: 5767216703150307405}
-  - {fileID: 7634987916864011525}
   - {fileID: 6760692964302645460}
   - {fileID: 4383091535250293116}
   - {fileID: 5933215573659074896}
@@ -237,55 +234,6 @@ MonoBehaviour:
   canvasGroup: {fileID: 0}
   hiddenPosition: {x: 0, y: -800}
   shownPosition: {x: 0, y: 0}
---- !u!1 &5306167728590301510
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7634987916864011525}
-  - component: {fileID: 3080437385138662259}
-  m_Layer: 0
-  m_Name: RoomUIPanel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7634987916864011525
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5306167728590301510}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3949691994319423052}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3080437385138662259
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5306167728590301510}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9274a647753e0243a879cef3c209868, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
 --- !u!1 &5825380966817008170
 GameObject:
   m_ObjectHideFlags: 0
@@ -335,55 +283,6 @@ MonoBehaviour:
   canvasGroup: {fileID: 0}
   hiddenPosition: {x: 0, y: -800}
   shownPosition: {x: 0, y: 0}
---- !u!1 &6177897647190168048
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5767216703150307405}
-  - component: {fileID: 2493809997311933704}
-  m_Layer: 0
-  m_Name: CreateRoomPanel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5767216703150307405
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6177897647190168048}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3949691994319423052}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2493809997311933704
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6177897647190168048}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9274a647753e0243a879cef3c209868, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
 --- !u!1 &6346952021289750434
 GameObject:
   m_ObjectHideFlags: 0
@@ -423,55 +322,6 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6346952021289750434}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9274a647753e0243a879cef3c209868, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
---- !u!1 &7910535105090619598
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2523014881974953463}
-  - component: {fileID: 4061944132755909143}
-  m_Layer: 0
-  m_Name: CustomLobbyPanel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2523014881974953463
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7910535105090619598}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3949691994319423052}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4061944132755909143
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7910535105090619598}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a9274a647753e0243a879cef3c209868, type: 3}

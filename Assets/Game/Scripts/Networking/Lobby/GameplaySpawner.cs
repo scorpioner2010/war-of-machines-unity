@@ -34,8 +34,6 @@ namespace Game.Scripts.Networking.Lobby
         public GameMaps[] scenes;
         public GameplayTimer gameplayTimerPrefab;
         
-        [SerializeField] private LobbyManager lobbyManager;
-
         private UEScene _additiveServerScene;
         public int sceneOffsetX;
         private const float SceneValidationTimeout = 10f;
@@ -200,10 +198,6 @@ namespace Game.Scripts.Networking.Lobby
             
             RequestPlayerDisconnectServerRpc(ClientManager.Connection.ClientId);
 
-            if (lobbyManager != null)
-            {
-                lobbyManager.RequestGetRoomList();
-            }
         }
 
         [ServerRpc(RequireOwnership = false)]

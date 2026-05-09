@@ -51,12 +51,6 @@ MonoBehaviour:
     controller: {fileID: 0}
   - type: 2
     controller: {fileID: 0}
-  - type: 4
-    controller: {fileID: 0}
-  - type: 5
-    controller: {fileID: 0}
-  - type: 6
-    controller: {fileID: 0}
   - type: 7
     controller: {fileID: 0}
   - type: 8

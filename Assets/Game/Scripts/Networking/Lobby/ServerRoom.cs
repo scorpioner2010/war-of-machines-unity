@@ -42,36 +42,17 @@ namespace Game.Scripts.Networking.Lobby
         {
             float currentTime = ServerSettings.In.findRoomSeconds;
             
-            while (currentTime > 0)
+            while (currentTime > 0 && !isInGame)
             {
                 await UniTask.Delay(1000);
                 currentTime--;
                 SyncedTimeOnChange(currentTime);
             }
 
-            int bots = maxPlayers - players.Count;
-
-            if (bots > 0)
+            if (!isInGame && players.Count > 0)
             {
                 OnTimeIsUp?.Invoke(this);
             }
-        }
-
-        public ClientRoom GetInfo()
-        {
-            return new ClientRoom
-            {
-                CreatedTime = CreatedTime,
-                selectedLocation = selectedLocation,
-                isAutoRoom = isAutoRoom,
-                roomName = roomName,
-                maxPlayers = maxPlayers,
-                roomId = roomId,
-                loadedSceneName = loadedSceneName,
-                players = players,
-                isInGame = isInGame,
-                handle = handle,
-            };
         }
         
         public void AddPlayer(Player player)

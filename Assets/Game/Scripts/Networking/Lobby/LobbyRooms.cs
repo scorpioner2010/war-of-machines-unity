@@ -109,6 +109,17 @@ namespace Game.Scripts.Networking.Lobby
                 Object.Destroy(serverRoom.gameObject);
             }
         }
+
+        public static void RemoveRoom(ServerRoom serverRoom)
+        {
+            if (serverRoom == null)
+            {
+                return;
+            }
+
+            Rooms.Remove(serverRoom.roomId);
+            Object.Destroy(serverRoom.gameObject);
+        }
         
         public static ServerRoom GetRoomByConnection(NetworkConnection conn)
         {
