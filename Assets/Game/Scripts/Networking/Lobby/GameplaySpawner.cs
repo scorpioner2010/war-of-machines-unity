@@ -25,7 +25,7 @@ namespace Game.Scripts.Networking.Lobby
 {
     public enum GameMaps
     {
-        Test = 0,
+        Map = 0,
     }
     
     public class GameplaySpawner : NetworkBehaviour
@@ -128,7 +128,11 @@ namespace Game.Scripts.Networking.Lobby
             UESceneManager.sceneLoaded += HandleClientSceneLoaded;
             SceneManager.OnLoadEnd += HandleClientLoadEnd;
             SceneManager.OnUnloadEnd += SceneManagerOnUnloadEnd;
-            GameplayGUI.In.pauseMenu.OnDisconnectPressed += ReturnToMainMenu;
+
+            if (GameplayGUI.In != null && GameplayGUI.In.pauseMenu != null)
+            {
+                GameplayGUI.In.pauseMenu.OnDisconnectPressed += ReturnToMainMenu;
+            }
         }
 
         public override void OnStopClient()
@@ -178,7 +182,12 @@ namespace Game.Scripts.Networking.Lobby
         public void ReturnToMainMenu()
         {
             RobotView.GenerateIcons();
-            MainMenu.In.SetActive(true);
+
+            if (MainMenu.In != null)
+            {
+                MainMenu.In.SetActive(true);
+            }
+
             MenuManager.CloseMenu(MenuType.GameplayHUD);
          
             foreach (VehicleRoot root in FindObjectsByType<VehicleRoot>(FindObjectsSortMode.None))
@@ -190,7 +199,11 @@ namespace Game.Scripts.Networking.Lobby
             }
             
             RequestPlayerDisconnectServerRpc(ClientManager.Connection.ClientId);
-            lobbyManager.RequestGetRoomList();
+
+            if (lobbyManager != null)
+            {
+                lobbyManager.RequestGetRoomList();
+            }
         }
 
         [ServerRpc(RequireOwnership = false)]

@@ -16,6 +16,16 @@ namespace Game.Scripts.Core.Services
             }
         }
 
+        public static bool TryRegister<T>(T service)
+        {
+            return Services.TryAdd(typeof(T), service);
+        }
+
+        public static bool IsRegistered<T>()
+        {
+            return Services.ContainsKey(typeof(T));
+        }
+
         public static T Get<T>()
         {
             Type type = typeof(T);

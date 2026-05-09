@@ -24,12 +24,25 @@ namespace Game.Scripts.Networking.Lobby
         private void Awake()
         {
             _in = this;
-            play.onClick.AddListener(CreateRoomOrJoin);
-            cancel.onClick.AddListener(Cancel);
+
+            if (play != null)
+            {
+                play.onClick.AddListener(CreateRoomOrJoin);
+            }
+
+            if (cancel != null)
+            {
+                cancel.onClick.AddListener(Cancel);
+            }
         }
         
         public static void UpdateTimer(float time, List<Player> players)
         {
+            if (_in == null)
+            {
+                return;
+            }
+
             foreach (Player player in players)
             {
                 if (player.isBot == false)
@@ -47,6 +60,11 @@ namespace Game.Scripts.Networking.Lobby
 
         public void CreateRoomOrJoin()
         {
+            if (lobbyManager == null)
+            {
+                return;
+            }
+
             IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
             lobbyManager.CreateRoomOrJoinServerRpc(ServerSettings.In.maxPlayersForFindRoom, currentMap.ToString(), info.Profile.username, info.ClientId);
             MenuManager.OpenMenu(MenuType.FindGame);
@@ -54,6 +72,11 @@ namespace Game.Scripts.Networking.Lobby
 
         public void Cancel()
         {
+            if (lobbyManager == null)
+            {
+                return;
+            }
+
             IPlayerClientInfo playerClientInfo = ServiceLocator.Get<IPlayerClientInfo>();
             lobbyManager.CancelFindRoomServerRpc(playerClientInfo.ClientId);
         }

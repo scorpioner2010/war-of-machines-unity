@@ -23,9 +23,20 @@ namespace Game.Scripts.Networking.Lobby
 
         private void Awake()
         {
-            createRoomButton.onClick.AddListener(OnCreateRoomClicked);
-            backCreateButton.onClick.AddListener(OnBackCreateClicked);
-            backLobbyButton.onClick.AddListener(OnBackLobbyClicked);
+            if (createRoomButton != null)
+            {
+                createRoomButton.onClick.AddListener(OnCreateRoomClicked);
+            }
+
+            if (backCreateButton != null)
+            {
+                backCreateButton.onClick.AddListener(OnBackCreateClicked);
+            }
+
+            if (backLobbyButton != null)
+            {
+                backLobbyButton.onClick.AddListener(OnBackLobbyClicked);
+            }
         }
 
         private void OnBackLobbyClicked()
@@ -68,7 +79,10 @@ namespace Game.Scripts.Networking.Lobby
         [TargetRpc]
         private void UpdateLobbyRoomsTargetRpc(NetworkConnection target, List<ClientRoom> roomList)
         {
-            lobbyUI.UpdateLobbyRooms(roomList);
+            if (lobbyUI != null)
+            {
+                lobbyUI.UpdateLobbyRooms(roomList);
+            }
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -285,19 +299,28 @@ namespace Game.Scripts.Networking.Lobby
         [TargetRpc]
         public void TargetRoomJoinedRpc(NetworkConnection target, ClientRoom clientRoom)
         {
-            lobbyUI.OnRoomJoined(clientRoom);
+            if (lobbyUI != null)
+            {
+                lobbyUI.OnRoomJoined(clientRoom);
+            }
         }
 
         [TargetRpc]
         public void TargetStartGameResponseRpc(NetworkConnection target)
         {
-            lobbyUI.HideRoomUI();
+            if (lobbyUI != null)
+            {
+                lobbyUI.HideRoomUI();
+            }
         }
 
         [TargetRpc]
         public void TargetJoinRoomResponseRpc(NetworkConnection target, bool success, string errorMessage, ClientRoom clientRoom)
         {
-            lobbyUI.OnJoinRoomResponse(success, errorMessage, clientRoom);
+            if (lobbyUI != null)
+            {
+                lobbyUI.OnJoinRoomResponse(success, errorMessage, clientRoom);
+            }
         }
 
         public void UpdateLobbyRooms()
@@ -308,7 +331,10 @@ namespace Game.Scripts.Networking.Lobby
         [ObserversRpc]
         private void UpdateLobbyRoomsObserversRpc(List<ClientRoom> rooms)
         {
-            lobbyUI.UpdateLobbyRooms(rooms);
+            if (lobbyUI != null)
+            {
+                lobbyUI.UpdateLobbyRooms(rooms);
+            }
         }
 
         private void UpdateCountPlayerInRoom(ServerRoom serverRoom)
@@ -319,7 +345,10 @@ namespace Game.Scripts.Networking.Lobby
         [ObserversRpc]
         private void UpdateCountPlayerObserversRpc(ClientRoom clientRoom)
         {
-            roomUI.UpdateCountPlayerInRoom(clientRoom);
+            if (roomUI != null)
+            {
+                roomUI.UpdateCountPlayerInRoom(clientRoom);
+            }
         }
 
         private List<ClientRoom> GetOpenRoomInfos()

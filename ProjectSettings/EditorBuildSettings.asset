@@ -6,10 +6,13 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Game/Scenes/Lobby.unity
+    path: Assets/Game/Scenes/Client.unity
     guid: b813628accd629c458ee2dc6cbfb55d9
   - enabled: 1
-    path: Assets/Game/Scenes/Test.unity
+    path: Assets/Game/Scenes/Server.unity
+    guid: cbc98448b3060534490c89572f65107a
+  - enabled: 1
+    path: Assets/Game/Scenes/Map.unity
     guid: ba87aff19da38454ebe9cac99a971e44
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

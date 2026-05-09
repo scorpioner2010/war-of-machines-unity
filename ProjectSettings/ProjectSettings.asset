@@ -581,7 +581,10 @@ PlayerSettings:
       m_Height: 720
       m_Kind: 1
       m_SubKind: 
-  m_BuildTargetBatching: []
+  m_BuildTargetBatching:
+  - m_BuildTarget: Standalone
+    m_StaticBatching: 1
+    m_DynamicBatching: 0
   m_BuildTargetShaderSettings: []
   m_BuildTargetGraphicsJobs: []
   m_BuildTargetGraphicsJobMode: []
@@ -898,8 +901,8 @@ PlayerSettings:
     PS4: DOTWEEN
     PS5: DOTWEEN
     QNX: DOTWEEN
-    Server: FISHNET;FISHNET_V4;EDGEGAP_PLUGIN_SERVERS
-    Standalone: FISHNET;FISHNET_V4;EDGEGAP_PLUGIN_SERVERS;DOTWEEN
+    Server: FISHNET;FISHNET_V4;EDGEGAP_PLUGIN_SERVERS;URP_COMPATIBILITY_MODE
+    Standalone: FISHNET;FISHNET_V4;EDGEGAP_PLUGIN_SERVERS;DOTWEEN;URP_COMPATIBILITY_MODE
     WebGL: DOTWEEN
     Windows Store Apps: DOTWEEN
     XboxOne: DOTWEEN
@@ -909,6 +912,7 @@ PlayerSettings:
   platformArchitecture: {}
   scriptingBackend:
     Android: 1
+    Server: 1
   il2cppCompilerConfiguration: {}
   il2cppCodeGeneration: {}
   il2cppStacktraceInformation: {}
