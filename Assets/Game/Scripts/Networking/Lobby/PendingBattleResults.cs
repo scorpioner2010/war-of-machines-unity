@@ -47,5 +47,25 @@ namespace Game.Scripts.Networking.Lobby
         {
             ResultsByUserId.Clear();
         }
+
+        public static int GetPendingUserCount()
+        {
+            return ResultsByUserId.Count;
+        }
+
+        public static int GetPendingResultCount()
+        {
+            int count = 0;
+
+            foreach (Queue<PlayerBattleResult> queue in ResultsByUserId.Values)
+            {
+                if (queue != null)
+                {
+                    count += queue.Count;
+                }
+            }
+
+            return count;
+        }
     }
 }

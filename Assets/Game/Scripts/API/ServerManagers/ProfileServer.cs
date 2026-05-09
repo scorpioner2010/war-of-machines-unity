@@ -66,14 +66,19 @@ namespace Game.Scripts.API.ServerManagers
         [TargetRpc]
         private void TargetRpcUpdateProfile(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
         {
-            Loading.Hide();
+            TargetRpcUpdateProfileAsync(target, success, errorMessage, profile).Forget();
+        }
 
+        private async UniTask TargetRpcUpdateProfileAsync(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
+        {
             if (success)
             {
                 IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
                 clientInfo.SetPlayerData(profile);
                 clientInfo.SetClientId(target.ClientId);
-                RobotView.GenerateIcons();
+
+                await RobotView.GenerateIconsAsync();
+
                 MainMenu.In.UpdatePlayerInfo(clientInfo.Profile);
                 developmentTree.Init();
 
@@ -86,6 +91,8 @@ namespace Game.Scripts.API.ServerManagers
             {
                 Popup.ShowText(errorMessage, Color.red);
             }
+
+            Loading.Hide();
         }
     }
 }

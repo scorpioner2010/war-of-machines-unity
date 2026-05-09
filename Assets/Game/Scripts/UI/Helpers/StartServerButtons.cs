@@ -19,6 +19,8 @@ namespace Game.Scripts.UI.Helpers
 
     public class StartServerButtons : MonoBehaviour
     {
+        public static string LastServerStatus { get; private set; } = "Server start not requested.";
+
         [SerializeField] private NetworkManager networkManager;
         [SerializeField] private Button connect;
         [SerializeField] private Button server;
@@ -32,6 +34,7 @@ namespace Game.Scripts.UI.Helpers
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
         private LocalConnectionState _serverState = LocalConnectionState.Stopped;
         private bool _clientInfoRegistered;
+        private bool _isStoppingConnections;
 
         private void Awake()
         {
@@ -66,6 +69,8 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnDestroy()
         {
+            StopNetworkConnections("destroy");
+
             if (connect != null)
             {
                 connect.onClick.RemoveListener(OnConnectClicked);
@@ -81,6 +86,11 @@ namespace Game.Scripts.UI.Helpers
                 networkManager.ClientManager.OnClientConnectionState -= OnClientConnectionState;
                 networkManager.ServerManager.OnServerConnectionState -= OnServerConnectionState;
             }
+        }
+
+        private void OnApplicationQuit()
+        {
+            StopNetworkConnections("application quit");
         }
 
         private IEnumerator AutoStart()
@@ -158,11 +168,13 @@ namespace Game.Scripts.UI.Helpers
         {
             if (networkManager == null)
             {
+                LastServerStatus = "Cannot start server: NetworkManager is not assigned.";
                 return;
             }
 
             if (_serverState != LocalConnectionState.Stopped)
             {
+                LastServerStatus = "Server start skipped: current state is " + _serverState + ".";
                 return;
             }
 
@@ -173,7 +185,8 @@ namespace Game.Scripts.UI.Helpers
 
             if (IsServerPortAvailable() == false)
             {
-                Debug.LogWarning($"Cannot start server because UDP port {GetServerPort()} is already in use. Use Connect in this window, or stop the other server first.");
+                LastServerStatus = "Cannot start server: UDP port " + GetServerPort() + " is already in use.";
+                Debug.LogWarning(LastServerStatus + " Use Connect in this window, or stop the other server first.");
                 if (server != null)
                 {
                     server.interactable = true;
@@ -183,11 +196,16 @@ namespace Game.Scripts.UI.Helpers
 
             if (networkManager.ServerManager.StartConnection() == false)
             {
+                LastServerStatus = "ServerManager.StartConnection returned false.";
                 if (server != null)
                 {
                     server.interactable = true;
                 }
+
+                return;
             }
+
+            LastServerStatus = "Server start requested.";
         }
 
         private void OnClientConnectionState(ClientConnectionStateArgs args)
@@ -212,9 +230,11 @@ namespace Game.Scripts.UI.Helpers
         private void OnServerConnectionState(ServerConnectionStateArgs args)
         {
             _serverState = args.ConnectionState;
+            LastServerStatus = "Server state: " + _serverState + ".";
 
             if (_serverState == LocalConnectionState.Started)
             {
+                LastServerStatus = "Server started.";
                 if (server != null)
                 {
                     server.interactable = false;
@@ -222,6 +242,7 @@ namespace Game.Scripts.UI.Helpers
             }
             else if (_serverState == LocalConnectionState.Stopped)
             {
+                LastServerStatus = "Server stopped.";
                 if (server != null)
                 {
                     server.interactable = true;
@@ -303,6 +324,28 @@ namespace Game.Scripts.UI.Helpers
         private ushort GetServerPort()
         {
             return networkManager.TransportManager.Transport.GetPort();
+        }
+
+        private void StopNetworkConnections(string reason)
+        {
+            if (_isStoppingConnections || networkManager == null)
+            {
+                return;
+            }
+
+            _isStoppingConnections = true;
+
+            if (networkManager.IsClientStarted)
+            {
+                networkManager.ClientManager.StopConnection();
+            }
+
+            if (networkManager.IsServerStarted)
+            {
+                networkManager.ServerManager.StopConnection(true);
+            }
+
+            LastServerStatus = "Network stopped on " + reason + ".";
         }
     }
 }

@@ -18,7 +18,6 @@ using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Screens;
 using NaughtyAttributes;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Game.Scripts.UI.MainMenu
 {
@@ -27,16 +26,23 @@ namespace Game.Scripts.UI.MainMenu
         public Transform spawnPosition;
         public GameObject rootSpawnPlace;
         public Transform vehicleContainer;
-        public VehicleButton vehicleButtonPrefab;
+        public VehicleSlotView vehicleSlotPrefab;
+        public VehicleItemView vehiclePrefab;
+        [SerializeField] private int unlockedVehicleSlots = 3;
 
         private VehicleRoot _vehicleRoot;
-        private readonly List<Button> _buttons = new List<Button>();
+        private readonly List<VehicleSlotView> _slots = new List<VehicleSlotView>();
 
         private static RobotView _in;
 
         private void Awake() => _in = this;
 
         public static void GenerateIcons()
+        {
+            GenerateIconsAsync().Forget();
+        }
+
+        public static async UniTask GenerateIconsAsync()
         {
             if (_in == null)
             {
@@ -46,39 +52,40 @@ namespace Game.Scripts.UI.MainMenu
             Despawn();
 
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-            if (clientInfo?.Profile == null || clientInfo.Profile.ownedVehicles == null || clientInfo.Profile.ownedVehicles.Length == 0)
+            if (clientInfo?.Profile == null)
             {
                 return;
             }
 
             OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
+            List<VehicleSlotVehicleData> vehicles = new List<VehicleSlotVehicleData>();
+
+            if (clientInfo.Profile.ownedVehicles != null)
+            {
+                foreach (OwnedVehicleDto vehicle in clientInfo.Profile.ownedVehicles)
+                {
+                    if (vehicle == null)
+                    {
+                        continue;
+                    }
+
+                    VehicleSlotVehicleData vehicleData = new VehicleSlotVehicleData();
+                    vehicleData.Icon = ResourceManager.GetIcon(vehicle.code);
+                    vehicleData.VehicleId = vehicle.vehicleId;
+                    vehicleData.IsSelected = selected != null && selected.vehicleId == vehicle.vehicleId;
+                    vehicleData.Name = vehicle.name;
+                    vehicles.Add(vehicleData);
+                }
+            }
+
+            vehicles.Sort(CompareByName);
+
+            BuildVehicleSlots(vehicles);
+
             if (selected == null)
             {
+                await UpdateUIAsync();
                 return;
-            }
-
-            List<RobotButtonData> list = new List<RobotButtonData>();
-
-            foreach (OwnedVehicleDto vehicle in clientInfo.Profile.ownedVehicles)
-            {
-                if (vehicle == null)
-                {
-                    continue;
-                }
-
-                RobotButtonData robotList = new RobotButtonData();
-                robotList.icon = ResourceManager.GetIcon(vehicle.code);
-                robotList.id = vehicle.vehicleId;
-                robotList.isSelected = selected.vehicleId == vehicle.vehicleId;
-                robotList.name = vehicle.name;
-                list.Add(robotList);
-            }
-
-            list.Sort(CompareByName);
-
-            foreach (RobotButtonData robotList in list)
-            {
-                MakeIcons(robotList.icon, robotList.isSelected, robotList.id);
             }
 
             VehicleRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
@@ -87,32 +94,59 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            Spawn(vehicleRoot);
-
-            UpdateUI();
+            await SpawnAsync(vehicleRoot);
+            await UpdateUIAsync();
         }
 
-        private static void MakeIcons(Sprite sprite, bool isSelect, int id)
+        private static void BuildVehicleSlots(List<VehicleSlotVehicleData> vehicles)
         {
-            VehicleButton button = Instantiate(_in.vehicleButtonPrefab, _in.vehicleContainer.transform);
-            button.vehicleImage.sprite = sprite;
-            button.isSelect.gameObject.SetActive(isSelect);
-
-            button.button.onClick.AddListener(() =>
+            if (_in.vehicleSlotPrefab == null)
             {
-                IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-                OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
+                Debug.LogWarning("Cannot build vehicle slots because VehicleSlot prefab is not assigned.");
+                return;
+            }
 
-                if (selected == null || id == selected.vehicleId)
+            int slotCount = _in.GetVisibleSlotCount(vehicles.Count);
+            for (int i = 0; i < slotCount; i++)
+            {
+                VehicleSlotView slot = Instantiate(_in.vehicleSlotPrefab, _in.vehicleContainer.transform);
+                slot.InitEmpty(i);
+                _in._slots.Add(slot);
+
+                if (i >= vehicles.Count)
                 {
-                    return;
+                    continue;
                 }
 
-                Helpers.Loading.Show();
-                _in.SelectVehicleServerRpc(id);
-            });
+                if (_in.vehiclePrefab == null)
+                {
+                    Debug.LogWarning("Cannot place vehicle in slot because Vehicle prefab is not assigned.");
+                    continue;
+                }
 
-            _in._buttons.Add(button.button);
+                VehicleItemView vehicle = Instantiate(_in.vehiclePrefab);
+                slot.PlaceVehicle(vehicle, vehicles[i], _in.OnVehicleSelected);
+            }
+        }
+
+        private int GetVisibleSlotCount(int vehicleCount)
+        {
+            int configuredSlots = Mathf.Max(0, unlockedVehicleSlots);
+            return Mathf.Max(configuredSlots, vehicleCount);
+        }
+
+        private void OnVehicleSelected(int id)
+        {
+            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+            OwnedVehicleDto selected = clientInfo?.Profile?.GetSelected();
+
+            if (selected == null || id == selected.vehicleId)
+            {
+                return;
+            }
+
+            Helpers.Loading.Show();
+            SelectVehicleServerRpc(id);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -149,10 +183,8 @@ namespace Game.Scripts.UI.MainMenu
             else
             {
                 Popup.ShowText(errorMessage, Color.red);
+                Helpers.Loading.Hide();
             }
-
-            UpdateUI();
-            Helpers.Loading.Hide();
         }
 
         [Button]
@@ -202,10 +234,10 @@ namespace Game.Scripts.UI.MainMenu
             _in._vehicleRoot.transform.rotation = _in.spawnPosition.rotation;
         }
 
-        private static int CompareByName(RobotButtonData left, RobotButtonData right)
+        private static int CompareByName(VehicleSlotVehicleData left, VehicleSlotVehicleData right)
         {
-            string leftName = left != null ? left.name : string.Empty;
-            string rightName = right != null ? right.name : string.Empty;
+            string leftName = left != null ? left.Name : string.Empty;
+            string rightName = right != null ? right.Name : string.Empty;
             return string.Compare(leftName, rightName, StringComparison.Ordinal);
         }
 
@@ -221,15 +253,15 @@ namespace Game.Scripts.UI.MainMenu
                 Destroy(_in._vehicleRoot.gameObject);
             }
 
-            foreach (Button button in _in._buttons)
+            foreach (VehicleSlotView slot in _in._slots)
             {
-                if (button != null)
+                if (slot != null)
                 {
-                    Destroy(button.gameObject);
+                    Destroy(slot.gameObject);
                 }
             }
 
-            _in._buttons.Clear();
+            _in._slots.Clear();
             _in.rootSpawnPlace.SetActive(false);
         }
 
@@ -253,12 +285,4 @@ namespace Game.Scripts.UI.MainMenu
         }
     }
 
-    [Serializable]
-    public class RobotButtonData
-    {
-        public string name;
-        public int id;
-        public Sprite icon;
-        public bool isSelected;
-    }
 }
