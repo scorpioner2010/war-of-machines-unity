@@ -6,7 +6,6 @@ namespace Game.Scripts.Server
     {
         public static ServerSettings In;
         
-        public bool isTestMode;
         public int maxPlayersForFindRoom = 1;
         public int findRoomSeconds = 60;
         

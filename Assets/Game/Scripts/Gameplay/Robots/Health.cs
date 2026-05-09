@@ -41,8 +41,6 @@ namespace Game.Scripts.Gameplay.Robots
         public float Current => _hp.Value;
         public bool IsDead => _dead.Value;
 
-        private void Awake() => _hp.OnChange += OnHpChanged;
-
         public override void OnStartServer()
         {
             _hp.Value = Mathf.Max(1f, maxHealth);
@@ -53,14 +51,6 @@ namespace Game.Scripts.Gameplay.Robots
         {
             // Узгодити стан колайдерів для лейт-джойнерів
             SetCollidersEnabled(!_dead.Value);
-        }
-
-        private void OnHpChanged(float prev, float next, bool asServer)
-        {
-            if (!IsServerInitialized)
-            {
-                //Debug.Log($"[Health:{name}][client] HP change {prev:0.##} -> {next:0.##}");
-            }
         }
 
         [Server]
@@ -75,14 +65,11 @@ namespace Game.Scripts.Gameplay.Robots
             float newHp = Mathf.Max(0f, old - dmg);
             _hp.Value = newHp;
 
-            //Debug.Log($"[Health:{name}] DAMAGE {dmg:0.##}  {old:0.##} -> {newHp:0.##}");
-
             DamagedObserversRpc(dmg, _hp.Value, maxHealth);
 
             if (_hp.Value <= 0f)
             {
                 _dead.Value = true;
-                //Debug.Log($"[Health:{name}] DEAD");
                 DeathServer();
             }
         }

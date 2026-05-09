@@ -302,7 +302,6 @@ namespace Game.Scripts.Networking.Lobby
         
         private void SpawnBot(ServerRoom serverRoom, Player player)
         {
-            // Bot spawning is not implemented in this demo yet.
             return;
         }
         

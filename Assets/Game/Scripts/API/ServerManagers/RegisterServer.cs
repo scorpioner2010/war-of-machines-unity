@@ -5,7 +5,6 @@ using FishNet.Object;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.MenuController;
-using Game.Scripts.Server;
 using Game.Scripts.UI.Helpers;
 using TMPro;
 using UnityEngine;
@@ -98,16 +97,7 @@ namespace NewDropDude.Script.API.ServerManagers
 
         private async void RequestLogin(string userLogin, string password, int clientID)
         {
-            (bool isSuccess, string message, string token) result;
-            
-            if (ServerSettings.In.isTestMode)
-            {
-                result = (true, "111", "222");
-            }
-            else
-            {
-                result = await RegisterManager.SendLoginRequest(userLogin, password);
-            }
+            (bool isSuccess, string message, string token) result = await RegisterManager.SendLoginRequest(userLogin, password);
             
             PlayerTokenInfo existing = PlayerTokenInfo.FirstOrDefault(p => p.id == clientID);
             

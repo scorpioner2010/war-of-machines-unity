@@ -5,8 +5,6 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public static class ServerHitResolver
     {
-        public static bool DebugShots = true;
-
         [Serializable]
         public struct HitResult
         {
@@ -99,18 +97,6 @@ namespace Game.Scripts.Gameplay.Robots
                     // No ArmorMap: treat it as a thin surface with full penetration.
                     hr.penetrated = true;
                     hr.damage = 100f;
-                }
-            }
-
-            if (DebugShots)
-            {
-                Color lineColor = !hr.hit ? Color.yellow : (hr.penetrated ? Color.green : Color.red);
-                Vector3 end = hr.hit ? hr.point : startPos + dir * maxCastDist;
-                Debug.DrawLine(startPos, end, lineColor, 2f);
-
-                if (hr.hit)
-                {
-                    Debug.DrawRay(hr.point, hr.normal * 0.8f, Color.cyan, 2f);
                 }
             }
 

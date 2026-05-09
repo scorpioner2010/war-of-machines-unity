@@ -2,19 +2,19 @@ using System;
 using Game.Scripts.Networking.Lobby;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Game.Scripts.UI.Lobby
 {
     public class RoomItemUI : MonoBehaviour
     {
-        public Sprite test;
+        [SerializeField]
+        private Sprite mapPreviewSprite;
         
         [SerializeField]
         private TMP_Text playerCountText;
         
-        [FormerlySerializedAs("roomData")] [SerializeField]
+        [SerializeField]
         private ClientRoom clientRoomData;
         
         [SerializeField]
@@ -35,9 +35,9 @@ namespace Game.Scripts.UI.Lobby
             clientRoomData = clientRoom;
             playerCountText.text = clientRoom.GetPlayerCountText();
 
-            if (clientRoom.selectedLocation == "Test")
+            if (clientRoom.selectedLocation == GameMaps.Map.ToString())
             {
-                location.sprite = test;
+                location.sprite = mapPreviewSprite;
             }
         }
 

@@ -181,7 +181,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef4a7260f68447c982c6fe3d676f196e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  test: {fileID: 21300000, guid: 5bfea610badf5ba4c81485b13d809d23, type: 3}
+  mapPreviewSprite: {fileID: 21300000, guid: 5bfea610badf5ba4c81485b13d809d23, type: 3}
   playerCountText: {fileID: 2002926375744991357}
   clientRoomData:
     roomId: 

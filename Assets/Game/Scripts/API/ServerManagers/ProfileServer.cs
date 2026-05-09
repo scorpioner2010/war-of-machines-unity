@@ -3,11 +3,9 @@ using FishNet.Connection;
 using FishNet.Object;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
-using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
 using Game.Scripts.Player.Data;
-using Game.Scripts.Server;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
 using Game.Scripts.UI.Tree;
@@ -49,53 +47,10 @@ namespace Game.Scripts.API.ServerManagers
             RequestGetProfile(clientId);
         }
 
-        private static PlayerProfile CreateTestProfile()
-        {
-            const int vehicleId = 1;
-            const string vehicleCode = "ia_l1_starter";
-            const string vehicleName = "Starter";
-
-            OwnedVehicleDto selectedVehicle = new OwnedVehicleDto
-            {
-                vehicleId = vehicleId,
-                code = vehicleCode,
-                name = vehicleName,
-                isActive = true,
-                xp = 0
-            };
-
-            return new PlayerProfile
-            {
-                id = vehicleId,
-                username = GameplayAssistant.GenerateName(10),
-                isAdmin = false,
-                mmr = 1000,
-                bolts = 1000,
-                adamant = 100,
-                freeXp = 500,
-                activeVehicleId = vehicleId,
-                activeVehicleCode = vehicleCode,
-                activeVehicleName = vehicleName,
-                ownedVehicles = new[]
-                {
-                    selectedVehicle
-                }
-            };
-        }
-
         private async void RequestGetProfile(int clientId)
         {
-            (bool isSuccess, string message, PlayerProfile profile) data;
             string token = RegisterServer.GetToken(clientId);
-
-            if (ServerSettings.In.isTestMode)
-            {
-                data = (true, "111", CreateTestProfile());
-            }
-            else
-            {
-                data = await PlayersManager.GetMyProfile(token);
-            }
+            (bool isSuccess, string message, PlayerProfile profile) data = await PlayersManager.GetMyProfile(token);
 
             NetworkConnection senderConn = ServerManager.Clients[clientId];
 

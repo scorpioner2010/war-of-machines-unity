@@ -51,7 +51,6 @@ namespace Game.Scripts.Core.Utils
             }
             catch (OperationCanceledException)
             {
-                //Debug.LogError("restore cancel");
             }
         }
     }

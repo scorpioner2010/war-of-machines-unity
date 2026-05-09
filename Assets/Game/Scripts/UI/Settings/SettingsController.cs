@@ -15,7 +15,7 @@ namespace Game.Scripts.UI.Settings
         public SettingsController(SettingsModel model)
         {
             _model = model;
-            _model.Load(); // Load from PlayerPrefs
+            _model.Load();
         }
         
         public void SetPostProcessingVolume(Volume volume)
@@ -23,14 +23,12 @@ namespace Game.Scripts.UI.Settings
             _postProcessingVolume = volume;
         }
 
-        // ------------------ GENERAL ------------------
         public void HandleLanguageChanged(int index)
         {
             _model.Language = GetLanguageByIndex(index);
         }
 
         
-        // ------------------ VIDEO --------------------
         public void HandleFullScreenChanged(int index)
         {
             _model.FullScreenIndex = index;
@@ -51,7 +49,6 @@ namespace Game.Scripts.UI.Settings
             _model.Gamma = value;
         }
 
-        // ------------------ SOUND --------------------
         public void HandleUiVolumeChanged(float value)
         {
             _model.UiVolume = value;
@@ -71,7 +68,6 @@ namespace Game.Scripts.UI.Settings
             PlayerPrefs.SetFloat("SFXVol", value);
         }
 
-        // ------------------ CONTROLS -----------------
         public void HandleMouseSensitivityChanged(float value)
         {
             _model.MouseSensitivity = value;
@@ -87,7 +83,6 @@ namespace Game.Scripts.UI.Settings
             _model.InvertYAxis = isOn;
         }
 
-        // Example methods for re-binding keys:
         public void HandleWalkKeyChanged(string newKey)
         {
             _model.WalkKey = newKey;
@@ -98,11 +93,8 @@ namespace Game.Scripts.UI.Settings
             _model.AttackKey = newKey;
         }
 
-        // ------------------ APPLY CHANGES ------------------
         public void ApplyChanges(SettingsView.TabType tabType)
         {
-            // 1) Save to PlayerPrefs
-            
             switch (tabType)
             {
                 case SettingsView.TabType.General:
@@ -110,28 +102,21 @@ namespace Game.Scripts.UI.Settings
                     break;
                 case SettingsView.TabType.Video:
                     _model.SaveVideo();
-                    // 2) Fullscreen
                     var fullScreenMode = (FullScreenMode)_model.FullScreenIndex;
 
-                    // 3) Resolution
                     Resolution[] resolutions = Screen.resolutions;
                     int chosenIndex = Mathf.Clamp(_model.ResolutionIndex, 0, resolutions.Length - 1);
                     Resolution chosenResolution = resolutions[chosenIndex];
                     Screen.SetResolution(chosenResolution.width, chosenResolution.height, fullScreenMode);
 
-                    // 4) Quality
                     QualitySettings.SetQualityLevel(_model.QualityIndex);
 
-                    // 5) Gamma
-                    // Option A: If using post-processing with ColorAdjustments
                     if (_postProcessingVolume != null &&
                         _postProcessingVolume.profile.TryGet(out ColorAdjustments colorAdjustments))
                     {
                         float postExposure = Mathf.Log(_model.Gamma);
                         colorAdjustments.postExposure.Override(postExposure);
                     }
-                    // Option B: Simple ambient light hack (less accurate):
-                    // RenderSettings.ambientLight = Color.white * _model.Gamma;
                     
                     break;
                 case SettingsView.TabType.Sounds:
@@ -149,7 +134,6 @@ namespace Game.Scripts.UI.Settings
 
         }
 
-        // Example helper to map language index to string
         private string GetLanguageByIndex(int index)
         {
             switch (index)
