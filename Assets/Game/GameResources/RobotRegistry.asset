@@ -22,15 +22,15 @@ MonoBehaviour:
       type: 3}
     icon: {fileID: 21300000, guid: 6ebfe44f9956af54d8430024bb3fc86a, type: 3}
   - code: ia_l2_scout
-    prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
+    prefab: {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
   - code: ia_l2_guardian
-    prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
+    prefab: {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
   - code: ia_l2_colossus
-    prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
+    prefab: {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
   - code: nv_l2_scout
