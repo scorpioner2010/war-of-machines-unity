@@ -4,7 +4,6 @@ using FishNet.Object;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
 using Game.Scripts.Player.Data;
-using Game.Scripts.Server;
 using Game.Scripts.UI.Lobby;
 using UnityEngine;
 using UnityEngine.UI;
@@ -66,7 +65,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
-            lobbyManager.FindMatchServerRpc(ServerSettings.In.maxPlayersForFindRoom, currentMap.ToString(), info.Profile.username, info.ClientId);
+            lobbyManager.FindMatchServerRpc(currentMap.ToString(), info.Profile.username, info.ClientId);
             MenuManager.OpenMenu(MenuType.FindGame);
         }
 

@@ -314,12 +314,18 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene);
-            if (spawnPoint == null)
+            Player player = serverRoom.GetPlayerByConnection(connection);
+            if (player == null)
             {
                 return;
             }
 
+            SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene, player.team);
+            if (spawnPoint == null)
+            {
+                return;
+            }
+            
             PlayerProfile profile = ProfileServer.GetProfileByClientId(connection.ClientId);
             if (profile == null)
             {
@@ -332,17 +338,11 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            VehicleRoot vehicleRoot = Instantiate(vehicle, spawnPoint.transform.position, Quaternion.identity);
+            VehicleRoot vehicleRoot = Instantiate(vehicle, spawnPoint.transform.position, spawnPoint.transform.rotation);
             ServerManager.Spawn(vehicleRoot.networkObject, connection, _additiveServerScene);
-            
-            Player player = serverRoom.GetPlayerByConnection(connection);
-            if (player == null)
-            {
-                return;
-            }
 
             player.playerRoot = vehicleRoot;
-            player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, _additiveServerScene);
+            player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, player.team, _additiveServerScene);
         }
 
         [ObserversRpc]

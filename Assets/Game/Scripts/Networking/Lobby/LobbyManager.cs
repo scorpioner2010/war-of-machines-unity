@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
+using Game.Scripts.API.Models;
+using Game.Scripts.API.ServerManagers;
 using Game.Scripts.MenuController;
+using Game.Scripts.Server;
 using UnityEngine;
 
 namespace Game.Scripts.Networking.Lobby
@@ -12,8 +15,14 @@ namespace Game.Scripts.Networking.Lobby
     {
         [SerializeField] private ServerRoom serverRoomPrefab;
 
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            RequestServerSettingsServerRpc();
+        }
+
         [ServerRpc(RequireOwnership = false)]
-        public void FindMatchServerRpc(int maxPlayers, string selectedLocation, string loginName, int senderId)
+        public void FindMatchServerRpc(string selectedLocation, string loginName, int senderId)
         {
             Player player = CreatePlayer(loginName, senderId);
             if (player.Connection == null)
@@ -24,7 +33,7 @@ namespace Game.Scripts.Networking.Lobby
             ServerRoom room = LobbyRooms.GetNotFullAutoRoom();
             if (room == null)
             {
-                room = CreateMatchmakingRoom(maxPlayers, selectedLocation);
+                room = CreateMatchmakingRoom(selectedLocation);
                 LobbyRooms.AddRoom(room);
                 room.OnTimeIsUp += StartGame;
                 room.RunTimerAsync();
@@ -36,6 +45,23 @@ namespace Game.Scripts.Networking.Lobby
             {
                 StartGame(room);
             }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestServerSettingsServerRpc(NetworkConnection sender = null)
+        {
+            if (sender == null)
+            {
+                return;
+            }
+
+            TargetServerSettingsRpc(sender, ServerSettings.GetMaxPlayersForFindRoom(), ServerSettings.GetFindRoomSeconds());
+        }
+
+        [TargetRpc]
+        private void TargetServerSettingsRpc(NetworkConnection target, int maxPlayersForFindRoom, int findRoomSeconds)
+        {
+            RemoteServerSettings.Apply(maxPlayersForFindRoom, findRoomSeconds);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -75,6 +101,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             room.isInGame = true;
+            room.AssignTeams();
             LoadScene(room, connections);
         }
 
@@ -147,18 +174,28 @@ namespace Game.Scripts.Networking.Lobby
 
         private Player CreatePlayer(string loginName, int senderId)
         {
+            PlayerProfile profile = ProfileServer.GetProfileByClientId(senderId);
+            string resolvedLoginName = loginName;
+            if (profile != null && string.IsNullOrEmpty(resolvedLoginName))
+            {
+                resolvedLoginName = profile.username;
+            }
+
             return new Player
             {
-                loginName = loginName,
-                Connection = GetConnectionOrNull(senderId)
+                loginName = resolvedLoginName,
+                Connection = GetConnectionOrNull(senderId),
+                userId = profile != null ? profile.id : 0,
+                mmr = profile != null ? profile.mmr : 1000,
+                team = MatchTeam.None
             };
         }
 
-        private ServerRoom CreateMatchmakingRoom(int maxPlayers, string selectedLocation)
+        private ServerRoom CreateMatchmakingRoom(string selectedLocation)
         {
             ServerRoom room = Instantiate(serverRoomPrefab, transform);
             room.roomId = Guid.NewGuid().ToString();
-            room.maxPlayers = maxPlayers;
+            room.maxPlayers = ServerSettings.GetMaxPlayersForFindRoom();
             room.selectedLocation = selectedLocation;
             room.isAutoRoom = true;
             return room;

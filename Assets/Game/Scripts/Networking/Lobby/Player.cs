@@ -10,6 +10,9 @@ namespace Game.Scripts.Networking.Lobby
         public string loginName;
         public NetworkConnection Connection;
         public VehicleRoot playerRoot;
+        public int userId;
+        public int mmr;
+        public MatchTeam team;
         public bool isBot;
         public bool randomPlayerConnected; //for random game
     }

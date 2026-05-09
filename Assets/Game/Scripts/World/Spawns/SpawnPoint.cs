@@ -32,16 +32,31 @@ namespace Game.Scripts.World.Spawns
 
         public static SpawnPoint GetFreePoint(Scene scene)
         {
+            return GetFreePoint(scene, MatchTeam.None);
+        }
+
+        public static SpawnPoint GetFreePoint(Scene scene, MatchTeam team)
+        {
             List<SpawnPoint> allPoints = GameplaySpawner.FindObjectsInScene<SpawnPoint>(scene);
-            List<SpawnPoint> freePoints = new();
+            List<SpawnPoint> preferredPoints = new List<SpawnPoint>();
+            List<SpawnPoint> fallbackPoints = new List<SpawnPoint>();
 
             foreach (SpawnPoint point in allPoints)
             {
-                if (point.IsNotFree.Value == false)
+                if (point == null || point.IsNotFree.Value)
                 {
-                    freePoints.Add(point);
+                    continue;
+                }
+
+                fallbackPoints.Add(point);
+
+                if (team == MatchTeam.None || point.BelongsToTeam(team))
+                {
+                    preferredPoints.Add(point);
                 }
             }
+
+            List<SpawnPoint> freePoints = preferredPoints.Count > 0 ? preferredPoints : fallbackPoints;
             
             SpawnPoint random = freePoints.RandomElement();
 
@@ -51,6 +66,32 @@ namespace Game.Scripts.World.Spawns
             }
             
             return random;
+        }
+
+        private bool BelongsToTeam(MatchTeam team)
+        {
+            return GetTeamFromHierarchy() == team;
+        }
+
+        private MatchTeam GetTeamFromHierarchy()
+        {
+            Transform current = transform;
+            while (current != null)
+            {
+                if (current.name.IndexOf("Red", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return MatchTeam.Red;
+                }
+
+                if (current.name.IndexOf("Blue", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return MatchTeam.Blue;
+                }
+
+                current = current.parent;
+            }
+
+            return MatchTeam.None;
         }
     }
 }

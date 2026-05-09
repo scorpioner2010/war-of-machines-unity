@@ -4,6 +4,7 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Game.Script.Player.UI;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Player.Data;
 using UnityEngine;
 using UEScene = UnityEngine.SceneManagement.Scene;
@@ -24,17 +25,19 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly SyncVar<int> _amountPlayersInRoom = new ();
         public readonly SyncVar<string> LoginName = new ("");
         public readonly SyncVar<PlayerType> PlayerType = new(Robots.PlayerType.None);
+        public readonly SyncVar<MatchTeam> Team = new(MatchTeam.None);
         
 
         public UEScene currentScene;
 
         [Server]
-        public void ServerInit(int amountPlayersInRoom, PlayerType playerType, string loginName, UEScene scene)
+        public void ServerInit(int amountPlayersInRoom, PlayerType playerType, string loginName, MatchTeam team, UEScene scene)
         {
             currentScene = scene;
             _amountPlayersInRoom.Value = amountPlayersInRoom;
             PlayerType.Value = playerType;
             LoginName.Value = loginName;
+            Team.Value = team;
         }
 
         public override void OnStartServer()

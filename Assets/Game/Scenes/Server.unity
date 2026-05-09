@@ -171,7 +171,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
+  m_Children: []
   m_Father: {fileID: 1751021264}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &33324101
@@ -326,21 +326,6 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
---- !u!115 &391450158
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: TMP_InputField
-  m_Namespace: TMPro
-  m_AssemblyName: Unity.TextMeshPro
 --- !u!1001 &425672388
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -556,7 +541,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _componentIndexCache: 255
-  _addedNetworkObject: {fileID: 0}
+  _addedNetworkObject: {fileID: 1171468201}
   _networkObjectCache: {fileID: 0}
   animationPanel: {fileID: 0}
   fractionTreePrefab: {fileID: 6962090755101031679, guid: 91b8e8671b7ceb74a876ececa1e7d9ca,
@@ -689,7 +674,6 @@ MonoBehaviour:
   scenes: 00000000
   gameplayTimerPrefab: {fileID: 5805746888609840445, guid: 91566732414fc37489fd74a6230dc973,
     type: 3}
-  lobbyManager: {fileID: 970225864}
   sceneOffsetX: 0
 --- !u!4 &1510332973
 Transform:
@@ -920,8 +904,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da7d804b5d3773e47b81d159d7e65980, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPlayersForFindRoom: 5
-  findRoomSeconds: 1
+  maxPlayersForFindRoom: 20
+  findRoomSeconds: 10
 --- !u!4 &2068572094
 Transform:
   m_ObjectHideFlags: 0

@@ -20,7 +20,7 @@ namespace Game.Scripts.UI.Lobby
         public static void UpdateInfo(float time, int players)
         {
             _in.timer.text = GameplayAssistant.ConvertToTime(time);
-            _in.players.text = players + "/" + ServerSettings.In.maxPlayersForFindRoom;
+            _in.players.text = players + "/" + RemoteServerSettings.MaxPlayersForFindRoom;
         }
     }
 }
