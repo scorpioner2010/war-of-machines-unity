@@ -76,6 +76,21 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [Server]
+        public void ServerKill()
+        {
+            if (!IsServerInitialized || _dead.Value)
+            {
+                return;
+            }
+
+            float old = _hp.Value;
+            _hp.Value = 0f;
+            DamagedObserversRpc(old, _hp.Value, maxHealth);
+            _dead.Value = true;
+            DeathServer();
+        }
+
+        [Server]
         private void DeathServer()
         {
             SetCollidersEnabled(false);

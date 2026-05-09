@@ -6,6 +6,7 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
+using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Gameplay.Robots;
@@ -37,6 +38,19 @@ namespace Game.Scripts.Networking.Lobby
         public int sceneOffsetX;
         private const float SceneValidationTimeout = 10f;
         private const int EndGameDelayMilliseconds = 2000;
+        private static readonly Dictionary<int, Queue<PendingGameResult>> PendingResultsByUserId = new Dictionary<int, Queue<PendingGameResult>>();
+
+        private struct PendingGameResult
+        {
+            public string RoomId;
+            public string Result;
+            public int Kills;
+            public int Damage;
+            public int XpEarned;
+            public int Bolts;
+            public int FreeXp;
+            public int MmrDelta;
+        }
 
         private void Awake()
         {
@@ -63,20 +77,29 @@ namespace Game.Scripts.Networking.Lobby
         {
             if (args.ConnectionState == RemoteConnectionState.Stopped)
             {
-                ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(conn);
-                if (serverRoom == null)
+                List<ServerRoom> rooms = LobbyRooms.GetRoomsByConnection(conn);
+                for (int i = 0; i < rooms.Count; i++)
                 {
-                    return;
+                    ServerRoom serverRoom = rooms[i];
+                    if (serverRoom == null)
+                    {
+                        continue;
+                    }
+                
+                    Player player = serverRoom.GetPlayers().Find(x => x.Connection == conn);
+                    if (player == null)
+                    {
+                        continue;
+                    }
+
+                    if (serverRoom.isInGame && !serverRoom.matchRewardsSent)
+                    {
+                        AbandonPlayer(serverRoom, player);
+                        continue;
+                    }
+
+                    LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
                 }
-                
-                Player player = serverRoom.GetPlayers().Find(x => x.Connection == conn);
-                
-                if (player == null)
-                {
-                    return;
-                }
-                
-                LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
             }
         }
 
@@ -197,7 +220,18 @@ namespace Game.Scripts.Networking.Lobby
             }
             
             RequestPlayerDisconnectServerRpc(ClientManager.Connection.ClientId);
+            EnsureMainMenuAfterDisconnect().Forget();
 
+        }
+
+        private async UniTask EnsureMainMenuAfterDisconnect()
+        {
+            await UniTask.Delay(1200);
+
+            if (MenuManager.CurrentType == MenuType.LoadScreen)
+            {
+                MenuManager.OpenMenu(MenuType.MainMenu);
+            }
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -216,11 +250,48 @@ namespace Game.Scripts.Networking.Lobby
             
                 if (player != null)
                 {
+                    if (serverRoom.isInGame && !serverRoom.matchRewardsSent)
+                    {
+                        AbandonPlayer(serverRoom, player);
+                        SceneManager.UnloadConnectionScenes(conn, new SceneUnloadData(serverRoom.loadedSceneName));
+                        return;
+                    }
+
                     SceneManager.UnloadConnectionScenes(conn, new SceneUnloadData(serverRoom.loadedSceneName));
+
                     LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
-                    Despawn(player.playerRoot.networkObject);
+
+                    if (player.playerRoot != null && player.playerRoot.networkObject != null)
+                    {
+                        Despawn(player.playerRoot.networkObject);
+                    }
                 }
             }
+        }
+
+        [Server]
+        private void AbandonPlayer(ServerRoom serverRoom, Player player)
+        {
+            if (serverRoom == null || player == null || player.leftBattle)
+            {
+                return;
+            }
+
+            player.leftBattle = true;
+            player.battleResult = "lose";
+
+            if (player.playerRoot != null && player.playerRoot.inputManager != null)
+            {
+                player.playerRoot.inputManager.SetControlsBlocked(true);
+            }
+
+            if (player.playerRoot != null && player.playerRoot.health != null && !player.playerRoot.health.IsDead)
+            {
+                player.playerRoot.health.ServerKill();
+            }
+
+            player.Connection = null;
+            EvaluateBattleEnd(serverRoom);
         }
 
         private bool IsValidScene(UEScene scene) => scene.IsValid() && scenes.Any(k => scene.name.Contains(k.ToString()));
@@ -290,6 +361,7 @@ namespace Game.Scripts.Networking.Lobby
         private void SpawnTimer(ServerRoom serverRoom)
         {
             GameplayTimer timer = Instantiate(gameplayTimerPrefab, Vector3.zero, Quaternion.identity);
+            timer.serverRoom = serverRoom;
             ServerManager.Spawn(timer.networkObject, LocalConnection, _additiveServerScene);
             serverRoom.gameplayTimer =  timer;
         }
@@ -349,6 +421,12 @@ namespace Game.Scripts.Networking.Lobby
         [Server]
         private void HandleRobotDeath(ServerRoom serverRoom)
         {
+            EvaluateBattleEnd(serverRoom);
+        }
+
+        [Server]
+        private void EvaluateBattleEnd(ServerRoom serverRoom)
+        {
             if (serverRoom == null || serverRoom.isGameFinished)
             {
                 return;
@@ -366,7 +444,7 @@ namespace Game.Scripts.Networking.Lobby
                     continue;
                 }
 
-                if (!player.playerRoot.health.IsDead)
+                if (!player.leftBattle && !player.playerRoot.health.IsDead)
                 {
                     aliveRobots++;
                     if (player.team == MatchTeam.Red)
@@ -404,24 +482,102 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
+            FinishBattle(serverRoom, winnerTeam, isDraw);
+        }
+
+        [Server]
+        public void HandleTimeExpired(ServerRoom serverRoom)
+        {
+            if (serverRoom == null || serverRoom.isGameFinished)
+            {
+                return;
+            }
+
+            FinishBattle(serverRoom, MatchTeam.None, true);
+        }
+
+        [Server]
+        public void RecordHitStats(VehicleRoot attackerRoot, VehicleRoot targetRoot, float damage, bool killed)
+        {
+            if (attackerRoot == null || damage <= 0f)
+            {
+                return;
+            }
+
+            ServerRoom serverRoom = GetRoomByVehicle(attackerRoot);
+            if (serverRoom == null || serverRoom.isGameFinished)
+            {
+                return;
+            }
+
+            Player attacker = serverRoom.GetPlayers().Find(p => p != null && p.playerRoot == attackerRoot);
+            if (attacker == null)
+            {
+                return;
+            }
+
+            attacker.damage = Mathf.Clamp(attacker.damage + Mathf.RoundToInt(damage), 0, 20000);
+
+            if (!killed || targetRoot == null || targetRoot == attackerRoot)
+            {
+                return;
+            }
+
+            Player target = serverRoom.GetPlayers().Find(p => p != null && p.playerRoot == targetRoot);
+            if (target != null)
+            {
+                attacker.kills = Mathf.Clamp(attacker.kills + 1, 0, 20);
+            }
+        }
+
+        private static ServerRoom GetRoomByVehicle(VehicleRoot root)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            {
+                foreach (Player player in room.GetPlayers())
+                {
+                    if (player != null && player.playerRoot == root)
+                    {
+                        return room;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        [Server]
+        private void FinishBattle(ServerRoom serverRoom, MatchTeam winnerTeam, bool isDraw)
+        {
+            if (serverRoom == null || serverRoom.isGameFinished)
+            {
+                return;
+            }
+
             serverRoom.isGameFinished = true;
 
             foreach (Player player in serverRoom.GetPlayers())
             {
-                if (!ShouldReceiveEndGame(player))
+                if (player == null || player.isBot)
                 {
                     continue;
                 }
 
-                EndGameResult result = EndGameResult.Draw;
+                EndGameResult result = GetEndGameResult(player, winnerTeam, isDraw);
+                player.battleResult = ToApiResult(result);
 
-                if (!isDraw)
+                if (ShouldReceiveEndGame(player))
                 {
-                    result = player.team == winnerTeam ? EndGameResult.Win : EndGameResult.Lose;
+                    TargetShowEndGameRpc(player.Connection, result);
                 }
-
-                TargetShowEndGameRpc(player.Connection, result);
             }
+
+            SubmitBattleResults(serverRoom).Forget();
         }
 
         private static bool ShouldReceiveEndGame(Player player)
@@ -429,13 +585,288 @@ namespace Game.Scripts.Networking.Lobby
             return player != null
                    && !player.isBot
                    && player.Connection != null
+                   && !player.leftBattle
                    && player.playerRoot != null;
+        }
+
+        private static EndGameResult GetEndGameResult(Player player, MatchTeam winnerTeam, bool isDraw)
+        {
+            if (player != null && player.leftBattle)
+            {
+                return EndGameResult.Lose;
+            }
+
+            if (isDraw)
+            {
+                return EndGameResult.Draw;
+            }
+
+            return player.team == winnerTeam ? EndGameResult.Win : EndGameResult.Lose;
+        }
+
+        private static string ToApiResult(EndGameResult result)
+        {
+            if (result == EndGameResult.Win)
+            {
+                return "win";
+            }
+
+            if (result == EndGameResult.Draw)
+            {
+                return "draw";
+            }
+
+            return "lose";
+        }
+
+        private async UniTask SubmitBattleResults(ServerRoom serverRoom)
+        {
+            if (serverRoom == null || serverRoom.matchEndSubmitted)
+            {
+                return;
+            }
+
+            serverRoom.matchEndSubmitted = true;
+
+            ParticipantInput[] participants = BuildParticipantInputs(serverRoom);
+            string token = serverRoom.GetApiToken();
+            MatchParticipantView[] rewardItems = Array.Empty<MatchParticipantView>();
+
+            if (serverRoom.matchId <= 0 && !string.IsNullOrEmpty(token))
+            {
+                (bool started, _, int matchId) = await MatchesManager.StartMatch(serverRoom.selectedLocation, token);
+                if (started)
+                {
+                    serverRoom.matchId = matchId;
+                }
+            }
+
+            if (serverRoom.matchId > 0 && !string.IsNullOrEmpty(token) && participants.Length > 0)
+            {
+                (bool isSuccess, _, EndMatchResponse response) = await MatchesManager.EndMatch(serverRoom.matchId, participants, token);
+
+                if (isSuccess && response != null && response.participants != null)
+                {
+                    rewardItems = response.participants;
+                }
+                else if (isSuccess)
+                {
+                    (bool loaded, _, MatchParticipantView[] items) = await MatchesManager.GetParticipants(serverRoom.matchId, token);
+                    if (loaded && items != null)
+                    {
+                        rewardItems = items;
+                    }
+                }
+            }
+
+            foreach (Player player in serverRoom.GetPlayers())
+            {
+                if (player == null || player.isBot)
+                {
+                    continue;
+                }
+
+                NetworkConnection resultConnection = player.Connection;
+                if (resultConnection == null)
+                {
+                    resultConnection = ServerPlayerSessions.GetConnectionByUserId(player.userId);
+                }
+
+                MatchParticipantView reward = FindReward(player.userId, rewardItems);
+                int xpEarned = reward != null ? reward.xpEarned : 0;
+                int bolts = reward != null ? reward.bolts : 0;
+                int freeXp = reward != null ? reward.freeXp : 0;
+                int mmrDelta = reward != null ? reward.mmrDelta : 0;
+
+                if (resultConnection == null)
+                {
+                    StorePendingResult(
+                        player.userId,
+                        serverRoom.roomId,
+                        player.battleResult,
+                        player.kills,
+                        player.damage,
+                        xpEarned,
+                        bolts,
+                        freeXp,
+                        mmrDelta
+                    );
+                    continue;
+                }
+
+                TargetShowGameResultRpc(
+                    resultConnection,
+                    serverRoom.roomId,
+                    player.battleResult,
+                    player.kills,
+                    player.damage,
+                    xpEarned,
+                    bolts,
+                    freeXp,
+                    mmrDelta
+                );
+            }
+
+            serverRoom.matchRewardsSent = true;
+        }
+
+        private static void StorePendingResult(
+            int userId,
+            string roomId,
+            string result,
+            int kills,
+            int damage,
+            int xpEarned,
+            int bolts,
+            int freeXp,
+            int mmrDelta)
+        {
+            if (userId <= 0)
+            {
+                return;
+            }
+
+            if (!PendingResultsByUserId.TryGetValue(userId, out Queue<PendingGameResult> queue))
+            {
+                queue = new Queue<PendingGameResult>();
+                PendingResultsByUserId[userId] = queue;
+            }
+
+            queue.Enqueue(new PendingGameResult
+            {
+                RoomId = roomId,
+                Result = result,
+                Kills = kills,
+                Damage = damage,
+                XpEarned = xpEarned,
+                Bolts = bolts,
+                FreeXp = freeXp,
+                MmrDelta = mmrDelta
+            });
+        }
+
+        private static ParticipantInput[] BuildParticipantInputs(ServerRoom serverRoom)
+        {
+            List<ParticipantInput> participants = new List<ParticipantInput>();
+
+            foreach (Player player in serverRoom.GetPlayers())
+            {
+                if (player == null || player.isBot || player.userId <= 0)
+                {
+                    continue;
+                }
+
+                ParticipantInput participant = new ParticipantInput
+                {
+                    userId = player.userId,
+                    vehicleId = player.activeVehicleId,
+                    team = (int)player.team,
+                    result = string.IsNullOrEmpty(player.battleResult) ? "lose" : player.battleResult,
+                    kills = Mathf.Clamp(player.kills, 0, 20),
+                    damage = Mathf.Clamp(player.damage, 0, 20000)
+                };
+
+                participants.Add(participant);
+            }
+
+            return participants.ToArray();
+        }
+
+        private static MatchParticipantView FindReward(int userId, MatchParticipantView[] rewards)
+        {
+            if (rewards == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < rewards.Length; i++)
+            {
+                MatchParticipantView reward = rewards[i];
+                if (reward != null && reward.userId == userId)
+                {
+                    return reward;
+                }
+            }
+
+            return null;
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void ConfirmGameResultReceivedServerRpc(string roomId, NetworkConnection sender = null)
+        {
+            if (sender == null)
+            {
+                return;
+            }
+
+            ServerRoom serverRoom = LobbyRooms.GetRoomById(roomId);
+            if (serverRoom == null || !serverRoom.matchRewardsSent)
+            {
+                return;
+            }
+
+            int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
+            Player player = serverRoom.GetPlayerByUserId(userId);
+            if (player == null)
+            {
+                return;
+            }
+
+            LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void RequestPendingGameResultsServerRpc(NetworkConnection sender = null)
+        {
+            if (sender == null)
+            {
+                return;
+            }
+
+            int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
+            if (userId <= 0 || !PendingResultsByUserId.TryGetValue(userId, out Queue<PendingGameResult> queue))
+            {
+                return;
+            }
+
+            while (queue.Count > 0)
+            {
+                PendingGameResult result = queue.Dequeue();
+                TargetShowGameResultRpc(
+                    sender,
+                    result.RoomId,
+                    result.Result,
+                    result.Kills,
+                    result.Damage,
+                    result.XpEarned,
+                    result.Bolts,
+                    result.FreeXp,
+                    result.MmrDelta
+                );
+            }
+
+            PendingResultsByUserId.Remove(userId);
         }
 
         [TargetRpc]
         private void TargetShowEndGameRpc(NetworkConnection target, EndGameResult result)
         {
             ShowEndGameDelayed(result).Forget();
+        }
+
+        [TargetRpc]
+        private void TargetShowGameResultRpc(
+            NetworkConnection target,
+            string roomId,
+            string result,
+            int kills,
+            int damage,
+            int xpEarned,
+            int bolts,
+            int freeXp,
+            int mmrDelta)
+        {
+            GameResultUI.Enqueue(roomId, result, kills, damage, xpEarned, bolts, freeXp, mmrDelta);
         }
 
         private async UniTask ShowEndGameDelayed(EndGameResult result)

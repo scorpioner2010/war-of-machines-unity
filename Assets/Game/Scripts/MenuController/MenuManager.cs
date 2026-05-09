@@ -13,6 +13,7 @@ namespace Game.Scripts.MenuController
         private Dictionary<MenuType, Menu> _map;
         public static Action<MenuType> OnDisable;
         public static Action<MenuType> OnEnable;
+        public static MenuType CurrentType { get; private set; }
         
         private void Awake()
         {
@@ -28,6 +29,7 @@ namespace Game.Scripts.MenuController
 
         public static void OpenMenu(MenuType type)
         {
+            CurrentType = type;
             OnEnable?.Invoke(type);
             foreach (KeyValuePair<MenuType, Menu> kv in _in._map)
             {

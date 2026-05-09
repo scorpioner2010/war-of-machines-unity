@@ -71,6 +71,28 @@ namespace Game.Scripts.Networking.Sessions
             return TryGet(clientId, out ServerPlayerSession session) ? session.Profile : null;
         }
 
+        public static NetworkConnection GetConnectionByUserId(int userId)
+        {
+            foreach (ServerPlayerSession session in SessionsByClientId.Values)
+            {
+                if (session != null
+                    && session.Connection != null
+                    && session.Profile != null
+                    && session.Profile.id == userId)
+                {
+                    return session.Connection;
+                }
+            }
+
+            return null;
+        }
+
+        public static int GetUserId(int clientId)
+        {
+            PlayerProfile profile = GetProfile(clientId);
+            return profile != null ? profile.id : 0;
+        }
+
         public static void ClearAuth(int clientId)
         {
             if (TryGet(clientId, out ServerPlayerSession session))

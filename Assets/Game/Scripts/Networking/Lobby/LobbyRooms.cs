@@ -134,6 +134,21 @@ namespace Game.Scripts.Networking.Lobby
             }
             return null;
         }
+
+        public static List<ServerRoom> GetRoomsByConnection(NetworkConnection conn)
+        {
+            List<ServerRoom> rooms = new List<ServerRoom>();
+
+            foreach (ServerRoom room in Rooms.Values)
+            {
+                if (room.HasPlayer(conn))
+                {
+                    rooms.Add(room);
+                }
+            }
+
+            return rooms;
+        }
         
         public static ServerRoom GetRoomByClientId(int clientId)
         {

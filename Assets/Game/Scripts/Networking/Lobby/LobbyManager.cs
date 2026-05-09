@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
+using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
@@ -106,7 +108,23 @@ namespace Game.Scripts.Networking.Lobby
 
             room.isInGame = true;
             room.AssignTeams();
+            StartApiMatch(room).Forget();
             LoadScene(room, connections);
+        }
+
+        private async UniTask StartApiMatch(ServerRoom room)
+        {
+            string token = room.GetApiToken();
+            if (string.IsNullOrEmpty(token))
+            {
+                return;
+            }
+
+            (bool isSuccess, _, int matchId) = await MatchesManager.StartMatch(room.selectedLocation, token);
+            if (isSuccess)
+            {
+                room.matchId = matchId;
+            }
         }
 
         private void LoadScene(ServerRoom room, List<NetworkConnection> connections)
@@ -174,8 +192,10 @@ namespace Game.Scripts.Networking.Lobby
             {
                 loginName = profile != null ? profile.username : string.Empty,
                 Connection = sender,
+                token = ServerPlayerSessions.GetToken(sender.ClientId),
                 userId = profile != null ? profile.id : 0,
                 mmr = profile != null ? profile.mmr : 1000,
+                activeVehicleId = profile != null ? profile.activeVehicleId : 0,
                 team = MatchTeam.None
             };
         }

@@ -24,6 +24,9 @@ namespace Game.Scripts.Networking.Lobby
         public event Action<ServerRoom> OnTimeIsUp;
         public GameplayTimer gameplayTimer;
         public bool isGameFinished;
+        public bool matchEndSubmitted;
+        public bool matchRewardsSent;
+        public int matchId;
 
         public bool IsEmpty => players.Count == 0;
 
@@ -109,6 +112,11 @@ namespace Game.Scripts.Networking.Lobby
         public Player GetPlayerByName(string name)
         {
             return players.Find(p => p.loginName == name);
+        }
+
+        public Player GetPlayerByUserId(int userId)
+        {
+            return players.Find(p => p != null && p.userId == userId);
         }
 
         public List<Player> GetPlayers()
@@ -243,6 +251,19 @@ namespace Game.Scripts.Networking.Lobby
         public bool IsFull()
         {
             return players.Count >= maxPlayers;
+        }
+
+        public string GetApiToken()
+        {
+            foreach (Player player in players)
+            {
+                if (player != null && !string.IsNullOrEmpty(player.token))
+                {
+                    return player.token;
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

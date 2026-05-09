@@ -11,5 +11,6 @@ namespace Game.Scripts.MenuController
         LoadScreen = 9,
         DevelopmentTree = 10,
         EndGame = 11,
+        GameResult = 12,
     }
 }

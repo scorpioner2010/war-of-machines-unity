@@ -10,10 +10,16 @@ namespace Game.Scripts.Networking.Lobby
         public string loginName;
         public NetworkConnection Connection;
         public VehicleRoot playerRoot;
+        public string token;
         public int userId;
         public int mmr;
+        public int activeVehicleId;
         public MatchTeam team;
         public bool isBot;
         public bool randomPlayerConnected; //for random game
+        public bool leftBattle;
+        public string battleResult;
+        public int kills;
+        public int damage;
     }
 }

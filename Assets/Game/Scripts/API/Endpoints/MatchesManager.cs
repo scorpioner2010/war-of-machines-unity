@@ -46,7 +46,7 @@ namespace Game.Scripts.API.Endpoints
 
         // POST /matches/{matchId}/end
         // Клієнт відправляє тільки "сирі" дані. XP/MMR/Bolts рахує сервер.
-        public static async UniTask<(bool isSuccess, string message)> EndMatch(int matchId, ParticipantInput[] participants, string token)
+        public static async UniTask<(bool isSuccess, string message, EndMatchResponse response)> EndMatch(int matchId, ParticipantInput[] participants, string token)
         {
             string url = HttpLink.APIBase + "/matches/" + matchId + "/end";
 
@@ -65,7 +65,19 @@ namespace Game.Scripts.API.Endpoints
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
             string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
-            return (req.result == UnityWebRequest.Result.Success, resp);
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                EndMatchResponse response = null;
+                string trimmed = string.IsNullOrWhiteSpace(resp) ? string.Empty : resp.TrimStart();
+                if (trimmed.StartsWith("{"))
+                {
+                    response = JsonUtility.FromJson<EndMatchResponse>(trimmed);
+                }
+
+                return (true, resp, response);
+            }
+
+            return (false, resp, null);
         }
 
         // GET /matches/{matchId}/participants
@@ -114,6 +126,12 @@ namespace Game.Scripts.API.Endpoints
         public ParticipantInput[] participants;
     }
 
+    [Serializable]
+    public class EndMatchResponse
+    {
+        public MatchParticipantView[] participants;
+    }
+
     /// <summary>
     /// "win" | "lose" | "draw"
     /// Значення поза цими трьома сервер трактує як "lose".
@@ -141,6 +159,8 @@ namespace Game.Scripts.API.Endpoints
         public int kills;
         public int damage;
         public int xpEarned;
+        public int bolts;
+        public int freeXp;
         public int mmrDelta;
     }
 }

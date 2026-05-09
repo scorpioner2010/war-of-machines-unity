@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
+using Game.Scripts.Networking.Lobby;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -147,6 +148,15 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 if (targetHealth != null)
                 {
+                    VehicleRoot targetRoot = targetHealth.GetComponentInParent<VehicleRoot>();
+                    bool wasDead = targetHealth.IsDead;
+                    bool willKill = !wasDead && targetHealth.Current > 0f && targetHealth.Current - hr.damage <= 0f;
+
+                    if (GameplaySpawner.In != null)
+                    {
+                        GameplaySpawner.In.RecordHitStats(vehicleRoot, targetRoot, hr.damage, willKill);
+                    }
+
                     targetHealth.ServerApplyDamage(hr.damage);
                 }
                 else

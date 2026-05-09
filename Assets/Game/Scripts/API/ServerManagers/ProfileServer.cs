@@ -4,6 +4,7 @@ using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
+using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Helpers;
@@ -69,6 +70,11 @@ namespace Game.Scripts.API.ServerManagers
                 RobotView.GenerateIcons();
                 MainMenu.In.UpdatePlayerInfo(clientInfo.Profile);
                 developmentTree.Init();
+
+                if (GameplaySpawner.In != null)
+                {
+                    GameplaySpawner.In.RequestPendingGameResultsServerRpc();
+                }
             }
             else
             {
