@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
-using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
-using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Lobby;
 using UnityEngine;
 using UnityEngine.UI;
@@ -64,8 +62,7 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
-            lobbyManager.FindMatchServerRpc(currentMap.ToString(), info.Profile.username, info.ClientId);
+            lobbyManager.FindMatchServerRpc(currentMap.ToString());
             MenuManager.OpenMenu(MenuType.FindGame);
         }
 
@@ -76,8 +73,7 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            IPlayerClientInfo playerClientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-            lobbyManager.CancelFindRoomServerRpc(playerClientInfo.ClientId);
+            lobbyManager.CancelFindRoomServerRpc();
         }
     }
 }

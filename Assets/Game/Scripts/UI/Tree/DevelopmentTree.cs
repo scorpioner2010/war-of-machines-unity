@@ -9,10 +9,9 @@ using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
-using Game.Scripts.Server;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
-using NewDropDude.Script.API.ServerManagers;
 using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Screens;
 using NaughtyAttributes;
@@ -316,7 +315,7 @@ namespace Game.Scripts.UI.Tree
                     Popup.ShowText($"Do you want buy?\nprice: {lite.purchaseCost}", Color.green, () =>
                     {
                         Helpers.Loading.Show();
-                        BuyRPC(ClientManager.Connection.ClientId, lite.code);
+                        BuyRPC(lite.code);
                     }, TypePopup.Confirm);
                 }
             });
@@ -327,17 +326,27 @@ namespace Game.Scripts.UI.Tree
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void BuyRPC(int clientID, string code)
+        private void BuyRPC(string code, NetworkConnection sender = null)
         {
-            Buy(clientID, code);
+            if (sender == null)
+            {
+                return;
+            }
+
+            Buy(sender, code);
         }
             
-        private async void Buy(int clientID, string code)
+        private async void Buy(NetworkConnection sender, string code)
         {
-            string token = RegisterServer.GetToken(clientID);
+            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (string.IsNullOrEmpty(token))
+            {
+                TargetRpcBuy(sender, false, "Not logged in.");
+                return;
+            }
+
             (bool ok, string msg, BuyVehicleResult data) result =  await UserVehiclesManager.Buy(code, token);
-            NetworkConnection senderConn = ServerManager.Clients[clientID];
-            TargetRpcBuy(senderConn, result.ok, result.msg);
+            TargetRpcBuy(sender, result.ok, result.msg);
         }
         
         [TargetRpc]

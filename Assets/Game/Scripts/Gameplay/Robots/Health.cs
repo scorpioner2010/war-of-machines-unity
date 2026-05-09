@@ -13,6 +13,7 @@ namespace Game.Scripts.Gameplay.Robots
         [Min(1f)] public float maxHealth = 100f;
 
         public Action<float, float, float> OnDamaged;
+        public Action<Health> OnServerDeath;
         public UnityEvent onDeath;
 
         private readonly SyncVar<float> _hp = new();
@@ -78,6 +79,7 @@ namespace Game.Scripts.Gameplay.Robots
         private void DeathServer()
         {
             SetCollidersEnabled(false);
+            OnServerDeath?.Invoke(this);
             DiedObserversRpc();
             TurnOffObject();
         }

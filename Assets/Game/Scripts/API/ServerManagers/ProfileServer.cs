@@ -1,15 +1,14 @@
-using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
 using Game.Scripts.UI.Tree;
-using NewDropDude.Script.API.ServerManagers;
 using UnityEngine;
 
 namespace Game.Scripts.API.ServerManagers
@@ -17,56 +16,44 @@ namespace Game.Scripts.API.ServerManagers
     public class ProfileServer : NetworkBehaviour
     {
         private static ProfileServer _in;
-        public static List<PlayerDataAPIInfo> PlayersDataAPIInfos = new();
         public DevelopmentTree developmentTree;
 
         private void Awake() => _in = this;
 
-        public static PlayerProfile GetProfileByClientId(int clientId)
-        {
-            foreach (PlayerDataAPIInfo dataAPIInfo in PlayersDataAPIInfos)
-            {
-                if (dataAPIInfo.ClientId == clientId)
-                {
-                    return dataAPIInfo.PlayerDataAPI;
-                }
-            }
-
-            return null;
-        }
-
         public static void UpdateProfile()
         {
             Loading.Show();
-            _in.GetProfileServerRpc(_in.ClientManager.Connection.ClientId);
+            _in.GetProfileServerRpc();
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void GetProfileServerRpc(int clientId)
+        private void GetProfileServerRpc(NetworkConnection sender = null)
         {
-            RequestGetProfile(clientId);
+            if (sender == null)
+            {
+                return;
+            }
+
+            RequestGetProfile(sender);
         }
 
-        private async void RequestGetProfile(int clientId)
+        private async void RequestGetProfile(NetworkConnection sender)
         {
-            string token = RegisterServer.GetToken(clientId);
+            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (string.IsNullOrEmpty(token))
+            {
+                TargetRpcUpdateProfile(sender, false, "Not logged in.", null);
+                return;
+            }
+
             (bool isSuccess, string message, PlayerProfile profile) data = await PlayersManager.GetMyProfile(token);
 
-            NetworkConnection senderConn = ServerManager.Clients[clientId];
-
-            AddPlayerDataAPI(data.profile, clientId);
-            TargetRpcUpdateProfile(senderConn, data.isSuccess, data.message, data.profile);
-        }
-
-        private void AddPlayerDataAPI(PlayerProfile data, int clientId)
-        {
-            PlayersDataAPIInfos.RemoveAll(x => x.ClientId == clientId);
-
-            PlayersDataAPIInfos.Add(new PlayerDataAPIInfo
+            if (data.isSuccess)
             {
-                PlayerDataAPI = data,
-                ClientId = clientId,
-            });
+                ServerPlayerSessions.SetProfile(sender, data.profile);
+            }
+
+            TargetRpcUpdateProfile(sender, data.isSuccess, data.message, data.profile);
         }
 
         [TargetRpc]

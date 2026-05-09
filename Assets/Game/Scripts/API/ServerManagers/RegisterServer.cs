@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
 using FishNet.Connection;
 using FishNet.Object;
+using FishNet.Transporting;
 using Game.Scripts.API.Endpoints;
-using Game.Scripts.API.ServerManagers;
 using Game.Scripts.MenuController;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.UI.Helpers;
 using TMPro;
 using UnityEngine;
@@ -22,7 +21,6 @@ namespace NewDropDude.Script.API.ServerManagers
         
         private const string LastLoginName = "LastLogin";
         private static readonly string LastPasswordName = "LastPassword";
-        public static readonly List<PlayerTokenInfo> PlayerTokenInfo = new();
 
         public static string LastLogin
         {
@@ -36,17 +34,29 @@ namespace NewDropDude.Script.API.ServerManagers
             set => PlayerPrefs.SetString(LastPasswordName, value);
         }
 
-        public static string GetToken(int clientId)
+        public override void OnStartServer()
         {
-            foreach (PlayerTokenInfo playerTokenInfo in PlayerTokenInfo)
-            {
-                if (clientId == playerTokenInfo.id)
-                {
-                    return playerTokenInfo.token;
-                }
-            }
+            base.OnStartServer();
+            ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
+        }
 
-            return string.Empty;
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+            ServerManager.OnRemoteConnectionState -= OnRemoteConnectionState;
+            ServerPlayerSessions.Clear();
+        }
+
+        private void OnRemoteConnectionState(NetworkConnection connection, RemoteConnectionStateArgs args)
+        {
+            if (args.ConnectionState == RemoteConnectionState.Started)
+            {
+                ServerPlayerSessions.UpsertConnection(connection);
+            }
+            else if (args.ConnectionState == RemoteConnectionState.Stopped)
+            {
+                ServerPlayerSessions.Remove(connection.ClientId);
+            }
         }
         
         public override void OnStartClient()
@@ -76,7 +86,7 @@ namespace NewDropDude.Script.API.ServerManagers
             string userLogin = userLoginInputField.text.Trim();
             string password = userPasswordInputField.text.Trim();
             
-            RequestLoginServerRpc(userLogin, password, ClientManager.Connection.ClientId);
+            RequestLoginServerRpc(userLogin, password);
         }
         
         private void RegisterButtonClicked()
@@ -86,46 +96,51 @@ namespace NewDropDude.Script.API.ServerManagers
             string userLogin = userLoginInputField.text.Trim();
             string password = userPasswordInputField.text.Trim();
             
-            RequestRegisterServerRpc(userLogin, password, ClientManager.Connection.ClientId);
+            RequestRegisterServerRpc(userLogin, password);
         }
         
         [ServerRpc(RequireOwnership = false)]
-        private void RequestLoginServerRpc(string userLogin, string password, int clientID)
+        private void RequestLoginServerRpc(string userLogin, string password, NetworkConnection sender = null)
         {
-            RequestLogin(userLogin, password, clientID);
+            if (sender == null)
+            {
+                return;
+            }
+
+            RequestLogin(userLogin, password, sender);
         }
 
-        private async void RequestLogin(string userLogin, string password, int clientID)
+        private async void RequestLogin(string userLogin, string password, NetworkConnection sender)
         {
             (bool isSuccess, string message, string token) result = await RegisterManager.SendLoginRequest(userLogin, password);
-            
-            PlayerTokenInfo existing = PlayerTokenInfo.FirstOrDefault(p => p.id == clientID);
-            
-            if (existing != null)
+
+            if (result.isSuccess)
             {
-                existing.token = result.token;
+                ServerPlayerSessions.SetToken(sender, result.token);
             }
             else
             {
-                PlayerTokenInfo.Add(new PlayerTokenInfo(clientID, result.token));
+                ServerPlayerSessions.ClearAuth(sender.ClientId);
             }
-            
-            NetworkConnection senderConn = ServerManager.Clients[clientID];
-            TargetLoginResponseRpc(senderConn, result.isSuccess, result.message);
+
+            TargetLoginResponseRpc(sender, result.isSuccess, result.message);
         }
         
         [ServerRpc(RequireOwnership = false)]
-        private void RequestRegisterServerRpc(string userLogin, string password, int clientID)
+        private void RequestRegisterServerRpc(string userLogin, string password, NetworkConnection sender = null)
         {
-            RequestRegister(userLogin, password, clientID);
+            if (sender == null)
+            {
+                return;
+            }
+
+            RequestRegister(userLogin, password, sender);
         }
         
-        private async void RequestRegister(string userLogin, string password, int clientID)
+        private async void RequestRegister(string userLogin, string password, NetworkConnection sender)
         {
             (bool isSuccess, string message) result = await RegisterManager.SendRegisterRequest(userLogin, password);
-            
-            NetworkConnection senderConn = ServerManager.Clients[clientID];
-            TargetRegisterResponseRpc(senderConn, result.isSuccess, result.message);
+            TargetRegisterResponseRpc(sender, result.isSuccess, result.message);
         }
 
         [TargetRpc]
@@ -164,18 +179,5 @@ namespace NewDropDude.Script.API.ServerManagers
             
             Loading.Hide();
         }
-    }
-}
-
-[System.Serializable]
-public class PlayerTokenInfo
-{
-    public int id;
-    public string token;
-
-    public PlayerTokenInfo(int id, string token)
-    {
-        this.id = id;
-        this.token = token;
     }
 }

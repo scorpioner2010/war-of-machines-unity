@@ -4,8 +4,8 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using Game.Scripts.API.Models;
-using Game.Scripts.API.ServerManagers;
 using Game.Scripts.MenuController;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
 using UnityEngine;
 
@@ -22,9 +22,14 @@ namespace Game.Scripts.Networking.Lobby
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void FindMatchServerRpc(string selectedLocation, string loginName, int senderId)
+        public void FindMatchServerRpc(string selectedLocation, NetworkConnection sender = null)
         {
-            Player player = CreatePlayer(loginName, senderId);
+            if (sender == null)
+            {
+                return;
+            }
+
+            Player player = CreatePlayer(sender);
             if (player.Connection == null)
             {
                 return;
@@ -65,25 +70,24 @@ namespace Game.Scripts.Networking.Lobby
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void CancelFindRoomServerRpc(int clientId)
+        public void CancelFindRoomServerRpc(NetworkConnection sender = null)
         {
-            NetworkConnection connection = GetConnectionOrNull(clientId);
-            if (connection == null)
+            if (sender == null)
             {
                 return;
             }
 
-            ServerRoom room = LobbyRooms.GetRoomByConnection(connection);
+            ServerRoom room = LobbyRooms.GetRoomByConnection(sender);
             if (room != null && !room.isInGame)
             {
-                Player player = room.GetPlayerByConnection(connection);
+                Player player = room.GetPlayerByConnection(sender);
                 if (player != null)
                 {
                     LobbyRooms.RemovePlayerFromRoom(room.roomId, player.loginName);
                 }
             }
 
-            TargetMatchmakingCancelledRpc(connection);
+            TargetMatchmakingCancelledRpc(sender);
         }
 
         private void StartGame(ServerRoom room)
@@ -162,29 +166,14 @@ namespace Game.Scripts.Networking.Lobby
             return connections;
         }
 
-        private NetworkConnection GetConnectionOrNull(int clientId)
+        private Player CreatePlayer(NetworkConnection sender)
         {
-            if (ServerManager.Clients.TryGetValue(clientId, out NetworkConnection connection))
-            {
-                return connection;
-            }
-
-            return null;
-        }
-
-        private Player CreatePlayer(string loginName, int senderId)
-        {
-            PlayerProfile profile = ProfileServer.GetProfileByClientId(senderId);
-            string resolvedLoginName = loginName;
-            if (profile != null && string.IsNullOrEmpty(resolvedLoginName))
-            {
-                resolvedLoginName = profile.username;
-            }
+            PlayerProfile profile = ServerPlayerSessions.GetProfile(sender.ClientId);
 
             return new Player
             {
-                loginName = resolvedLoginName,
-                Connection = GetConnectionOrNull(senderId),
+                loginName = profile != null ? profile.username : string.Empty,
+                Connection = sender,
                 userId = profile != null ? profile.id : 0,
                 mmr = profile != null ? profile.mmr : 1000,
                 team = MatchTeam.None

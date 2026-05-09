@@ -30,6 +30,7 @@ namespace Game.Scripts.MenuController
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
             _state = MenuState.Idle;
+            _sequence = DOTween.Sequence();
             _sequence.Join(animationPanel.DOAnchorPos(hiddenPosition, _duration).SetEase(Ease.InBack));
         }
 

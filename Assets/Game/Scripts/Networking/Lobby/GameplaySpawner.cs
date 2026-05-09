@@ -7,13 +7,12 @@ using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
 using Game.Scripts.API.Models;
-using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Helpers;
-using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
-using Game.Scripts.Player.Data;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.UI.HUD;
+using Game.Scripts.UI.Lobby;
 using Game.Scripts.UI.MainMenu;
 using Game.Scripts.World.Spawns;
 using UnityEngine;
@@ -326,7 +325,7 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
             
-            PlayerProfile profile = ProfileServer.GetProfileByClientId(connection.ClientId);
+            PlayerProfile profile = ServerPlayerSessions.GetProfile(connection.ClientId);
             if (profile == null)
             {
                 return;
@@ -342,7 +341,101 @@ namespace Game.Scripts.Networking.Lobby
             ServerManager.Spawn(vehicleRoot.networkObject, connection, _additiveServerScene);
 
             player.playerRoot = vehicleRoot;
+            player.playerRoot.health.OnServerDeath += _ => HandleRobotDeath(serverRoom);
             player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, player.team, _additiveServerScene);
+        }
+
+        [Server]
+        private void HandleRobotDeath(ServerRoom serverRoom)
+        {
+            if (serverRoom == null || serverRoom.isGameFinished)
+            {
+                return;
+            }
+
+            int redAlive = 0;
+            int blueAlive = 0;
+            int unassignedAlive = 0;
+            int aliveRobots = 0;
+
+            foreach (Player player in serverRoom.GetPlayers())
+            {
+                if (player == null || player.playerRoot == null || player.playerRoot.health == null)
+                {
+                    continue;
+                }
+
+                if (!player.playerRoot.health.IsDead)
+                {
+                    aliveRobots++;
+                    if (player.team == MatchTeam.Red)
+                    {
+                        redAlive++;
+                    }
+                    else if (player.team == MatchTeam.Blue)
+                    {
+                        blueAlive++;
+                    }
+                    else
+                    {
+                        unassignedAlive++;
+                    }
+                }
+            }
+
+            MatchTeam winnerTeam = MatchTeam.None;
+            bool isDraw = aliveRobots == 0;
+
+            if (!isDraw)
+            {
+                if (unassignedAlive == 0 && redAlive > 0 && blueAlive == 0)
+                {
+                    winnerTeam = MatchTeam.Red;
+                }
+                else if (unassignedAlive == 0 && blueAlive > 0 && redAlive == 0)
+                {
+                    winnerTeam = MatchTeam.Blue;
+                }
+            }
+
+            if (!isDraw && winnerTeam == MatchTeam.None)
+            {
+                return;
+            }
+
+            serverRoom.isGameFinished = true;
+
+            foreach (Player player in serverRoom.GetPlayers())
+            {
+                if (!ShouldReceiveEndGame(player))
+                {
+                    continue;
+                }
+
+                EndGameResult result = EndGameResult.Draw;
+
+                if (!isDraw)
+                {
+                    result = player.team == winnerTeam ? EndGameResult.Win : EndGameResult.Lose;
+                }
+
+                TargetShowEndGameRpc(player.Connection, result);
+            }
+        }
+
+        private static bool ShouldReceiveEndGame(Player player)
+        {
+            return player != null
+                   && !player.isBot
+                   && player.Connection != null
+                   && player.playerRoot != null;
+        }
+
+        [TargetRpc]
+        private void TargetShowEndGameRpc(NetworkConnection target, EndGameResult result)
+        {
+            EndGameUI.Show(result);
+            MenuManager.OpenMenu(MenuType.EndGame);
         }
 
         [ObserversRpc]

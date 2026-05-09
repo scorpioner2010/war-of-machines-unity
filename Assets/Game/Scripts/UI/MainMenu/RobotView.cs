@@ -13,12 +13,11 @@ using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Player.Data;
-using Game.Scripts.Server;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Screens;
 using NaughtyAttributes;
-using NewDropDude.Script.API.ServerManagers;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -106,24 +105,34 @@ namespace Game.Scripts.UI.MainMenu
                 }
 
                 Helpers.Loading.Show();
-                _in.SelectRPC(_in.ClientManager.Connection.ClientId, id);
+                _in.SelectRPC(id);
             });
 
             _in._buttons.Add(button.button);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void SelectRPC(int clientID, int code)
+        private void SelectRPC(int code, NetworkConnection sender = null)
         {
-            Select(clientID, code);
+            if (sender == null)
+            {
+                return;
+            }
+
+            Select(sender, code);
         }
 
-        private async void Select(int clientID, int id)
+        private async void Select(NetworkConnection sender, int id)
         {
-            string token = RegisterServer.GetToken(clientID);
+            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (string.IsNullOrEmpty(token))
+            {
+                TargetRpcSelect(sender, false, "Not logged in.");
+                return;
+            }
+
             (bool ok, string msg) result = await UserVehiclesManager.SetActive(id, token);
-            NetworkConnection senderConn = ServerManager.Clients[clientID];
-            TargetRpcSelect(senderConn, result.ok, result.msg);
+            TargetRpcSelect(sender, result.ok, result.msg);
         }
 
         [TargetRpc]

@@ -23,6 +23,7 @@ namespace Game.Scripts.Networking.Lobby
         public bool isAutoRoom;
         public event Action<ServerRoom> OnTimeIsUp;
         public GameplayTimer gameplayTimer;
+        public bool isGameFinished;
 
         public bool IsEmpty => players.Count == 0;
 
