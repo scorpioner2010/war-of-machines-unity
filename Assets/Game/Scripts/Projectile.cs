@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public interface IDamageable
@@ -43,6 +44,10 @@ public class Projectile : MonoBehaviour
 
     private Vector3 _prevPos;
     private bool _authoritative;
+    private bool _detonateAtResolvedTarget;
+    private Vector3 _resolvedImpactNormal = Vector3.up;
+    private Action _onAuthoritativeResolvedImpact;
+    private bool _resolvedImpactHandled;
 
     public GameObject explosionFX;
 
@@ -87,12 +92,8 @@ public class Projectile : MonoBehaviour
         _slowdownCurve = (slowdownCurve != null && slowdownCurve.length > 0) ? slowdownCurve : DefaultSlowdownCurve();
         _minSpeedMultiplier = Mathf.Clamp(minSpeedMultiplier, 0f, 1f);
 
-        _totalDistance = Vector3.Distance(_startPoint, _targetPoint);
         _distanceTraveled = 0f;
-
-        float scaled = Mathf.Pow(_totalDistance, _arcExponent) * _arcScale;
-        _arcHeightComputed = Mathf.Clamp(scaled, _arcMin, _arcMax);
-        _arcUp = _arcAlongWorldUp ? Vector3.up : ComputeArcUp(_startPoint, _targetPoint);
+        RecomputeTrajectory();
 
         _passedTimeCatchup = Mathf.Max(0f, passedTime);
         _initialized = true;
@@ -105,6 +106,29 @@ public class Projectile : MonoBehaviour
 
         _prevPos = transform.position;
         _authoritative = authoritative;
+    }
+
+    public void ConfigureResolvedImpact(Vector3 targetPoint, Vector3 impactNormal, Action onAuthoritativeImpact = null)
+    {
+        _targetPoint = targetPoint;
+        _resolvedImpactNormal = impactNormal.sqrMagnitude > 1e-6f ? impactNormal.normalized : Vector3.up;
+        _detonateAtResolvedTarget = true;
+
+        if (onAuthoritativeImpact != null)
+        {
+            _onAuthoritativeResolvedImpact = onAuthoritativeImpact;
+        }
+
+        RecomputeTrajectory();
+    }
+
+    private void RecomputeTrajectory()
+    {
+        _totalDistance = Vector3.Distance(_startPoint, _targetPoint);
+
+        float scaled = Mathf.Pow(_totalDistance, _arcExponent) * _arcScale;
+        _arcHeightComputed = Mathf.Clamp(scaled, _arcMin, _arcMax);
+        _arcUp = _arcAlongWorldUp ? Vector3.up : ComputeArcUp(_startPoint, _targetPoint);
     }
 
     private AnimationCurve DefaultArcCurve()
@@ -193,7 +217,7 @@ public class Projectile : MonoBehaviour
 
         Vector3 travel = newPos - _prevPos;
         float dist = travel.magnitude;
-        if (dist > 1e-6f)
+        if (!_detonateAtResolvedTarget && dist > 1e-6f)
         {
             Vector3 dir = travel / dist;
             bool hitSomething = false;
@@ -250,6 +274,21 @@ public class Projectile : MonoBehaviour
 
     private void OnArrived()
     {
+        if (_detonateAtResolvedTarget)
+        {
+            transform.position = _targetPoint;
+
+            if (_authoritative && !_resolvedImpactHandled)
+            {
+                _resolvedImpactHandled = true;
+                _onAuthoritativeResolvedImpact?.Invoke();
+            }
+
+            Explode(_targetPoint, _resolvedImpactNormal);
+            Destroy(gameObject);
+            return;
+        }
+
         ExplodeAndDestroy();
     }
 }

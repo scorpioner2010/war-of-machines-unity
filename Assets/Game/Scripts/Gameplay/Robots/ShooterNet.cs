@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.UI.HUD;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -35,10 +36,29 @@ namespace Game.Scripts.Gameplay.Robots
         public float normalizationDeg = 0f;
 
         private const float MAX_PASSED_TIME = 0.30f;
+
         private int _shotSeq;
 
-        // дедуплікація пострілів на сервері
         private readonly HashSet<int> _processedShots = new HashSet<int>();
+        private readonly Dictionary<int, Projectile> _predictedProjectiles = new Dictionary<int, Projectile>();
+
+        private enum ShotHudStatus : byte
+        {
+            Miss = 0,
+            Penetrated = 1,
+            NotPenetrated = 2
+        }
+
+        private struct ResolvedShot
+        {
+            public Vector3 Point;
+            public Vector3 Normal;
+            public bool TargetIsRobot;
+            public float Damage;
+            public Health TargetHealth;
+            public VehicleRoot TargetRoot;
+            public ShotHudStatus HudStatus;
+        }
 
         public void PredictAndRequest()
         {
@@ -51,10 +71,9 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 aimPoint = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
             int shotId = ++_shotSeq;
 
-            // 1) миттєвий візуал на клієнті
-            SpawnLocal(startPos, aimPoint, 0f, authoritative: false);
+            Projectile predicted = SpawnLocal(startPos, aimPoint, 0f, authoritative: false, Vector3.up);
+            _predictedProjectiles[shotId] = predicted;
 
-            // 2) завжди надсилаємо запит на сервер (жодних умов за sendRequest)
             if (!IsSpawned)
             {
                 return;
@@ -63,7 +82,13 @@ namespace Game.Scripts.Gameplay.Robots
             FireRequestServerRpc(shotId, startPos, aimPoint, base.TimeManager.Tick);
         }
 
-        private void SpawnLocal(Vector3 startPos, Vector3 aimPoint, float passedTime, bool authoritative)
+        private Projectile SpawnLocal(
+            Vector3 startPos,
+            Vector3 aimPoint,
+            float passedTime,
+            bool authoritative,
+            Vector3 impactNormal,
+            System.Action onAuthoritativeImpact = null)
         {
             Projectile proj = Instantiate(projectilePrefab, startPos, Quaternion.identity);
             proj.Init(
@@ -85,6 +110,8 @@ namespace Game.Scripts.Gameplay.Robots
                 passedTime: passedTime,
                 authoritative: authoritative
             );
+            proj.ConfigureResolvedImpact(aimPoint, impactNormal, onAuthoritativeImpact);
+            return proj;
         }
 
         [ServerRpc(RequireOwnership = true)]
@@ -95,34 +122,38 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            // перевірка власника
             if (sender != base.Owner)
             {
                 return;
             }
 
-            // дедуп
             if (_processedShots.Contains(shotId))
             {
                 return;
             }
             _processedShots.Add(shotId);
 
-            // компенсація затримки
             float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
             passed = Mathf.Min(MAX_PASSED_TIME * 0.5f, passed);
 
-            // авторитетний снаряд + хіт
-            SpawnLocal(startPos, aimPoint, passed, authoritative: true);
-            ResolveAndBroadcastHit(shotId, startPos, aimPoint);
+            ResolvedShot shot = ResolveShot(startPos, aimPoint);
+            ConfigureOwnerProjectileTargetRpc(sender, shotId, shot.Point, shot.Normal);
 
-            // повідомити спостерігачів (власнику не треба)
-            FireObserversRpc(shotId, startPos, aimPoint, clientTick);
+            SpawnLocal(
+                startPos,
+                shot.Point,
+                passed,
+                authoritative: true,
+                shot.Normal,
+                onAuthoritativeImpact: () => ApplyResolvedShotDamage(sender, shot)
+            );
+
+            FireObserversRpc(shotId, startPos, shot.Point, shot.Normal, clientTick);
         }
 
-        private void ResolveAndBroadcastHit(int shotId, Vector3 startPos, Vector3 aimPoint)
+        private ResolvedShot ResolveShot(Vector3 startPos, Vector3 aimPoint)
         {
-            var hr = ServerHitResolver.ResolveShot(
+            ServerHitResolver.HitResult hr = ServerHitResolver.ResolveShot(
                 startPos,
                 aimPoint,
                 hitMask,
@@ -130,88 +161,71 @@ namespace Game.Scripts.Gameplay.Robots
                 normalizationDeg
             );
 
-            int targetId = 0;
-            NetworkObject targetNetObj = null;
             Health targetHealth = null;
+            VehicleRoot targetRoot = null;
 
             if (hr.hit && hr.collider != null)
             {
-                targetNetObj = hr.collider.GetComponentInParent<NetworkObject>();
-                if (targetNetObj != null)
+                targetHealth = hr.collider.GetComponentInParent<Health>();
+                if (targetHealth != null)
                 {
-                    targetId = targetNetObj.ObjectId;
-                    targetHealth = targetNetObj.GetComponent<Health>();
+                    targetRoot = targetHealth.GetComponentInParent<VehicleRoot>();
                 }
             }
 
-            if (hr.hit && hr.damage > 0f)
+            bool targetIsRobot = targetHealth != null && targetRoot != null;
+            ShotHudStatus status = ShotHudStatus.Miss;
+            if (targetIsRobot)
             {
-                if (targetHealth != null)
+                if (hr.penetrated && hr.damage > 0f)
                 {
-                    VehicleRoot targetRoot = targetHealth.GetComponentInParent<VehicleRoot>();
-                    bool wasDead = targetHealth.IsDead;
-                    bool willKill = !wasDead && targetHealth.Current > 0f && targetHealth.Current - hr.damage <= 0f;
-
-                    if (GameplaySpawner.In != null)
-                    {
-                        GameplaySpawner.In.RecordHitStats(vehicleRoot, targetRoot, hr.damage, willKill);
-                    }
-
-                    targetHealth.ServerApplyDamage(hr.damage);
+                    status = ShotHudStatus.Penetrated;
                 }
                 else
                 {
-                    string goName = hr.collider ? hr.collider.gameObject.name : "null";
-                    string path = hr.collider ? GetPath(hr.collider.transform) : "null";
-                    int oid = targetNetObj != null ? targetNetObj.ObjectId : 0;
+                    status = ShotHudStatus.NotPenetrated;
                 }
             }
 
-            if (hr.hit)
+            ResolvedShot shot = new ResolvedShot
             {
-                string tgtGo = hr.collider != null ? hr.collider.gameObject.name : "null";
-                string tgtRoot = "n/a";
-                var armor = hr.collider != null ? hr.collider.GetComponentInParent<ArmorMap>() : null;
-                if (armor != null && armor.vehicleRoot != null)
-                {
-                    tgtRoot = armor.vehicleRoot.name;
-                }
+                Point = hr.hit ? hr.point : aimPoint,
+                Normal = hr.hit && hr.normal.sqrMagnitude > 1e-6f ? hr.normal : Vector3.up,
+                TargetIsRobot = targetIsRobot,
+                Damage = targetIsRobot ? hr.damage : 0f,
+                TargetHealth = targetHealth,
+                TargetRoot = targetRoot,
+                HudStatus = status
+            };
 
-            }
-            else
-            {
-            }
-
-            BroadcastHitObserversRpc(
-                shotId,
-                hr.hit,
-                hr.point,
-                hr.normal,
-                targetId,
-                hr.penetrated,
-                hr.damage
-            );
+            return shot;
         }
 
-        private static string GetPath(Transform t)
+        private void ApplyResolvedShotDamage(NetworkConnection shooterConnection, ResolvedShot shot)
         {
-            if (t == null)
+            if (!IsServerInitialized)
             {
-                return "null";
+                return;
             }
 
-            System.Text.StringBuilder sb = new System.Text.StringBuilder(t.name);
-            Transform p = t.parent;
-            while (p != null)
+            if (shot.TargetIsRobot && shot.TargetHealth != null && shot.Damage > 0f)
             {
-                sb.Insert(0, p.name + "/");
-                p = p.parent;
+                bool wasDead = shot.TargetHealth.IsDead;
+                bool willKill = !wasDead && shot.TargetHealth.Current > 0f && shot.TargetHealth.Current - shot.Damage <= 0f;
+
+                if (GameplaySpawner.In != null)
+                {
+                    GameplaySpawner.In.RecordHitStats(vehicleRoot, shot.TargetRoot, shot.Damage, willKill);
+                }
+
+                shot.TargetHealth.ServerApplyDamage(shot.Damage);
             }
-            return sb.ToString();
+
+            ShowShotResultTargetRpc(shooterConnection, (byte)shot.HudStatus);
         }
 
         [ObserversRpc(ExcludeOwner = true)]
-        private void FireObserversRpc(int shotId, Vector3 startPos, Vector3 aimPoint, uint clientTick)
+        private void FireObserversRpc(int shotId, Vector3 startPos, Vector3 aimPoint, Vector3 impactNormal, uint clientTick)
         {
             if (IsOwner)
             {
@@ -221,20 +235,46 @@ namespace Game.Scripts.Gameplay.Robots
             float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
             passed = Mathf.Min(MAX_PASSED_TIME, passed);
 
-            SpawnLocal(startPos, aimPoint, passed, authoritative: false);
+            SpawnLocal(startPos, aimPoint, passed, authoritative: false, impactNormal);
         }
 
-        [ObserversRpc(BufferLast = false)]
-        private void BroadcastHitObserversRpc(
-            int shotId,
-            bool hit,
-            Vector3 point,
-            Vector3 normal,
-            int targetObjectId,
-            bool penetrated,
-            float damage)
+        [TargetRpc]
+        private void ConfigureOwnerProjectileTargetRpc(NetworkConnection conn, int shotId, Vector3 impactPoint, Vector3 impactNormal)
         {
-            // локальні VFX/хіт-маркери — за потреби
+            if (!_predictedProjectiles.TryGetValue(shotId, out Projectile projectile))
+            {
+                return;
+            }
+
+            if (projectile == null)
+            {
+                _predictedProjectiles.Remove(shotId);
+                return;
+            }
+
+            projectile.ConfigureResolvedImpact(impactPoint, impactNormal);
+        }
+
+        [TargetRpc]
+        private void ShowShotResultTargetRpc(NetworkConnection conn, byte status)
+        {
+            if (GameplayGUI.In == null)
+            {
+                return;
+            }
+
+            if (status == (byte)ShotHudStatus.Penetrated)
+            {
+                GameplayGUI.In.ShowShotResult("Пробив");
+            }
+            else if (status == (byte)ShotHudStatus.NotPenetrated)
+            {
+                GameplayGUI.In.ShowShotResult("Не пробив");
+            }
+            else
+            {
+                GameplayGUI.In.ShowShotResult("Промах");
+            }
         }
     }
 }
