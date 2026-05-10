@@ -57,7 +57,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            // 1) реальний AimPoint з напрямку гармати
             Vector3 gunFwdWorld = ToWorldAxis(gun, localForwardAxis).normalized;
             Ray gunRay = new Ray(gun.position, gunFwdWorld);
 
@@ -68,7 +67,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
             CurrentAimPoint = gunAimPoint;
 
-            // 2) крутить ТІЛЬКИ сервер
             if (IsServerInitialized)
             {
                 float step = smoothSpeed * Time.deltaTime;

@@ -37,15 +37,10 @@ namespace Game.Scripts.Gameplay.Robots
 
         private const float YawPitchSendDeadzoneDeg = 0.3f;
 
-        // 🔒 прапор блокування керування (меню, катсцена тощо)
         private bool _controlsBlocked;
 
         public static bool Escape => UnityEngine.Input.GetKeyDown(KeyCode.Escape);
 
-        /// <summary>
-        /// Увімк/вимк блокування керування роботом (рух, стрільба, дії).
-        /// Escape не блокується (UI).
-        /// </summary>
         public void SetControlsBlocked(bool blocked)
         {
             _controlsBlocked = blocked;
@@ -138,10 +133,9 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            // --- Зчитування локального інпуту ---
             float x = 0f;
             float y = 0f;
-            if (!_controlsBlocked) // рух блокується, Escape НЕ блокуємо (використовуйте InputManager.Escape у вашому UI)
+            if (!_controlsBlocked)
             {
                 if (Input.GetKey(KeyCode.A)) x = -1f;
                 else if (Input.GetKey(KeyCode.D)) x = 1f;
@@ -156,12 +150,10 @@ namespace Game.Scripts.Gameplay.Robots
             _shootLocal = newShoot;
             _actionLocal = newAction;
 
-            // --- Обчислення yaw/pitch ---
             float yawDeg, pitchDeg;
 
             if (_controlsBlocked)
             {
-                // Під час блокування не оновлюємо цільові кути: фіксуємо попередні
                 yawDeg = DequantizeAngle01(_lastSentYawQ);
                 pitchDeg = DequantizeAngle01(_lastSentPitchQ);
             }
@@ -213,7 +205,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            // клієнтський prediction обертання відключено; все крутить сервер
         }
 
         [ServerRpc(RequireOwnership = true, RunLocally = false)]

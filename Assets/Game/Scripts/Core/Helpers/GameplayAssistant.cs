@@ -73,7 +73,7 @@ namespace Game.Scripts.Core.Helpers
         public static int GetRandomInt(params int[] values)
         {
             if (values == null || values.Length == 0)
-                throw new ArgumentException("Не передано жодного значення", nameof(values));
+                throw new ArgumentException("No values were provided", nameof(values));
 
             int index = RandomObject.Next(values.Length);
             return values[index];

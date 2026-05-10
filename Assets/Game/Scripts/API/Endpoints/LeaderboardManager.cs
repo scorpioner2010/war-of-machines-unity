@@ -8,7 +8,6 @@ namespace Game.Scripts.API.Endpoints
 {
     public abstract class LeaderboardManager
     {
-        // GET /leaderboard/mmr?top=10
         public static async UniTask<(bool ok, string msg, LeaderboardEntry[] items)> GetTopMmr(int top, string token)
         {
             string url = HttpLink.APIBase + "/leaderboard/mmr?top=" + Mathf.Max(1, top);

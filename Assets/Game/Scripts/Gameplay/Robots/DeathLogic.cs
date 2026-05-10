@@ -43,16 +43,27 @@ public class DeathLogic : MonoBehaviour
 
         foreach (Collider c in all)
         {
-            if (c == null) continue;
-            if (c.gameObject.layer != armorLayer) continue;
+            if (c == null)
+            {
+                continue;
+            }
+
+            if (c.gameObject.layer != armorLayer)
+            {
+                continue;
+            }
 
             bool isConvex = true;
 
             if (c is MeshCollider mc)
-                isConvex = mc.convex; // тільки якщо Convex = true
+            {
+                isConvex = mc.convex;
+            }
 
             if (isConvex)
+            {
                 list.Add(c);
+            }
         }
 
         colliders = list.ToArray();
@@ -71,10 +82,7 @@ public class DeathLogic : MonoBehaviour
             }
 
             coll.transform.parent = null;
-            if (coll is MeshCollider meshCollider && !meshCollider.convex)
-            {
-                meshCollider.convex = true;
-            }
+            PrepareColliderForDynamicRigidbody(coll);
 
             if (!coll.TryGetComponent(out Rigidbody rigidbody))
             {
@@ -92,6 +100,32 @@ public class DeathLogic : MonoBehaviour
         foreach (GameObject obj in forTurnOff)
         {
             obj.SetActive(false);
+        }
+    }
+
+    private static void PrepareColliderForDynamicRigidbody(Collider selectedCollider)
+    {
+        MeshCollider[] meshColliders = selectedCollider.GetComponents<MeshCollider>();
+
+        for (int i = 0; i < meshColliders.Length; i++)
+        {
+            MeshCollider meshCollider = meshColliders[i];
+
+            if (meshCollider == null)
+            {
+                continue;
+            }
+
+            if (meshCollider != selectedCollider)
+            {
+                meshCollider.enabled = false;
+                continue;
+            }
+
+            if (!meshCollider.convex)
+            {
+                meshCollider.convex = true;
+            }
         }
     }
 }

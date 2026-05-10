@@ -15,7 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public bool showServerReticle = true;
         
-        private RectTransform _serverCrosshair; // окремий UI-елемент для серверного прицілу
+        private RectTransform _serverCrosshair;
         private RectTransform _reticleRect;
         private Canvas _canvas;
 
@@ -62,7 +62,6 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            // 1) Кут між пушкою і камерою: якщо занадто різняться — ховаємо
             Vector3 gunFwd = GetGunForwardWorld(vehicleRoot.weaponAimAtCamera.gun, vehicleRoot.weaponAimAtCamera.localForwardAxis).normalized;
             float angle = Vector3.Angle(gunFwd, cam.transform.forward);
             if (angle > hideWhenAngleGreaterThan)
@@ -72,7 +71,6 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            // 2) ЛОКАЛЬНИЙ приціл (швидкий)
             Vector3 worldAim = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
             bool ok = WorldToCanvasLocalPoint(worldAim, cam, out Vector2 localPoint);
             if (!ok)
@@ -97,11 +95,9 @@ namespace Game.Scripts.Gameplay.Robots
                 LerpReticle(ref _curLocal, _tgtLocal, _reticleRect);
             }
 
-            // 3) СЕРВЕРНИЙ приціл (повільніший, авторитетний)
             if (showServerReticle && _serverCrosshair != null)
             {
                 Vector3 srvAim = vehicleRoot.weaponAimAtCamera.ServerAimPoint;
-                // якщо ще не оновлювався SyncVar (Vector3.zero), підстрахуємось локальним
                 if (srvAim == Vector3.zero)
                 {
                     srvAim = worldAim;

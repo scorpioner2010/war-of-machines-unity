@@ -265,15 +265,15 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (status == (byte)ShotHudStatus.Penetrated)
             {
-                GameplayGUI.In.ShowShotResult("Пробив");
+                GameplayGUI.In.ShowShotResult("Penetrated");
             }
             else if (status == (byte)ShotHudStatus.NotPenetrated)
             {
-                GameplayGUI.In.ShowShotResult("Не пробив");
+                GameplayGUI.In.ShowShotResult("No penetration");
             }
             else
             {
-                GameplayGUI.In.ShowShotResult("Промах");
+                GameplayGUI.In.ShowShotResult("Miss");
             }
         }
     }

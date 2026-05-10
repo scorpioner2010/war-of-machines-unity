@@ -18,14 +18,6 @@ namespace Game.Scripts.UI.Settings
         {
             _controller = controller;
 
-            // Subscribe to UI events
-            //LanguageDropdown.onValueChanged.AddListener(OnLanguageDropdownChanged);
-            //FeedbackButton.onClick.AddListener(OnFeedbackButtonClicked);
-            //CreditsButton.onClick.AddListener(OnCreditsButtonClicked);
-            
-            //List<string> languageList = new List<string>();
-            //languageList.Add("English");
-            //LanguageDropdown.AddOptions(languageList);
         }
 
         private void OnCreditsButtonClicked()
@@ -40,7 +32,6 @@ namespace Game.Scripts.UI.Settings
         
         public void SetData(SettingsModel model)
         {
-            //LanguageDropdown.value = GetLanguageIndex(model.Language);
         }
 
         private void OnLanguageDropdownChanged(int index)
@@ -49,12 +40,7 @@ namespace Game.Scripts.UI.Settings
         }
         private int GetLanguageIndex(string language)
         {
-            switch (language)
-            {
-                case "Ukrainian": return 1;
-                case "Spanish":   return 2;
-                default:          return 0; // English
-            }
+            return 0;
         }
     }
 }

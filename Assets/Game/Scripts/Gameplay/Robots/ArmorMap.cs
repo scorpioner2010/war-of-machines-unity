@@ -15,7 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
             float u = Mathf.Clamp01(uv.x);
             float v = Mathf.Clamp01(uv.y);
             Color c = thicknessMap.GetPixelBilinear(u, v);
-            float t = Mathf.Clamp01(c.r); // 0=чорний => maxMm, 1=білий => minMm
+            float t = Mathf.Clamp01(c.r);
             return Mathf.Lerp(maxMm, minMm, t);
         }
 

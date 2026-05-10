@@ -6,6 +6,6 @@ using TMPro;
 
 public class HealthBar : MonoBehaviour
 {
-    public Slider slider;      // Slider (min=0, max=1)
-    public TMP_Text label;     // 100 / 100 тощо (опційно)
+    public Slider slider;
+    public TMP_Text label;
 }

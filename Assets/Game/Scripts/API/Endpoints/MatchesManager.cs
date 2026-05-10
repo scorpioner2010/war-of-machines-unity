@@ -7,15 +7,8 @@ using UnityEngine.Networking;
 
 namespace Game.Scripts.API.Endpoints
 {
-    /// <summary>
-    /// Робота з матчами:
-    ///   POST /matches/start
-    ///   POST /matches/{matchId}/end
-    ///   GET  /matches/{matchId}/participants
-    /// </summary>
     public abstract class MatchesManager
     {
-        // POST /matches/start
         public static async UniTask<(bool isSuccess, string message, int matchId)> StartMatch(string map, string token)
         {
             string url = HttpLink.APIBase + "/matches/start";
@@ -44,8 +37,6 @@ namespace Game.Scripts.API.Endpoints
             return (false, resp, 0);
         }
 
-        // POST /matches/{matchId}/end
-        // Клієнт відправляє тільки "сирі" дані. XP/MMR/Bolts рахує сервер.
         public static async UniTask<(bool isSuccess, string message, EndMatchResponse response)> EndMatch(int matchId, ParticipantInput[] participants, string token)
         {
             string url = HttpLink.APIBase + "/matches/" + matchId + "/end";
@@ -80,7 +71,6 @@ namespace Game.Scripts.API.Endpoints
             return (false, resp, null);
         }
 
-        // GET /matches/{matchId}/participants
         public static async UniTask<(bool isSuccess, string message, MatchParticipantView[] items)> GetParticipants(int matchId, string token)
         {
             string url = HttpLink.APIBase + "/matches/" + matchId + "/participants";
@@ -106,8 +96,6 @@ namespace Game.Scripts.API.Endpoints
         }
     }
 
-    // ===== Models (мають відповідати серверним контрактам) =====
-
     [Serializable]
     public class StartMatchRequest
     {
@@ -132,17 +120,13 @@ namespace Game.Scripts.API.Endpoints
         public MatchParticipantView[] participants;
     }
 
-    /// <summary>
-    /// "win" | "lose" | "draw"
-    /// Значення поза цими трьома сервер трактує як "lose".
-    /// </summary>
     [Serializable]
     public class ParticipantInput
     {
         public int userId;
         public int vehicleId;
         public int team;
-        public string result; // "win"/"lose"/"draw"
+        public string result;
         public int kills;
         public int damage;
     }

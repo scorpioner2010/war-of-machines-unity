@@ -88,11 +88,9 @@ namespace Game.Scripts.Gameplay.Robots
 
                 if (!localGate && !_isReloading.Value && _ammoLeft.Value > 0 && vehicleRoot.inputManager.Shoot)
                 {
-                    // Миттєвий локальний візуал + запит на сервер через ShooterNet
                     _clientReloadRemain = Mathf.Max(_clientReloadRemain, reloadTime);
                     vehicleRoot.shooterNet.PredictAndRequest();
 
-                    // Паралельно офіційний запит на сервер для списання патронів/таймера
                     RequestFireServerRpc();
                 }
             }
@@ -114,7 +112,6 @@ namespace Game.Scripts.Gameplay.Robots
             _ammoLeft.Value = Mathf.Max(0, _ammoLeft.Value - 1);
             StartServerReloadTimer();
 
-            // Підтверджуємо власнику (без спавну візуалу тут!)
             FireApprovedTargetRpc(sender);
             onShot?.Invoke();
         }
@@ -122,7 +119,6 @@ namespace Game.Scripts.Gameplay.Robots
         [TargetRpc]
         private void FireApprovedTargetRpc(NetworkConnection conn)
         {
-            // НІЯКОГО Predict тут — уникнення дубля.
             ApplyHud();
         }
 

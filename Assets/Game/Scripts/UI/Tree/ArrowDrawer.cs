@@ -9,13 +9,11 @@ namespace Game.Scripts.UI.Tree
     {
         public Image arrowPrefab;
 
-        // малює стрілки між вузлами
         public void Draw(IEnumerable<VehicleEdge> edges, Dictionary<int, RectTransform> nodeById, RectTransform layer)
         {
             if (arrowPrefab == null || layer == null)
                 return;
 
-            // очищаємо попередні стрілки
             foreach (Transform c in layer)
             {
                 if (Application.isPlaying)
@@ -29,11 +27,9 @@ namespace Game.Scripts.UI.Tree
                 if (!nodeById.TryGetValue(e.fromId, out var from) || !nodeById.TryGetValue(e.toId, out var to))
                     continue;
 
-                // центри нод у світових координатах
                 Vector3 wa = GetWorldCenter(from);
                 Vector3 wb = GetWorldCenter(to);
 
-                // переводимо в локальні координати шару стрілок
                 Vector2 a = layer.InverseTransformPoint(wa);
                 Vector2 b = layer.InverseTransformPoint(wb);
 
@@ -42,18 +38,16 @@ namespace Game.Scripts.UI.Tree
                 float len = dir.magnitude;
                 float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
-                // створюємо нову стрілку
                 Image img = Instantiate(arrowPrefab, layer);
                 RectTransform rt = img.rectTransform;
 
                 rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = mid;        // центр стрілки між точками
-                rt.sizeDelta = new Vector2(len, rt.sizeDelta.y); // розтягуємо по довжині
+                rt.anchoredPosition = mid;
+                rt.sizeDelta = new Vector2(len, rt.sizeDelta.y);
                 rt.localRotation = Quaternion.Euler(0f, 0f, angle);
             }
         }
 
-        // обчислює центр RectTransform у world space
         private static Vector3 GetWorldCenter(RectTransform rt)
         {
             Vector3[] c = new Vector3[4];

@@ -8,8 +8,8 @@ namespace Game.Scripts.UI.MainMenu
         [SerializeField] private float distance = 5.0f;
         [SerializeField] private float heightOffset = 2.0f;
 
-        [SerializeField] private float xSpeed = 0.2f; // чутливість по X (пікселі → градуси)
-        [SerializeField] private float ySpeed = 0.2f; // чутливість по Y
+        [SerializeField] private float xSpeed = 0.2f;
+        [SerializeField] private float ySpeed = 0.2f;
         [SerializeField] private float yMinLimit = -20f;
         [SerializeField] private float yMaxLimit = 80f;
 
@@ -32,7 +32,6 @@ namespace Game.Scripts.UI.MainMenu
 
             if (dragArea != null && dragArea.IsDragging)
             {
-                // Отримуємо дельту з UI (в пікселях) і конвертуємо в кути
                 Vector2 delta = dragArea.ConsumeDelta();
                 _x += delta.x * xSpeed;
                 _y -= delta.y * ySpeed;

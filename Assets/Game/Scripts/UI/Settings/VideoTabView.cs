@@ -21,8 +21,8 @@ namespace Game.Scripts.UI.Settings
 
             List<string> fullScreenType = new List<string>
             {
-                "FullScreen",// = 1
-                "Windowed", // = 3
+                "FullScreen",
+                "Windowed",
             };
             FullScreenDropdown.AddOptions(fullScreenType);
             
@@ -45,7 +45,6 @@ namespace Game.Scripts.UI.Settings
             
             QualityDropdown.AddOptions(quality);
             
-            // Subscribe to UI events
             FullScreenDropdown.onValueChanged.AddListener(OnFullScreenChanged);
             ResolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
             QualityDropdown.onValueChanged.AddListener(OnQualityChanged);

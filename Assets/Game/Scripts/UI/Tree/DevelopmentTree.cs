@@ -37,7 +37,6 @@ namespace Game.Scripts.UI.Tree
         public ArrowDrawer arrowDrawer;
         public RectTransform arrowsLayerPrefab;
 
-        // збережені дані з сервера
         private VehicleGraph[] _graphs;
         private VehicleLite[] _vehicleLites;
         private string[] _factionCodes;
@@ -76,7 +75,6 @@ namespace Game.Scripts.UI.Tree
 
         private void Awake()
         {
-            // кнопка "Назад" повертає в головне меню
             if (buttonBack != null)
             {
                 buttonBack.onClick.AddListener(() =>
@@ -87,7 +85,6 @@ namespace Game.Scripts.UI.Tree
             }
         }
 
-        // ініціалізація — отримує дані з сервера, а потім оновлює UI
         [Button]
         public void Init()
         {
@@ -106,10 +103,8 @@ namespace Game.Scripts.UI.Tree
             await UpdateUI();
         }
 
-        // отримання всіх потрібних даних із сервера
         private async UniTask<bool> LoadDataFromServer()
         {
-            // очищаємо попередні дані
             _factionNameByCode.Clear();
 
             (bool ok, _, VehicleLite[] items) = await VehiclesManager.GetAll();
@@ -124,7 +119,6 @@ namespace Game.Scripts.UI.Tree
                 return ok;
             }
 
-            // формуємо словник назв фракцій
             foreach (VehicleLite v in items)
             {
                 if (!string.IsNullOrWhiteSpace(v.factionCode) && !_factionNameByCode.ContainsKey(v.factionCode))
@@ -133,10 +127,8 @@ namespace Game.Scripts.UI.Tree
                 }
             }
 
-            // отримуємо список кодів фракцій
             _factionCodes = BuildFactionCodes(items);
 
-            // отримуємо графи для кожної фракції
             List<VehicleGraph> graphs = new List<VehicleGraph>();
         
             foreach (string faction in _factionCodes)
@@ -159,7 +151,6 @@ namespace Game.Scripts.UI.Tree
             return true;
         }
 
-        // оновлює весь UI (будує кнопки, дерева, стрілки)
         private static string[] BuildFactionCodes(VehicleLite[] items)
         {
             List<string> factionCodes = new List<string>();
@@ -205,7 +196,6 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
-            // створюємо кнопки фракцій
             for (int i = 0; i < _factionCodes.Length; i++)
             {
                 int idx = i;
@@ -224,13 +214,11 @@ namespace Game.Scripts.UI.Tree
                 });
             }
 
-            // створюємо UI для кожної фракції
             for (int i = 0; i < _graphs.Length; i++)
             {
                 await BuildFactionTreeUI(_factionCodes[i], _graphs[i]);
             }
 
-            // активуємо першу фракцію
             if (_fractionRoots.Count > 0)
             {
                 SetActiveContainer(0);
@@ -241,7 +229,6 @@ namespace Game.Scripts.UI.Tree
             DrawArrowsAll();
         }
 
-        // показує активну фракцію
         public void SetActiveContainer(int number)
         {
             for (int i = 0; i < _fractionRoots.Count; i++)
@@ -250,7 +237,6 @@ namespace Game.Scripts.UI.Tree
             }
         }
 
-        // будує дерево UI для однієї фракції
         private async UniTask BuildFactionTreeUI(string factionCode, VehicleGraph graph)
         {
             if (graph == null || graph.nodes == null || graph.nodes.Length == 0)
@@ -258,12 +244,10 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
-            // кореневий контейнер фракції
             Transform rootT = Instantiate(fractionTreePrefab, animationPanel);
             rootT.name = $"FactionRoot_{factionCode}";
             _fractionRoots.Add(rootT);
 
-            // шар для стрілок (завжди під елементами)
             RectTransform arrowsLayer = null;
             if (arrowsLayerPrefab != null)
             {
@@ -272,18 +256,15 @@ namespace Game.Scripts.UI.Tree
                 arrowsLayer.SetAsFirstSibling();
             }
 
-            // контейнер стартової машини
             Transform starterContainer = Instantiate(starterContainerPrefab, rootT);
             starterContainer.name = "StarterContainer";
 
             Dictionary<int, RectTransform> nodeMap = new Dictionary<int, RectTransform>();
 
-            // шукаємо стартовий вузол
             VehicleNode starter = FindStarterNode(graph.nodes);
 
             CreateTreeItemFromNode(starterContainer, starter, nodeMap);
 
-            // колонки для класів машин
             FactionContainer columns = Instantiate(factionContainerPrefab, rootT);
             columns.name = "ColumnsContainer";
 
@@ -302,7 +283,6 @@ namespace Game.Scripts.UI.Tree
             await UniTask.Yield();
         }
 
-        // створює одну колонку
         private void BuildColumn(Transform parent, VehicleGraph graph, string className, string columnName, Dictionary<int, RectTransform> nodeMap)
         {
             TreeGrid grid = Instantiate(treeGridPrefab, parent);
@@ -317,7 +297,6 @@ namespace Game.Scripts.UI.Tree
             }
         }
 
-        // створює елемент дерева (машину)
         private static VehicleNode FindStarterNode(VehicleNode[] nodes)
         {
             VehicleNode starter = null;
@@ -532,7 +511,6 @@ namespace Game.Scripts.UI.Tree
             return Vehicle.Scout;
         }
 
-        // перемальовує стрілки лише для активної фракції
         private async UniTask RedrawActive(int index)
         {
             await GameplayAssistant.RebuildAllLayouts(_fractionRoots);
@@ -552,7 +530,6 @@ namespace Game.Scripts.UI.Tree
             arrowDrawer.Draw(v.Edges, v.NodeMap, v.ArrowsLayer);
         }
 
-        // перемальовує всі стрілки (для всіх фракцій)
         private void DrawArrowsAll()
         {
             if (arrowDrawer == null)
@@ -571,7 +548,6 @@ namespace Game.Scripts.UI.Tree
             }
         }
     
-        // очищення UI
         private void WipeUI()
         {
             for (int i = 0; i < _fractionRoots.Count; i++)

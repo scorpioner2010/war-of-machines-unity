@@ -1,4 +1,3 @@
-// RobotRegistry.cs (лінійний пошук)
 using System;
 using System.Collections.Generic;
 using Game.Scripts.Gameplay.Robots;

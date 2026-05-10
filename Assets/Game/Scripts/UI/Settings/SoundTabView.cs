@@ -15,7 +15,6 @@ namespace Game.Scripts.UI.Settings
         {
             _controller = controller;
 
-            // Subscribe to UI events
             MasterVolumeSlider.onValueChanged.AddListener(OnUiVolumeChanged);
             MusicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
             SfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeChanged);

@@ -105,7 +105,6 @@ namespace Game.Scripts.Networking.Lobby
             sceneOffsetX += 500;
             _additiveServerScene = scene;
 
-            // повідомити клієнтів про зсув
             ApplySceneOffsetClientRpc(scene.handle, usedOffset);
         }
 
@@ -311,7 +310,7 @@ namespace Game.Scripts.Networking.Lobby
             playerByConnection.randomPlayerConnected = true;
             bool allLoaded = serverRoom.AreAllRealPlayersLoaded();
             
-            if (allLoaded) //виконується тільки тоді коли всі гравці загрузилися
+            if (allLoaded)
             {
                 foreach (Player player in serverRoom.GetPlayers())
                 {

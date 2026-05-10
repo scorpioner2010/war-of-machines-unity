@@ -20,7 +20,6 @@ namespace Game.Scripts.Core.Utils
 
         private void OnGUI()
         {
-            //Display the fps and round to 2 decimals
             GUI.Label(new Rect(10, 250, 100, 25), _fps.ToString("0", CultureInfo.InvariantCulture) + " FPS", _textStyle);
             GUI.Label(new Rect(10, 200, 100, 25), middleFps.ToString("0", CultureInfo.InvariantCulture) + " FPS meddle(10s)", _textStyle);
         }

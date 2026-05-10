@@ -6,14 +6,6 @@ using UnityEngine.Networking;
 
 namespace Game.Scripts.API
 {
-    /// <summary>
-    /// Робота з технікою:
-    ///   GET /vehicles?faction=&branch=
-    ///   GET /vehicles/{id}
-    ///   GET /vehicles/by-code/{code}
-    ///   GET /vehicles/{id}/research-from
-    ///   GET /vehicles/graph?faction=
-    /// </summary>
     public abstract class VehiclesManager
     {
         public static async UniTask<(bool isSuccess, string message, VehicleLite[] items)> GetAll(string faction = null, string branch = null)
@@ -98,10 +90,6 @@ namespace Game.Scripts.API
             return (false, resp, default(VehicleLite));
         }
 
-        /// <summary>
-        /// Хто може відкрити цей танк (і скільки XP потрібно на предку).
-        /// GET /vehicles/{id}/research-from
-        /// </summary>
         public static async UniTask<(bool isSuccess, string message, ResearchFromLink[] items)> GetResearchFrom(int vehicleId)
         {
             string url = HttpLink.APIBase + "/vehicles/" + vehicleId + "/research-from";
@@ -125,10 +113,6 @@ namespace Game.Scripts.API
             return (false, resp, Array.Empty<ResearchFromLink>());
         }
 
-        /// <summary>
-        /// Повний граф для побудови дерева (вершини + ребра).
-        /// GET /vehicles/graph?faction=
-        /// </summary>
         public static async UniTask<(bool ok, string msg, VehicleGraph graph)>
             GetGraph(string faction = null)
         {
@@ -153,43 +137,35 @@ namespace Game.Scripts.API
         }
     }
 
-    // -------- Models --------
-
     [Serializable]
     public class VehicleLite
     {
-        // Ідентифікація/категорія
         public int id;
         public string code;
         public string name;
 
-        public string branch;       // "tracked" | "biped"
-        public string factionCode;  // напр. "iron_alliance"
-        public string factionName;  // текстове ім'я
+        public string branch;
+        public string factionCode;
+        public string factionName;
 
-        // НОВЕ з сервера
-        public string @class;       // "Scout" | "Guardian" | "Colossus"
-        public int level;           // 1..4
-        public int purchaseCost;    // валюта гри
-        public bool isVisible;      // 🔹 нове поле (чи видно в гілці розвитку / каталозі)
+        public string @class;
+        public int level;
+        public int purchaseCost;
+        public bool isVisible;
 
-        // Бойові параметри
         public int hp;
         public int damage;
         public int penetration;
 
-        // Гарматні/точність/кадри
         public float reloadTime;
         public float accuracy;
         public float aimTime;
 
-        // Мобільність
         public float speed;
         public float acceleration;
         public float traverseSpeed;
         public float turretTraverseSpeed;
 
-        // Броня
         public string turretArmor;
         public string hullArmor;
 
@@ -229,7 +205,7 @@ namespace Game.Scripts.API
         public int level;
         public string branch;
         public string factionCode;
-        public bool isVisible;   // 🔹 нове поле
+        public bool isVisible;
     }
 
     [Serializable]

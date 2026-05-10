@@ -7,7 +7,6 @@ namespace Game.Scripts.API.Endpoints
 {
     public abstract class MapsManager
     {
-        // GET /maps
         public static async UniTask<(bool isSuccess, string message, MapView[] items)> GetAll()
         {
             string url = HttpLink.APIBase + "/maps";

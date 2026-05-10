@@ -18,7 +18,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void FixedUpdate()
         {
-            // Тільки сервер рухає; клієнти отримують NetworkTransform
             if (!vehicleRoot.IsServerInitialized)
             {
                 return;

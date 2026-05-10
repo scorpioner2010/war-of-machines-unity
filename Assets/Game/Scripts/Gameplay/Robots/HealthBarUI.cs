@@ -14,7 +14,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Start()
         {
-            // Працюємо тільки для локального власника
             if (!vehicleRoot.IsOwner)
             {
                 enabled = false;

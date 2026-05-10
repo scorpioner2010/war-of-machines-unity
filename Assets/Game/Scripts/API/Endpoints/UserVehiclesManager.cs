@@ -9,7 +9,6 @@ namespace Game.Scripts.API.Endpoints
 {
     public abstract class UserVehiclesManager
     {
-        // GET /user-vehicles/me
         public static async UniTask<(bool ok, string msg, UserVehicleResponse response)> GetMyVehicles(string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me";
@@ -34,7 +33,6 @@ namespace Game.Scripts.API.Endpoints
             return (false, resp, null);
         }
 
-        // PUT /user-vehicles/me/active/{vehicleId}
         public static async UniTask<(bool ok, string msg)> SetActive(int vehicleId, string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me/active/" + vehicleId;
@@ -54,7 +52,6 @@ namespace Game.Scripts.API.Endpoints
             return (req.result == UnityWebRequest.Result.Success, resp);
         }
 
-        // DELETE /user-vehicles/me/{vehicleId}
         public static async UniTask<(bool ok, string msg)> Remove(int vehicleId, string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me/" + vehicleId;
@@ -72,7 +69,6 @@ namespace Game.Scripts.API.Endpoints
             return (req.result == UnityWebRequest.Result.Success, resp);
         }
 
-        // POST /user-vehicles/{vehicleId}/convert-freexp
         public static async UniTask<(bool ok, string msg)> ConvertFreeXp(int vehicleId, int amount, string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/" + vehicleId + "/convert-freexp";
@@ -93,7 +89,6 @@ namespace Game.Scripts.API.Endpoints
             return (req.result == UnityWebRequest.Result.Success, resp);
         }
 
-        // GET /user-vehicles/xp
         public static async UniTask<(bool ok, string msg, VehicleXpResponse data)> GetXpInfo(string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/xp";
@@ -118,8 +113,6 @@ namespace Game.Scripts.API.Endpoints
             return (false, resp, null);
         }
 
-        // POST /user-vehicles/me/buy/{code}
-        // Купівля техніки за кодом: списує Bolts на бекенді та додає машину гравцеві
         public static async UniTask<(bool ok, string msg, BuyVehicleResult data)> Buy(string code, string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me/buy/" + code;
@@ -145,8 +138,6 @@ namespace Game.Scripts.API.Endpoints
             return (false, resp, null);
         }
 
-        // POST /user-vehicles/me/sell/{vehicleId}
-        // Продаж техніки за 50% від ціни
         public static async UniTask<(bool ok, string msg, SellVehicleResult data)> Sell(int vehicleId, string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me/sell/" + vehicleId;
@@ -165,7 +156,6 @@ namespace Game.Scripts.API.Endpoints
 
             if (req.result == UnityWebRequest.Result.Success)
             {
-                // очікуємо JSON: { ok, soldVehicleId, refundBolts, newBolts }
                 var data = JsonUtility.FromJson<SellVehicleResult>(resp);
                 return (true, resp, data);
             }

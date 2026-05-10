@@ -34,7 +34,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartClient()
         {
-            // nothing
         }
 
         public void Init(bool isMenu = false)

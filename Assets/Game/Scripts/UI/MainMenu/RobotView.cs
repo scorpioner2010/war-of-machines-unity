@@ -32,10 +32,23 @@ namespace Game.Scripts.UI.MainMenu
 
         private VehicleRoot _vehicleRoot;
         private readonly List<VehicleSlotView> _slots = new List<VehicleSlotView>();
+        private int _spawnVersion;
 
         private static RobotView _in;
 
-        private void Awake() => _in = this;
+        private void Awake()
+        {
+            _in = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (_in == this)
+            {
+                _spawnVersion++;
+                _in = null;
+            }
+        }
 
         public static void GenerateIcons()
         {
@@ -218,20 +231,28 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            _in.rootSpawnPlace.SetActive(true);
-            _in._vehicleRoot = Instantiate(vehicleRoot, _in.spawnPosition.transform, true);
-            _in._vehicleRoot.gameObject.SetActive(false);
+            RobotView view = _in;
+            int spawnVersion = ++view._spawnVersion;
+
+            view.rootSpawnPlace.SetActive(true);
+            VehicleRoot spawnedVehicleRoot = Instantiate(vehicleRoot, view.spawnPosition.transform, true);
+            view._vehicleRoot = spawnedVehicleRoot;
+            spawnedVehicleRoot.gameObject.SetActive(false);
 
             // Remove FishNet components and keep only local scripts.
-            _in.StripFishNetRuntime(_in._vehicleRoot.gameObject);
+            view.StripFishNetRuntime(spawnedVehicleRoot.gameObject);
 
-            _in._vehicleRoot.transform.position = Vector3.zero;
-            _in._vehicleRoot.transform.rotation = Quaternion.identity;
+            spawnedVehicleRoot.transform.position = Vector3.zero;
+            spawnedVehicleRoot.transform.rotation = Quaternion.identity;
 
-            await _in.ActivateAndInitNextFrame(_in._vehicleRoot);
+            bool activated = await view.ActivateAndInitNextFrame(spawnedVehicleRoot, spawnVersion);
+            if (!activated || view == null || spawnedVehicleRoot == null || view._vehicleRoot != spawnedVehicleRoot)
+            {
+                return;
+            }
 
-            _in._vehicleRoot.transform.position = _in.spawnPosition.position;
-            _in._vehicleRoot.transform.rotation = _in.spawnPosition.rotation;
+            spawnedVehicleRoot.transform.position = view.spawnPosition.position;
+            spawnedVehicleRoot.transform.rotation = view.spawnPosition.rotation;
         }
 
         private static int CompareByName(VehicleSlotVehicleData left, VehicleSlotVehicleData right)
@@ -248,9 +269,12 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
+            _in._spawnVersion++;
+
             if (_in._vehicleRoot != null)
             {
                 Destroy(_in._vehicleRoot.gameObject);
+                _in._vehicleRoot = null;
             }
 
             foreach (VehicleSlotView slot in _in._slots)
@@ -265,13 +289,23 @@ namespace Game.Scripts.UI.MainMenu
             _in.rootSpawnPlace.SetActive(false);
         }
 
-        private async UniTask ActivateAndInitNextFrame(VehicleRoot go)
+        private async UniTask<bool> ActivateAndInitNextFrame(VehicleRoot go, int spawnVersion)
         {
             await UniTask.NextFrame();
+            if (this == null || go == null || _spawnVersion != spawnVersion)
+            {
+                return false;
+            }
+
             await UniTask.NextFrame();
+            if (this == null || go == null || _spawnVersion != spawnVersion)
+            {
+                return false;
+            }
 
             go.gameObject.SetActive(true);
             go.Init(true);
+            return true;
         }
 
         private void StripFishNetRuntime(GameObject root)

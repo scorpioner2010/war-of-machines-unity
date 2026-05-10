@@ -1,4 +1,3 @@
-// Vehicle.cs
 namespace Game.Scripts.UI
 {
     public enum Vehicle

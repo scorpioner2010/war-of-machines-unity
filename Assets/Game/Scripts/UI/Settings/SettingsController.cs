@@ -136,12 +136,7 @@ namespace Game.Scripts.UI.Settings
 
         private string GetLanguageByIndex(int index)
         {
-            switch (index)
-            {
-                case 1: return "Ukrainian";
-                case 2: return "Spanish";
-                default: return "English";
-            }
+            return "English";
         }
     }
 }

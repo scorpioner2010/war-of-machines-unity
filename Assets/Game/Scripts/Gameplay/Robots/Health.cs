@@ -50,7 +50,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartClient()
         {
-            // Узгодити стан колайдерів для лейт-джойнерів
             SetCollidersEnabled(!_dead.Value);
         }
 

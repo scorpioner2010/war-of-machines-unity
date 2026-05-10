@@ -5,7 +5,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
     public class RotateObject : MonoBehaviour
     {
         public float speed;
-        public float currentSpeed;  // динамічна швидкість обертання
+        public float currentSpeed;
 
         private void Update() 
         {

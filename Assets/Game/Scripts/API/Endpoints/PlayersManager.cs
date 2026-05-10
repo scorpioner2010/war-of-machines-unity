@@ -68,7 +68,7 @@ namespace Game.Scripts.API.Models
         public int mmr;
         public int bolts;
         public int adamant;
-        public int freeXp;  // new field
+        public int freeXp;
 
         public int activeVehicleId;
         public string activeVehicleCode;

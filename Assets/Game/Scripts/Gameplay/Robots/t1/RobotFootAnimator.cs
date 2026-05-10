@@ -13,21 +13,19 @@ namespace Game.Scripts.Gameplay.Robots.t1
         
         public float inputThreshold = 0.01f;
 
-        public float stepDistance = 1.1f;        // Дистанція переміщення стопи
-        public float stepHeight = 0.5f;          // Підйом стопи під час кроку
-        public float stepCycleDuration = 1f;     // Тривалість циклу ходьби
+        public float stepDistance = 1.1f;
+        public float stepHeight = 0.5f;
+        public float stepCycleDuration = 1f;
 
-        public float turnLiftHeight = 0.2f;      // Підйом стопи при повороті
-        public float turnStepDuration = 0.5f;    // Тривалість циклу поворотної анімації
+        public float turnLiftHeight = 0.2f;
+        public float turnStepDuration = 0.5f;
 
-        public float animTransitionSpeed = 5f;   // Швидкість переходу між анімаціями
+        public float animTransitionSpeed = 5f;
 
-        // Приватні змінні
-        private float _walkPhase = 0f;            // Фаза ходьби [0,1)
-        private float _turnTimer = 0f;            // Таймер циклу повороту
-        private bool _isLeftTurningStep = true;   // Чи піднімається ліва стопа при повороті
+        private float _walkPhase = 0f;
+        private float _turnTimer = 0f;
+        private bool _isLeftTurningStep = true;
 
-        // Вагові коефіцієнти для анімацій (0 - нейтрально, 1 - повна анімація)
         private float _currentWalkWeight = 0f;
         private float _currentTurnWeight = 0f;
         
@@ -42,7 +40,6 @@ namespace Game.Scripts.Gameplay.Robots.t1
             {
                 _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 1f, Time.deltaTime * animTransitionSpeed);
                 _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * animTransitionSpeed);
-                // Оновлення фази ходьби (на основі напрямку вперед/назад)
                 float direction = movementInput.y > 0f ? 1f : -1f;
                 _walkPhase += direction * Time.deltaTime / stepCycleDuration;
                 _walkPhase %= 1f;
@@ -52,7 +49,6 @@ namespace Game.Scripts.Gameplay.Robots.t1
             {
                 _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 0f, Time.deltaTime * animTransitionSpeed);
                 _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 1f, Time.deltaTime * animTransitionSpeed);
-                // Оновлення таймера повороту
                 _turnTimer += Time.deltaTime;
                 if (_turnTimer >= turnStepDuration)
                 {
@@ -62,29 +58,24 @@ namespace Game.Scripts.Gameplay.Robots.t1
             }
             else
             {
-                // Немає вводу – повертаємось до нейтрального положення
                 _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 0f, Time.deltaTime * animTransitionSpeed);
                 _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * animTransitionSpeed);
             }
 
-            // --- Обчислення анімації ходьби ---
             Vector3 leftWalkOffset = ComputeWalkOffset(_walkPhase);
             Vector3 rightWalkOffset = ComputeWalkOffset((_walkPhase + 0.5f) % 1f);
             float leftWalkBlend = ComputeWalkBlend(_walkPhase);
             float rightWalkBlend = ComputeWalkBlend((_walkPhase + 0.5f) % 1f);
 
-            // --- Обчислення анімації повороту ---
             Vector3 turnOffset = new Vector3(0f, turnLiftHeight, 0f);
-            float turnBlend = ComputeTurnBlend();  // спільний для обох, але застосовується до однієї стопи
+            float turnBlend = ComputeTurnBlend();
             float leftTurnBlend = _isLeftTurningStep ? turnBlend : 1f;
             float rightTurnBlend = !_isLeftTurningStep ? turnBlend : 1f;
             Vector3 leftTurnOffset = turnOffset;
             Vector3 rightTurnOffset = turnOffset;
 
-            // --- Остаточне змішування (нейтральний стан – offset = 0, blend = 1) ---
-            // Формула: final = neutral*(1 - (walkW + turnW)) + walk*walkW + turn*turnW
             Vector3 neutralOffset = Vector3.zero;
-            float neutralBlend = 1f; // повний контакт із землею
+            float neutralBlend = 1f;
 
             Vector3 leftFinalOffset = neutralOffset * (1f - (_currentWalkWeight + _currentTurnWeight))
                                       + leftWalkOffset * _currentWalkWeight
@@ -100,12 +91,10 @@ namespace Game.Scripts.Gameplay.Robots.t1
                                      + rightWalkBlend * _currentWalkWeight
                                      + rightTurnBlend * _currentTurnWeight);
 
-            // Передача зсувів до компонентів FootPlacer
             leftFoot.SetTargetOffset(leftFinalOffset, leftFinalBlend);
             rightFoot.SetTargetOffset(rightFinalOffset, rightFinalBlend);
         }
 
-        // --- Функції для анімації ходьби ---
         private Vector3 ComputeWalkOffset(float phase)
         {
             float halfStep = stepDistance * 0.5f;
@@ -123,7 +112,6 @@ namespace Game.Scripts.Gameplay.Robots.t1
                 horizontal = Mathf.Lerp(-halfStep, halfStep, t);
                 vertical = Mathf.Sin(Mathf.PI * t) * stepHeight;
             }
-            // Зсув: по вертикалі (Y) і вздовж осі Z (горизонтальний)
             return new Vector3(0f, vertical, horizontal);
         }
 
@@ -139,7 +127,6 @@ namespace Game.Scripts.Gameplay.Robots.t1
                 return Mathf.Lerp(0f, 1f, (phase - 0.85f) / 0.15f);
         }
 
-        // --- Функція для анімації повороту ---
         private float ComputeTurnBlend()
         {
             float t = _turnTimer / turnStepDuration;

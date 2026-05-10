@@ -28,7 +28,7 @@ namespace Game.Scripts.Gameplay.Robots
             float speed = new Vector2(delta.x, delta.z).magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
             _prevPos = t.position;
 
-            int kmh = Mathf.RoundToInt(speed * 3.6f); // м/с → км/год (або множ *5 як було)
+            int kmh = Mathf.RoundToInt(speed * 3.6f);
             SpeedHud.SetText(kmh.ToString());
         }
     }
