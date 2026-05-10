@@ -6,6 +6,7 @@ using FishNet.Managing.Scened;
 using FishNet.Object;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
+using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
@@ -62,13 +63,57 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            TargetServerSettingsRpc(sender, ServerSettings.GetMaxPlayersForFindRoom(), ServerSettings.GetFindRoomSeconds());
+            GunDispersionGlobalSettings gunDispersion = ServerSettings.GetGunDispersion();
+            TargetServerSettingsRpc(
+                sender,
+                ServerSettings.GetMaxPlayersForFindRoom(),
+                ServerSettings.GetFindRoomSeconds(),
+                gunDispersion.enabled,
+                gunDispersion.expandTime,
+                gunDispersion.referenceHullTraverseDegPerSec,
+                gunDispersion.referenceTurretTraverseDegPerSec,
+                gunDispersion.referenceGunTraverseDegPerSec,
+                gunDispersion.referenceCameraAimDegPerSec,
+                gunDispersion.uiMinDiameter,
+                gunDispersion.uiMaxDiameter,
+                gunDispersion.uiPixelsPerDegree,
+                gunDispersion.serverSyncInterval,
+                gunDispersion.serverSyncDeadZoneDeg
+            );
         }
 
         [TargetRpc]
-        private void TargetServerSettingsRpc(NetworkConnection target, int maxPlayersForFindRoom, int findRoomSeconds)
+        private void TargetServerSettingsRpc(
+            NetworkConnection target,
+            int maxPlayersForFindRoom,
+            int findRoomSeconds,
+            bool gunDispersionEnabled,
+            float gunDispersionExpandTime,
+            float gunDispersionReferenceHullTraverse,
+            float gunDispersionReferenceTurretTraverse,
+            float gunDispersionReferenceGunTraverse,
+            float gunDispersionReferenceCameraAim,
+            float gunDispersionUiMinDiameter,
+            float gunDispersionUiMaxDiameter,
+            float gunDispersionUiPixelsPerDegree,
+            float gunDispersionServerSyncInterval,
+            float gunDispersionServerSyncDeadZoneDeg)
         {
-            RemoteServerSettings.Apply(maxPlayersForFindRoom, findRoomSeconds);
+            RemoteServerSettings.Apply(
+                maxPlayersForFindRoom,
+                findRoomSeconds,
+                gunDispersionEnabled,
+                gunDispersionExpandTime,
+                gunDispersionReferenceHullTraverse,
+                gunDispersionReferenceTurretTraverse,
+                gunDispersionReferenceGunTraverse,
+                gunDispersionReferenceCameraAim,
+                gunDispersionUiMinDiameter,
+                gunDispersionUiMaxDiameter,
+                gunDispersionUiPixelsPerDegree,
+                gunDispersionServerSyncInterval,
+                gunDispersionServerSyncDeadZoneDeg
+            );
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -196,6 +241,7 @@ namespace Game.Scripts.Networking.Lobby
                 userId = profile != null ? profile.id : 0,
                 mmr = profile != null ? profile.mmr : 1000,
                 activeVehicleId = profile != null ? profile.activeVehicleId : 0,
+                activeVehicleCode = profile != null ? profile.activeVehicleCode : string.Empty,
                 team = MatchTeam.None
             };
         }

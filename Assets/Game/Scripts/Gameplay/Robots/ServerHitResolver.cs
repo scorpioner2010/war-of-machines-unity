@@ -25,6 +25,7 @@ namespace Game.Scripts.Gameplay.Robots
             LayerMask hitMask,
             float shellPenMm = 200f,
             float normDeg = 0f,
+            float shellDamage = 100f,
             float maxDistanceFallback = 2000f)
         {
             HitResult hr = default;
@@ -90,13 +91,13 @@ namespace Game.Scripts.Gameplay.Robots
                     hr.baseMm = baseMm;
                     hr.losMm = losMm;
                     hr.penetrated = shellPenMm >= losMm;
-                    hr.damage = hr.penetrated ? 100f : 0f;
+                    hr.damage = hr.penetrated ? Mathf.Max(0f, shellDamage) : 0f;
                 }
                 else
                 {
                     // No ArmorMap: treat it as a thin surface with full penetration.
                     hr.penetrated = true;
-                    hr.damage = 100f;
+                    hr.damage = Mathf.Max(0f, shellDamage);
                 }
             }
 

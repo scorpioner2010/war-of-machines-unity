@@ -1,18 +1,23 @@
 using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
+using FishNet.Object.Synchronizing;
+using Game.Scripts.Core.Services;
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class ShooterNet : NetworkBehaviour, IVehicleRootAware
+    public class ShooterNet : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
 
         public Projectile projectilePrefab;
         public Transform muzzleTransform;
+
+        public GunDispersionSettings dispersion = new GunDispersionSettings();
 
         public float projectileSpeed = 70f;
         public float projectileLifeTime = 8f;
@@ -32,19 +37,94 @@ namespace Game.Scripts.Gameplay.Robots
         [Range(0f, 1f)] public float projectileMinSpeedMultiplier = 0.1f;
 
         public LayerMask hitMask = ~0;
+        public float shellDamage = 100f;
         public float shellPenetrationMm = 200f;
         public float normalizationDeg = 0f;
 
         private const float MAX_PASSED_TIME = 0.30f;
 
         private int _shotSeq;
+        private float _nextServerDispersionSyncTime;
+        private GunCrosshair _crosshair;
+        private bool _ownerDispersionInitialized;
+        private bool _serverDispersionInitialized;
 
         private readonly HashSet<int> _processedShots = new HashSet<int>();
         private readonly Dictionary<int, Projectile> _predictedProjectiles = new Dictionary<int, Projectile>();
+        private readonly GunDispersionModel _ownerDispersion = new GunDispersionModel();
+        private readonly GunDispersionModel _serverDispersion = new GunDispersionModel();
+        private readonly SyncVar<float> _serverDispersionDeg = new();
 
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+        }
+
+        public void ApplyVehicleStats(VehicleRuntimeStats stats)
+        {
+            if (stats == null)
+            {
+                return;
+            }
+
+            if (stats.Damage > 0f)
+            {
+                shellDamage = stats.Damage;
+            }
+
+            if (stats.Penetration > 0f)
+            {
+                shellPenetrationMm = stats.Penetration;
+            }
+
+            if (stats.Accuracy > 0f)
+            {
+                dispersion.minDispersionDeg = stats.Accuracy;
+            }
+
+            if (stats.AimTime > 0f)
+            {
+                dispersion.aimTime = stats.AimTime;
+            }
+        }
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (context.IsServer)
+            {
+                InitServerDispersion();
+            }
+
+            if (context.IsOwner && !context.IsMenu)
+            {
+                InitOwnerDispersion();
+            }
+        }
+
+        private void Update()
+        {
+            if (IsServerInitialized)
+            {
+                if (!_serverDispersionInitialized)
+                {
+                    InitServerDispersion();
+                }
+
+                GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+                float serverDeg = _serverDispersion.Tick(vehicleRoot, dispersion, globalDispersion, Time.deltaTime, includeCameraAimMotion: false);
+                SyncServerDispersion(serverDeg, globalDispersion, force: false);
+            }
+
+            if (IsOwner && vehicleRoot != null && !vehicleRoot.IsMenu)
+            {
+                if (!_ownerDispersionInitialized)
+                {
+                    InitOwnerDispersion();
+                }
+
+                _ownerDispersion.Tick(vehicleRoot, dispersion, GetGlobalDispersion(), Time.deltaTime, includeCameraAimMotion: true);
+                ApplyCrosshairDispersion();
+            }
         }
 
         private enum ShotHudStatus : byte
@@ -73,18 +153,25 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             Vector3 startPos = muzzleTransform.position;
-            Vector3 aimPoint = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
+            Vector3 baseAimPoint = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
             int shotId = ++_shotSeq;
+            if (!_ownerDispersionInitialized)
+            {
+                InitOwnerDispersion();
+            }
 
-            Projectile predicted = SpawnLocal(startPos, aimPoint, 0f, authoritative: false, Vector3.up);
+            Vector3 predictedAimPoint = GetDispersedAimPoint(startPos, baseAimPoint, shotId, _ownerDispersion.CurrentDeg, GetGlobalDispersion());
+
+            Projectile predicted = SpawnLocal(startPos, predictedAimPoint, 0f, authoritative: false, Vector3.up);
             _predictedProjectiles[shotId] = predicted;
+            AddOwnerShotBloom();
 
             if (!IsSpawned)
             {
                 return;
             }
 
-            FireRequestServerRpc(shotId, startPos, aimPoint, base.TimeManager.Tick);
+            FireRequestServerRpc(shotId, startPos, baseAimPoint, base.TimeManager.Tick);
         }
 
         private Projectile SpawnLocal(
@@ -141,7 +228,15 @@ namespace Game.Scripts.Gameplay.Robots
             float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
             passed = Mathf.Min(MAX_PASSED_TIME * 0.5f, passed);
 
-            ResolvedShot shot = ResolveShot(startPos, aimPoint);
+            if (!_serverDispersionInitialized)
+            {
+                InitServerDispersion();
+            }
+
+            GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+            Vector3 dispersedAimPoint = GetDispersedAimPoint(startPos, aimPoint, shotId, _serverDispersion.CurrentDeg, globalDispersion);
+            ResolvedShot shot = ResolveShot(startPos, dispersedAimPoint);
+            AddServerShotBloom();
             ConfigureOwnerProjectileTargetRpc(sender, shotId, shot.Point, shot.Normal);
 
             SpawnLocal(
@@ -156,6 +251,134 @@ namespace Game.Scripts.Gameplay.Robots
             FireObserversRpc(shotId, startPos, shot.Point, shot.Normal, clientTick);
         }
 
+        private void InitOwnerDispersion()
+        {
+            _ownerDispersion.Reset(vehicleRoot, dispersion);
+            _crosshair = Singleton<GunCrosshair>.CurrentOrNull;
+            _ownerDispersionInitialized = true;
+            ApplyCrosshairDispersion();
+        }
+
+        private void InitServerDispersion()
+        {
+            _serverDispersion.Reset(vehicleRoot, dispersion);
+            _serverDispersionInitialized = true;
+            SyncServerDispersion(_serverDispersion.CurrentDeg, GetGlobalDispersion(), force: true);
+        }
+
+        private void AddOwnerShotBloom()
+        {
+            if (!_ownerDispersionInitialized)
+            {
+                InitOwnerDispersion();
+            }
+
+            _ownerDispersion.AddShotBloom(dispersion, GetGlobalDispersion());
+            ApplyCrosshairDispersion();
+        }
+
+        private void AddServerShotBloom()
+        {
+            if (!_serverDispersionInitialized)
+            {
+                InitServerDispersion();
+            }
+
+            GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+            _serverDispersion.AddShotBloom(dispersion, globalDispersion);
+            SyncServerDispersion(_serverDispersion.CurrentDeg, globalDispersion, force: true);
+        }
+
+        private void SyncServerDispersion(float value, GunDispersionGlobalSettings globalDispersion, bool force)
+        {
+            if (!IsServerInitialized)
+            {
+                return;
+            }
+
+            globalDispersion ??= GunDispersionGlobalSettings.Default;
+            if (!force && Time.time < _nextServerDispersionSyncTime && Mathf.Abs(_serverDispersionDeg.Value - value) < globalDispersion.serverSyncDeadZoneDeg)
+            {
+                return;
+            }
+
+            _serverDispersionDeg.Value = value;
+            _nextServerDispersionSyncTime = Time.time + Mathf.Max(0.001f, globalDispersion.serverSyncInterval);
+        }
+
+        private void ApplyCrosshairDispersion()
+        {
+            if (_crosshair == null)
+            {
+                _crosshair = Singleton<GunCrosshair>.CurrentOrNull;
+            }
+
+            if (_crosshair == null || dispersion == null)
+            {
+                return;
+            }
+
+            GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+            float localDiameter = globalDispersion.GetUiDiameter(_ownerDispersion.CurrentDeg, dispersion.MinDispersion);
+            float serverDeg = _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
+            float serverDiameter = globalDispersion.GetUiDiameter(serverDeg, dispersion.MinDispersion);
+            _crosshair.SetAimingDiameters(localDiameter, serverDiameter);
+        }
+
+        private GunDispersionGlobalSettings GetGlobalDispersion()
+        {
+            if (IsServerInitialized)
+            {
+                return ServerSettings.GetGunDispersion();
+            }
+
+            return RemoteServerSettings.GunDispersion;
+        }
+
+        private Vector3 GetDispersedAimPoint(Vector3 startPos, Vector3 aimPoint, int shotId, float dispersionDeg, GunDispersionGlobalSettings globalDispersion)
+        {
+            globalDispersion ??= GunDispersionGlobalSettings.Default;
+            if (dispersion == null || !globalDispersion.enabled || dispersionDeg <= 0f)
+            {
+                return aimPoint;
+            }
+
+            Vector3 direction = aimPoint - startPos;
+            float distance = direction.magnitude;
+            if (distance <= 0.001f)
+            {
+                return aimPoint;
+            }
+
+            direction /= distance;
+            Vector2 unitCircle = GetDeterministicUnitCircle(shotId);
+            float spreadRadius = Mathf.Tan(dispersionDeg * Mathf.Deg2Rad) * distance;
+
+            Vector3 right = Vector3.Cross(Vector3.up, direction);
+            if (right.sqrMagnitude < 0.0001f)
+            {
+                right = Vector3.Cross(Vector3.forward, direction);
+            }
+            right.Normalize();
+
+            Vector3 up = Vector3.Cross(direction, right).normalized;
+            return aimPoint + (right * unitCircle.x + up * unitCircle.y) * spreadRadius;
+        }
+
+        private Vector2 GetDeterministicUnitCircle(int shotId)
+        {
+            unchecked
+            {
+                int objectId = NetworkObject != null ? NetworkObject.ObjectId : 0;
+                int seed = shotId * 73856093 ^ objectId * 19349663;
+                System.Random random = new System.Random(seed);
+
+                float angle = (float)random.NextDouble() * Mathf.PI * 2f;
+                float radius = Mathf.Sqrt((float)random.NextDouble());
+                return new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
+            }
+        }
+
         private ResolvedShot ResolveShot(Vector3 startPos, Vector3 aimPoint)
         {
             ServerHitResolver.HitResult hr = ServerHitResolver.ResolveShot(
@@ -163,7 +386,8 @@ namespace Game.Scripts.Gameplay.Robots
                 aimPoint,
                 hitMask,
                 shellPenetrationMm,
-                normalizationDeg
+                normalizationDeg,
+                shellDamage
             );
 
             Health targetHealth = null;

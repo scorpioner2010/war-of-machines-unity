@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class ObjectMover : MonoBehaviour, IVehicleRootAware
+    public class ObjectMover : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
         public CharacterController controller;
@@ -15,10 +15,36 @@ namespace Game.Scripts.Gameplay.Robots
 
         private Vector3 _hVel;
         private float _vVel;
+        private bool _useRuntimeTraverseSpeed;
+        private float _runtimeTraverseSpeedDegPerSecond;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+        }
+
+        public void ApplyVehicleStats(VehicleRuntimeStats stats)
+        {
+            if (stats == null)
+            {
+                return;
+            }
+
+            if (stats.Speed > 0f)
+            {
+                maxSpeed = stats.Speed;
+            }
+
+            if (stats.Acceleration > 0f)
+            {
+                acceleration = stats.Acceleration;
+            }
+
+            if (stats.TraverseSpeed > 0f)
+            {
+                _runtimeTraverseSpeedDegPerSecond = stats.TraverseSpeed;
+                _useRuntimeTraverseSpeed = true;
+            }
         }
 
         private void FixedUpdate()
@@ -54,7 +80,11 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (mi.x != 0f)
             {
-                transform.Rotate(Vector3.up * mi.x * rotateSpeed);
+                float rotationStep = _useRuntimeTraverseSpeed
+                    ? _runtimeTraverseSpeedDegPerSecond * Time.fixedDeltaTime
+                    : rotateSpeed;
+
+                transform.Rotate(Vector3.up * mi.x * rotationStep);
             }
         }
     }

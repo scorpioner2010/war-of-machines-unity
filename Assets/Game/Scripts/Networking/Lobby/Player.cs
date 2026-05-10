@@ -14,6 +14,7 @@ namespace Game.Scripts.Networking.Lobby
         public int userId;
         public int mmr;
         public int activeVehicleId;
+        public string activeVehicleCode;
         public MatchTeam team;
         public bool isBot;
         public bool randomPlayerConnected; //for random game

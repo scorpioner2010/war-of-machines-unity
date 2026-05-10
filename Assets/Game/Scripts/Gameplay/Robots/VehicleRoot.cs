@@ -27,9 +27,13 @@ namespace Game.Scripts.Gameplay.Robots
         public VehicleHUD vehicleHUD;
 
         private readonly List<IVehicleInitializable> _initializables = new List<IVehicleInitializable>(16);
+        private readonly List<IVehicleStatsConsumer> _statsConsumers = new List<IVehicleStatsConsumer>(16);
         private bool _componentsCached;
+        private VehicleRuntimeStats _runtimeStats;
 
         public bool IsMenu { get; set; }
+        public VehicleRuntimeStats RuntimeStats => _runtimeStats;
+        public bool HasRuntimeStats => _runtimeStats != null && _runtimeStats.IsValid;
 
         private void Awake()
         {
@@ -153,6 +157,11 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     _initializables.Add(initializable);
                 }
+
+                if (behaviour is IVehicleStatsConsumer statsConsumer)
+                {
+                    _statsConsumers.Add(statsConsumer);
+                }
             }
 
             _componentsCached = true;
@@ -169,6 +178,117 @@ namespace Game.Scripts.Gameplay.Robots
                     initializable.OnVehicleInitialized(context);
                 }
             }
+        }
+
+        public void ServerApplyRuntimeStats(VehicleRuntimeStats stats, bool syncObservers)
+        {
+            ApplyRuntimeStats(stats);
+
+            if (syncObservers && IsServerInitialized && IsSpawned && HasRuntimeStats)
+            {
+                RuntimeStatsObserversRpc(
+                    _runtimeStats.VehicleId,
+                    _runtimeStats.Code,
+                    _runtimeStats.Name,
+                    _runtimeStats.Level,
+                    _runtimeStats.MaxHealth,
+                    _runtimeStats.Damage,
+                    _runtimeStats.Penetration,
+                    _runtimeStats.ReloadTime,
+                    _runtimeStats.Accuracy,
+                    _runtimeStats.AimTime,
+                    _runtimeStats.Speed,
+                    _runtimeStats.Acceleration,
+                    _runtimeStats.TraverseSpeed,
+                    _runtimeStats.TurretTraverseSpeed,
+                    _runtimeStats.HullArmor.Front,
+                    _runtimeStats.HullArmor.Side,
+                    _runtimeStats.HullArmor.Rear,
+                    _runtimeStats.TurretArmor.Front,
+                    _runtimeStats.TurretArmor.Side,
+                    _runtimeStats.TurretArmor.Rear
+                );
+            }
+        }
+
+        public void ApplyRuntimeStats(VehicleRuntimeStats stats)
+        {
+            if (stats == null || !stats.IsValid)
+            {
+                return;
+            }
+
+            _runtimeStats = stats.Clone();
+            CacheComponents();
+            ApplyRuntimeStatsToComponents();
+        }
+
+        private void ApplyRuntimeStatsToComponents()
+        {
+            for (int i = 0; i < _statsConsumers.Count; i++)
+            {
+                IVehicleStatsConsumer consumer = _statsConsumers[i];
+                if (consumer != null)
+                {
+                    consumer.ApplyVehicleStats(_runtimeStats);
+                }
+            }
+        }
+
+        [ObserversRpc(BufferLast = true)]
+        private void RuntimeStatsObserversRpc(
+            int vehicleId,
+            string code,
+            string vehicleName,
+            int level,
+            float maxHealth,
+            float damage,
+            float penetration,
+            float reloadTime,
+            float accuracy,
+            float aimTime,
+            float speed,
+            float acceleration,
+            float traverseSpeed,
+            float turretTraverseSpeed,
+            int hullFront,
+            int hullSide,
+            int hullRear,
+            int turretFront,
+            int turretSide,
+            int turretRear)
+        {
+            VehicleRuntimeStats stats = new VehicleRuntimeStats
+            {
+                VehicleId = vehicleId,
+                Code = code,
+                Name = vehicleName,
+                Level = level,
+                MaxHealth = maxHealth,
+                Damage = damage,
+                Penetration = penetration,
+                ReloadTime = reloadTime,
+                Accuracy = accuracy,
+                AimTime = aimTime,
+                Speed = speed,
+                Acceleration = acceleration,
+                TraverseSpeed = traverseSpeed,
+                TurretTraverseSpeed = turretTraverseSpeed,
+                HullArmor = new VehicleArmorValues
+                {
+                    Front = hullFront,
+                    Side = hullSide,
+                    Rear = hullRear
+                },
+                TurretArmor = new VehicleArmorValues
+                {
+                    Front = turretFront,
+                    Side = turretSide,
+                    Rear = turretRear
+                }
+            };
+
+            ApplyRuntimeStats(stats);
         }
     }
 }

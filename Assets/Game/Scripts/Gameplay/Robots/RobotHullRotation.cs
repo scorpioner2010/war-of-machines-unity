@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class RobotHullRotation : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
+    public class RobotHullRotation : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
 
@@ -18,6 +18,14 @@ namespace Game.Scripts.Gameplay.Robots
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+        }
+
+        public void ApplyVehicleStats(VehicleRuntimeStats stats)
+        {
+            if (stats != null && stats.TurretTraverseSpeed > 0f)
+            {
+                rotationSpeed = stats.TurretTraverseSpeed;
+            }
         }
 
         public void OnVehicleInitialized(VehicleInitializationContext context)

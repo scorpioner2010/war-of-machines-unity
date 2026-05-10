@@ -8,7 +8,7 @@ using NaughtyAttributes;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class Health : NetworkBehaviour
+    public class Health : NetworkBehaviour, IVehicleStatsConsumer
     {
         [Min(1f)] public float maxHealth = 100f;
 
@@ -41,6 +41,23 @@ namespace Game.Scripts.Gameplay.Robots
         
         public float Current => _hp.Value;
         public bool IsDead => _dead.Value;
+
+        public void ApplyVehicleStats(VehicleRuntimeStats stats)
+        {
+            if (stats == null || stats.MaxHealth <= 0f)
+            {
+                return;
+            }
+
+            float oldMax = Mathf.Max(1f, maxHealth);
+            maxHealth = Mathf.Max(1f, stats.MaxHealth);
+
+            if (IsServerInitialized && !_dead.Value)
+            {
+                float ratio = _hp.Value > 0f ? Mathf.Clamp01(_hp.Value / oldMax) : 1f;
+                _hp.Value = Mathf.Clamp(maxHealth * ratio, 1f, maxHealth);
+            }
+        }
 
         public override void OnStartServer()
         {

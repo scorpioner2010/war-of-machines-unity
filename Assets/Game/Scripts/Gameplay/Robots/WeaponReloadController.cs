@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class WeaponReloadController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
+    public class WeaponReloadController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
 
@@ -30,6 +30,14 @@ namespace Game.Scripts.Gameplay.Robots
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+        }
+
+        public void ApplyVehicleStats(VehicleRuntimeStats stats)
+        {
+            if (stats != null && stats.ReloadTime > 0f)
+            {
+                reloadTime = stats.ReloadTime;
+            }
         }
 
         public void OnVehicleInitialized(VehicleInitializationContext context)

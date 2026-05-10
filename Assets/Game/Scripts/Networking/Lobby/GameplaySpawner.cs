@@ -247,7 +247,7 @@ namespace Game.Scripts.Networking.Lobby
         [Server]
         private void AbandonPlayer(ServerRoom serverRoom, Player player)
         {
-            if (serverRoom == null || player == null || player.leftBattle)
+            if (serverRoom == null || player == null || player.leftBattle || serverRoom.isGameFinished)
             {
                 return;
             }
@@ -312,26 +312,39 @@ namespace Game.Scripts.Networking.Lobby
             
             if (allLoaded)
             {
-                foreach (Player player in serverRoom.GetPlayers())
-                {
-                    if (player == null)
-                    {
-                        continue;
-                    }
-
-                    if (player.isBot)
-                    {
-                        SpawnBot(serverRoom, player);
-                    }
-                    else
-                    {
-                        SpawnPlayerAsync(serverRoom, player.Connection).Forget();
-                    }
-                }
-                
-                LobbyRooms.UpdateRoomStatusInGame(serverRoom.roomId);
-                SpawnTimer(serverRoom);
+                SpawnBattleVehiclesAsync(serverRoom).Forget();
             }
+        }
+
+        private async UniTask SpawnBattleVehiclesAsync(ServerRoom serverRoom)
+        {
+            if (serverRoom == null || serverRoom.spawnStarted)
+            {
+                return;
+            }
+
+            serverRoom.spawnStarted = true;
+            await VehicleStatsProvider.PreloadAsync();
+
+            foreach (Player player in serverRoom.GetPlayers())
+            {
+                if (player == null)
+                {
+                    continue;
+                }
+
+                if (player.isBot)
+                {
+                    SpawnBot(serverRoom, player);
+                }
+                else
+                {
+                    await SpawnPlayerAsync(serverRoom, player.Connection);
+                }
+            }
+                
+            LobbyRooms.UpdateRoomStatusInGame(serverRoom.roomId);
+            SpawnTimer(serverRoom);
         }
 
         private void SpawnTimer(ServerRoom serverRoom)
@@ -380,14 +393,28 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            VehicleRoot vehicle = ResourceManager.GetPrefab(profile.activeVehicleCode);
+            string vehicleCode = !string.IsNullOrEmpty(player.activeVehicleCode)
+                ? player.activeVehicleCode
+                : profile.activeVehicleCode;
+
+            VehicleRoot vehicle = ResourceManager.GetPrefab(vehicleCode);
             if (vehicle == null)
             {
                 return;
             }
 
             VehicleRoot vehicleRoot = Instantiate(vehicle, spawnPoint.transform.position, spawnPoint.transform.rotation);
+            VehicleRuntimeStats stats = await VehicleStatsProvider.GetAsync(player.activeVehicleId, vehicleCode);
+            if (stats != null)
+            {
+                vehicleRoot.ServerApplyRuntimeStats(stats, syncObservers: false);
+            }
+
             ServerManager.Spawn(vehicleRoot.networkObject, connection, _additiveServerScene);
+            if (stats != null)
+            {
+                vehicleRoot.ServerApplyRuntimeStats(stats, syncObservers: true);
+            }
 
             player.playerRoot = vehicleRoot;
             player.playerRoot.health.OnServerDeath += _ => HandleRobotDeath(serverRoom);

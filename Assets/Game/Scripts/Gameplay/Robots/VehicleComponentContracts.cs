@@ -35,6 +35,11 @@ namespace Game.Scripts.Gameplay.Robots
         void OnVehicleInitialized(VehicleInitializationContext context);
     }
 
+    public interface IVehicleStatsConsumer
+    {
+        void ApplyVehicleStats(VehicleRuntimeStats stats);
+    }
+
     public abstract class VehicleBehaviour : MonoBehaviour, IVehicleRootAware
     {
         [SerializeField] private VehicleRoot vehicleRoot;

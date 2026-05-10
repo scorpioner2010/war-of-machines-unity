@@ -1,9 +1,7 @@
-using System;
 using FishNet.Object;
 using Cysharp.Threading.Tasks;
 using FishNet.Object.Synchronizing;
 using Game.Scripts.Networking.Lobby;
-using Game.Scripts.UI.Loading;
 
 public class GameplayTimer : NetworkBehaviour
 {
@@ -45,19 +43,5 @@ public class GameplayTimer : NetworkBehaviour
             GameplaySpawner.In.HandleTimeExpired(serverRoom);
         }
 
-        TimeFinish();
-    }
-
-    private void TimeFinish()
-    {
-        TimeFinishObserversRpc();
-    }
-
-    [ObserversRpc]
-    private void TimeFinishObserversRpc()
-    {
-        GameplaySpawner.In.ReturnToMainMenu();
-        LoadingScreenManager.ShowLoading();
-        LoadingScreenManager.HideLoading(); //hide with delay 1 second
     }
 }

@@ -25,6 +25,7 @@ namespace Game.Scripts.Networking.Lobby
         public event Action<ServerRoom> OnTimeIsUp;
         public GameplayTimer gameplayTimer;
         public bool isGameFinished;
+        public bool spawnStarted;
         public bool matchEndSubmitted;
         public bool matchRewardsSent;
         public int matchId;
