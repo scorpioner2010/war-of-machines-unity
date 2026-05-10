@@ -5,6 +5,7 @@ using FishNet.Component.Transforming;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Observing;
+using Game.Scripts.API;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
@@ -72,6 +73,10 @@ namespace Game.Scripts.UI.MainMenu
 
             OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
             List<VehicleSlotVehicleData> vehicles = new List<VehicleSlotVehicleData>();
+            (bool isSuccess, string message, VehicleLite[] items) vehicleStatsResult = await VehiclesManager.GetAll();
+            VehicleLite[] vehicleStats = vehicleStatsResult.isSuccess && vehicleStatsResult.items != null
+                ? vehicleStatsResult.items
+                : Array.Empty<VehicleLite>();
 
             if (clientInfo.Profile.ownedVehicles != null)
             {
@@ -87,6 +92,7 @@ namespace Game.Scripts.UI.MainMenu
                     vehicleData.VehicleId = vehicle.vehicleId;
                     vehicleData.IsSelected = selected != null && selected.vehicleId == vehicle.vehicleId;
                     vehicleData.Name = vehicle.name;
+                    vehicleData.ApplyVehicleLite(FindVehicleStats(vehicleStats, vehicle.code, vehicle.vehicleId));
                     vehicles.Add(vehicleData);
                 }
             }
@@ -146,6 +152,37 @@ namespace Game.Scripts.UI.MainMenu
         {
             int configuredSlots = Mathf.Max(0, unlockedVehicleSlots);
             return Mathf.Max(configuredSlots, vehicleCount);
+        }
+
+        private static VehicleLite FindVehicleStats(VehicleLite[] vehicles, string code, int vehicleId)
+        {
+            if (vehicles == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrEmpty(code))
+            {
+                for (int i = 0; i < vehicles.Length; i++)
+                {
+                    VehicleLite vehicle = vehicles[i];
+                    if (vehicle != null && vehicle.code == code)
+                    {
+                        return vehicle;
+                    }
+                }
+            }
+
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                VehicleLite vehicle = vehicles[i];
+                if (vehicle != null && vehicle.id == vehicleId)
+                {
+                    return vehicle;
+                }
+            }
+
+            return null;
         }
 
         private void OnVehicleSelected(int id)

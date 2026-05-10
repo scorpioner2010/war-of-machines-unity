@@ -1,11 +1,17 @@
 using FishNet.Managing;
 using FishNet.Transporting;
+using Game.Scripts.API;
+using Game.Scripts.API.Helpers;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Player.Data;
+using Game.Scripts.Server;
 using System.Collections;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace Game.Scripts.UI.Helpers
@@ -30,11 +36,13 @@ namespace Game.Scripts.UI.Helpers
         [SerializeField] private float autoStartDelaySeconds = 0.25f;
         [SerializeField] private float clientRetryDelaySeconds = 1f;
         [SerializeField] private int clientMaxStartAttempts = 30;
+        [SerializeField] private float serverHeartbeatIntervalSeconds = 2f;
 
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
         private LocalConnectionState _serverState = LocalConnectionState.Stopped;
         private bool _clientInfoRegistered;
         private bool _isStoppingConnections;
+        private Coroutine _serverHeartbeatCoroutine;
 
         private void Awake()
         {
@@ -69,6 +77,7 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnDestroy()
         {
+            StopServerHeartbeat();
             StopNetworkConnections("destroy");
 
             if (connect != null)
@@ -90,6 +99,7 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnApplicationQuit()
         {
+            StopServerHeartbeat();
             StopNetworkConnections("application quit");
         }
 
@@ -235,6 +245,7 @@ namespace Game.Scripts.UI.Helpers
             if (_serverState == LocalConnectionState.Started)
             {
                 LastServerStatus = "Server started.";
+                StartServerHeartbeat();
                 if (server != null)
                 {
                     server.interactable = false;
@@ -243,6 +254,7 @@ namespace Game.Scripts.UI.Helpers
             else if (_serverState == LocalConnectionState.Stopped)
             {
                 LastServerStatus = "Server stopped.";
+                StopServerHeartbeat();
                 if (server != null)
                 {
                     server.interactable = true;
@@ -250,6 +262,117 @@ namespace Game.Scripts.UI.Helpers
             }
 
             RefreshControls();
+        }
+
+        private void StartServerHeartbeat()
+        {
+            if (_serverHeartbeatCoroutine != null)
+            {
+                return;
+            }
+
+            _serverHeartbeatCoroutine = StartCoroutine(ServerHeartbeatLoop());
+        }
+
+        private void StopServerHeartbeat()
+        {
+            if (_serverHeartbeatCoroutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(_serverHeartbeatCoroutine);
+            _serverHeartbeatCoroutine = null;
+        }
+
+        private IEnumerator ServerHeartbeatLoop()
+        {
+            float interval = Mathf.Max(0.1f, serverHeartbeatIntervalSeconds);
+            WaitForSeconds wait = new WaitForSeconds(interval);
+
+            while (networkManager != null && networkManager.IsServerStarted)
+            {
+                yield return SendServerHeartbeat();
+                yield return wait;
+            }
+
+            _serverHeartbeatCoroutine = null;
+        }
+
+        private IEnumerator SendServerHeartbeat()
+        {
+            UnityServerStatusPayload payload = new UnityServerStatusPayload
+            {
+                status = "ready",
+                playersOnline = GetPlayersOnline(),
+                maxPlayers = GetMaxPlayers(),
+                activeMatches = GetActiveMatches(),
+                message = "Unity server running"
+            };
+
+            string json = JsonUtility.ToJson(payload);
+            byte[] body = Encoding.UTF8.GetBytes(json);
+            string url = HttpLink.APIBase + "/unity-server/status";
+
+            using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
+            {
+                request.uploadHandler = new UploadHandlerRaw(body);
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.certificateHandler = new AcceptAllCertificates();
+                request.SetRequestHeader("Content-Type", "application/json");
+
+                yield return request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning("Unity server heartbeat failed: " + request.responseCode + " " + request.error);
+                }
+            }
+        }
+
+        private int GetPlayersOnline()
+        {
+            if (networkManager == null || networkManager.ServerManager == null)
+            {
+                return 0;
+            }
+
+            return networkManager.ServerManager.Clients.Count;
+        }
+
+        private static int GetMaxPlayers()
+        {
+            int maxPlayers = 0;
+
+            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            {
+                if (room != null && room.maxPlayers > 0)
+                {
+                    maxPlayers += room.maxPlayers;
+                }
+            }
+
+            if (maxPlayers > 0)
+            {
+                return maxPlayers;
+            }
+
+            return ServerSettings.GetMaxPlayersForFindRoom();
+        }
+
+        private static int GetActiveMatches()
+        {
+            int activeMatches = 0;
+
+            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            {
+                if (room != null && room.IsActiveMatch)
+                {
+                    activeMatches++;
+                }
+            }
+
+            return activeMatches;
         }
 
         private void RegisterClientInfo()
@@ -346,6 +469,16 @@ namespace Game.Scripts.UI.Helpers
             }
 
             LastServerStatus = "Network stopped on " + reason + ".";
+        }
+
+        [System.Serializable]
+        private class UnityServerStatusPayload
+        {
+            public string status;
+            public int playersOnline;
+            public int maxPlayers;
+            public int activeMatches;
+            public string message;
         }
     }
 }
