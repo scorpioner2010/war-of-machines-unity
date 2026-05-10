@@ -3,14 +3,25 @@ using Game.Scripts.Gameplay.Robots;
 using NaughtyAttributes;
 using UnityEngine;
 
-public class DeathLogic : MonoBehaviour
+public class DeathLogic : MonoBehaviour, IVehicleRootAware
 {
     public Collider[] colliders;
     public VehicleRoot vehicleRoot;
     public GameObject[] forTurnOff;
 
+    public void SetVehicleRoot(VehicleRoot root)
+    {
+        vehicleRoot = root;
+    }
+
     private void Start()
     {
+        if (vehicleRoot == null || vehicleRoot.health == null)
+        {
+            enabled = false;
+            return;
+        }
+
         vehicleRoot.health.onDeath.AddListener(Death);
     }
 
@@ -72,7 +83,10 @@ public class DeathLogic : MonoBehaviour
 
     private void Death()
     {
-        vehicleRoot.inputManager.SetControlsBlocked(true);
+        if (vehicleRoot != null && vehicleRoot.inputManager != null)
+        {
+            vehicleRoot.inputManager.SetControlsBlocked(true);
+        }
         
         foreach (Collider coll in colliders)
         {

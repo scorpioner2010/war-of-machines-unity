@@ -6,22 +6,43 @@ using UnityEngine.UI;
 
 namespace Game.Script.Player.UI
 {
-    public class VehicleHUD : MonoBehaviour
+    public class VehicleHUD : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
         private Camera _mainCamera;
         [SerializeField] private TMP_Text nickName;
         [SerializeField] private Image hpView;
         public FloatingText floatingTextPrefab;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
         
         private void Start()
         {
-            vehicleRoot.health.OnDamaged += (dmg, f1, arg3) =>
+            if (vehicleRoot == null || vehicleRoot.health == null)
             {
-                float cur01 = Mathf.Clamp01(f1 / Mathf.Max(1f, arg3));
-                hpView.fillAmount = cur01;
-                ShowFloatingText(dmg);
-            };
+                enabled = false;
+                return;
+            }
+
+            vehicleRoot.health.OnDamaged += OnDamaged;
+        }
+
+        private void OnDestroy()
+        {
+            if (vehicleRoot != null && vehicleRoot.health != null)
+            {
+                vehicleRoot.health.OnDamaged -= OnDamaged;
+            }
+        }
+
+        private void OnDamaged(float damageAmount, float currentHealth, float maxHealth)
+        {
+            float cur01 = Mathf.Clamp01(currentHealth / Mathf.Max(1f, maxHealth));
+            hpView.fillAmount = cur01;
+            ShowFloatingText(damageAmount);
         }
         
         private void ShowFloatingText(float dmg)

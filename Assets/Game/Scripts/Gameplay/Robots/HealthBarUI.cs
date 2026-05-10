@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class HealthBarUI : MonoBehaviour
+    public class HealthBarUI : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
         public float smoothSpeed = 10f;
@@ -12,8 +12,19 @@ namespace Game.Scripts.Gameplay.Robots
         private HealthBar _healthBar;
         private bool _active;
 
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
         private void Start()
         {
+            if (vehicleRoot == null)
+            {
+                enabled = false;
+                return;
+            }
+
             if (!vehicleRoot.IsOwner)
             {
                 enabled = false;

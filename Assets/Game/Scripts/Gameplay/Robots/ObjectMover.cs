@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class ObjectMover : MonoBehaviour
+    public class ObjectMover : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
         public CharacterController controller;
@@ -15,6 +15,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private Vector3 _hVel;
         private float _vVel;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
 
         private void FixedUpdate()
         {

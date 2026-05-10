@@ -18,13 +18,18 @@ namespace Game.Scripts.Gameplay.Robots
         Bot,
     }
 
-    public class CharacterInit : NetworkBehaviour
+    public class CharacterInit : NetworkBehaviour, IVehicleRootAware
     {
         public VehicleRoot playerRoot;
 
         private readonly SyncVar<int> _amountPlayersInRoom = new ();
         public readonly SyncVar<string> LoginName = new ("");
         public readonly SyncVar<PlayerType> PlayerType = new(Robots.PlayerType.None);
+
+        public void SetVehicleRoot(VehicleRoot vehicleRoot)
+        {
+            playerRoot = vehicleRoot;
+        }
         public readonly SyncVar<MatchTeam> Team = new(MatchTeam.None);
         
 

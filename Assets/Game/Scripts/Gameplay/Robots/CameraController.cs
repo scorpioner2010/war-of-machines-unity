@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class CameraController : MonoBehaviour
+    public class CameraController : MonoBehaviour, IVehicleInitializable
     {
         public Transform rig;
         public float distance = 10.0f;
@@ -11,6 +11,14 @@ namespace Game.Scripts.Gameplay.Robots
 
         private float _X;
         private float _Y;
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (context.IsOwner)
+            {
+                Init();
+            }
+        }
 
         public void Init()
         {

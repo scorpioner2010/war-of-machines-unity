@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class WeaponAimAtCamera : NetworkBehaviour
+    public class WeaponAimAtCamera : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
 
@@ -36,8 +36,28 @@ namespace Game.Scripts.Gameplay.Robots
 
         public enum Axis { X, Y, Z }
 
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (!context.IsOwner || context.IsMenu || CameraSync.In == null)
+            {
+                return;
+            }
+
+            Init(CameraSync.In.transform);
+        }
+
         public void Init(Transform cam)
         {
+            if (gun == null)
+            {
+                return;
+            }
+
             _cam = cam;
             _initialLocalRotation = gun.localRotation;
             _localPitch = 0f;
@@ -46,7 +66,10 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Awake()
         {
-            _initialLocalRotation = gun.localRotation;
+            if (gun != null)
+            {
+                _initialLocalRotation = gun.localRotation;
+            }
         }
 
         [Server]
@@ -57,6 +80,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
+            if (gun == null)
+            {
+                return;
+            }
+
             Vector3 gunFwdWorld = ToWorldAxis(gun, localForwardAxis).normalized;
             Ray gunRay = new Ray(gun.position, gunFwdWorld);
 
@@ -90,15 +118,27 @@ namespace Game.Scripts.Gameplay.Robots
 
         public static Vector3 AxisToVector(Axis a)
         {
-            if (a == Axis.X) return Vector3.right;
-            if (a == Axis.Y) return Vector3.up;
+            if (a == Axis.X)
+            {
+                return Vector3.right;
+            }
+            if (a == Axis.Y)
+            {
+                return Vector3.up;
+            }
             return Vector3.forward;
         }
 
         public static Vector3 ToWorldAxis(Transform t, Axis a)
         {
-            if (a == Axis.X) return t.right;
-            if (a == Axis.Y) return t.up;
+            if (a == Axis.X)
+            {
+                return t.right;
+            }
+            if (a == Axis.Y)
+            {
+                return t.up;
+            }
             return t.forward;
         }
     }

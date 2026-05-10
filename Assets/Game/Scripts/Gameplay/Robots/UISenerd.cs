@@ -3,15 +3,33 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class UISenerd : MonoBehaviour
+    public class UISenerd : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
         public bool isActive;
 
         private Vector3 _prevPos;
 
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (context.IsOwner && !context.IsMenu)
+            {
+                Init();
+            }
+        }
+
         public void Init()
         {
+            if (vehicleRoot == null || vehicleRoot.objectMover == null)
+            {
+                return;
+            }
+
             isActive = true;
             _prevPos = vehicleRoot.objectMover.transform.position;
         }

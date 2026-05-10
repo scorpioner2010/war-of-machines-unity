@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class ShooterNet : NetworkBehaviour
+    public class ShooterNet : NetworkBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
 
@@ -41,6 +41,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private readonly HashSet<int> _processedShots = new HashSet<int>();
         private readonly Dictionary<int, Projectile> _predictedProjectiles = new Dictionary<int, Projectile>();
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
 
         private enum ShotHudStatus : byte
         {

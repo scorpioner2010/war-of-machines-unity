@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots.t1
 {
-    public class RobotFootAnimator : MonoBehaviour
+    public class RobotFootAnimator : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot playerRoot;
         
@@ -28,9 +28,19 @@ namespace Game.Scripts.Gameplay.Robots.t1
 
         private float _currentWalkWeight = 0f;
         private float _currentTurnWeight = 0f;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            playerRoot = root;
+        }
         
         private void Update()
         {
+            if (playerRoot == null || playerRoot.inputManager == null)
+            {
+                return;
+            }
+
             Vector2 movementInput = playerRoot.inputManager.AnimMove;
         
             bool isWalking = Mathf.Abs(movementInput.y) > inputThreshold;
@@ -43,7 +53,10 @@ namespace Game.Scripts.Gameplay.Robots.t1
                 float direction = movementInput.y > 0f ? 1f : -1f;
                 _walkPhase += direction * Time.deltaTime / stepCycleDuration;
                 _walkPhase %= 1f;
-                if (_walkPhase < 0f) _walkPhase += 1f;
+                if (_walkPhase < 0f)
+                {
+                    _walkPhase += 1f;
+                }
             }
             else if (isTurning)
             {
@@ -91,8 +104,14 @@ namespace Game.Scripts.Gameplay.Robots.t1
                                      + rightWalkBlend * _currentWalkWeight
                                      + rightTurnBlend * _currentTurnWeight);
 
-            leftFoot.SetTargetOffset(leftFinalOffset, leftFinalBlend);
-            rightFoot.SetTargetOffset(rightFinalOffset, rightFinalBlend);
+            if (leftFoot != null)
+            {
+                leftFoot.SetTargetOffset(leftFinalOffset, leftFinalBlend);
+            }
+            if (rightFoot != null)
+            {
+                rightFoot.SetTargetOffset(rightFinalOffset, rightFinalBlend);
+            }
         }
 
         private Vector3 ComputeWalkOffset(float phase)
@@ -118,13 +137,19 @@ namespace Game.Scripts.Gameplay.Robots.t1
         private float ComputeWalkBlend(float phase)
         {
             if (phase < 0.45f)
+            {
                 return 1f;
-            else if (phase < 0.55f)
+            }
+            if (phase < 0.55f)
+            {
                 return Mathf.Lerp(1f, 0f, (phase - 0.45f) / 0.1f);
-            else if (phase < 0.85f)
+            }
+            if (phase < 0.85f)
+            {
                 return 0f;
-            else
-                return Mathf.Lerp(0f, 1f, (phase - 0.85f) / 0.15f);
+            }
+
+            return Mathf.Lerp(0f, 1f, (phase - 0.85f) / 0.15f);
         }
 
         private float ComputeTurnBlend()

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class RobotHullRotation : NetworkBehaviour
+    public class RobotHullRotation : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
 
@@ -15,8 +15,26 @@ namespace Game.Scripts.Gameplay.Robots
         private float _targetYawServer;
         private Transform _chassisTransform;
 
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (context.IsServer || (context.IsOwner && !context.IsMenu))
+            {
+                Init();
+            }
+        }
+
         public void Init()
         {
+            if (vehicleRoot == null || vehicleRoot.objectMover == null)
+            {
+                return;
+            }
+
             _chassisTransform = vehicleRoot.objectMover.transform;
 
             if (startAlignedToChassis)
@@ -26,10 +44,18 @@ namespace Game.Scripts.Gameplay.Robots
             else
             {
                 Vector3 chassisFwd = _chassisTransform.forward;
-                chassisFwd.y = 0f; if (chassisFwd.sqrMagnitude > 1e-6f) chassisFwd.Normalize();
+                chassisFwd.y = 0f;
+                if (chassisFwd.sqrMagnitude > 1e-6f)
+                {
+                    chassisFwd.Normalize();
+                }
 
                 Vector3 turretFwd = transform.forward;
-                turretFwd.y = 0f; if (turretFwd.sqrMagnitude > 1e-6f) turretFwd.Normalize();
+                turretFwd.y = 0f;
+                if (turretFwd.sqrMagnitude > 1e-6f)
+                {
+                    turretFwd.Normalize();
+                }
 
                 _localYaw = Vector3.SignedAngle(chassisFwd, turretFwd, Vector3.up);
             }

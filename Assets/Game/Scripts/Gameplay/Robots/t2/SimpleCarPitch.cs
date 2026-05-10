@@ -2,9 +2,14 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots.t2
 {
-    public class SimpleCarPitch : MonoBehaviour
+    public class SimpleCarPitch : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
 
         private void Update()
         {

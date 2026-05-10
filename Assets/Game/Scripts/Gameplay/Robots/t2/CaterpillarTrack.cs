@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots.t2
 {
-    public class CaterpillarTrack : MonoBehaviour
+    public class CaterpillarTrack : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
         public Renderer[] mesh;
@@ -14,8 +14,18 @@ namespace Game.Scripts.Gameplay.Robots.t2
         public RotateObject[] rightWheels;
         public RotateObject[] leftWheels;
 
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
         private void Update()
         {
+            if (vehicleRoot == null || vehicleRoot.inputManager == null)
+            {
+                return;
+            }
+
             Vector2 mv = vehicleRoot.inputManager.AnimMove;
             float forwardInput = mv.y;
             float turnInput = mv.x;
@@ -58,19 +68,27 @@ namespace Game.Scripts.Gameplay.Robots.t2
                 rightMaterial.mainTextureOffset = rightOffset;
             }
 
-            foreach (var wheel in leftWheels)
+            if (leftWheels != null)
             {
-                if (wheel != null)
+                for (int i = 0; i < leftWheels.Length; i++)
                 {
-                    wheel.currentSpeed = leftInputSpeed;
+                    RotateObject wheel = leftWheels[i];
+                    if (wheel != null)
+                    {
+                        wheel.currentSpeed = leftInputSpeed;
+                    }
                 }
             }
 
-            foreach (var wheel in rightWheels)
+            if (rightWheels != null)
             {
-                if (wheel != null)
+                for (int i = 0; i < rightWheels.Length; i++)
                 {
-                    wheel.currentSpeed = rightInputSpeed;
+                    RotateObject wheel = rightWheels[i];
+                    if (wheel != null)
+                    {
+                        wheel.currentSpeed = rightInputSpeed;
+                    }
                 }
             }
         }

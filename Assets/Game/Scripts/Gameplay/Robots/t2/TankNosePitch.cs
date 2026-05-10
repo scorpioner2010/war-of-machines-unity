@@ -5,7 +5,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
     /// <summary>
     /// Stable tank nose pitch based on filtered movement without Rigidbody springs.
     /// </summary>
-    public class TankNosePitch : MonoBehaviour
+    public class TankNosePitch : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
         
@@ -57,22 +57,34 @@ namespace Game.Scripts.Gameplay.Robots.t2
         private float _accelSmoothed;
 
         private float _currentPitch;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
         
         private void Start()
         {
-            if (movingTransform == null) movingTransform = transform;
+            if (movingTransform == null)
+            {
+                movingTransform = transform;
+            }
+
             _currentPitch = movingTransform.localEulerAngles.x;
         }
 
         private void Update()
         {
-            if (vehicleRoot.IsServerInitialized)
+            if (vehicleRoot == null || vehicleRoot.IsServerInitialized)
             {
                 return;
             }
             
             float dt = Time.deltaTime;
-            if (dt <= 0f) return;
+            if (dt <= 0f)
+            {
+                return;
+            }
         }
     }
 }

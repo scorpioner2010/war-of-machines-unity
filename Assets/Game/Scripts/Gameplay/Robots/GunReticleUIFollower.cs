@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class GunReticleUIFollower : MonoBehaviour
+    public class GunReticleUIFollower : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
 
@@ -26,6 +26,19 @@ namespace Game.Scripts.Gameplay.Robots
         private Vector2 _curLocalServer;
         private Vector2 _tgtLocalServer;
         private bool _visibleServer = true;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (context.IsOwner && !context.IsMenu)
+            {
+                Init();
+            }
+        }
 
         public void Init()
         {

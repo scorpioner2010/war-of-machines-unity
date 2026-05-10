@@ -33,6 +33,7 @@ namespace Game.Scripts.UI.MainMenu
 
         private VehicleRoot _vehicleRoot;
         private readonly List<VehicleSlotView> _slots = new List<VehicleSlotView>();
+        private int _buildVersion;
         private int _spawnVersion;
 
         private static RobotView _in;
@@ -46,6 +47,7 @@ namespace Game.Scripts.UI.MainMenu
         {
             if (_in == this)
             {
+                _buildVersion++;
                 _spawnVersion++;
                 _in = null;
             }
@@ -58,12 +60,14 @@ namespace Game.Scripts.UI.MainMenu
 
         public static async UniTask GenerateIconsAsync()
         {
-            if (_in == null)
+            RobotView view = _in;
+            if (view == null)
             {
                 return;
             }
 
-            Despawn();
+            int buildVersion = ++view._buildVersion;
+            view.DespawnContent();
 
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
             if (clientInfo?.Profile == null)
@@ -74,6 +78,11 @@ namespace Game.Scripts.UI.MainMenu
             OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
             List<VehicleSlotVehicleData> vehicles = new List<VehicleSlotVehicleData>();
             (bool isSuccess, string message, VehicleLite[] items) vehicleStatsResult = await VehiclesManager.GetAll();
+            if (!IsBuildCurrent(view, buildVersion))
+            {
+                return;
+            }
+
             VehicleLite[] vehicleStats = vehicleStatsResult.isSuccess && vehicleStatsResult.items != null
                 ? vehicleStatsResult.items
                 : Array.Empty<VehicleLite>();
@@ -99,52 +108,68 @@ namespace Game.Scripts.UI.MainMenu
 
             vehicles.Sort(CompareByName);
 
-            BuildVehicleSlots(vehicles);
+            BuildVehicleSlots(view, vehicles);
+            if (!IsBuildCurrent(view, buildVersion))
+            {
+                return;
+            }
 
             if (selected == null)
             {
-                await UpdateUIAsync();
+                await UpdateUIAsync(view, buildVersion);
                 return;
             }
 
             VehicleRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
-            if (vehicleRoot == null)
+            if (vehicleRoot == null || !IsBuildCurrent(view, buildVersion))
             {
                 return;
             }
 
             await SpawnAsync(vehicleRoot);
-            await UpdateUIAsync();
+            await UpdateUIAsync(view, buildVersion);
         }
 
-        private static void BuildVehicleSlots(List<VehicleSlotVehicleData> vehicles)
+        private static bool IsBuildCurrent(RobotView view, int buildVersion)
         {
-            if (_in.vehicleSlotPrefab == null)
+            return view != null && _in == view && view._buildVersion == buildVersion;
+        }
+
+        private static void BuildVehicleSlots(RobotView view, List<VehicleSlotVehicleData> vehicles)
+        {
+            if (view == null || view.vehicleContainer == null)
+            {
+                return;
+            }
+
+            view.ClearVehicleSlots();
+
+            if (view.vehicleSlotPrefab == null)
             {
                 Debug.LogWarning("Cannot build vehicle slots because VehicleSlot prefab is not assigned.");
                 return;
             }
 
-            int slotCount = _in.GetVisibleSlotCount(vehicles.Count);
+            int slotCount = view.GetVisibleSlotCount(vehicles.Count);
             for (int i = 0; i < slotCount; i++)
             {
-                VehicleSlotView slot = Instantiate(_in.vehicleSlotPrefab, _in.vehicleContainer.transform);
+                VehicleSlotView slot = Instantiate(view.vehicleSlotPrefab, view.vehicleContainer.transform);
                 slot.InitEmpty(i);
-                _in._slots.Add(slot);
+                view._slots.Add(slot);
 
                 if (i >= vehicles.Count)
                 {
                     continue;
                 }
 
-                if (_in.vehiclePrefab == null)
+                if (view.vehiclePrefab == null)
                 {
                     Debug.LogWarning("Cannot place vehicle in slot because Vehicle prefab is not assigned.");
                     continue;
                 }
 
-                VehicleItemView vehicle = Instantiate(_in.vehiclePrefab);
-                slot.PlaceVehicle(vehicle, vehicles[i], _in.OnVehicleSelected);
+                VehicleItemView vehicle = Instantiate(view.vehiclePrefab);
+                slot.PlaceVehicle(vehicle, vehicles[i], view.OnVehicleSelected);
             }
         }
 
@@ -243,7 +268,7 @@ namespace Game.Scripts.UI.MainMenu
             UpdateUIAsync().Forget();
         }
 
-        private static async UniTask UpdateUIAsync()
+        private static async UniTask UpdateUIAsync(RobotView expectedView = null, int expectedBuildVersion = 0)
         {
             if (_in == null || _in.vehicleContainer == null)
             {
@@ -251,6 +276,11 @@ namespace Game.Scripts.UI.MainMenu
             }
 
             await UniTask.DelayFrame(1);
+            if (expectedView != null && !IsBuildCurrent(expectedView, expectedBuildVersion))
+            {
+                return;
+            }
+
             List<Transform> l = new List<Transform>();
             l.Add(_in.vehicleContainer);
             GameplayAssistant.RebuildAllLayouts(l).Forget();
@@ -306,24 +336,58 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            _in._spawnVersion++;
+            _in._buildVersion++;
+            _in.DespawnContent();
+        }
 
-            if (_in._vehicleRoot != null)
+        private void DespawnContent()
+        {
+            _spawnVersion++;
+
+            if (_vehicleRoot != null)
             {
-                Destroy(_in._vehicleRoot.gameObject);
-                _in._vehicleRoot = null;
+                Destroy(_vehicleRoot.gameObject);
+                _vehicleRoot = null;
             }
 
-            foreach (VehicleSlotView slot in _in._slots)
+            ClearVehicleSlots();
+
+            if (rootSpawnPlace != null)
             {
+                rootSpawnPlace.SetActive(false);
+            }
+        }
+
+        private void ClearVehicleSlots()
+        {
+            if (vehicleContainer != null)
+            {
+                for (int i = vehicleContainer.childCount - 1; i >= 0; i--)
+                {
+                    Transform child = vehicleContainer.GetChild(i);
+                    if (child == null || !child.gameObject.activeSelf)
+                    {
+                        continue;
+                    }
+
+                    VehicleSlotView slot = child.GetComponent<VehicleSlotView>();
+                    if (slot != null)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                }
+            }
+
+            for (int i = 0; i < _slots.Count; i++)
+            {
+                VehicleSlotView slot = _slots[i];
                 if (slot != null)
                 {
                     Destroy(slot.gameObject);
                 }
             }
 
-            _in._slots.Clear();
-            _in.rootSpawnPlace.SetActive(false);
+            _slots.Clear();
         }
 
         private async UniTask<bool> ActivateAndInitNextFrame(VehicleRoot go, int spawnVersion)

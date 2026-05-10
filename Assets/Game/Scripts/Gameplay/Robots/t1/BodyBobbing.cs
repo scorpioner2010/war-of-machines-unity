@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots.t1
 {
-    public class BodyBobbing : MonoBehaviour
+    public class BodyBobbing : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot playerRoot;
         
@@ -13,6 +13,11 @@ namespace Game.Scripts.Gameplay.Robots.t1
 
         private Vector3 _initialLocalPosition;
 
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            playerRoot = root;
+        }
+
         private void Start()
         {
             _initialLocalPosition = transform.localPosition;
@@ -20,6 +25,11 @@ namespace Game.Scripts.Gameplay.Robots.t1
 
         private void Update()
         {
+            if (playerRoot == null || playerRoot.inputManager == null)
+            {
+                return;
+            }
+
             bool isWalking = Mathf.Abs(playerRoot.inputManager.AnimMove.y) > inputThreshold;
             bool isRotating = Mathf.Abs(playerRoot.inputManager.AnimMove.x) > inputThreshold;
         

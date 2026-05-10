@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class WeaponReloadController : NetworkBehaviour
+    public class WeaponReloadController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
 
@@ -26,6 +26,19 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _initialized;
 
         private float _clientReloadRemain;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (context.IsOwner && !context.IsMenu)
+            {
+                Init();
+            }
+        }
 
         public override void OnStartServer()
         {

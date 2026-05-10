@@ -3,12 +3,17 @@ using UnityEngine;
 namespace Game.Scripts.Gameplay.Robots
 {
     [DisallowMultipleComponent]
-    public class ArmorMap : MonoBehaviour
+    public class ArmorMap : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
         public Texture2D thicknessMap;
         [Min(0f)] public float minMm = 0;
         [Min(0f)] public float maxMm = 500;
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
 
         public float SampleMm(Vector2 uv)
         {
@@ -29,7 +34,10 @@ namespace Game.Scripts.Gameplay.Robots
             float thetaDeg = Mathf.Acos(cosTheta) * Mathf.Rad2Deg;
             float thetaPrime = Mathf.Max(0f, thetaDeg - Mathf.Max(0f, normDeg));
             float cosThetaPrime = Mathf.Cos(thetaPrime * Mathf.Deg2Rad);
-            if (cosThetaPrime <= 0.0001f) cosThetaPrime = 0.0001f;
+            if (cosThetaPrime <= 0.0001f)
+            {
+                cosThetaPrime = 0.0001f;
+            }
 
             losMm = baseMm / cosThetaPrime;
             return true;

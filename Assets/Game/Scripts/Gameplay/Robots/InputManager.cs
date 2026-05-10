@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class InputManager : NetworkBehaviour
+    public class InputManager : NetworkBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
 
@@ -40,6 +40,11 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _controlsBlocked;
 
         public static bool Escape => UnityEngine.Input.GetKeyDown(KeyCode.Escape);
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
 
         public void SetControlsBlocked(bool blocked)
         {
@@ -100,8 +105,14 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServerInitialized) return _moveServer;
-                if (IsOwner) return _moveLocal;
+                if (IsServerInitialized)
+                {
+                    return _moveServer;
+                }
+                if (IsOwner)
+                {
+                    return _moveLocal;
+                }
                 return _animMove.Value;
             }
         }
@@ -110,8 +121,14 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServerInitialized) return _shootServer;
-                if (IsOwner) return _shootLocal;
+                if (IsServerInitialized)
+                {
+                    return _shootServer;
+                }
+                if (IsOwner)
+                {
+                    return _shootLocal;
+                }
                 return _animShoot.Value;
             }
         }
@@ -120,8 +137,14 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServerInitialized) return _actionServer;
-                if (IsOwner) return _actionLocal;
+                if (IsServerInitialized)
+                {
+                    return _actionServer;
+                }
+                if (IsOwner)
+                {
+                    return _actionLocal;
+                }
                 return _animAction.Value;
             }
         }
@@ -137,10 +160,23 @@ namespace Game.Scripts.Gameplay.Robots
             float y = 0f;
             if (!_controlsBlocked)
             {
-                if (Input.GetKey(KeyCode.A)) x = -1f;
-                else if (Input.GetKey(KeyCode.D)) x = 1f;
-                if (Input.GetKey(KeyCode.W)) y = 1f;
-                else if (Input.GetKey(KeyCode.S)) y = -1f;
+                if (Input.GetKey(KeyCode.A))
+                {
+                    x = -1f;
+                }
+                else if (Input.GetKey(KeyCode.D))
+                {
+                    x = 1f;
+                }
+
+                if (Input.GetKey(KeyCode.W))
+                {
+                    y = 1f;
+                }
+                else if (Input.GetKey(KeyCode.S))
+                {
+                    y = -1f;
+                }
             }
 
             bool newShoot = !_controlsBlocked && Input.GetMouseButton(0);
@@ -171,8 +207,14 @@ namespace Game.Scripts.Gameplay.Robots
             bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= YawPitchSendDeadzoneDeg;
             bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= YawPitchSendDeadzoneDeg;
 
-            if (!yawBeyond) yawQ = _lastSentYawQ;
-            if (!pitchBeyond) pitchQ = _lastSentPitchQ;
+            if (!yawBeyond)
+            {
+                yawQ = _lastSentYawQ;
+            }
+            if (!pitchBeyond)
+            {
+                pitchQ = _lastSentPitchQ;
+            }
 
             bool changed =
                 (_lastSentMove - _moveLocal).sqrMagnitude > 0.0001f ||
@@ -329,15 +371,27 @@ namespace Game.Scripts.Gameplay.Robots
 
         private static Vector3 AxisToVector(WeaponAimAtCamera.Axis a)
         {
-            if (a == WeaponAimAtCamera.Axis.X) return Vector3.right;
-            if (a == WeaponAimAtCamera.Axis.Y) return Vector3.up;
+            if (a == WeaponAimAtCamera.Axis.X)
+            {
+                return Vector3.right;
+            }
+            if (a == WeaponAimAtCamera.Axis.Y)
+            {
+                return Vector3.up;
+            }
             return Vector3.forward;
         }
 
         private static Vector3 ToWorldAxis(Transform t, WeaponAimAtCamera.Axis a)
         {
-            if (a == WeaponAimAtCamera.Axis.X) return t.right;
-            if (a == WeaponAimAtCamera.Axis.Y) return t.up;
+            if (a == WeaponAimAtCamera.Axis.X)
+            {
+                return t.right;
+            }
+            if (a == WeaponAimAtCamera.Axis.Y)
+            {
+                return t.up;
+            }
             return t.forward;
         }
 
@@ -347,7 +401,10 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 ortho = Mathf.Abs(localAxis.x) < 0.5f ? new Vector3(1f, 0f, 0f) : new Vector3(0f, 1f, 0f);
             Vector3 a = Vector3.ProjectOnPlane(ortho, localAxis).normalized;
             Vector3 b = Vector3.ProjectOnPlane(delta * a, localAxis).normalized;
-            if (a.sqrMagnitude < 1e-6f || b.sqrMagnitude < 1e-6f) return 0f;
+            if (a.sqrMagnitude < 1e-6f || b.sqrMagnitude < 1e-6f)
+            {
+                return 0f;
+            }
             return Vector3.SignedAngle(a, b, localAxis.normalized);
         }
     }
