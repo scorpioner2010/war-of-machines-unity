@@ -1,4 +1,5 @@
 using TMPro;
+using Game.Scripts.UI.Settings;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,6 +18,17 @@ namespace Game.Scripts.UI.HUD
         private Vector2 _serverCrosshairBaseSize;
         private bool _crosshairBaseSizeCached;
         private bool _serverCrosshairBaseSizeCached;
+
+        private void OnEnable()
+        {
+            ClientGameplaySettings.ServerCrosshairChanged += OnServerCrosshairSettingChanged;
+            ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
+        }
+
+        private void OnDisable()
+        {
+            ClientGameplaySettings.ServerCrosshairChanged -= OnServerCrosshairSettingChanged;
+        }
 
         public void SetAimingDiameters(float localDiameter, float serverDiameter)
         {
@@ -47,6 +59,19 @@ namespace Game.Scripts.UI.HUD
             float baseDiameter = Mathf.Max(1f, Mathf.Max(Mathf.Abs(baseSize.x), Mathf.Abs(baseSize.y)));
             float scale = safeDiameter / baseDiameter;
             target.localScale = new Vector3(scale, scale, 1f);
+        }
+
+        private void OnServerCrosshairSettingChanged(bool enabled)
+        {
+            ApplyServerCrosshairSetting(enabled);
+        }
+
+        private void ApplyServerCrosshairSetting(bool enabled)
+        {
+            if (serverCrosshair != null)
+            {
+                serverCrosshair.gameObject.SetActive(enabled);
+            }
         }
     }
 }

@@ -9,6 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: TTFE_Leaves
   m_Shader: {fileID: 4800000, guid: 6f53b8cb323b0614c82237d5b033019f, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _LEAFFLUTTER_ON
   - _WINDTYPE_GENTLEBREEZE
@@ -28,6 +30,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -103,8 +106,22 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AlphaClip: 0.4
+    - _AlphaCutoff: 0.5
     - _AmbientOcclusionIntensity: 1
     - _BackfaceNormalKill: 0
     - _BranchMaskR: 0
@@ -121,6 +138,12 @@ Material:
     - _DEBUGVertexR: 0
     - _DEBUGVertexRGBA: 0
     - _DEBUGVisuliseWindMask: 0
+    - _DIVIDER_01: 0
+    - _DIVIDER_02: 0
+    - _DIVIDER_03: 0
+    - _DIVIDER_04: 0
+    - _DIVIDER_05: 0
+    - _DIVIDER_06: 0
     - _DetailNormalMapScale: 1
     - _DirectionalBendingAmount: 3
     - _DirectionalWind: 1
@@ -129,6 +152,7 @@ Material:
     - _DryLeavesOffset: 1
     - _DryLeavesScale: 1
     - _DstBlend: 0
+    - _EnvironmentReflections: 1
     - _FKS_Offset: 0.1
     - _FKS_Scale: 1
     - _FauxShading: 0
@@ -148,6 +172,7 @@ Material:
     - _Hardness3: 1
     - _InvertColorMask: 0
     - _InvertColorMask2: 0
+    - _LIGHTINGSETTINGS: 0
     - _LeafFlutter: 1
     - _LightDetectBackface: 1
     - _LightDetectFrontface: 0
@@ -162,16 +187,23 @@ Material:
     - _NormalizeSeasons: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _PivotSway: 0
+    - _PivotSwayPower: 1
     - _PlantMassVolume: 1
     - _PlantVolumeandMass: 1
     - _PreventStrecthing_Offset: -0.2
     - _PreventStrecthing_Scale: 5
     - _QuadScatterOnlybasiccards: 0
     - _Quadscatterpower: 1
+    - _QueueControl: 0
+    - _QueueOffset: 0
     - _Radius: 1
     - _Radius3: 1
+    - _RandomColorScale: 1
     - _RandomContrast: 1
     - _RandomContrastOnOff: 0
+    - _ReceiveShadows: 1
+    - _SEASONSETTINGS: 0
     - _SeasonChangeGlobal: 0
     - _SeasonChnageA: 0
     - _SeasonChnageB: 0
@@ -183,13 +215,25 @@ Material:
     - _Speckbakcfacefix: 0
     - _SpecularBackfaceOcclusion: 0
     - _SpecularBackfaceOcclusion1: 0
+    - _SpecularBias: 1
     - _SpecularHighlights: 1
+    - _SpecularMapOffset: 0
+    - _SpecularMapScale: 1
     - _SpecularPower: 1
+    - _SpecularScale: -5
+    - _SpecularStrength: 2
     - _Specularpower: 0
     - _SrcBlend: 1
     - _StrongWindSpeed: 1
     - _SwitchVGreenToRGBA: 0
+    - _TEXTUREMAPS: 0
+    - _TEXTURESETTINGS: 0
+    - _TTFELIGHTTREEFOLIAGESHADER: 0
+    - _TranslucencyDirectIntensity: 1
+    - _TranslucencyFalloff: 0
     - _TranslucencyFluffiness: 1
+    - _TranslucencyMapOffset: 0
+    - _TranslucencyMapScale: 1
     - _TranslucencyPower: 1
     - _TranslucencyRange: 1
     - _TranslucencyTreeTangents: 1
@@ -200,9 +244,11 @@ Material:
     - _VertexPositionYOff: 1
     - _VertexShadow: 0
     - _VisualizeMass: 0
+    - _WINDMASKSETTINGS: 0
     - _WindDirection: 0
     - _WindOnOff: 1
     - _WindType: 0
+    - _WorldUp: 0
     - _ZWrite: 1
     - __dirty: 0
     m_Colors:
@@ -213,3 +259,4 @@ Material:
     - _Dryleafcolor: {r: 0.5568628, g: 0.37306848, b: 0.17647055, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

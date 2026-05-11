@@ -16,6 +16,7 @@ namespace Game.Scripts.UI.Settings
         {
             _model = model;
             _model.Load();
+            ClientGameplaySettings.SetServerCrosshairEnabled(_model.ServerCrosshairEnabled, false);
         }
         
         public void SetPostProcessingVolume(Volume volume)
@@ -81,6 +82,12 @@ namespace Game.Scripts.UI.Settings
         public void HandleInvertYAxisChanged(bool isOn)
         {
             _model.InvertYAxis = isOn;
+        }
+
+        public void HandleServerCrosshairChanged(bool isOn)
+        {
+            _model.ServerCrosshairEnabled = isOn;
+            ClientGameplaySettings.SetServerCrosshairEnabled(isOn);
         }
 
         public void HandleWalkKeyChanged(string newKey)

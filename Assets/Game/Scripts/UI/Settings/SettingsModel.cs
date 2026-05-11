@@ -22,6 +22,7 @@ namespace Game.Scripts.UI.Settings
         public bool InvertYAxis = false;
         public string WalkKey = "WASD";
         public string AttackKey = "RMB";
+        public bool ServerCrosshairEnabled = false;
 
         private static string configFileName = "settings.config";
 

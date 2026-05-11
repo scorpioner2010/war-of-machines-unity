@@ -157,28 +157,53 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            _crosshair.ammoLeftText.text = Mathf.Max(0, _ammoLeft.Value).ToString();
+            int ammoLeft = _ammoLeft.Value;
+            bool isReloading = _isReloading.Value;
+            float reloadRemain = _reloadRemain.Value;
 
-            if (_ammoLeft.Value <= 0 && !_isReloading.Value)
+            if (_crosshair.ammoLeftText != null)
             {
-                _crosshair.fillImage.fillAmount = 0f;
-                _crosshair.reloadText.text = "EMPTY";
+                _crosshair.ammoLeftText.text = Mathf.Max(0, ammoLeft).ToString();
+            }
+
+            if (ammoLeft <= 0 && !isReloading)
+            {
+                if (_crosshair.fillImage != null)
+                {
+                    _crosshair.fillImage.fillAmount = 0f;
+                }
+                if (_crosshair.reloadText != null)
+                {
+                    _crosshair.reloadText.text = "EMPTY";
+                }
                 return;
             }
 
-            if (_isReloading.Value)
+            if (isReloading)
             {
                 float t = reloadTime > 0.0001f
-                    ? Mathf.Clamp01(1f - (_reloadRemain.Value / reloadTime))
+                    ? Mathf.Clamp01(1f - (reloadRemain / reloadTime))
                     : 1f;
 
-                _crosshair.fillImage.fillAmount = t;
-                _crosshair.reloadText.text = $"{Mathf.Max(0f, _reloadRemain.Value):0.0}s";
+                if (_crosshair.fillImage != null)
+                {
+                    _crosshair.fillImage.fillAmount = t;
+                }
+                if (_crosshair.reloadText != null)
+                {
+                    _crosshair.reloadText.text = $"{Mathf.Max(0f, reloadRemain):0.0}s";
+                }
                 return;
             }
 
-            _crosshair.fillImage.fillAmount = 1f;
-            _crosshair.reloadText.text = "READY";
+            if (_crosshair.fillImage != null)
+            {
+                _crosshair.fillImage.fillAmount = 1f;
+            }
+            if (_crosshair.reloadText != null)
+            {
+                _crosshair.reloadText.text = "READY";
+            }
         }
     }
 }

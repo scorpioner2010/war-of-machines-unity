@@ -52,6 +52,7 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         public bool IsControlsBlocked => _controlsBlocked;
+        private bool HasLocalInput => IsOwner;
 
         public Vector2 Move
         {
@@ -61,7 +62,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _moveServer;
                 }
-                if (IsOwner)
+                if (HasLocalInput)
                 {
                     return _moveLocal;
                 }
@@ -77,7 +78,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _shootServer;
                 }
-                if (IsOwner)
+                if (HasLocalInput)
                 {
                     return _shootLocal;
                 }
@@ -93,7 +94,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _actionServer;
                 }
-                if (IsOwner)
+                if (HasLocalInput)
                 {
                     return _actionLocal;
                 }
@@ -109,7 +110,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _moveServer;
                 }
-                if (IsOwner)
+                if (HasLocalInput)
                 {
                     return _moveLocal;
                 }
@@ -125,7 +126,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _shootServer;
                 }
-                if (IsOwner)
+                if (HasLocalInput)
                 {
                     return _shootLocal;
                 }
@@ -141,7 +142,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return _actionServer;
                 }
-                if (IsOwner)
+                if (HasLocalInput)
                 {
                     return _actionLocal;
                 }
@@ -151,7 +152,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Update()
         {
-            if (!IsOwner)
+            if (!HasLocalInput)
             {
                 return;
             }

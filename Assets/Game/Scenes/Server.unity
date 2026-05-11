@@ -1037,6 +1037,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxPlayersForFindRoom: 20
   findRoomSeconds: 10
+  robotMovement:
+    fallbackMaxSpeed: 10
+    fallbackAcceleration: 30
+    fallbackTraverseSpeedDegPerSecond: 0
+    stoppingAccelerationMultiplier: 3
+    standardAccelerationMultiplier: 1
+    standardBrakingMultiplier: 1
+    leggedAccelerationMultiplier: 2.25
+    leggedBrakingMultiplier: 2.75
+    leggedAnimationReferenceSpeed: 10
+    leggedAnimationMinSpeedMultiplier: 0.45
+    leggedAnimationMaxSpeedMultiplier: 2.2
+    leggedAnimationSpeedExponent: 0.8
+    leggedStepDistanceMultiplier: 1
+    leggedStepHeightMultiplier: 1
+    leggedTurnStepDurationMultiplier: 1
+    leggedTransitionSpeedMultiplier: 1
+    gravity: 25
+    groundedSnap: 2
+  gunDispersion:
+    enabled: 1
+    expandTime: 0.12
+    referenceHullTraverseDegPerSec: 90
+    referenceTurretTraverseDegPerSec: 45
+    referenceGunTraverseDegPerSec: 35
+    referenceCameraAimDegPerSec: 120
+    uiMinDiameter: 80
+    uiMaxDiameter: 340
+    uiPixelsPerDegree: 42
+    serverSyncInterval: 0.05
+    serverSyncDeadZoneDeg: 0.03
 --- !u!4 &2068572094
 Transform:
   m_ObjectHideFlags: 0

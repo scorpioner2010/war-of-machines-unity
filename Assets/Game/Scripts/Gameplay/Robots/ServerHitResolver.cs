@@ -5,6 +5,9 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public static class ServerHitResolver
     {
+        private const int RaycastBufferSize = 128;
+        private static readonly RaycastHit[] RaycastBuffer = new RaycastHit[RaycastBufferSize];
+
         [Serializable]
         public struct HitResult
         {
@@ -26,7 +29,8 @@ namespace Game.Scripts.Gameplay.Robots
             float shellPenMm = 200f,
             float normDeg = 0f,
             float shellDamage = 100f,
-            float maxDistanceFallback = 2000f)
+            float maxDistanceFallback = 2000f,
+            Transform ignoredRoot = null)
         {
             HitResult hr = default;
 
@@ -50,25 +54,25 @@ namespace Game.Scripts.Gameplay.Robots
 
             float maxCastDist = Mathf.Max(dist, 0.1f);
 
-            bool didHit = Physics.Raycast(
+            bool didHit = TryRaycast(
                 startPos,
                 dir,
                 out RaycastHit hit,
                 maxCastDist,
                 hitMask,
-                QueryTriggerInteraction.Ignore
+                ignoredRoot
             );
 
             // Fallback: if we missed within dist, try a longer ray to maxDistanceFallback.
             if (!didHit && maxCastDist < maxDistanceFallback)
             {
-                didHit = Physics.Raycast(
+                didHit = TryRaycast(
                     startPos,
                     dir,
                     out hit,
                     maxDistanceFallback,
                     hitMask,
-                    QueryTriggerInteraction.Ignore
+                    ignoredRoot
                 );
                 if (didHit)
                 {
@@ -102,6 +106,79 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return hr;
+        }
+
+        private static bool TryRaycast(
+            Vector3 startPos,
+            Vector3 dir,
+            out RaycastHit hit,
+            float distance,
+            LayerMask hitMask,
+            Transform ignoredRoot)
+        {
+            if (ignoredRoot == null)
+            {
+                return Physics.Raycast(
+                    startPos,
+                    dir,
+                    out hit,
+                    distance,
+                    hitMask,
+                    QueryTriggerInteraction.Ignore
+                );
+            }
+
+            int count = Physics.RaycastNonAlloc(
+                startPos,
+                dir,
+                RaycastBuffer,
+                distance,
+                hitMask,
+                QueryTriggerInteraction.Ignore
+            );
+
+            int bestIndex = -1;
+            float bestDistance = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                Collider collider = RaycastBuffer[i].collider;
+                if (collider == null || IsUnderRoot(collider.transform, ignoredRoot))
+                {
+                    continue;
+                }
+
+                float hitDistance = RaycastBuffer[i].distance;
+                if (hitDistance < bestDistance)
+                {
+                    bestDistance = hitDistance;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex >= 0)
+            {
+                hit = RaycastBuffer[bestIndex];
+                return true;
+            }
+
+            hit = default;
+            return false;
+        }
+
+        private static bool IsUnderRoot(Transform transform, Transform root)
+        {
+            Transform current = transform;
+            while (current != null)
+            {
+                if (current == root)
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
     }
 }

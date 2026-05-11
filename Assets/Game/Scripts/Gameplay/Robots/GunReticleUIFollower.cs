@@ -1,5 +1,6 @@
 using Game.Scripts.Core.Services;
 using Game.Scripts.UI.HUD;
+using Game.Scripts.UI.Settings;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -108,7 +109,7 @@ namespace Game.Scripts.Gameplay.Robots
                 LerpReticle(ref _curLocal, _tgtLocal, _reticleRect);
             }
 
-            if (showServerReticle && _serverCrosshair != null)
+            if (showServerReticle && ClientGameplaySettings.ServerCrosshairEnabled && _serverCrosshair != null)
             {
                 Vector3 srvAim = vehicleRoot.weaponAimAtCamera.ServerAimPoint;
                 if (srvAim == Vector3.zero)
@@ -234,6 +235,12 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 return;
             }
+
+            if (!ClientGameplaySettings.ServerCrosshairEnabled)
+            {
+                v = false;
+            }
+
             if (_visibleServer == v)
             {
                 return;

@@ -109,7 +109,13 @@ namespace Game.Scripts.Server
                 return false;
             }
 
-            if (SceneManager.GetActiveScene().name == "Server")
+            string activeSceneName = SceneManager.GetActiveScene().name;
+            if (activeSceneName == "VehicleTest")
+            {
+                return false;
+            }
+
+            if (activeSceneName == "Server")
             {
                 return true;
             }

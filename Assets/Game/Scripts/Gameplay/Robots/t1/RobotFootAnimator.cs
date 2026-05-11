@@ -1,5 +1,4 @@
-using System;
-using Cysharp.Threading.Tasks;
+using Game.Scripts.Server;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots.t1
@@ -28,6 +27,8 @@ namespace Game.Scripts.Gameplay.Robots.t1
 
         private float _currentWalkWeight = 0f;
         private float _currentTurnWeight = 0f;
+        private Vector3 _lastWorldPosition;
+        private bool _hasLastWorldPosition;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -41,17 +42,21 @@ namespace Game.Scripts.Gameplay.Robots.t1
                 return;
             }
 
+            RobotMovementGlobalSettings settings = GetMovementSettings();
+            float actualSpeed = SampleHorizontalSpeed();
             Vector2 movementInput = playerRoot.inputManager.AnimMove;
         
             bool isWalking = Mathf.Abs(movementInput.y) > inputThreshold;
             bool isTurning = (!isWalking) && (Mathf.Abs(movementInput.x) > inputThreshold);
+            float transitionSpeed = animTransitionSpeed * Mathf.Max(0.01f, settings.leggedTransitionSpeedMultiplier);
         
             if (isWalking)
             {
-                _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 1f, Time.deltaTime * animTransitionSpeed);
-                _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * animTransitionSpeed);
+                _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 1f, Time.deltaTime * transitionSpeed);
+                _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * transitionSpeed);
                 float direction = movementInput.y > 0f ? 1f : -1f;
-                _walkPhase += direction * Time.deltaTime / stepCycleDuration;
+                float animationSpeed = GetWalkAnimationSpeed(settings, actualSpeed);
+                _walkPhase += direction * Time.deltaTime * animationSpeed / Mathf.Max(0.0001f, stepCycleDuration);
                 _walkPhase %= 1f;
                 if (_walkPhase < 0f)
                 {
@@ -60,28 +65,29 @@ namespace Game.Scripts.Gameplay.Robots.t1
             }
             else if (isTurning)
             {
-                _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 0f, Time.deltaTime * animTransitionSpeed);
-                _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 1f, Time.deltaTime * animTransitionSpeed);
+                _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 0f, Time.deltaTime * transitionSpeed);
+                _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 1f, Time.deltaTime * transitionSpeed);
                 _turnTimer += Time.deltaTime;
-                if (_turnTimer >= turnStepDuration)
+                float currentTurnStepDuration = GetTurnStepDuration(settings);
+                if (_turnTimer >= currentTurnStepDuration)
                 {
-                    _turnTimer -= turnStepDuration;
+                    _turnTimer -= currentTurnStepDuration;
                     _isLeftTurningStep = !_isLeftTurningStep;
                 }
             }
             else
             {
-                _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 0f, Time.deltaTime * animTransitionSpeed);
-                _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * animTransitionSpeed);
+                _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 0f, Time.deltaTime * transitionSpeed);
+                _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * transitionSpeed);
             }
 
-            Vector3 leftWalkOffset = ComputeWalkOffset(_walkPhase);
-            Vector3 rightWalkOffset = ComputeWalkOffset((_walkPhase + 0.5f) % 1f);
+            Vector3 leftWalkOffset = ComputeWalkOffset(_walkPhase, settings);
+            Vector3 rightWalkOffset = ComputeWalkOffset((_walkPhase + 0.5f) % 1f, settings);
             float leftWalkBlend = ComputeWalkBlend(_walkPhase);
             float rightWalkBlend = ComputeWalkBlend((_walkPhase + 0.5f) % 1f);
 
             Vector3 turnOffset = new Vector3(0f, turnLiftHeight, 0f);
-            float turnBlend = ComputeTurnBlend();
+            float turnBlend = ComputeTurnBlend(settings);
             float leftTurnBlend = _isLeftTurningStep ? turnBlend : 1f;
             float rightTurnBlend = !_isLeftTurningStep ? turnBlend : 1f;
             Vector3 leftTurnOffset = turnOffset;
@@ -114,9 +120,9 @@ namespace Game.Scripts.Gameplay.Robots.t1
             }
         }
 
-        private Vector3 ComputeWalkOffset(float phase)
+        private Vector3 ComputeWalkOffset(float phase, RobotMovementGlobalSettings settings)
         {
-            float halfStep = stepDistance * 0.5f;
+            float halfStep = stepDistance * Mathf.Max(0.01f, settings.leggedStepDistanceMultiplier) * 0.5f;
             float horizontal = 0f;
             float vertical = 0f;
 
@@ -129,7 +135,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
             {
                 float t = (phase - 0.5f) / 0.5f;
                 horizontal = Mathf.Lerp(-halfStep, halfStep, t);
-                vertical = Mathf.Sin(Mathf.PI * t) * stepHeight;
+                vertical = Mathf.Sin(Mathf.PI * t) * stepHeight * Mathf.Max(0.01f, settings.leggedStepHeightMultiplier);
             }
             return new Vector3(0f, vertical, horizontal);
         }
@@ -152,10 +158,51 @@ namespace Game.Scripts.Gameplay.Robots.t1
             return Mathf.Lerp(0f, 1f, (phase - 0.85f) / 0.15f);
         }
 
-        private float ComputeTurnBlend()
+        private float ComputeTurnBlend(RobotMovementGlobalSettings settings)
         {
-            float t = _turnTimer / turnStepDuration;
+            float t = _turnTimer / GetTurnStepDuration(settings);
             return t < 0.5f ? Mathf.Lerp(1f, 0f, t * 2f) : Mathf.Lerp(0f, 1f, (t - 0.5f) * 2f);
+        }
+
+        private float GetWalkAnimationSpeed(RobotMovementGlobalSettings settings, float actualSpeed)
+        {
+            float referenceSpeed = Mathf.Max(0.01f, settings.leggedAnimationReferenceSpeed);
+            float normalizedSpeed = Mathf.Clamp01(actualSpeed / referenceSpeed);
+            float shapedSpeed = Mathf.Pow(normalizedSpeed, Mathf.Max(0.01f, settings.leggedAnimationSpeedExponent));
+            float minSpeed = Mathf.Max(0.01f, settings.leggedAnimationMinSpeedMultiplier);
+            float maxSpeed = Mathf.Max(minSpeed, settings.leggedAnimationMaxSpeedMultiplier);
+            return Mathf.Lerp(minSpeed, maxSpeed, shapedSpeed);
+        }
+
+        private float GetTurnStepDuration(RobotMovementGlobalSettings settings)
+        {
+            return Mathf.Max(0.0001f, turnStepDuration * Mathf.Max(0.01f, settings.leggedTurnStepDurationMultiplier));
+        }
+
+        private float SampleHorizontalSpeed()
+        {
+            Vector3 currentPosition = playerRoot != null ? playerRoot.transform.position : transform.position;
+            if (!_hasLastWorldPosition)
+            {
+                _lastWorldPosition = currentPosition;
+                _hasLastWorldPosition = true;
+                return 0f;
+            }
+
+            Vector3 delta = currentPosition - _lastWorldPosition;
+            _lastWorldPosition = currentPosition;
+            delta.y = 0f;
+            return delta.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
+        }
+
+        private RobotMovementGlobalSettings GetMovementSettings()
+        {
+            if (playerRoot != null && playerRoot.IsServerInitialized)
+            {
+                return ServerSettings.GetRobotMovement();
+            }
+
+            return RemoteServerSettings.RobotMovement;
         }
     }
 }

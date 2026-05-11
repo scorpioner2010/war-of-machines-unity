@@ -75,6 +75,11 @@ namespace Game.Scripts.Gameplay.Robots
         [Server]
         public void SetTargetYawServer(float targetLocalYaw)
         {
+            SetTargetYaw(targetLocalYaw);
+        }
+
+        public void SetTargetYaw(float targetLocalYaw)
+        {
             if (maxLocalYaw > 0f)
             {
                 float half = Mathf.Abs(maxLocalYaw);

@@ -162,7 +162,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             Vector3 predictedAimPoint = GetDispersedAimPoint(startPos, baseAimPoint, shotId, _ownerDispersion.CurrentDeg, GetGlobalDispersion());
 
-            Projectile predicted = SpawnLocal(startPos, predictedAimPoint, 0f, authoritative: false, Vector3.up);
+            Projectile predicted = SpawnLocal(startPos, predictedAimPoint, 0f, false, Vector3.up, true);
             _predictedProjectiles[shotId] = predicted;
             AddOwnerShotBloom();
 
@@ -180,6 +180,7 @@ namespace Game.Scripts.Gameplay.Robots
             float passedTime,
             bool authoritative,
             Vector3 impactNormal,
+            bool visible = true,
             System.Action onAuthoritativeImpact = null)
         {
             Projectile proj = Instantiate(projectilePrefab, startPos, Quaternion.identity);
@@ -203,6 +204,10 @@ namespace Game.Scripts.Gameplay.Robots
                 authoritative: authoritative
             );
             proj.ConfigureResolvedImpact(aimPoint, impactNormal, onAuthoritativeImpact);
+            if (!visible)
+            {
+                proj.SetVisualsEnabled(false);
+            }
             return proj;
         }
 
@@ -239,13 +244,15 @@ namespace Game.Scripts.Gameplay.Robots
             AddServerShotBloom();
             ConfigureOwnerProjectileTargetRpc(sender, shotId, shot.Point, shot.Normal);
 
+            bool serverVisualVisible = !(sender.IsLocalClient && IsClientInitialized);
             SpawnLocal(
                 startPos,
                 shot.Point,
                 passed,
-                authoritative: true,
+                true,
                 shot.Normal,
-                onAuthoritativeImpact: () => ApplyResolvedShotDamage(sender, shot)
+                serverVisualVisible,
+                () => ApplyResolvedShotDamage(sender, shot)
             );
 
             FireObserversRpc(shotId, startPos, shot.Point, shot.Normal, clientTick);
@@ -387,7 +394,8 @@ namespace Game.Scripts.Gameplay.Robots
                 hitMask,
                 shellPenetrationMm,
                 normalizationDeg,
-                shellDamage
+                shellDamage,
+                ignoredRoot: vehicleRoot != null ? vehicleRoot.transform : null
             );
 
             Health targetHealth = null;
@@ -464,7 +472,7 @@ namespace Game.Scripts.Gameplay.Robots
             float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
             passed = Mathf.Min(MAX_PASSED_TIME, passed);
 
-            SpawnLocal(startPos, aimPoint, passed, authoritative: false, impactNormal);
+            SpawnLocal(startPos, aimPoint, passed, false, impactNormal);
         }
 
         [TargetRpc]

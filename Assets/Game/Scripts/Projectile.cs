@@ -48,8 +48,42 @@ public class Projectile : MonoBehaviour
     private Vector3 _resolvedImpactNormal = Vector3.up;
     private Action _onAuthoritativeResolvedImpact;
     private bool _resolvedImpactHandled;
+    private bool _visualsEnabled = true;
 
     public GameObject explosionFX;
+
+    public void SetVisualsEnabled(bool enabled)
+    {
+        _visualsEnabled = enabled;
+
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+            {
+                renderers[i].enabled = enabled;
+            }
+        }
+
+        ParticleSystem[] particles = GetComponentsInChildren<ParticleSystem>(true);
+        for (int i = 0; i < particles.Length; i++)
+        {
+            ParticleSystem particle = particles[i];
+            if (particle == null)
+            {
+                continue;
+            }
+
+            if (enabled)
+            {
+                particle.Play();
+            }
+            else
+            {
+                particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+    }
 
     public void Init(
         Vector3 targetPoint,
@@ -159,7 +193,7 @@ public class Projectile : MonoBehaviour
 
     private void Explode(Vector3 pos, Vector3 normal)
     {
-        if (explosionFX != null)
+        if (_visualsEnabled && explosionFX != null)
         {
             Instantiate(explosionFX, pos, Quaternion.LookRotation(normal != Vector3.zero ? normal : Vector3.up));
         }

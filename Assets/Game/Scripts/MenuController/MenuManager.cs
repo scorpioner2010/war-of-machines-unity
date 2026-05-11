@@ -14,6 +14,7 @@ namespace Game.Scripts.MenuController
         public static Action<MenuType> OnDisable;
         public static Action<MenuType> OnEnable;
         public static MenuType CurrentType { get; private set; }
+        public static bool IsReady => _in != null && _in._map != null;
         
         private void Awake()
         {
@@ -29,6 +30,11 @@ namespace Game.Scripts.MenuController
 
         public static void OpenMenu(MenuType type)
         {
+            if (!IsReady)
+            {
+                return;
+            }
+
             CurrentType = type;
             OnEnable?.Invoke(type);
             foreach (KeyValuePair<MenuType, Menu> kv in _in._map)
@@ -46,6 +52,11 @@ namespace Game.Scripts.MenuController
 
         public static void CloseMenu(MenuType type)
         {
+            if (!IsReady)
+            {
+                return;
+            }
+
             OnDisable?.Invoke(type);
             if (_in._map.ContainsKey(type))
             {

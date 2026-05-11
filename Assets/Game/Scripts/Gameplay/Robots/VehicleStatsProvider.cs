@@ -76,6 +76,24 @@ namespace Game.Scripts.Gameplay.Robots
             return null;
         }
 
+        public static async UniTask<VehicleRuntimeStats[]> GetAllAsync()
+        {
+            await PreloadAsync();
+
+            if (_cache == null || _cache.Length == 0)
+            {
+                return Array.Empty<VehicleRuntimeStats>();
+            }
+
+            VehicleRuntimeStats[] result = new VehicleRuntimeStats[_cache.Length];
+            for (int i = 0; i < _cache.Length; i++)
+            {
+                result[i] = _cache[i] != null ? _cache[i].Clone() : null;
+            }
+
+            return result;
+        }
+
         private static VehicleRuntimeStats FindCached(int vehicleId, string code)
         {
             if (_cache == null)

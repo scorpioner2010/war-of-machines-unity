@@ -75,6 +75,11 @@ namespace Game.Scripts.Gameplay.Robots
         [Server]
         public void SetTargetPitchServer(float targetPitch)
         {
+            SetTargetPitch(targetPitch);
+        }
+
+        public void SetTargetPitch(float targetPitch)
+        {
             _targetPitchServer = Mathf.Clamp(targetPitch, minPitch, maxPitch);
         }
 
