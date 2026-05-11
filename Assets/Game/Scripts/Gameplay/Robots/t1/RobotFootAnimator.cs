@@ -20,6 +20,8 @@ namespace Game.Scripts.Gameplay.Robots.t1
         public float turnStepDuration = 0.5f;
 
         public float animTransitionSpeed = 5f;
+        public float strideSpeedSmoothing = 12f;
+        public float minStrideSpeed = 0.05f;
 
         private float _walkPhase = 0f;
         private float _turnTimer = 0f;
@@ -29,6 +31,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
         private float _currentTurnWeight = 0f;
         private Vector3 _lastWorldPosition;
         private bool _hasLastWorldPosition;
+        private float _smoothedHorizontalSpeed;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -55,8 +58,8 @@ namespace Game.Scripts.Gameplay.Robots.t1
                 _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 1f, Time.deltaTime * transitionSpeed);
                 _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * transitionSpeed);
                 float direction = movementInput.y > 0f ? 1f : -1f;
-                float animationSpeed = GetWalkAnimationSpeed(settings, actualSpeed);
-                _walkPhase += direction * Time.deltaTime * animationSpeed / Mathf.Max(0.0001f, stepCycleDuration);
+                float phaseSpeed = GetWalkPhaseSpeed(settings, actualSpeed);
+                _walkPhase += direction * Time.deltaTime * phaseSpeed;
                 _walkPhase %= 1f;
                 if (_walkPhase < 0f)
                 {
@@ -164,14 +167,18 @@ namespace Game.Scripts.Gameplay.Robots.t1
             return t < 0.5f ? Mathf.Lerp(1f, 0f, t * 2f) : Mathf.Lerp(0f, 1f, (t - 0.5f) * 2f);
         }
 
-        private float GetWalkAnimationSpeed(RobotMovementGlobalSettings settings, float actualSpeed)
+        private float GetWalkPhaseSpeed(RobotMovementGlobalSettings settings, float actualSpeed)
         {
-            float referenceSpeed = Mathf.Max(0.01f, settings.leggedAnimationReferenceSpeed);
-            float normalizedSpeed = Mathf.Clamp01(actualSpeed / referenceSpeed);
-            float shapedSpeed = Mathf.Pow(normalizedSpeed, Mathf.Max(0.01f, settings.leggedAnimationSpeedExponent));
-            float minSpeed = Mathf.Max(0.01f, settings.leggedAnimationMinSpeedMultiplier);
-            float maxSpeed = Mathf.Max(minSpeed, settings.leggedAnimationMaxSpeedMultiplier);
-            return Mathf.Lerp(minSpeed, maxSpeed, shapedSpeed);
+            float strideDistance = stepDistance * Mathf.Max(0.01f, settings.leggedStepDistanceMultiplier);
+            float speed = Mathf.Max(0f, actualSpeed);
+            if (speed < Mathf.Max(0f, minStrideSpeed))
+            {
+                return 0f;
+            }
+
+            float phaseSpeed = speed / Mathf.Max(0.0001f, strideDistance * 2f);
+            float maxPhaseSpeed = Mathf.Max(0.01f, settings.leggedAnimationMaxSpeedMultiplier) / Mathf.Max(0.0001f, stepCycleDuration);
+            return Mathf.Min(phaseSpeed, maxPhaseSpeed);
         }
 
         private float GetTurnStepDuration(RobotMovementGlobalSettings settings)
@@ -181,7 +188,10 @@ namespace Game.Scripts.Gameplay.Robots.t1
 
         private float SampleHorizontalSpeed()
         {
-            Vector3 currentPosition = playerRoot != null ? playerRoot.transform.position : transform.position;
+            Transform speedTransform = playerRoot != null && playerRoot.objectMover != null
+                ? playerRoot.objectMover.transform
+                : transform;
+            Vector3 currentPosition = speedTransform.position;
             if (!_hasLastWorldPosition)
             {
                 _lastWorldPosition = currentPosition;
@@ -192,7 +202,11 @@ namespace Game.Scripts.Gameplay.Robots.t1
             Vector3 delta = currentPosition - _lastWorldPosition;
             _lastWorldPosition = currentPosition;
             delta.y = 0f;
-            return delta.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
+            float rawSpeed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
+            float smoothRate = Mathf.Max(0.01f, strideSpeedSmoothing);
+            float t = 1f - Mathf.Exp(-smoothRate * Time.deltaTime);
+            _smoothedHorizontalSpeed = Mathf.Lerp(_smoothedHorizontalSpeed, rawSpeed, t);
+            return _smoothedHorizontalSpeed;
         }
 
         private RobotMovementGlobalSettings GetMovementSettings()

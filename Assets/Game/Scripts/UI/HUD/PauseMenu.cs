@@ -2,6 +2,7 @@ using System;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.UI.Loading;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Game.Scripts.UI.HUD
@@ -38,6 +39,11 @@ namespace Game.Scripts.UI.HUD
         
         public void OpenPause()
         {
+            if (IsVehicleTestScene())
+            {
+                return;
+            }
+
             pauseMenu.SetActive(true);
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
@@ -45,6 +51,11 @@ namespace Game.Scripts.UI.HUD
         
         private void Update()
         {
+            if (IsVehicleTestScene())
+            {
+                return;
+            }
+
             if (InputManager.Escape)
             {
                 if (!pauseMenu.activeInHierarchy)
@@ -60,6 +71,11 @@ namespace Game.Scripts.UI.HUD
                     Cursor.lockState = CursorLockMode.Locked;
                 }
             }
+        }
+
+        private static bool IsVehicleTestScene()
+        {
+            return SceneManager.GetActiveScene().name == "VehicleTest";
         }
     }
 }

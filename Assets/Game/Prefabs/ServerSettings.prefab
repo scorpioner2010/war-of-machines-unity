@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1036203649056536016
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2352615188937540898}
+  - component: {fileID: 3533032834666098081}
+  m_Layer: 0
+  m_Name: ServerSettings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2352615188937540898
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1036203649056536016}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3533032834666098081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1036203649056536016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da7d804b5d3773e47b81d159d7e65980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxPlayersForFindRoom: 20
+  findRoomSeconds: 10
+  robotMovement:
+    fallbackMaxSpeed: 10
+    fallbackAcceleration: 30
+    fallbackTraverseSpeedDegPerSecond: 0
+    stoppingAccelerationMultiplier: 3
+    standardAccelerationMultiplier: 1
+    standardBrakingMultiplier: 1
+    leggedAccelerationMultiplier: 2.25
+    leggedBrakingMultiplier: 2.75
+    leggedAnimationReferenceSpeed: 10
+    leggedAnimationMinSpeedMultiplier: 1.35
+    leggedAnimationMaxSpeedMultiplier: 2.2
+    leggedAnimationSpeedExponent: 0.8
+    leggedStepDistanceMultiplier: 1
+    leggedStepHeightMultiplier: 1
+    leggedTurnStepDurationMultiplier: 1
+    leggedTransitionSpeedMultiplier: 1
+    gravity: 25
+    groundedSnap: 2
+  gunDispersion:
+    enabled: 1
+    expandTime: 0.12
+    referenceHullTraverseDegPerSec: 90
+    referenceTurretTraverseDegPerSec: 45
+    referenceGunTraverseDegPerSec: 35
+    referenceCameraAimDegPerSec: 120
+    uiMinDiameter: 80
+    uiMaxDiameter: 340
+    uiPixelsPerDegree: 42
+    serverSyncInterval: 0.05
+    serverSyncDeadZoneDeg: 0.03

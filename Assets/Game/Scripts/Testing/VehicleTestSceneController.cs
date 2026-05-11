@@ -44,6 +44,8 @@ namespace Game.Scripts.Testing
         private bool _startedTestServer;
         private bool _startedTestClient;
         private bool _networkStartInProgress;
+        private bool _testCursorMode = true;
+        private Rect _testGuiArea;
 
         private void Awake()
         {
@@ -53,6 +55,8 @@ namespace Game.Scripts.Testing
 
         private void Start()
         {
+            SetTestCursorMode(true);
+
             if (autoStartHost)
             {
                 StartHostAsync().Forget();
@@ -85,10 +89,23 @@ namespace Game.Scripts.Testing
             }
         }
 
+        private void Update()
+        {
+            if (InputManager.Escape)
+            {
+                SetTestCursorMode(!_testCursorMode);
+            }
+
+            if (_testCursorMode && _spawnedVehicle != null && Input.GetMouseButtonDown(0) && !IsMouseOverTestGui())
+            {
+                SetTestCursorMode(false);
+            }
+        }
+
         private void OnGUI()
         {
-            Rect area = new Rect(12f, 12f, 390f, Screen.height - 24f);
-            GUILayout.BeginArea(area, GUI.skin.box);
+            _testGuiArea = new Rect(12f, 12f, 390f, Screen.height - 24f);
+            GUILayout.BeginArea(_testGuiArea, GUI.skin.box);
 
             GUILayout.Label("Vehicle Parameter Test");
             GUILayout.Label(_status);
@@ -124,6 +141,13 @@ namespace Game.Scripts.Testing
             GUILayout.Label("Controls: WASD move, mouse aim, LMB fire, Space action.");
 
             GUILayout.EndArea();
+        }
+
+        private bool IsMouseOverTestGui()
+        {
+            Vector3 mousePosition = Input.mousePosition;
+            Vector2 guiMousePosition = new Vector2(mousePosition.x, Screen.height - mousePosition.y);
+            return _testGuiArea.Contains(guiMousePosition);
         }
 
         private async UniTaskVoid LoadVehiclesAsync()
@@ -304,6 +328,8 @@ namespace Game.Scripts.Testing
                 _spawnedVehicle.characterInit.ServerInit(1, PlayerType.Player, "VehicleTest", MatchTeam.None, gameObject.scene);
             }
 
+            SetTestCursorMode(false);
+
             _status = "Spawned " + stats.Name + ".";
         }
 
@@ -328,6 +354,19 @@ namespace Game.Scripts.Testing
             }
 
             _spawnedVehicle = null;
+            SetTestCursorMode(true);
+        }
+
+        private void SetTestCursorMode(bool enabled)
+        {
+            _testCursorMode = enabled;
+            Cursor.visible = enabled;
+            Cursor.lockState = enabled ? CursorLockMode.None : CursorLockMode.Locked;
+
+            if (_spawnedVehicle != null && _spawnedVehicle.inputManager != null)
+            {
+                _spawnedVehicle.inputManager.SetControlsBlocked(enabled);
+            }
         }
 
         private void ResolveSceneReferences()

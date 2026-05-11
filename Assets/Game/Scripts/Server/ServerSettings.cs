@@ -54,6 +54,48 @@ namespace Game.Scripts.Server
             return Mathf.Max(0.01f, value);
         }
 
+        public void Validate()
+        {
+            fallbackMaxSpeed = ClampFinite(fallbackMaxSpeed, 0f, Default.fallbackMaxSpeed);
+            fallbackAcceleration = ClampFinite(fallbackAcceleration, 0.01f, Default.fallbackAcceleration);
+            fallbackTraverseSpeedDegPerSecond = ClampFinite(fallbackTraverseSpeedDegPerSecond, 0f, Default.fallbackTraverseSpeedDegPerSecond);
+            stoppingAccelerationMultiplier = ClampFinite(stoppingAccelerationMultiplier, 0.01f, Default.stoppingAccelerationMultiplier);
+            standardAccelerationMultiplier = ClampFinite(standardAccelerationMultiplier, 0.01f, Default.standardAccelerationMultiplier);
+            standardBrakingMultiplier = ClampFinite(standardBrakingMultiplier, 0.01f, Default.standardBrakingMultiplier);
+            leggedAccelerationMultiplier = ClampFinite(leggedAccelerationMultiplier, 0.01f, Default.leggedAccelerationMultiplier);
+            leggedBrakingMultiplier = ClampFinite(leggedBrakingMultiplier, 0.01f, Default.leggedBrakingMultiplier);
+            leggedAnimationReferenceSpeed = ClampFinite(leggedAnimationReferenceSpeed, 0.01f, Default.leggedAnimationReferenceSpeed);
+            leggedAnimationMinSpeedMultiplier = ClampFinite(leggedAnimationMinSpeedMultiplier, 0.01f, Default.leggedAnimationMinSpeedMultiplier);
+            leggedAnimationMaxSpeedMultiplier = ClampFinite(leggedAnimationMaxSpeedMultiplier, 0.01f, Default.leggedAnimationMaxSpeedMultiplier);
+            if (leggedAnimationMaxSpeedMultiplier < leggedAnimationMinSpeedMultiplier)
+            {
+                leggedAnimationMaxSpeedMultiplier = leggedAnimationMinSpeedMultiplier;
+            }
+
+            leggedAnimationSpeedExponent = ClampFinite(leggedAnimationSpeedExponent, 0.01f, Default.leggedAnimationSpeedExponent);
+            leggedStepDistanceMultiplier = ClampFinite(leggedStepDistanceMultiplier, 0.01f, Default.leggedStepDistanceMultiplier);
+            leggedStepHeightMultiplier = ClampFinite(leggedStepHeightMultiplier, 0.01f, Default.leggedStepHeightMultiplier);
+            leggedTurnStepDurationMultiplier = ClampFinite(leggedTurnStepDurationMultiplier, 0.01f, Default.leggedTurnStepDurationMultiplier);
+            leggedTransitionSpeedMultiplier = ClampFinite(leggedTransitionSpeedMultiplier, 0.01f, Default.leggedTransitionSpeedMultiplier);
+            gravity = ClampFinite(gravity, 0.01f, Default.gravity);
+            groundedSnap = ClampFinite(groundedSnap, 0.01f, Default.groundedSnap);
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+
         public void CopyFrom(RobotMovementGlobalSettings source)
         {
             if (source == null)
@@ -93,7 +135,13 @@ namespace Game.Scripts.Server
         
         private void Awake()
         {
+            ValidateSettings();
             In = this;
+        }
+
+        private void OnValidate()
+        {
+            ValidateSettings();
         }
 
         public static int GetMaxPlayersForFindRoom()
@@ -133,7 +181,26 @@ namespace Game.Scripts.Server
                 return RobotMovementGlobalSettings.Default;
             }
 
+            In.robotMovement.Validate();
             return In.robotMovement;
+        }
+
+        private void ValidateSettings()
+        {
+            if (maxPlayersForFindRoom < 1)
+            {
+                maxPlayersForFindRoom = 1;
+            }
+
+            if (findRoomSeconds < 1)
+            {
+                findRoomSeconds = 1;
+            }
+
+            if (robotMovement != null)
+            {
+                robotMovement.Validate();
+            }
         }
     }
 }

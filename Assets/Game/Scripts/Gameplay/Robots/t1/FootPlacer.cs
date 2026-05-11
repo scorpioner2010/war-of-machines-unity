@@ -11,6 +11,10 @@ namespace Game.Scripts.Gameplay.Robots.t1
         private Vector3 _neutralLocalPos;
         private Transform _parentTransform;
 
+        public Vector3 NeutralLocalPosition => _neutralLocalPos;
+        public Vector3 CurrentLocalPosition => transform.localPosition;
+        public bool IsInitialized => _parentTransform != null;
+
         private void Start() 
         { 
             _parentTransform = transform.parent; 

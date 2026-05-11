@@ -909,6 +909,7 @@ MonoBehaviour:
   autoStartDelaySeconds: 0.25
   clientRetryDelaySeconds: 1
   clientMaxStartAttempts: 30
+  serverHeartbeatIntervalSeconds: 2
 --- !u!4 &1731322153
 Transform:
   m_ObjectHideFlags: 0
@@ -1006,83 +1007,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   registry: {fileID: 11400000, guid: e789c05f8eea53d409cd152d7bda366e, type: 2}
---- !u!1 &2068572092
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2068572094}
-  - component: {fileID: 2068572093}
-  m_Layer: 0
-  m_Name: ServerSettings
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2068572093
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2068572092}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: da7d804b5d3773e47b81d159d7e65980, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxPlayersForFindRoom: 20
-  findRoomSeconds: 10
-  robotMovement:
-    fallbackMaxSpeed: 10
-    fallbackAcceleration: 30
-    fallbackTraverseSpeedDegPerSecond: 0
-    stoppingAccelerationMultiplier: 3
-    standardAccelerationMultiplier: 1
-    standardBrakingMultiplier: 1
-    leggedAccelerationMultiplier: 2.25
-    leggedBrakingMultiplier: 2.75
-    leggedAnimationReferenceSpeed: 10
-    leggedAnimationMinSpeedMultiplier: 0.45
-    leggedAnimationMaxSpeedMultiplier: 2.2
-    leggedAnimationSpeedExponent: 0.8
-    leggedStepDistanceMultiplier: 1
-    leggedStepHeightMultiplier: 1
-    leggedTurnStepDurationMultiplier: 1
-    leggedTransitionSpeedMultiplier: 1
-    gravity: 25
-    groundedSnap: 2
-  gunDispersion:
-    enabled: 1
-    expandTime: 0.12
-    referenceHullTraverseDegPerSec: 90
-    referenceTurretTraverseDegPerSec: 45
-    referenceGunTraverseDegPerSec: 35
-    referenceCameraAimDegPerSec: 120
-    uiMinDiameter: 80
-    uiMaxDiameter: 340
-    uiPixelsPerDegree: 42
-    serverSyncInterval: 0.05
-    serverSyncDeadZoneDeg: 0.03
---- !u!4 &2068572094
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2068572092}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &785906799401746339
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1269,6 +1193,74 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 50f2395fc5c7e8e4bb576c913ea66c58, type: 3}
+--- !u!1001 &5561866804131739244
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1036203649056536016, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_Name
+      value: ServerSettings
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2352615188937540898, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 37920e9282dd1184faf512fea6cfe275, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1277,6 +1269,6 @@ SceneRoots:
   - {fileID: 425672388}
   - {fileID: 785906799401746339}
   - {fileID: 1751021264}
-  - {fileID: 2068572094}
+  - {fileID: 5561866804131739244}
   - {fileID: 1766321692}
   - {fileID: 1711377004}
