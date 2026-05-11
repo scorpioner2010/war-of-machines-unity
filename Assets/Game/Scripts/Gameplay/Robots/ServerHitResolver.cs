@@ -32,8 +32,6 @@ namespace Game.Scripts.Gameplay.Robots
             float maxDistanceFallback = 2000f,
             Transform ignoredRoot = null)
         {
-            HitResult hr = default;
-
             Vector3 dir = aimPoint - startPos;
             float dist = dir.magnitude;
 
@@ -52,6 +50,43 @@ namespace Game.Scripts.Gameplay.Robots
                 dir /= Mathf.Max(dist, 1e-6f);
             }
 
+            return ResolveShotDirection(
+                startPos,
+                dir,
+                hitMask,
+                shellPenMm,
+                normDeg,
+                shellDamage,
+                Mathf.Max(dist, 0.1f),
+                maxDistanceFallback,
+                ignoredRoot
+            );
+        }
+
+        public static HitResult ResolveShotDirection(
+            Vector3 startPos,
+            Vector3 direction,
+            LayerMask hitMask,
+            float shellPenMm = 200f,
+            float normDeg = 0f,
+            float shellDamage = 100f,
+            float initialDistance = 2000f,
+            float maxDistanceFallback = 2000f,
+            Transform ignoredRoot = null)
+        {
+            HitResult hr = default;
+
+            Vector3 dir = direction;
+            if (float.IsNaN(dir.x) || float.IsNaN(dir.y) || float.IsNaN(dir.z) || dir.sqrMagnitude < 0.000001f)
+            {
+                dir = Vector3.forward;
+            }
+            else
+            {
+                dir.Normalize();
+            }
+
+            float dist = Mathf.Max(initialDistance, 0.1f);
             float maxCastDist = Mathf.Max(dist, 0.1f);
 
             bool didHit = TryRaycast(

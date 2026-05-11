@@ -145,6 +145,12 @@ namespace Game.Scripts.Gameplay.Robots
             public ShotHudStatus HudStatus;
         }
 
+        private struct DispersedShotRay
+        {
+            public Vector3 Direction;
+            public Vector3 TargetPoint;
+        }
+
         public void PredictAndRequest()
         {
             if (!vehicleRoot.IsOwner)
@@ -160,9 +166,9 @@ namespace Game.Scripts.Gameplay.Robots
                 InitOwnerDispersion();
             }
 
-            Vector3 predictedAimPoint = GetDispersedAimPoint(startPos, baseAimPoint, shotId, _ownerDispersion.CurrentDeg, GetGlobalDispersion());
+            DispersedShotRay predictedRay = BuildDispersedShotRay(startPos, baseAimPoint, shotId, _ownerDispersion.CurrentDeg, GetGlobalDispersion());
 
-            Projectile predicted = SpawnLocal(startPos, predictedAimPoint, 0f, false, Vector3.up, true);
+            Projectile predicted = SpawnLocal(startPos, predictedRay.TargetPoint, 0f, false, Vector3.up, true);
             _predictedProjectiles[shotId] = predicted;
             AddOwnerShotBloom();
 
@@ -239,8 +245,8 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-            Vector3 dispersedAimPoint = GetDispersedAimPoint(startPos, aimPoint, shotId, _serverDispersion.CurrentDeg, globalDispersion);
-            ResolvedShot shot = ResolveShot(startPos, dispersedAimPoint);
+            DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, _serverDispersion.CurrentDeg, globalDispersion);
+            ResolvedShot shot = ResolveShot(startPos, dispersedRay);
             AddServerShotBloom();
             ConfigureOwnerProjectileTargetRpc(sender, shotId, shot.Point, shot.Normal);
 
@@ -342,34 +348,58 @@ namespace Game.Scripts.Gameplay.Robots
             return RemoteServerSettings.GunDispersion;
         }
 
-        private Vector3 GetDispersedAimPoint(Vector3 startPos, Vector3 aimPoint, int shotId, float dispersionDeg, GunDispersionGlobalSettings globalDispersion)
+        private DispersedShotRay BuildDispersedShotRay(Vector3 startPos, Vector3 aimPoint, int shotId, float dispersionDeg, GunDispersionGlobalSettings globalDispersion)
         {
             globalDispersion ??= GunDispersionGlobalSettings.Default;
+            Vector3 baseDirection = aimPoint - startPos;
+            float distance = baseDirection.magnitude;
+            if (float.IsNaN(baseDirection.x) || float.IsNaN(baseDirection.y) || float.IsNaN(baseDirection.z) || distance <= 0.001f)
+            {
+                baseDirection = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
+                distance = 2000f;
+            }
+            else
+            {
+                baseDirection /= distance;
+            }
+
             if (dispersion == null || !globalDispersion.enabled || dispersionDeg <= 0f)
             {
-                return aimPoint;
+                return new DispersedShotRay
+                {
+                    Direction = baseDirection,
+                    TargetPoint = startPos + baseDirection * distance
+                };
             }
 
-            Vector3 direction = aimPoint - startPos;
-            float distance = direction.magnitude;
-            if (distance <= 0.001f)
-            {
-                return aimPoint;
-            }
-
-            direction /= distance;
             Vector2 unitCircle = GetDeterministicUnitCircle(shotId);
-            float spreadRadius = Mathf.Tan(dispersionDeg * Mathf.Deg2Rad) * distance;
 
-            Vector3 right = Vector3.Cross(Vector3.up, direction);
+            Vector3 right = Vector3.Cross(Vector3.up, baseDirection);
             if (right.sqrMagnitude < 0.0001f)
             {
-                right = Vector3.Cross(Vector3.forward, direction);
+                right = Vector3.Cross(Vector3.forward, baseDirection);
             }
             right.Normalize();
 
-            Vector3 up = Vector3.Cross(direction, right).normalized;
-            return aimPoint + (right * unitCircle.x + up * unitCircle.y) * spreadRadius;
+            Vector3 up = Vector3.Cross(baseDirection, right).normalized;
+            float spreadTan = Mathf.Tan(Mathf.Max(0f, dispersionDeg) * Mathf.Deg2Rad);
+            Vector3 dispersedDirection = baseDirection
+                                         + right * (unitCircle.x * spreadTan)
+                                         + up * (unitCircle.y * spreadTan);
+            if (dispersedDirection.sqrMagnitude <= 0.000001f)
+            {
+                dispersedDirection = baseDirection;
+            }
+            else
+            {
+                dispersedDirection.Normalize();
+            }
+
+            return new DispersedShotRay
+            {
+                Direction = dispersedDirection,
+                TargetPoint = startPos + dispersedDirection * distance
+            };
         }
 
         private Vector2 GetDeterministicUnitCircle(int shotId)
@@ -386,15 +416,18 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private ResolvedShot ResolveShot(Vector3 startPos, Vector3 aimPoint)
+        private ResolvedShot ResolveShot(Vector3 startPos, DispersedShotRay shotRay)
         {
-            ServerHitResolver.HitResult hr = ServerHitResolver.ResolveShot(
+            float initialDistance = Mathf.Max(0.1f, (shotRay.TargetPoint - startPos).magnitude);
+            ServerHitResolver.HitResult hr = ServerHitResolver.ResolveShotDirection(
                 startPos,
-                aimPoint,
+                shotRay.Direction,
                 hitMask,
                 shellPenetrationMm,
                 normalizationDeg,
                 shellDamage,
+                initialDistance,
+                2000f,
                 ignoredRoot: vehicleRoot != null ? vehicleRoot.transform : null
             );
 
@@ -426,7 +459,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             ResolvedShot shot = new ResolvedShot
             {
-                Point = hr.hit ? hr.point : aimPoint,
+                Point = hr.hit ? hr.point : shotRay.TargetPoint,
                 Normal = hr.hit && hr.normal.sqrMagnitude > 1e-6f ? hr.normal : Vector3.up,
                 TargetIsRobot = targetIsRobot,
                 Damage = targetIsRobot ? hr.damage : 0f,
