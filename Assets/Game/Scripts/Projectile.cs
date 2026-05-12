@@ -67,6 +67,9 @@ public class Projectile : MonoBehaviour
     private bool _missContinuationUsed;
     private Vector3 _lastTravelDirection;
     private float _continuationSpeedMultiplier = -1f;
+    private bool _useMissContinuationArc;
+    private Vector3 _missContinuationDirection;
+    private Vector3 _missContinuationArcCoefficient;
 
     public GameObject explosionFX;
 
@@ -147,6 +150,7 @@ public class Projectile : MonoBehaviour
 
         _distanceTraveled = 0f;
         _continuationSpeedMultiplier = -1f;
+        _useMissContinuationArc = false;
         RecomputeTrajectory();
         ExtendLifetimeToReachTarget();
 
@@ -223,6 +227,7 @@ public class Projectile : MonoBehaviour
         _explodeAtResolvedTarget = explodeAtTarget;
         _resolvedTargetHandled = false;
         _liveCollisionEnabled = false;
+        _useMissContinuationArc = false;
 
         _onAuthoritativeResolvedTarget = onAuthoritativeArrival;
 
@@ -240,6 +245,7 @@ public class Projectile : MonoBehaviour
         _explodeAtResolvedTarget = false;
         _resolvedTargetHandled = false;
         _liveCollisionEnabled = true;
+        _useMissContinuationArc = false;
         _ignoredRoot = ignoredRoot;
         _onAuthoritativeLiveHit = onAuthoritativeHit;
         _onAuthoritativeLiveMiss = onAuthoritativeMiss;
@@ -398,9 +404,7 @@ public class Projectile : MonoBehaviour
         _distanceTraveled += stepLen;
 
         float newFraction = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(_distanceTraveled / _totalDistance);
-        Vector3 basePos = Vector3.Lerp(_startPoint, _targetPoint, newFraction);
-        float heightMul = _useArc ? _arcCurve.Evaluate(newFraction) : 0f;
-        Vector3 newPos = basePos + _arcUp * (_arcHeightComputed * heightMul);
+        Vector3 newPos = GetTrajectoryPosition(_distanceTraveled);
 
         Vector3 travel = newPos - _prevPos;
         float dist = travel.magnitude;
@@ -432,10 +436,7 @@ public class Projectile : MonoBehaviour
 
         float lookAheadDistance = Mathf.Max(0.01f, _initialSpeed * 0.02f);
         float aheadDist = Mathf.Min(_distanceTraveled + lookAheadDistance, _totalDistance);
-        float aheadFrac = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(aheadDist / _totalDistance);
-        Vector3 aheadBase = Vector3.Lerp(_startPoint, _targetPoint, aheadFrac);
-        float aheadHMul = _useArc ? _arcCurve.Evaluate(aheadFrac) : 0f;
-        Vector3 aheadPos = aheadBase + _arcUp * (_arcHeightComputed * aheadHMul);
+        Vector3 aheadPos = GetTrajectoryPosition(aheadDist);
 
         Vector3 vdir = (aheadPos - newPos);
         if (vdir.sqrMagnitude > 1e-8f)
@@ -455,6 +456,22 @@ public class Projectile : MonoBehaviour
     private float GetCollisionCastPadding()
     {
         return Mathf.Max(CollisionCastPadding, hitRadius, _arriveThreshold);
+    }
+
+    private Vector3 GetTrajectoryPosition(float distance)
+    {
+        if (_useMissContinuationArc)
+        {
+            float clampedDistance = Mathf.Clamp(distance, 0f, _totalDistance);
+            return _startPoint
+                   + _missContinuationDirection * clampedDistance
+                   + _missContinuationArcCoefficient * (clampedDistance * clampedDistance);
+        }
+
+        float fraction = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(distance / _totalDistance);
+        Vector3 basePos = Vector3.Lerp(_startPoint, _targetPoint, fraction);
+        float heightMul = _useArc ? _arcCurve.Evaluate(fraction) : 0f;
+        return basePos + _arcUp * (_arcHeightComputed * heightMul);
     }
 
     private bool TryCastCollision(Vector3 origin, Vector3 dir, float distance, out RaycastHit bestHit)
@@ -592,15 +609,19 @@ public class Projectile : MonoBehaviour
         direction.Normalize();
         _missContinuationUsed = true;
         _startPoint = transform.position;
-        _targetPoint = _startPoint + direction * remainingDistance;
+        _useMissContinuationArc = true;
+        _missContinuationDirection = direction;
+        _missContinuationArcCoefficient = ComputeMissContinuationArcCoefficient();
+        _targetPoint = _startPoint
+                       + _missContinuationDirection * remainingDistance
+                       + _missContinuationArcCoefficient * (remainingDistance * remainingDistance);
         _distanceTraveled = 0f;
         _prevPos = _startPoint;
         _hasResolvedTarget = false;
         _explodeAtResolvedTarget = false;
-        _useArc = false;
         _continuationSpeedMultiplier = GetSpeedMultiplier(1f);
 
-        RecomputeTrajectory();
+        _totalDistance = remainingDistance;
         _spawnTime = Time.time;
         _lifeTime = ClampLifetime(EstimateFlightTime() + FlightLifetimePadding);
 
@@ -609,17 +630,29 @@ public class Projectile : MonoBehaviour
 
     private Vector3 GetMissContinuationDirection()
     {
+        if (_lastTravelDirection.sqrMagnitude > 0.000001f)
+        {
+            return _lastTravelDirection;
+        }
+
         Vector3 direction = _targetPoint - _startPoint;
         if (direction.sqrMagnitude > 0.000001f)
         {
             return direction;
         }
 
-        if (_lastTravelDirection.sqrMagnitude > 0.000001f)
+        return transform.forward;
+    }
+
+    private Vector3 ComputeMissContinuationArcCoefficient()
+    {
+        float distance = Mathf.Max(_totalDistance, 0.001f);
+        float curveCoefficient = _arcHeightComputed * 4f / (distance * distance);
+        if (!_useArc || curveCoefficient <= 0.000001f)
         {
-            return _lastTravelDirection;
+            return Vector3.zero;
         }
 
-        return transform.forward;
+        return -_arcUp * curveCoefficient;
     }
 }
