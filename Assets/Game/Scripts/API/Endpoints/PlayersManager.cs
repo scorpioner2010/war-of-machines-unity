@@ -75,6 +75,7 @@ namespace Game.Scripts.API.Models
         public string activeVehicleName;
 
         public OwnedVehicleDto[] ownedVehicles;
+        public ResearchedVehicleDto[] researchedVehicles;
 
         public OwnedVehicleDto GetSelected()
         {
@@ -119,6 +120,30 @@ namespace Game.Scripts.API.Models
 
             return false;
         }
+
+        public bool IsResearched(int idVehicle)
+        {
+            if (IsHave(idVehicle))
+            {
+                return true;
+            }
+
+            if (researchedVehicles == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < researchedVehicles.Length; i++)
+            {
+                ResearchedVehicleDto dto = researchedVehicles[i];
+                if (dto != null && dto.vehicleId == idVehicle)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     [System.Serializable]
@@ -129,5 +154,14 @@ namespace Game.Scripts.API.Models
         public string name;
         public bool isActive;
         public int xp;
+        public bool isResearched;
+    }
+
+    [System.Serializable]
+    public class ResearchedVehicleDto
+    {
+        public int vehicleId;
+        public string code;
+        public string name;
     }
 }

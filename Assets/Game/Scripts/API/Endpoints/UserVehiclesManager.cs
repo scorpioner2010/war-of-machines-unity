@@ -89,6 +89,33 @@ namespace Game.Scripts.API.Endpoints
             return (req.result == UnityWebRequest.Result.Success, resp);
         }
 
+        public static async UniTask<(bool ok, string msg, ResearchVehicleResult data)> Research(int vehicleId, int predecessorVehicleId, string token)
+        {
+            string url = HttpLink.APIBase + "/user-vehicles/research/" + vehicleId;
+            string json = "{\"predecessorVehicleId\":" + predecessorVehicleId + "}";
+
+            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
+            {
+                uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
+                downloadHandler = new DownloadHandlerBuffer(),
+                certificateHandler = new AcceptAllCertificates()
+            };
+            req.SetRequestHeader("Content-Type", "application/json");
+            req.SetRequestHeader("Authorization", "Bearer " + token);
+
+            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+
+            string resp = req.downloadHandler?.text ?? string.Empty;
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                var data = JsonUtility.FromJson<ResearchVehicleResult>(resp);
+                return (true, resp, data);
+            }
+
+            return (false, resp, null);
+        }
+
         public static async UniTask<(bool ok, string msg, VehicleXpResponse data)> GetXpInfo(string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/xp";
@@ -186,6 +213,7 @@ namespace Game.Scripts.API.Endpoints
         public string vehicleName;
         public int xp;
         public bool isActive;
+        public bool isResearched;
     }
 
     [Serializable]
@@ -202,6 +230,19 @@ namespace Game.Scripts.API.Endpoints
         public string vehicleName;
         public int xp;
         public bool isActive;
+        public bool isResearched;
+    }
+
+    [Serializable]
+    public class ResearchVehicleResult
+    {
+        public bool ok;
+        public int vehicleId;
+        public int predecessorVehicleId;
+        public int spentXp;
+        public int remainingPredecessorXp;
+        public bool alreadyOwned;
+        public bool alreadyResearched;
     }
 
     [Serializable]

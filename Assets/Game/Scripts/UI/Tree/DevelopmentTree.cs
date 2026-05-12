@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
+using Game.Scripts;
 using Game.Scripts.API;
 using Game.Scripts.API.Endpoints;
+using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Services;
@@ -263,14 +265,16 @@ namespace Game.Scripts.UI.Tree
 
             VehicleNode starter = FindStarterNode(graph.nodes);
 
-            CreateTreeItemFromNode(starterContainer, starter, nodeMap);
+            VehicleResearchProgressResolver progressResolver = CreateProgressResolver(graph);
+
+            CreateTreeItemFromNode(starterContainer, starter, nodeMap, progressResolver);
 
             FactionContainer columns = Instantiate(factionContainerPrefab, rootT);
             columns.name = "ColumnsContainer";
 
-            BuildColumn(columns.transform, graph, "Scout", "Scout_Column", nodeMap);
-            BuildColumn(columns.transform, graph, "Guardian", "Guardian_Column", nodeMap);
-            BuildColumn(columns.transform, graph, "Colossus", "Colossus_Column", nodeMap);
+            BuildColumn(columns.transform, graph, "Scout", "Scout_Column", nodeMap, progressResolver);
+            BuildColumn(columns.transform, graph, "Guardian", "Guardian_Column", nodeMap, progressResolver);
+            BuildColumn(columns.transform, graph, "Colossus", "Colossus_Column", nodeMap, progressResolver);
 
             _views.Add(new FactionView
             {
@@ -283,7 +287,13 @@ namespace Game.Scripts.UI.Tree
             await UniTask.Yield();
         }
 
-        private void BuildColumn(Transform parent, VehicleGraph graph, string className, string columnName, Dictionary<int, RectTransform> nodeMap)
+        private void BuildColumn(
+            Transform parent,
+            VehicleGraph graph,
+            string className,
+            string columnName,
+            Dictionary<int, RectTransform> nodeMap,
+            VehicleResearchProgressResolver progressResolver)
         {
             TreeGrid grid = Instantiate(treeGridPrefab, parent);
             grid.name = columnName;
@@ -293,7 +303,7 @@ namespace Game.Scripts.UI.Tree
 
             foreach (VehicleNode n in nodes)
             {
-                CreateTreeItemFromNode(grid.transform, n, nodeMap);
+                CreateTreeItemFromNode(grid.transform, n, nodeMap, progressResolver);
             }
         }
 
@@ -395,7 +405,17 @@ namespace Game.Scripts.UI.Tree
             return string.Compare(left.code, right.code, StringComparison.Ordinal);
         }
 
-        private void CreateTreeItemFromNode(Transform parent, VehicleNode node, Dictionary<int, RectTransform> nodeMap)
+        private VehicleResearchProgressResolver CreateProgressResolver(VehicleGraph graph)
+        {
+            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+            return new VehicleResearchProgressResolver(clientInfo != null ? clientInfo.Profile : null, graph, _vehicleLites);
+        }
+
+        private void CreateTreeItemFromNode(
+            Transform parent,
+            VehicleNode node,
+            Dictionary<int, RectTransform> nodeMap,
+            VehicleResearchProgressResolver progressResolver)
         {
             if (node == null)
             {
@@ -406,53 +426,192 @@ namespace Game.Scripts.UI.Tree
             item.vehicleName.text = node.name;
             item.vehicleType = ParseVehicleClass(node.@class);
             item.level.text = node.level.ToString();
-            item.isClose.SetActive(!node.isVisible);
-            
-            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-            bool isHave = clientInfo != null && clientInfo.Profile != null && clientInfo.Profile.IsHave(node.id);
-            item.isHave.gameObject.SetActive(isHave);
+
+            VehicleResearchProgress progress = progressResolver != null
+                ? progressResolver.Resolve(node)
+                : new VehicleResearchProgress { Node = node, Status = VehicleResearchStatus.Hidden };
+
+            ApplyTreeItemState(item, progress);
         
             Sprite sprite = ResourceManager.GetIcon(node.code);
             item.image.sprite = sprite;
-            VehicleLite result = GetVehicleLite(node.id);
-
-            item.price.text = result != null ? result.purchaseCost.ToString() : "0";
         
             item.button.onClick.AddListener(() =>
             {
-                IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
-                if (info == null || info.Profile == null)
-                {
-                    return;
-                }
-
-                bool have = info.Profile.IsHave(node.id);
-            
-                if (have)
-                {
-                    return;
-                }
-            
-                int bolts = info.Profile.bolts;
-                VehicleLite lite = GetVehicleLite(node.id);
-                if (lite == null)
-                {
-                    return;
-                }
-
-                if (bolts >= lite.purchaseCost)
-                {
-                    Popup.ShowText($"Do you want buy?\nprice: {lite.purchaseCost}", Color.green, () =>
-                    {
-                        Helpers.Loading.Show();
-                        BuyVehicleServerRpc(lite.code);
-                    }, TypePopup.Confirm);
-                }
+                OnVehicleNodeClicked(progress);
             });
         
         
             RectTransform rt = item.rectTransform;
             nodeMap[node.id] = rt;
+        }
+
+        private void ApplyTreeItemState(TreeItem item, VehicleResearchProgress progress)
+        {
+            if (item == null || progress == null)
+            {
+                return;
+            }
+
+            bool isLocked = progress.Status == VehicleResearchStatus.Hidden
+                || progress.Status == VehicleResearchStatus.LockedByResearch;
+
+            if (item.isClose != null)
+            {
+                item.isClose.SetActive(isLocked);
+            }
+
+            if (item.isHave != null)
+            {
+                item.isHave.gameObject.SetActive(progress.IsOwned);
+            }
+
+            if (item.price == null)
+            {
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.Owned)
+            {
+                item.price.text = "Owned";
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.LockedByResearch)
+            {
+                item.price.text = "XP " + progress.CurrentXp + "/" + progress.RequiredXp;
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.AvailableToResearch)
+            {
+                item.price.text = "Research " + progress.RequiredXp + " XP";
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.Hidden)
+            {
+                item.price.text = string.Empty;
+                return;
+            }
+
+            item.price.text = progress.PurchaseCost.ToString();
+        }
+
+        private void OnVehicleNodeClicked(VehicleResearchProgress progress)
+        {
+            if (progress == null || progress.Node == null)
+            {
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.Owned)
+            {
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.Hidden)
+            {
+                Popup.ShowText("This vehicle is not available.", Color.red);
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.LockedByResearch)
+            {
+                ShowResearchLockedPopup(progress);
+                return;
+            }
+
+            if (progress.Status == VehicleResearchStatus.AvailableToResearch)
+            {
+                TryResearch(progress);
+                return;
+            }
+
+            TryBuy(progress);
+        }
+
+        private void ShowResearchLockedPopup(VehicleResearchProgress progress)
+        {
+            Popup.ShowText(BuildResearchLockedMessage(progress), Color.red);
+        }
+
+        private static string BuildResearchLockedMessage(VehicleResearchProgress progress)
+        {
+            if (progress == null)
+            {
+                return "Research required.";
+            }
+
+            string predecessorName = string.IsNullOrEmpty(progress.PredecessorName)
+                ? "previous vehicle"
+                : progress.PredecessorName;
+
+            string message = "Research required\n"
+                + predecessorName + ": " + progress.CurrentXp + "/" + progress.RequiredXp + " XP";
+
+            if (progress.MissingXp > 0)
+            {
+                message += "\nMissing: " + progress.MissingXp + " XP";
+            }
+
+            return message;
+        }
+
+        private void TryResearch(VehicleResearchProgress progress)
+        {
+            if (progress == null || progress.Node == null)
+            {
+                return;
+            }
+
+            if (progress.PredecessorVehicleId <= 0)
+            {
+                Popup.ShowText("Required predecessor vehicle is not owned.", Color.red);
+                return;
+            }
+
+            string predecessorName = string.IsNullOrEmpty(progress.PredecessorName)
+                ? "previous vehicle"
+                : progress.PredecessorName;
+
+            string message = "Research vehicle?\n"
+                + predecessorName + ": -" + progress.RequiredXp + " XP";
+
+            Popup.ShowText(message, Color.green, () =>
+            {
+                Helpers.Loading.Show();
+                ResearchVehicleServerRpc(progress.Node.id, progress.PredecessorVehicleId);
+            }, TypePopup.Confirm);
+        }
+
+        private void TryBuy(VehicleResearchProgress progress)
+        {
+            IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
+            if (info == null || info.Profile == null)
+            {
+                Popup.ShowText("Profile is not loaded.", Color.red);
+                return;
+            }
+
+            VehicleLite lite = progress.Vehicle != null ? progress.Vehicle : GetVehicleLite(progress.Node.id);
+            if (lite == null)
+            {
+                Popup.ShowText("Vehicle data is not loaded.", Color.red);
+                return;
+            }
+
+            if (info.Profile.bolts < lite.purchaseCost)
+            {
+                Popup.ShowText("Not enough bolts.\nprice: " + lite.purchaseCost, Color.red);
+                return;
+            }
+
+            Popup.ShowText("Do you want buy?\nprice: " + lite.purchaseCost, Color.green, () =>
+            {
+                Helpers.Loading.Show();
+                BuyVehicleServerRpc(lite.code);
+            }, TypePopup.Confirm);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -475,8 +634,143 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
+            (bool ok, string msg) validation = await ValidateVehiclePurchaseAsync(token, code);
+            if (!validation.ok)
+            {
+                TargetRpcBuy(sender, false, validation.msg);
+                return;
+            }
+
             (bool ok, string msg, BuyVehicleResult data) result =  await UserVehiclesManager.Buy(code, token);
             TargetRpcBuy(sender, result.ok, result.msg);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void ResearchVehicleServerRpc(int vehicleId, int predecessorVehicleId, NetworkConnection sender = null)
+        {
+            if (sender == null)
+            {
+                return;
+            }
+
+            ResearchVehicleAsync(sender, vehicleId, predecessorVehicleId).Forget();
+        }
+
+        private async UniTask ResearchVehicleAsync(NetworkConnection sender, int vehicleId, int predecessorVehicleId)
+        {
+            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (string.IsNullOrEmpty(token))
+            {
+                TargetRpcResearch(sender, false, "Not logged in.");
+                return;
+            }
+
+            (bool ok, string msg, ResearchVehicleResult data) result = await UserVehiclesManager.Research(vehicleId, predecessorVehicleId, token);
+            TargetRpcResearch(sender, result.ok, result.msg);
+        }
+
+        [TargetRpc]
+        private void TargetRpcResearch(NetworkConnection target, bool success, string errorMessage)
+        {
+            if (success)
+            {
+                ProfileServer.UpdateProfile();
+            }
+            else
+            {
+                Popup.ShowText(errorMessage, Color.red);
+                Helpers.Loading.Hide();
+            }
+        }
+
+        private async UniTask<(bool ok, string msg)> ValidateVehiclePurchaseAsync(string token, string code)
+        {
+            if (string.IsNullOrEmpty(code))
+            {
+                return (false, "Vehicle code is empty.");
+            }
+
+            (bool isSuccess, string message, PlayerProfile profile) profileResult = await PlayersManager.GetMyProfile(token);
+            if (!profileResult.isSuccess || profileResult.profile == null)
+            {
+                return (false, string.IsNullOrEmpty(profileResult.message) ? "Failed to load profile." : profileResult.message);
+            }
+
+            (bool isSuccess, string message, VehicleLite item) vehicleResult = await VehiclesManager.GetByCode(code);
+            if (!vehicleResult.isSuccess || vehicleResult.item == null)
+            {
+                return (false, string.IsNullOrEmpty(vehicleResult.message) ? "Vehicle data is not loaded." : vehicleResult.message);
+            }
+
+            if (profileResult.profile.IsHave(vehicleResult.item.id))
+            {
+                return (false, "Vehicle already owned.");
+            }
+
+            (bool isSuccess, string message, VehicleLite[] items) vehiclesResult = await VehiclesManager.GetAll(vehicleResult.item.factionCode);
+            if (!vehiclesResult.isSuccess || vehiclesResult.items == null || vehiclesResult.items.Length == 0)
+            {
+                return (false, string.IsNullOrEmpty(vehiclesResult.message) ? "Failed to load vehicle list." : vehiclesResult.message);
+            }
+
+            (bool ok, string msg, VehicleGraph graph) graphResult = await VehiclesManager.GetGraph(vehicleResult.item.factionCode);
+            if (!graphResult.ok || graphResult.graph == null || graphResult.graph.nodes == null)
+            {
+                return (false, string.IsNullOrEmpty(graphResult.msg) ? "Failed to load research tree." : graphResult.msg);
+            }
+
+            VehicleNode node = FindNode(graphResult.graph.nodes, vehicleResult.item.id);
+            if (node == null)
+            {
+                return (false, "Vehicle is missing from research tree.");
+            }
+
+            VehicleResearchProgressResolver resolver = new VehicleResearchProgressResolver(
+                profileResult.profile,
+                graphResult.graph,
+                vehiclesResult.items);
+            VehicleResearchProgress progress = resolver.Resolve(node);
+
+            if (progress.Status == VehicleResearchStatus.Hidden)
+            {
+                return (false, "This vehicle is not available.");
+            }
+
+            if (progress.Status == VehicleResearchStatus.LockedByResearch)
+            {
+                return (false, BuildResearchLockedMessage(progress));
+            }
+
+            if (progress.Status == VehicleResearchStatus.AvailableToResearch)
+            {
+                return (false, "Vehicle is not researched.");
+            }
+
+            if (profileResult.profile.bolts < vehicleResult.item.purchaseCost)
+            {
+                return (false, "Not enough bolts.\nprice: " + vehicleResult.item.purchaseCost);
+            }
+
+            return (true, string.Empty);
+        }
+
+        private static VehicleNode FindNode(VehicleNode[] nodes, int vehicleId)
+        {
+            if (nodes == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                VehicleNode node = nodes[i];
+                if (node != null && node.id == vehicleId)
+                {
+                    return node;
+                }
+            }
+
+            return null;
         }
         
         [TargetRpc]
@@ -571,6 +865,269 @@ namespace Game.Scripts.UI.Tree
             }
 
             _factionButtons.Clear();
+        }
+    }
+
+    public enum VehicleResearchStatus
+    {
+        Hidden,
+        Owned,
+        LockedByResearch,
+        AvailableToResearch,
+        AvailableToBuy
+    }
+
+    public class VehicleResearchProgress
+    {
+        public VehicleNode Node;
+        public VehicleLite Vehicle;
+        public VehicleResearchStatus Status;
+        public bool IsOwned;
+        public bool IsVisible;
+        public bool IsResearched;
+        public bool IsResearchUnlocked;
+        public int PredecessorVehicleId;
+        public int PurchaseCost;
+        public int RequiredXp;
+        public int CurrentXp;
+        public int MissingXp;
+        public string PredecessorName;
+    }
+
+    public class VehicleResearchProgressResolver
+    {
+        private readonly VehicleGraph _graph;
+        private readonly Dictionary<int, OwnedVehicleDto> _ownedByVehicleId = new Dictionary<int, OwnedVehicleDto>();
+        private readonly Dictionary<int, bool> _researchedByVehicleId = new Dictionary<int, bool>();
+        private readonly Dictionary<int, VehicleLite> _vehiclesById = new Dictionary<int, VehicleLite>();
+
+        public VehicleResearchProgressResolver(PlayerProfile profile, VehicleGraph graph, VehicleLite[] vehicles)
+        {
+            _graph = graph;
+            IndexOwnedVehicles(profile);
+            IndexResearchedVehicles(profile);
+            IndexVehicles(vehicles);
+        }
+
+        public VehicleResearchProgress Resolve(VehicleNode node)
+        {
+            VehicleResearchProgress progress = new VehicleResearchProgress();
+            progress.Node = node;
+
+            if (node == null)
+            {
+                progress.Status = VehicleResearchStatus.Hidden;
+                return progress;
+            }
+
+            VehicleLite vehicle = FindVehicle(node.id);
+            progress.Vehicle = vehicle;
+            progress.PurchaseCost = vehicle != null ? vehicle.purchaseCost : 0;
+            progress.IsVisible = node.isVisible && (vehicle == null || vehicle.isVisible);
+            progress.IsOwned = IsOwned(node.id);
+            progress.IsResearched = IsResearched(node.id);
+
+            if (!progress.IsVisible)
+            {
+                progress.Status = VehicleResearchStatus.Hidden;
+                return progress;
+            }
+
+            if (progress.IsOwned)
+            {
+                progress.IsResearched = true;
+                progress.Status = VehicleResearchStatus.Owned;
+                return progress;
+            }
+
+            if (progress.IsResearched)
+            {
+                progress.Status = VehicleResearchStatus.AvailableToBuy;
+                return progress;
+            }
+
+            ResolveResearchState(node, progress);
+            return progress;
+        }
+
+        private void ResolveResearchState(VehicleNode node, VehicleResearchProgress progress)
+        {
+            VehicleEdge[] edges = _graph != null ? _graph.edges : null;
+            if (edges == null || edges.Length == 0)
+            {
+                progress.IsResearched = true;
+                progress.Status = VehicleResearchStatus.AvailableToBuy;
+                return;
+            }
+
+            bool hasIncomingLink = false;
+            bool hasAffordableLink = false;
+            int bestMissingXp = int.MaxValue;
+            int bestAffordableXp = int.MaxValue;
+
+            for (int i = 0; i < edges.Length; i++)
+            {
+                VehicleEdge edge = edges[i];
+                if (edge == null || edge.toId != node.id)
+                {
+                    continue;
+                }
+
+                hasIncomingLink = true;
+                int requiredXp = edge.requiredXp;
+                OwnedVehicleDto predecessor = FindOwned(edge.fromId);
+                int currentXp = predecessor != null ? predecessor.xp : 0;
+                int missingXp = requiredXp - currentXp;
+
+                if (missingXp <= 0 && predecessor != null)
+                {
+                    if (requiredXp >= bestAffordableXp)
+                    {
+                        continue;
+                    }
+
+                    hasAffordableLink = true;
+                    bestAffordableXp = requiredXp;
+                    progress.IsResearchUnlocked = true;
+                    progress.RequiredXp = requiredXp;
+                    progress.CurrentXp = currentXp;
+                    progress.MissingXp = 0;
+                    progress.PredecessorVehicleId = edge.fromId;
+                    progress.PredecessorName = ResolveVehicleName(edge.fromId, predecessor.name);
+                    continue;
+                }
+
+                if (!hasAffordableLink && missingXp < bestMissingXp)
+                {
+                    bestMissingXp = missingXp;
+                    progress.RequiredXp = requiredXp;
+                    progress.CurrentXp = currentXp;
+                    progress.MissingXp = missingXp > 0 ? missingXp : 0;
+                    progress.PredecessorVehicleId = predecessor != null ? edge.fromId : 0;
+                    progress.PredecessorName = ResolveVehicleName(edge.fromId, predecessor != null ? predecessor.name : null);
+                }
+            }
+
+            if (hasAffordableLink)
+            {
+                progress.Status = VehicleResearchStatus.AvailableToResearch;
+                return;
+            }
+
+            if (!hasIncomingLink)
+            {
+                progress.IsResearched = true;
+                progress.Status = VehicleResearchStatus.AvailableToBuy;
+                return;
+            }
+
+            progress.Status = VehicleResearchStatus.LockedByResearch;
+        }
+
+        private void IndexOwnedVehicles(PlayerProfile profile)
+        {
+            if (profile == null || profile.ownedVehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < profile.ownedVehicles.Length; i++)
+            {
+                OwnedVehicleDto dto = profile.ownedVehicles[i];
+                if (dto == null || dto.vehicleId <= 0)
+                {
+                    continue;
+                }
+
+                _ownedByVehicleId[dto.vehicleId] = dto;
+                _researchedByVehicleId[dto.vehicleId] = true;
+            }
+        }
+
+        private void IndexResearchedVehicles(PlayerProfile profile)
+        {
+            if (profile == null || profile.researchedVehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < profile.researchedVehicles.Length; i++)
+            {
+                ResearchedVehicleDto dto = profile.researchedVehicles[i];
+                if (dto == null || dto.vehicleId <= 0)
+                {
+                    continue;
+                }
+
+                _researchedByVehicleId[dto.vehicleId] = true;
+            }
+        }
+
+        private void IndexVehicles(VehicleLite[] vehicles)
+        {
+            if (vehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                VehicleLite vehicle = vehicles[i];
+                if (vehicle == null || vehicle.id <= 0)
+                {
+                    continue;
+                }
+
+                _vehiclesById[vehicle.id] = vehicle;
+            }
+        }
+
+        private bool IsOwned(int vehicleId)
+        {
+            return FindOwned(vehicleId) != null;
+        }
+
+        private bool IsResearched(int vehicleId)
+        {
+            return _researchedByVehicleId.ContainsKey(vehicleId);
+        }
+
+        private OwnedVehicleDto FindOwned(int vehicleId)
+        {
+            OwnedVehicleDto dto;
+            if (_ownedByVehicleId.TryGetValue(vehicleId, out dto))
+            {
+                return dto;
+            }
+
+            return null;
+        }
+
+        private VehicleLite FindVehicle(int vehicleId)
+        {
+            VehicleLite vehicle;
+            if (_vehiclesById.TryGetValue(vehicleId, out vehicle))
+            {
+                return vehicle;
+            }
+
+            return null;
+        }
+
+        private string ResolveVehicleName(int vehicleId, string fallback)
+        {
+            if (!string.IsNullOrEmpty(fallback))
+            {
+                return fallback;
+            }
+
+            VehicleLite vehicle = FindVehicle(vehicleId);
+            if (vehicle != null && !string.IsNullOrEmpty(vehicle.name))
+            {
+                return vehicle.name;
+            }
+
+            return "previous vehicle";
         }
     }
 }
