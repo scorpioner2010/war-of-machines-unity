@@ -70,7 +70,14 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            Camera cam = Camera.main;
+            if (vehicleRoot == null || vehicleRoot.weaponAimAtCamera == null)
+            {
+                SetVisible(false);
+                SetVisibleServer(false);
+                return;
+            }
+
+            Camera cam = GetGameplayCamera();
             if (cam == null)
             {
                 return;
@@ -86,6 +93,11 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             Vector3 worldAim = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
+            if (worldAim == Vector3.zero)
+            {
+                worldAim = vehicleRoot.weaponAimAtCamera.DesiredAimPoint;
+            }
+
             bool ok = WorldToCanvasLocalPoint(worldAim, cam, out Vector2 localPoint);
             if (!ok)
             {
@@ -187,6 +199,11 @@ namespace Game.Scripts.Gameplay.Robots
                 cur = tgt;
             }
 
+            if ((cur - tgt).sqrMagnitude <= 0.25f)
+            {
+                cur = tgt;
+            }
+
             rect.anchoredPosition = cur;
         }
 
@@ -213,6 +230,16 @@ namespace Game.Scripts.Gameplay.Robots
                 return gun.up;
             }
             return gun.forward;
+        }
+
+        private static Camera GetGameplayCamera()
+        {
+            if (CameraSync.In != null && CameraSync.In.gameplayCamera != null)
+            {
+                return CameraSync.In.gameplayCamera;
+            }
+
+            return Camera.main;
         }
 
         private void SetVisible(bool v)

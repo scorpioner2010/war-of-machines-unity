@@ -773,7 +773,7 @@ MonoBehaviour:
   projectileMinSpeedMultiplier: 0.1
   hitMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 73
   shellPenetrationMm: 600
   normalizationDeg: 0
 --- !u!114 &2411042778565667645

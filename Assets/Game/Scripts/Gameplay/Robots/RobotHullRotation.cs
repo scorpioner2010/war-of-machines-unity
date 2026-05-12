@@ -91,7 +91,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            if (!IsServerInitialized || _chassisTransform == null)
+            if (!ShouldDriveRotation() || _chassisTransform == null)
             {
                 return;
             }
@@ -99,6 +99,16 @@ namespace Game.Scripts.Gameplay.Robots
             float step = rotationSpeed * Time.deltaTime;
             _localYaw = Mathf.MoveTowardsAngle(_localYaw, _targetYawServer, step);
             transform.rotation = _chassisTransform.rotation * Quaternion.Euler(0f, _localYaw, 0f);
+        }
+
+        private bool ShouldDriveRotation()
+        {
+            if (IsServerInitialized)
+            {
+                return true;
+            }
+
+            return IsOwner && vehicleRoot != null && !vehicleRoot.IsMenu;
         }
     }
 }

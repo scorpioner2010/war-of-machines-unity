@@ -117,27 +117,50 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (didHit)
             {
-                hr.hit = true;
-                hr.point = hit.point;
-                hr.normal = hit.normal;
-                hr.collider = hit.collider;
+                hr = ResolveHit(hit, dir, shellPenMm, normDeg, shellDamage);
+            }
 
-                ArmorMap armor = hit.collider != null ? hit.collider.GetComponentInParent<ArmorMap>() : null;
+            return hr;
+        }
 
-                if (armor != null && armor.TryGetArmorLoS(hit, dir, normDeg, out float baseMm, out float losMm))
-                {
-                    hr.armor = armor;
-                    hr.baseMm = baseMm;
-                    hr.losMm = losMm;
-                    hr.penetrated = shellPenMm >= losMm;
-                    hr.damage = hr.penetrated ? Mathf.Max(0f, shellDamage) : 0f;
-                }
-                else
-                {
-                    // No ArmorMap: treat it as a thin surface with full penetration.
-                    hr.penetrated = true;
-                    hr.damage = Mathf.Max(0f, shellDamage);
-                }
+        public static HitResult ResolveHit(
+            RaycastHit hit,
+            Vector3 direction,
+            float shellPenMm = 200f,
+            float normDeg = 0f,
+            float shellDamage = 100f)
+        {
+            HitResult hr = default;
+            hr.hit = true;
+            hr.point = hit.point;
+            hr.normal = hit.normal;
+            hr.collider = hit.collider;
+
+            Vector3 dir = direction;
+            if (float.IsNaN(dir.x) || float.IsNaN(dir.y) || float.IsNaN(dir.z) || dir.sqrMagnitude < 0.000001f)
+            {
+                dir = Vector3.forward;
+            }
+            else
+            {
+                dir.Normalize();
+            }
+
+            ArmorMap armor = hit.collider != null ? hit.collider.GetComponentInParent<ArmorMap>() : null;
+
+            if (armor != null && armor.TryGetArmorLoS(hit, dir, normDeg, out float baseMm, out float losMm))
+            {
+                hr.armor = armor;
+                hr.baseMm = baseMm;
+                hr.losMm = losMm;
+                hr.penetrated = shellPenMm >= losMm;
+                hr.damage = hr.penetrated ? Mathf.Max(0f, shellDamage) : 0f;
+            }
+            else
+            {
+                // No ArmorMap: treat it as a thin surface with full penetration.
+                hr.penetrated = true;
+                hr.damage = Mathf.Max(0f, shellDamage);
             }
 
             return hr;

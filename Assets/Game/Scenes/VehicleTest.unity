@@ -3781,7 +3781,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buttonPause: {fileID: 27546798}
   isPenetrationText: {fileID: 2102000301}
-  shotResultVisibleTime: 1
+  shotResultVisibleTime: 4
   pauseMenu: {fileID: 1555773423}
 --- !u!1 &1198449473
 GameObject:

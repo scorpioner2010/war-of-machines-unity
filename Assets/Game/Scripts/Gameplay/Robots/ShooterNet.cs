@@ -21,6 +21,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public float projectileSpeed = 70f;
         public float projectileLifeTime = 8f;
+        public float maxShotDistance = 2000f;
 
         public bool projectileUseArc = true;
         public float projectileArcScale = 0.02f;
@@ -51,6 +52,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private readonly HashSet<int> _processedShots = new HashSet<int>();
         private readonly Dictionary<int, Projectile> _predictedProjectiles = new Dictionary<int, Projectile>();
+        private readonly Dictionary<int, Projectile> _observedProjectiles = new Dictionary<int, Projectile>();
         private readonly GunDispersionModel _ownerDispersion = new GunDispersionModel();
         private readonly GunDispersionModel _serverDispersion = new GunDispersionModel();
         private readonly SyncVar<float> _serverDispersionDeg = new();
@@ -136,6 +138,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private struct ResolvedShot
         {
+            public bool Hit;
             public Vector3 Point;
             public Vector3 Normal;
             public bool TargetIsRobot;
@@ -159,7 +162,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             Vector3 startPos = muzzleTransform.position;
-            Vector3 baseAimPoint = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
+            Vector3 baseAimPoint = GetShotAimPoint(startPos);
             int shotId = ++_shotSeq;
             if (!_ownerDispersionInitialized)
             {
@@ -168,7 +171,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             DispersedShotRay predictedRay = BuildDispersedShotRay(startPos, baseAimPoint, shotId, _ownerDispersion.CurrentDeg, GetGlobalDispersion());
 
-            Projectile predicted = SpawnLocal(startPos, predictedRay.TargetPoint, 0f, false, Vector3.up, true);
+            Projectile predicted = SpawnLocal(startPos, predictedRay.TargetPoint, 0f, false, false, Vector3.up, true);
             _predictedProjectiles[shotId] = predicted;
             AddOwnerShotBloom();
 
@@ -180,16 +183,57 @@ namespace Game.Scripts.Gameplay.Robots
             FireRequestServerRpc(shotId, startPos, baseAimPoint, base.TimeManager.Tick);
         }
 
+        private Vector3 GetShotAimPoint(Vector3 startPos)
+        {
+            WeaponAimAtCamera weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
+            if (weaponAim != null)
+            {
+                if (CameraSync.In != null)
+                {
+                    weaponAim.ResolveCameraAim(CameraSync.In.transform, out Vector3 cameraAimPoint, out _);
+                    if (IsFinite(cameraAimPoint) && (cameraAimPoint - startPos).sqrMagnitude > 0.01f)
+                    {
+                        return cameraAimPoint;
+                    }
+                }
+
+                Vector3 desiredAimPoint = weaponAim.DesiredAimPoint;
+                if (IsFinite(desiredAimPoint) && (desiredAimPoint - startPos).sqrMagnitude > 0.01f)
+                {
+                    return desiredAimPoint;
+                }
+
+                Vector3 currentAimPoint = weaponAim.GetCurrentAimPointForOrigin(startPos);
+                if (IsFinite(currentAimPoint) && (currentAimPoint - startPos).sqrMagnitude > 0.01f)
+                {
+                    return currentAimPoint;
+                }
+            }
+
+            Vector3 forward = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                forward = Vector3.forward;
+            }
+
+            forward.Normalize();
+            return startPos + forward * GetMaxShotDistance();
+        }
+
         private Projectile SpawnLocal(
             Vector3 startPos,
             Vector3 aimPoint,
             float passedTime,
             bool authoritative,
+            bool explodeOnArrival,
             Vector3 impactNormal,
             bool visible = true,
-            System.Action onAuthoritativeImpact = null)
+            System.Action onAuthoritativeImpact = null,
+            bool configureResolvedTarget = true)
         {
             Projectile proj = Instantiate(projectilePrefab, startPos, Quaternion.identity);
+            proj.hitMask = hitMask;
+            proj.damage = Mathf.RoundToInt(Mathf.Max(0f, shellDamage));
             proj.Init(
                 targetPoint: aimPoint,
                 initialSpeed: projectileSpeed,
@@ -209,7 +253,18 @@ namespace Game.Scripts.Gameplay.Robots
                 passedTime: passedTime,
                 authoritative: authoritative
             );
-            proj.ConfigureResolvedImpact(aimPoint, impactNormal, onAuthoritativeImpact);
+            if (configureResolvedTarget)
+            {
+                if (explodeOnArrival)
+                {
+                    proj.ConfigureResolvedImpact(aimPoint, impactNormal, onAuthoritativeImpact);
+                }
+                else
+                {
+                    proj.ConfigureResolvedMiss(aimPoint, GetMaxShotDistance(), onAuthoritativeImpact);
+                }
+            }
+
             if (!visible)
             {
                 proj.SetVisualsEnabled(false);
@@ -246,22 +301,33 @@ namespace Game.Scripts.Gameplay.Robots
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
             DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, _serverDispersion.CurrentDeg, globalDispersion);
-            ResolvedShot shot = ResolveShot(startPos, dispersedRay);
             AddServerShotBloom();
-            ConfigureOwnerProjectileTargetRpc(sender, shotId, shot.Point, shot.Normal);
+            ConfigureOwnerProjectileTrajectoryTargetRpc(sender, shotId, dispersedRay.TargetPoint);
 
             bool serverVisualVisible = !(sender.IsLocalClient && IsClientInitialized);
-            SpawnLocal(
+            Projectile serverProjectile = SpawnLocal(
                 startPos,
-                shot.Point,
+                dispersedRay.TargetPoint,
                 passed,
                 true,
-                shot.Normal,
+                false,
+                Vector3.up,
                 serverVisualVisible,
-                () => ApplyResolvedShotDamage(sender, shot)
+                null,
+                configureResolvedTarget: false
             );
 
-            FireObserversRpc(shotId, startPos, shot.Point, shot.Normal, clientTick);
+            if (serverProjectile != null)
+            {
+                serverProjectile.ConfigureLiveCollision(
+                    vehicleRoot != null ? vehicleRoot.transform : null,
+                    (hit, direction) => HandleAuthoritativeProjectileHit(sender, shotId, hit, direction),
+                    () => HandleAuthoritativeProjectileMiss(sender, shotId, dispersedRay.TargetPoint),
+                    GetMaxShotDistance()
+                );
+            }
+
+            FireObserversRpc(shotId, startPos, dispersedRay.TargetPoint, clientTick);
         }
 
         private void InitOwnerDispersion()
@@ -351,24 +417,27 @@ namespace Game.Scripts.Gameplay.Robots
         private DispersedShotRay BuildDispersedShotRay(Vector3 startPos, Vector3 aimPoint, int shotId, float dispersionDeg, GunDispersionGlobalSettings globalDispersion)
         {
             globalDispersion ??= GunDispersionGlobalSettings.Default;
+            float maxDistance = GetMaxShotDistance();
             Vector3 baseDirection = aimPoint - startPos;
             float distance = baseDirection.magnitude;
-            if (float.IsNaN(baseDirection.x) || float.IsNaN(baseDirection.y) || float.IsNaN(baseDirection.z) || distance <= 0.001f)
+            if (!IsFinite(baseDirection) || float.IsNaN(distance) || float.IsInfinity(distance) || distance <= 0.001f)
             {
                 baseDirection = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
-                distance = 2000f;
+                distance = maxDistance;
             }
             else
             {
                 baseDirection /= distance;
             }
 
+            float targetDistance = Mathf.Clamp(distance, 0.001f, maxDistance);
+
             if (dispersion == null || !globalDispersion.enabled || dispersionDeg <= 0f)
             {
                 return new DispersedShotRay
                 {
                     Direction = baseDirection,
-                    TargetPoint = startPos + baseDirection * distance
+                    TargetPoint = startPos + baseDirection * targetDistance
                 };
             }
 
@@ -398,8 +467,13 @@ namespace Game.Scripts.Gameplay.Robots
             return new DispersedShotRay
             {
                 Direction = dispersedDirection,
-                TargetPoint = startPos + dispersedDirection * distance
+                TargetPoint = startPos + dispersedDirection * targetDistance
             };
+        }
+
+        private float GetMaxShotDistance()
+        {
+            return Mathf.Max(1f, maxShotDistance);
         }
 
         private Vector2 GetDeterministicUnitCircle(int shotId)
@@ -416,21 +490,56 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private ResolvedShot ResolveShot(Vector3 startPos, DispersedShotRay shotRay)
+        private static bool IsFinite(Vector3 value)
         {
-            float initialDistance = Mathf.Max(0.1f, (shotRay.TargetPoint - startPos).magnitude);
-            ServerHitResolver.HitResult hr = ServerHitResolver.ResolveShotDirection(
-                startPos,
-                shotRay.Direction,
-                hitMask,
+            return !float.IsNaN(value.x)
+                   && !float.IsNaN(value.y)
+                   && !float.IsNaN(value.z)
+                   && !float.IsInfinity(value.x)
+                   && !float.IsInfinity(value.y)
+                   && !float.IsInfinity(value.z);
+        }
+
+        private void HandleAuthoritativeProjectileHit(NetworkConnection shooterConnection, int shotId, RaycastHit hit, Vector3 shotDirection)
+        {
+            if (!IsServerInitialized)
+            {
+                return;
+            }
+
+            ResolvedShot shot = ResolveProjectileHit(hit, shotDirection);
+            ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, shot.Point, shot.Normal, shot.Hit);
+            ResolveObserversProjectileTargetRpc(shotId, shot.Point, shot.Normal, shot.Hit);
+            ApplyResolvedShotDamage(shooterConnection, shot);
+        }
+
+        private void HandleAuthoritativeProjectileMiss(NetworkConnection shooterConnection, int shotId, Vector3 missPoint)
+        {
+            if (!IsServerInitialized)
+            {
+                return;
+            }
+
+            ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, missPoint, Vector3.up, false);
+            ResolveObserversProjectileTargetRpc(shotId, missPoint, Vector3.up, false);
+            ShowShotResultTargetRpc(shooterConnection, (byte)ShotHudStatus.Miss);
+        }
+
+        private ResolvedShot ResolveProjectileHit(RaycastHit hit, Vector3 shotDirection)
+        {
+            ServerHitResolver.HitResult hr = ServerHitResolver.ResolveHit(
+                hit,
+                shotDirection,
                 shellPenetrationMm,
                 normalizationDeg,
-                shellDamage,
-                initialDistance,
-                2000f,
-                ignoredRoot: vehicleRoot != null ? vehicleRoot.transform : null
+                shellDamage
             );
 
+            return BuildResolvedShot(hr, hit.point, hit.normal);
+        }
+
+        private ResolvedShot BuildResolvedShot(ServerHitResolver.HitResult hr, Vector3 missPoint, Vector3 missNormal)
+        {
             Health targetHealth = null;
             VehicleRoot targetRoot = null;
 
@@ -440,35 +549,52 @@ namespace Game.Scripts.Gameplay.Robots
                 if (targetHealth != null)
                 {
                     targetRoot = targetHealth.GetComponentInParent<VehicleRoot>();
+                    if (targetRoot == null)
+                    {
+                        targetRoot = hr.collider.GetComponentInParent<VehicleRoot>();
+                    }
+                }
+                else
+                {
+                    targetRoot = hr.collider.GetComponentInParent<VehicleRoot>();
+                    if (targetRoot != null)
+                    {
+                        targetHealth = targetRoot.health != null
+                            ? targetRoot.health
+                            : targetRoot.GetComponentInChildren<Health>(true);
+                    }
                 }
             }
 
             bool targetIsRobot = targetHealth != null && targetRoot != null;
-            ShotHudStatus status = ShotHudStatus.Miss;
-            if (targetIsRobot)
-            {
-                if (hr.penetrated && hr.damage > 0f)
-                {
-                    status = ShotHudStatus.Penetrated;
-                }
-                else
-                {
-                    status = ShotHudStatus.NotPenetrated;
-                }
-            }
+            ShotHudStatus status = GetHudStatus(targetIsRobot, hr.penetrated, hr.damage);
 
-            ResolvedShot shot = new ResolvedShot
+            return new ResolvedShot
             {
-                Point = hr.hit ? hr.point : shotRay.TargetPoint,
-                Normal = hr.hit && hr.normal.sqrMagnitude > 1e-6f ? hr.normal : Vector3.up,
+                Hit = hr.hit,
+                Point = hr.hit ? hr.point : missPoint,
+                Normal = hr.hit && hr.normal.sqrMagnitude > 1e-6f ? hr.normal : missNormal,
                 TargetIsRobot = targetIsRobot,
                 Damage = targetIsRobot ? hr.damage : 0f,
                 TargetHealth = targetHealth,
                 TargetRoot = targetRoot,
                 HudStatus = status
             };
+        }
 
-            return shot;
+        private ShotHudStatus GetHudStatus(bool targetIsRobot, bool penetrated, float damage)
+        {
+            if (!targetIsRobot)
+            {
+                return ShotHudStatus.Miss;
+            }
+
+            if (penetrated && damage > 0f)
+            {
+                return ShotHudStatus.Penetrated;
+            }
+
+            return ShotHudStatus.NotPenetrated;
         }
 
         private void ApplyResolvedShotDamage(NetworkConnection shooterConnection, ResolvedShot shot)
@@ -495,7 +621,7 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [ObserversRpc(ExcludeOwner = true)]
-        private void FireObserversRpc(int shotId, Vector3 startPos, Vector3 aimPoint, Vector3 impactNormal, uint clientTick)
+        private void FireObserversRpc(int shotId, Vector3 startPos, Vector3 targetPoint, uint clientTick)
         {
             if (IsOwner)
             {
@@ -505,11 +631,19 @@ namespace Game.Scripts.Gameplay.Robots
             float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
             passed = Mathf.Min(MAX_PASSED_TIME, passed);
 
-            SpawnLocal(startPos, aimPoint, passed, false, impactNormal);
+            Projectile projectile = SpawnLocal(
+                startPos,
+                targetPoint,
+                passed,
+                false,
+                false,
+                Vector3.up
+            );
+            _observedProjectiles[shotId] = projectile;
         }
 
         [TargetRpc]
-        private void ConfigureOwnerProjectileTargetRpc(NetworkConnection conn, int shotId, Vector3 impactPoint, Vector3 impactNormal)
+        private void ConfigureOwnerProjectileTrajectoryTargetRpc(NetworkConnection conn, int shotId, Vector3 targetPoint)
         {
             if (!_predictedProjectiles.TryGetValue(shotId, out Projectile projectile))
             {
@@ -522,7 +656,86 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            projectile.ConfigureResolvedImpact(impactPoint, impactNormal);
+            projectile.ConfigureResolvedMiss(targetPoint, GetMaxShotDistance());
+        }
+
+        [TargetRpc]
+        private void ResolveOwnerProjectileTargetRpc(NetworkConnection conn, int shotId, Vector3 impactPoint, Vector3 impactNormal, bool hit)
+        {
+            if (!_predictedProjectiles.TryGetValue(shotId, out Projectile projectile))
+            {
+                if (hit)
+                {
+                    SpawnImpactFx(impactPoint, impactNormal);
+                }
+                return;
+            }
+
+            if (projectile == null)
+            {
+                _predictedProjectiles.Remove(shotId);
+                if (hit)
+                {
+                    SpawnImpactFx(impactPoint, impactNormal);
+                }
+                return;
+            }
+
+            if (hit)
+            {
+                projectile.ResolveImpactNow(impactPoint, impactNormal);
+            }
+            else
+            {
+                projectile.SetMissContinuationMaxDistance(GetMaxShotDistance());
+            }
+
+            _predictedProjectiles.Remove(shotId);
+        }
+
+        [ObserversRpc(ExcludeOwner = true)]
+        private void ResolveObserversProjectileTargetRpc(int shotId, Vector3 impactPoint, Vector3 impactNormal, bool hit)
+        {
+            if (!_observedProjectiles.TryGetValue(shotId, out Projectile projectile))
+            {
+                if (hit)
+                {
+                    SpawnImpactFx(impactPoint, impactNormal);
+                }
+                return;
+            }
+
+            if (projectile == null)
+            {
+                _observedProjectiles.Remove(shotId);
+                if (hit)
+                {
+                    SpawnImpactFx(impactPoint, impactNormal);
+                }
+                return;
+            }
+
+            if (hit)
+            {
+                projectile.ResolveImpactNow(impactPoint, impactNormal);
+            }
+            else
+            {
+                projectile.SetMissContinuationMaxDistance(GetMaxShotDistance());
+            }
+
+            _observedProjectiles.Remove(shotId);
+        }
+
+        private void SpawnImpactFx(Vector3 impactPoint, Vector3 impactNormal)
+        {
+            if (projectilePrefab == null || projectilePrefab.explosionFX == null)
+            {
+                return;
+            }
+
+            Vector3 normal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal : Vector3.up;
+            Instantiate(projectilePrefab.explosionFX, impactPoint, Quaternion.LookRotation(normal));
         }
 
         [TargetRpc]

@@ -11,7 +11,7 @@ namespace Game.Scripts.UI.HUD
         
         [SerializeField] private Button buttonPause;
         [SerializeField] private TMP_Text isPenetrationText;
-        [SerializeField] private float shotResultVisibleTime = 1f;
+        [SerializeField] private float shotResultVisibleTime = 4f;
         
         public PauseMenu pauseMenu;
 

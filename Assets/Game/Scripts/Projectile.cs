@@ -8,6 +8,14 @@ public interface IDamageable
 
 public class Projectile : MonoBehaviour
 {
+    private const float FlightLifetimePadding = 0.25f;
+    private const float MaxFlightLifetime = 5f;
+    private const int FlightLifetimeSamples = 32;
+    private const int CollisionBufferSize = 128;
+    private const float CollisionCastPadding = 0.15f;
+
+    private static readonly RaycastHit[] CollisionBuffer = new RaycastHit[CollisionBufferSize];
+
     public LayerMask hitMask = ~0;
     public float hitRadius = 0.05f;
     public int damage = 40;
@@ -31,6 +39,7 @@ public class Projectile : MonoBehaviour
     private float _minSpeedMultiplier;
 
     private Vector3 _startPoint;
+    private Vector3 _originalStartPoint;
     private Vector3 _targetPoint;
     private float _spawnTime;
     private float _totalDistance;
@@ -44,11 +53,19 @@ public class Projectile : MonoBehaviour
 
     private Vector3 _prevPos;
     private bool _authoritative;
-    private bool _detonateAtResolvedTarget;
+    private bool _hasResolvedTarget;
+    private bool _explodeAtResolvedTarget;
     private Vector3 _resolvedImpactNormal = Vector3.up;
-    private Action _onAuthoritativeResolvedImpact;
-    private bool _resolvedImpactHandled;
+    private Action _onAuthoritativeResolvedTarget;
+    private bool _resolvedTargetHandled;
     private bool _visualsEnabled = true;
+    private bool _liveCollisionEnabled;
+    private Transform _ignoredRoot;
+    private Action<RaycastHit, Vector3> _onAuthoritativeLiveHit;
+    private Action _onAuthoritativeLiveMiss;
+    private float _missContinuationMaxDistance;
+    private bool _missContinuationUsed;
+    private Vector3 _lastTravelDirection;
 
     public GameObject explosionFX;
 
@@ -106,10 +123,11 @@ public class Projectile : MonoBehaviour
     )
     {
         _startPoint = transform.position;
+        _originalStartPoint = _startPoint;
         _targetPoint = targetPoint;
 
         _initialSpeed = Mathf.Max(0.0001f, initialSpeed);
-        _lifeTime = lifeTime;
+        _lifeTime = ClampLifetime(lifeTime);
         _spawnTime = Time.time;
 
         _useArc = useArc;
@@ -124,13 +142,15 @@ public class Projectile : MonoBehaviour
         _slowdownAmount = Mathf.Clamp01(slowdownAmount);
         _slowdownExponent = Mathf.Max(0.0001f, slowdownExponent);
         _slowdownCurve = (slowdownCurve != null && slowdownCurve.length > 0) ? slowdownCurve : DefaultSlowdownCurve();
-        _minSpeedMultiplier = Mathf.Clamp(minSpeedMultiplier, 0f, 1f);
+        _minSpeedMultiplier = Mathf.Clamp(minSpeedMultiplier, 0.01f, 1f);
 
         _distanceTraveled = 0f;
         RecomputeTrajectory();
+        ExtendLifetimeToReachTarget();
 
         _passedTimeCatchup = Mathf.Max(0f, passedTime);
         _initialized = true;
+        ConfigureScriptedPhysics();
 
         Vector3 toTarget = (_targetPoint - _startPoint);
         if (toTarget.sqrMagnitude > 1e-6f)
@@ -140,20 +160,88 @@ public class Projectile : MonoBehaviour
 
         _prevPos = transform.position;
         _authoritative = authoritative;
+        _lastTravelDirection = toTarget.sqrMagnitude > 1e-6f ? toTarget.normalized : transform.forward;
+    }
+
+    private void ConfigureScriptedPhysics()
+    {
+        Rigidbody rigidbody = GetComponent<Rigidbody>();
+        if (rigidbody != null)
+        {
+            rigidbody.linearVelocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
+            rigidbody.useGravity = false;
+            rigidbody.isKinematic = true;
+            rigidbody.detectCollisions = false;
+        }
+
+        Collider[] colliders = GetComponentsInChildren<Collider>();
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null)
+            {
+                colliders[i].enabled = false;
+            }
+        }
     }
 
     public void ConfigureResolvedImpact(Vector3 targetPoint, Vector3 impactNormal, Action onAuthoritativeImpact = null)
     {
+        ConfigureResolvedTarget(targetPoint, impactNormal, true, onAuthoritativeImpact);
+    }
+
+    public void ResolveImpactNow(Vector3 impactPoint, Vector3 impactNormal)
+    {
+        transform.position = impactPoint;
+        Explode(impactPoint, impactNormal);
+        Destroy(gameObject);
+    }
+
+    public void ConfigureResolvedMiss(Vector3 targetPoint, Action onAuthoritativeMiss = null)
+    {
+        ConfigureResolvedMiss(targetPoint, 0f, onAuthoritativeMiss);
+    }
+
+    public void ConfigureResolvedMiss(Vector3 targetPoint, float missContinuationMaxDistance, Action onAuthoritativeMiss = null)
+    {
+        ConfigureResolvedTarget(targetPoint, Vector3.up, false, onAuthoritativeMiss);
+        SetMissContinuationMaxDistance(missContinuationMaxDistance);
+    }
+
+    public void SetMissContinuationMaxDistance(float maxDistance)
+    {
+        _missContinuationMaxDistance = Mathf.Max(0f, maxDistance);
+    }
+
+    private void ConfigureResolvedTarget(Vector3 targetPoint, Vector3 impactNormal, bool explodeAtTarget, Action onAuthoritativeArrival)
+    {
         _targetPoint = targetPoint;
         _resolvedImpactNormal = impactNormal.sqrMagnitude > 1e-6f ? impactNormal.normalized : Vector3.up;
-        _detonateAtResolvedTarget = true;
+        _hasResolvedTarget = true;
+        _explodeAtResolvedTarget = explodeAtTarget;
+        _resolvedTargetHandled = false;
+        _liveCollisionEnabled = false;
 
-        if (onAuthoritativeImpact != null)
-        {
-            _onAuthoritativeResolvedImpact = onAuthoritativeImpact;
-        }
+        _onAuthoritativeResolvedTarget = onAuthoritativeArrival;
 
         RecomputeTrajectory();
+        ExtendLifetimeToReachTarget();
+    }
+
+    public void ConfigureLiveCollision(
+        Transform ignoredRoot,
+        Action<RaycastHit, Vector3> onAuthoritativeHit,
+        Action onAuthoritativeMiss,
+        float missContinuationMaxDistance = 0f)
+    {
+        _hasResolvedTarget = false;
+        _explodeAtResolvedTarget = false;
+        _resolvedTargetHandled = false;
+        _liveCollisionEnabled = true;
+        _ignoredRoot = ignoredRoot;
+        _onAuthoritativeLiveHit = onAuthoritativeHit;
+        _onAuthoritativeLiveMiss = onAuthoritativeMiss;
+        SetMissContinuationMaxDistance(missContinuationMaxDistance);
     }
 
     private void RecomputeTrajectory()
@@ -163,6 +251,61 @@ public class Projectile : MonoBehaviour
         float scaled = Mathf.Pow(_totalDistance, _arcExponent) * _arcScale;
         _arcHeightComputed = Mathf.Clamp(scaled, _arcMin, _arcMax);
         _arcUp = _arcAlongWorldUp ? Vector3.up : ComputeArcUp(_startPoint, _targetPoint);
+    }
+
+    private void ExtendLifetimeToReachTarget()
+    {
+        float estimatedFlightTime = EstimateFlightTime();
+        if (!IsFinite(estimatedFlightTime) || estimatedFlightTime <= 0f)
+        {
+            return;
+        }
+
+        _lifeTime = ClampLifetime(Mathf.Max(_lifeTime, estimatedFlightTime + FlightLifetimePadding));
+    }
+
+    private float EstimateFlightTime()
+    {
+        if (_totalDistance <= 0f)
+        {
+            return 0f;
+        }
+
+        float result = 0f;
+        float lastFraction = 0f;
+        for (int i = 1; i <= FlightLifetimeSamples; i++)
+        {
+            float fraction = i / (float)FlightLifetimeSamples;
+            float midFraction = (lastFraction + fraction) * 0.5f;
+            float segmentDistance = _totalDistance * (fraction - lastFraction);
+            float speed = _initialSpeed * GetSpeedMultiplier(midFraction);
+            if (speed <= 0.001f)
+            {
+                return _lifeTime;
+            }
+
+            result += segmentDistance / speed;
+            lastFraction = fraction;
+        }
+
+        return result;
+    }
+
+    private float GetSpeedMultiplier(float fraction)
+    {
+        float slowdownEval = _useSlowdown ? _slowdownCurve.Evaluate(fraction) : 1f;
+        float speedMul = 1f - (_useSlowdown ? (_slowdownAmount * Mathf.Pow(fraction, _slowdownExponent) * slowdownEval) : 0f);
+        return Mathf.Clamp(speedMul, _minSpeedMultiplier, 1f);
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    private static float ClampLifetime(float lifeTime)
+    {
+        return Mathf.Clamp(lifeTime, 0.01f, MaxFlightLifetime);
     }
 
     private AnimationCurve DefaultArcCurve()
@@ -199,10 +342,18 @@ public class Projectile : MonoBehaviour
         }
     }
 
-    private void ExplodeAndDestroy()
+    private void DestroyWithoutExplosion()
     {
-        Explode(transform.position, Vector3.up);
         Destroy(gameObject);
+    }
+
+    private void CompleteLiveMiss()
+    {
+        if (_liveCollisionEnabled && _authoritative && !_resolvedTargetHandled)
+        {
+            _resolvedTargetHandled = true;
+            _onAuthoritativeLiveMiss?.Invoke();
+        }
     }
 
     private void Update()
@@ -214,17 +365,14 @@ public class Projectile : MonoBehaviour
 
         if (Time.time - _spawnTime >= _lifeTime)
         {
-            ExplodeAndDestroy();
+            CompleteLiveMiss();
+            DestroyWithoutExplosion();
             return;
         }
 
         float fraction = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(_distanceTraveled / _totalDistance);
 
-        float slowdownEval = _useSlowdown ? _slowdownCurve.Evaluate(fraction) : 1f;
-        float speedMul = 1f - (_useSlowdown ? (_slowdownAmount * Mathf.Pow(fraction, _slowdownExponent) * slowdownEval) : 0f);
-        speedMul = Mathf.Clamp(speedMul, _minSpeedMultiplier, 1f);
-
-        float currentSpeed = _initialSpeed * speedMul;
+        float currentSpeed = _initialSpeed * GetSpeedMultiplier(fraction);
 
         float catchupDelta = 0f;
         if (_passedTimeCatchup > 0f)
@@ -251,30 +399,18 @@ public class Projectile : MonoBehaviour
 
         Vector3 travel = newPos - _prevPos;
         float dist = travel.magnitude;
-        if (!_detonateAtResolvedTarget && dist > 1e-6f)
+        if (_liveCollisionEnabled && dist > 1e-6f)
         {
             Vector3 dir = travel / dist;
-            bool hitSomething = false;
-            RaycastHit hit;
-
-            if (hitRadius > 0f)
-            {
-                hitSomething = Physics.SphereCast(_prevPos, hitRadius, dir, out hit, dist, hitMask, QueryTriggerInteraction.Ignore);
-            }
-            else
-            {
-                hitSomething = Physics.Raycast(_prevPos, dir, out hit, dist, hitMask, QueryTriggerInteraction.Ignore);
-            }
-
-            if (hitSomething)
+            _lastTravelDirection = dir;
+            if (TryCastCollision(_prevPos, dir, dist + GetCollisionCastPadding(), out RaycastHit hit))
             {
                 if (_authoritative)
                 {
-                    Transform t = hit.collider.transform;
-                    IDamageable dmg = t.GetComponentInParent<IDamageable>();
-                    if (dmg != null)
+                    if (!_resolvedTargetHandled)
                     {
-                        dmg.ApplyDamage(damage, hit.point, hit.normal);
+                        _resolvedTargetHandled = true;
+                        _onAuthoritativeLiveHit?.Invoke(hit, dir);
                     }
                 }
 
@@ -306,24 +442,166 @@ public class Projectile : MonoBehaviour
         }
     }
 
+    private float GetCollisionCastPadding()
+    {
+        return Mathf.Max(CollisionCastPadding, hitRadius, _arriveThreshold);
+    }
+
+    private bool TryCastCollision(Vector3 origin, Vector3 dir, float distance, out RaycastHit bestHit)
+    {
+        int count;
+        if (hitRadius > 0f)
+        {
+            count = Physics.SphereCastNonAlloc(
+                origin,
+                hitRadius,
+                dir,
+                CollisionBuffer,
+                distance,
+                hitMask,
+                QueryTriggerInteraction.Ignore
+            );
+        }
+        else
+        {
+            count = Physics.RaycastNonAlloc(
+                origin,
+                dir,
+                CollisionBuffer,
+                distance,
+                hitMask,
+                QueryTriggerInteraction.Ignore
+            );
+        }
+
+        int bestIndex = -1;
+        float bestDistance = float.PositiveInfinity;
+        for (int i = 0; i < count; i++)
+        {
+            Collider hitCollider = CollisionBuffer[i].collider;
+            if (hitCollider == null || IsUnderRoot(hitCollider.transform, _ignoredRoot))
+            {
+                continue;
+            }
+
+            float hitDistance = CollisionBuffer[i].distance;
+            if (hitDistance < bestDistance)
+            {
+                bestDistance = hitDistance;
+                bestIndex = i;
+            }
+        }
+
+        if (bestIndex >= 0)
+        {
+            bestHit = CollisionBuffer[bestIndex];
+            return true;
+        }
+
+        bestHit = default;
+        return false;
+    }
+
+    private static bool IsUnderRoot(Transform transform, Transform root)
+    {
+        if (root == null)
+        {
+            return false;
+        }
+
+        Transform current = transform;
+        while (current != null)
+        {
+            if (current == root)
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
     private void OnArrived()
     {
-        if (_detonateAtResolvedTarget)
+        if (_hasResolvedTarget)
         {
             transform.position = _targetPoint;
 
-            if (_authoritative && !_resolvedImpactHandled)
+            if (!_explodeAtResolvedTarget && TryContinueMissFlight())
             {
-                _resolvedImpactHandled = true;
-                _onAuthoritativeResolvedImpact?.Invoke();
+                return;
             }
 
-            Explode(_targetPoint, _resolvedImpactNormal);
+            if (_authoritative && !_resolvedTargetHandled)
+            {
+                _resolvedTargetHandled = true;
+                _onAuthoritativeResolvedTarget?.Invoke();
+            }
+
+            if (_explodeAtResolvedTarget)
+            {
+                Explode(_targetPoint, _resolvedImpactNormal);
+            }
+
             Destroy(gameObject);
             return;
         }
 
-        ExplodeAndDestroy();
+        if (TryContinueMissFlight())
+        {
+            return;
+        }
+
+        CompleteLiveMiss();
+        DestroyWithoutExplosion();
+    }
+
+    private bool TryContinueMissFlight()
+    {
+        if (_missContinuationUsed || _missContinuationMaxDistance <= 0f)
+        {
+            return false;
+        }
+
+        float traveledFromOriginal = Vector3.Distance(_originalStartPoint, transform.position);
+        float remainingDistance = _missContinuationMaxDistance - traveledFromOriginal;
+        if (remainingDistance <= Mathf.Max(_arriveThreshold, 0.1f))
+        {
+            return false;
+        }
+
+        Vector3 direction = _lastTravelDirection;
+        if (direction.sqrMagnitude <= 0.000001f)
+        {
+            direction = (_targetPoint - _startPoint);
+        }
+
+        if (direction.sqrMagnitude <= 0.000001f)
+        {
+            direction = transform.forward;
+        }
+
+        if (direction.sqrMagnitude <= 0.000001f)
+        {
+            return false;
+        }
+
+        direction.Normalize();
+        _missContinuationUsed = true;
+        _startPoint = transform.position;
+        _targetPoint = _startPoint + direction * remainingDistance;
+        _distanceTraveled = 0f;
+        _prevPos = _startPoint;
+        _hasResolvedTarget = false;
+        _explodeAtResolvedTarget = false;
+        _useArc = false;
+
+        RecomputeTrajectory();
+        _spawnTime = Time.time;
+        _lifeTime = ClampLifetime(EstimateFlightTime() + FlightLifetimePadding);
+
+        return true;
     }
 }
-
