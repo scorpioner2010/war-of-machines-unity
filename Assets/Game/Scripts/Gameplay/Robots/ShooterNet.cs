@@ -19,7 +19,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public GunDispersionSettings dispersion = new GunDispersionSettings();
 
-        public float projectileSpeed = 70f;
+        public float projectileSpeed = VehicleRuntimeStats.DefaultShellSpeed;
         public float projectileLifeTime = 8f;
         public float maxShotDistance = 2000f;
 
@@ -38,7 +38,8 @@ namespace Game.Scripts.Gameplay.Robots
         [Range(0f, 1f)] public float projectileMinSpeedMultiplier = 0.1f;
 
         public LayerMask hitMask = ~0;
-        public float shellDamage = 100f;
+        public float damageMin = VehicleRuntimeStats.DefaultDamageMin;
+        public float damageMax = VehicleRuntimeStats.DefaultDamageMax;
         public float shellPenetrationMm = 200f;
         public float normalizationDeg = 0f;
 
@@ -51,6 +52,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _serverDispersionInitialized;
 
         private readonly HashSet<int> _processedShots = new HashSet<int>();
+        private readonly HashSet<int> _observedResolvedHitShots = new HashSet<int>();
         private readonly Dictionary<int, Projectile> _predictedProjectiles = new Dictionary<int, Projectile>();
         private readonly Dictionary<int, Projectile> _observedProjectiles = new Dictionary<int, Projectile>();
         private readonly GunDispersionModel _ownerDispersion = new GunDispersionModel();
@@ -69,10 +71,8 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (stats.Damage > 0f)
-            {
-                shellDamage = stats.Damage;
-            }
+            projectileSpeed = VehicleRuntimeStats.ResolveShellSpeed(stats.ShellSpeed);
+            VehicleRuntimeStats.ResolveDamageRange(stats.DamageMin, stats.DamageMax, out damageMin, out damageMax);
 
             if (stats.Penetration > 0f)
             {
@@ -233,7 +233,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             Projectile proj = Instantiate(projectilePrefab, startPos, Quaternion.identity);
             proj.hitMask = hitMask;
-            proj.damage = Mathf.RoundToInt(Mathf.Max(0f, shellDamage));
+            proj.damage = Mathf.RoundToInt(Mathf.Max(0f, damageMax));
             proj.Init(
                 targetPoint: aimPoint,
                 initialSpeed: projectileSpeed,
@@ -527,15 +527,27 @@ namespace Game.Scripts.Gameplay.Robots
 
         private ResolvedShot ResolveProjectileHit(RaycastHit hit, Vector3 shotDirection)
         {
+            float damage = RollDamage();
             ServerHitResolver.HitResult hr = ServerHitResolver.ResolveHit(
                 hit,
                 shotDirection,
                 shellPenetrationMm,
                 normalizationDeg,
-                shellDamage
+                damage
             );
 
             return BuildResolvedShot(hr, hit.point, hit.normal);
+        }
+
+        private float RollDamage()
+        {
+            VehicleRuntimeStats.ResolveDamageRange(damageMin, damageMax, out float min, out float max);
+            if (Mathf.Approximately(min, max))
+            {
+                return min;
+            }
+
+            return Random.Range(min, max);
         }
 
         private ResolvedShot BuildResolvedShot(ServerHitResolver.HitResult hr, Vector3 missPoint, Vector3 missNormal)
@@ -628,6 +640,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            if (_observedResolvedHitShots.Remove(shotId))
+            {
+                return;
+            }
+
             float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
             passed = Mathf.Min(MAX_PASSED_TIME, passed);
 
@@ -700,6 +717,7 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 if (hit)
                 {
+                    _observedResolvedHitShots.Add(shotId);
                     SpawnImpactFx(impactPoint, impactNormal);
                 }
                 return;
@@ -710,6 +728,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _observedProjectiles.Remove(shotId);
                 if (hit)
                 {
+                    _observedResolvedHitShots.Add(shotId);
                     SpawnImpactFx(impactPoint, impactNormal);
                 }
                 return;

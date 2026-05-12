@@ -12,7 +12,7 @@ namespace Game.Scripts.Gameplay.Robots
         public VehicleRoot vehicleRoot;
 
         public float reloadTime = 2f;
-        public int totalAmmo = 10;
+        public int totalAmmo = VehicleRuntimeStats.DefaultShellsCount;
 
         public UnityEngine.Events.UnityEvent onShot;
 
@@ -34,10 +34,17 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
         {
-            if (stats != null && stats.ReloadTime > 0f)
+            if (stats == null)
+            {
+                return;
+            }
+
+            if (stats.ReloadTime > 0f)
             {
                 reloadTime = stats.ReloadTime;
             }
+
+            ApplyTotalAmmo(stats.ShellsCount);
         }
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
@@ -53,6 +60,24 @@ namespace Game.Scripts.Gameplay.Robots
             _ammoLeft.Value = totalAmmo;
             _isReloading.Value = false;
             _reloadRemain.Value = 0f;
+        }
+
+        private void ApplyTotalAmmo(int value)
+        {
+            int oldTotalAmmo = totalAmmo;
+            int newTotalAmmo = VehicleRuntimeStats.ResolveShellsCount(value);
+            if (newTotalAmmo == oldTotalAmmo)
+            {
+                return;
+            }
+
+            bool canResetServerAmmo = IsServerInitialized && _ammoLeft.Value == oldTotalAmmo;
+            totalAmmo = newTotalAmmo;
+
+            if (canResetServerAmmo)
+            {
+                _ammoLeft.Value = totalAmmo;
+            }
         }
 
         private void Update()

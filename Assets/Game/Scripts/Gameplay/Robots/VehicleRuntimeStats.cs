@@ -43,14 +43,22 @@ namespace Game.Scripts.Gameplay.Robots
     [Serializable]
     public class VehicleRuntimeStats
     {
+        public const float DefaultShellSpeed = 70f;
+        public const int DefaultShellsCount = 20;
+        public const float DefaultDamageMin = 90f;
+        public const float DefaultDamageMax = 110f;
+
         public int VehicleId;
         public string Code;
         public string Name;
         public int Level;
 
         public float MaxHealth;
-        public float Damage;
         public float Penetration;
+        public float ShellSpeed;
+        public int ShellsCount;
+        public float DamageMin;
+        public float DamageMax;
         public float ReloadTime;
         public float Accuracy;
         public float AimTime;
@@ -77,6 +85,8 @@ namespace Game.Scripts.Gameplay.Robots
                 return null;
             }
 
+            ResolveDamageRange(vehicle.damageMin, vehicle.damageMax, out float damageMin, out float damageMax);
+
             VehicleRuntimeStats stats = new VehicleRuntimeStats
             {
                 VehicleId = vehicle.id,
@@ -84,8 +94,11 @@ namespace Game.Scripts.Gameplay.Robots
                 Name = vehicle.name,
                 Level = vehicle.level,
                 MaxHealth = Mathf.Max(0f, vehicle.hp),
-                Damage = Mathf.Max(0f, vehicle.damage),
                 Penetration = Mathf.Max(0f, vehicle.penetration),
+                ShellSpeed = ResolveShellSpeed(vehicle.shellSpeed),
+                ShellsCount = ResolveShellsCount(vehicle.shellsCount),
+                DamageMin = damageMin,
+                DamageMax = damageMax,
                 ReloadTime = Mathf.Max(0f, vehicle.reloadTime),
                 Accuracy = Mathf.Max(0f, vehicle.accuracy),
                 AimTime = Mathf.Max(0f, vehicle.aimTime),
@@ -100,17 +113,79 @@ namespace Game.Scripts.Gameplay.Robots
             return stats;
         }
 
+        public void NormalizeCombatStats()
+        {
+            ShellSpeed = ResolveShellSpeed(ShellSpeed);
+            ShellsCount = ResolveShellsCount(ShellsCount);
+            ResolveDamageRange(DamageMin, DamageMax, out float damageMin, out float damageMax);
+            DamageMin = damageMin;
+            DamageMax = damageMax;
+        }
+
+        public static float ResolveShellSpeed(float value)
+        {
+            if (value > 0f)
+            {
+                return value;
+            }
+
+            return DefaultShellSpeed;
+        }
+
+        public static int ResolveShellsCount(int value)
+        {
+            if (value > 0)
+            {
+                return value;
+            }
+
+            return DefaultShellsCount;
+        }
+
+        public static void ResolveDamageRange(float sourceMin, float sourceMax, out float damageMin, out float damageMax)
+        {
+            if (sourceMin <= 0f && sourceMax <= 0f)
+            {
+                damageMin = DefaultDamageMin;
+                damageMax = DefaultDamageMax;
+                return;
+            }
+
+            damageMin = Mathf.Max(0f, sourceMin);
+            damageMax = Mathf.Max(0f, sourceMax);
+
+            if (damageMin <= 0f)
+            {
+                damageMin = damageMax;
+            }
+
+            if (damageMax <= 0f)
+            {
+                damageMax = damageMin;
+            }
+
+            if (damageMin > damageMax)
+            {
+                float temp = damageMin;
+                damageMin = damageMax;
+                damageMax = temp;
+            }
+        }
+
         public VehicleRuntimeStats Clone()
         {
-            return new VehicleRuntimeStats
+            VehicleRuntimeStats clone = new VehicleRuntimeStats
             {
                 VehicleId = VehicleId,
                 Code = Code,
                 Name = Name,
                 Level = Level,
                 MaxHealth = MaxHealth,
-                Damage = Damage,
                 Penetration = Penetration,
+                ShellSpeed = ShellSpeed,
+                ShellsCount = ShellsCount,
+                DamageMin = DamageMin,
+                DamageMax = DamageMax,
                 ReloadTime = ReloadTime,
                 Accuracy = Accuracy,
                 AimTime = AimTime,
@@ -121,6 +196,9 @@ namespace Game.Scripts.Gameplay.Robots
                 HullArmor = HullArmor,
                 TurretArmor = TurretArmor
             };
+
+            clone.NormalizeCombatStats();
+            return clone;
         }
     }
 }

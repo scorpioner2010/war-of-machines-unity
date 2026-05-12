@@ -156,6 +156,10 @@ namespace Game.Scripts.API
         public int hp;
         public int damage;
         public int penetration;
+        public float shellSpeed;
+        public int shellsCount;
+        public float damageMin;
+        public float damageMax;
 
         public float reloadTime;
         public float accuracy;
@@ -206,6 +210,10 @@ namespace Game.Scripts.API
         public string branch;
         public string factionCode;
         public bool isVisible;
+        public float shellSpeed;
+        public int shellsCount;
+        public float damageMin;
+        public float damageMax;
     }
 
     [Serializable]

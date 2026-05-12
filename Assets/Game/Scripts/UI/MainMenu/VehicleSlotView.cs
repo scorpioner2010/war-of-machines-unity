@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using DG.Tweening;
 using Game.Scripts.API;
+using Game.Scripts.Gameplay.Robots;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -307,16 +308,21 @@ namespace Game.Scripts.UI.MainMenu
                 }
             }
 
-            bool hasFirepower = data.Damage > 0
+            bool hasFirepower = data.DamageMin > 0f
+                || data.DamageMax > 0f
                 || data.Penetration > 0
+                || data.ShellSpeed > 0f
+                || data.ShellsCount > 0
                 || data.ReloadTime > 0f
                 || data.Accuracy > 0f
                 || data.AimTime > 0f;
             if (hasFirepower)
             {
                 AppendHeader(builder, "FIREPOWER");
-                AppendInt(builder, "Damage", data.Damage, string.Empty);
+                AppendRange(builder, "Damage", data.DamageMin, data.DamageMax, string.Empty, "0.#");
                 AppendInt(builder, "Penetration", data.Penetration, " mm");
+                AppendFloat(builder, "Shell speed", data.ShellSpeed, " m/s", "0.#");
+                AppendInt(builder, "Ammo", data.ShellsCount, string.Empty);
                 AppendFloat(builder, "Reload", data.ReloadTime, " s", "0.##");
                 AppendFloat(builder, "Accuracy", data.Accuracy, string.Empty, "0.##");
                 AppendFloat(builder, "Aim time", data.AimTime, " s", "0.##");
@@ -375,6 +381,27 @@ namespace Game.Scripts.UI.MainMenu
 
             builder.AppendLine();
             builder.Append(label).Append(": ").Append(value.ToString(format, CultureInfo.InvariantCulture)).Append(suffix);
+        }
+
+        private static void AppendRange(StringBuilder builder, string label, float min, float max, string suffix, string format)
+        {
+            if (min <= 0f && max <= 0f)
+            {
+                return;
+            }
+
+            builder.AppendLine();
+            builder.Append(label).Append(": ");
+            if (Mathf.Approximately(min, max))
+            {
+                builder.Append(min.ToString(format, CultureInfo.InvariantCulture)).Append(suffix);
+                return;
+            }
+
+            builder.Append(min.ToString(format, CultureInfo.InvariantCulture))
+                .Append("-")
+                .Append(max.ToString(format, CultureInfo.InvariantCulture))
+                .Append(suffix);
         }
 
         private static void AppendText(StringBuilder builder, string label, string value)
@@ -526,8 +553,11 @@ namespace Game.Scripts.UI.MainMenu
         public string Class;
         public int Level;
         public int Hp;
-        public int Damage;
         public int Penetration;
+        public float ShellSpeed;
+        public int ShellsCount;
+        public float DamageMin;
+        public float DamageMax;
         public float ReloadTime;
         public float Accuracy;
         public float AimTime;
@@ -553,8 +583,10 @@ namespace Game.Scripts.UI.MainMenu
             Class = vehicle.@class;
             Level = vehicle.level;
             Hp = vehicle.hp;
-            Damage = vehicle.damage;
             Penetration = vehicle.penetration;
+            ShellSpeed = VehicleRuntimeStats.ResolveShellSpeed(vehicle.shellSpeed);
+            ShellsCount = VehicleRuntimeStats.ResolveShellsCount(vehicle.shellsCount);
+            VehicleRuntimeStats.ResolveDamageRange(vehicle.damageMin, vehicle.damageMax, out DamageMin, out DamageMax);
             ReloadTime = vehicle.reloadTime;
             Accuracy = vehicle.accuracy;
             AimTime = vehicle.aimTime;

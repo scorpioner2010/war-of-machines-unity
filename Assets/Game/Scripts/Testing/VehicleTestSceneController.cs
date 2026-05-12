@@ -231,8 +231,10 @@ namespace Game.Scripts.Testing
             _builder.Append("Code: ").Append(stats.Code).Append('\n');
             _builder.Append("Level: ").Append(stats.Level).Append('\n');
             _builder.Append("HP: ").Append(stats.MaxHealth).Append('\n');
-            _builder.Append("Damage: ").Append(stats.Damage).Append('\n');
+            _builder.Append("Damage: ").Append(stats.DamageMin).Append('-').Append(stats.DamageMax).Append('\n');
             _builder.Append("Penetration: ").Append(stats.Penetration).Append('\n');
+            _builder.Append("Shell speed: ").Append(stats.ShellSpeed).Append('\n');
+            _builder.Append("Ammo: ").Append(stats.ShellsCount).Append('\n');
             _builder.Append("Reload: ").Append(stats.ReloadTime).Append(" s\n");
             _builder.Append("Accuracy: ").Append(stats.Accuracy).Append('\n');
             _builder.Append("Aim time: ").Append(stats.AimTime).Append(" s\n");

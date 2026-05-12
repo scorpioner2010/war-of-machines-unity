@@ -66,6 +66,7 @@ public class Projectile : MonoBehaviour
     private float _missContinuationMaxDistance;
     private bool _missContinuationUsed;
     private Vector3 _lastTravelDirection;
+    private float _continuationSpeedMultiplier = -1f;
 
     public GameObject explosionFX;
 
@@ -145,6 +146,7 @@ public class Projectile : MonoBehaviour
         _minSpeedMultiplier = Mathf.Clamp(minSpeedMultiplier, 0.01f, 1f);
 
         _distanceTraveled = 0f;
+        _continuationSpeedMultiplier = -1f;
         RecomputeTrajectory();
         ExtendLifetimeToReachTarget();
 
@@ -372,7 +374,10 @@ public class Projectile : MonoBehaviour
 
         float fraction = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(_distanceTraveled / _totalDistance);
 
-        float currentSpeed = _initialSpeed * GetSpeedMultiplier(fraction);
+        float speedMultiplier = _continuationSpeedMultiplier > 0f
+            ? _continuationSpeedMultiplier
+            : GetSpeedMultiplier(fraction);
+        float currentSpeed = _initialSpeed * speedMultiplier;
 
         float catchupDelta = 0f;
         if (_passedTimeCatchup > 0f)
@@ -399,9 +404,14 @@ public class Projectile : MonoBehaviour
 
         Vector3 travel = newPos - _prevPos;
         float dist = travel.magnitude;
+        if (dist > 1e-6f)
+        {
+            _lastTravelDirection = travel / dist;
+        }
+
         if (_liveCollisionEnabled && dist > 1e-6f)
         {
-            Vector3 dir = travel / dist;
+            Vector3 dir = _lastTravelDirection;
             _lastTravelDirection = dir;
             if (TryCastCollision(_prevPos, dir, dist + GetCollisionCastPadding(), out RaycastHit hit))
             {
@@ -527,12 +537,12 @@ public class Projectile : MonoBehaviour
     {
         if (_hasResolvedTarget)
         {
-            transform.position = _targetPoint;
-
             if (!_explodeAtResolvedTarget && TryContinueMissFlight())
             {
                 return;
             }
+
+            transform.position = _targetPoint;
 
             if (_authoritative && !_resolvedTargetHandled)
             {
@@ -572,16 +582,7 @@ public class Projectile : MonoBehaviour
             return false;
         }
 
-        Vector3 direction = _lastTravelDirection;
-        if (direction.sqrMagnitude <= 0.000001f)
-        {
-            direction = (_targetPoint - _startPoint);
-        }
-
-        if (direction.sqrMagnitude <= 0.000001f)
-        {
-            direction = transform.forward;
-        }
+        Vector3 direction = GetMissContinuationDirection();
 
         if (direction.sqrMagnitude <= 0.000001f)
         {
@@ -597,11 +598,28 @@ public class Projectile : MonoBehaviour
         _hasResolvedTarget = false;
         _explodeAtResolvedTarget = false;
         _useArc = false;
+        _continuationSpeedMultiplier = GetSpeedMultiplier(1f);
 
         RecomputeTrajectory();
         _spawnTime = Time.time;
         _lifeTime = ClampLifetime(EstimateFlightTime() + FlightLifetimePadding);
 
         return true;
+    }
+
+    private Vector3 GetMissContinuationDirection()
+    {
+        Vector3 direction = _targetPoint - _startPoint;
+        if (direction.sqrMagnitude > 0.000001f)
+        {
+            return direction;
+        }
+
+        if (_lastTravelDirection.sqrMagnitude > 0.000001f)
+        {
+            return _lastTravelDirection;
+        }
+
+        return transform.forward;
     }
 }
