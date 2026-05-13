@@ -18,14 +18,12 @@ namespace Game.Scripts.UI.Helpers
         
         public static void Show()
         {
-            _in.standardLoading.SetActive(true);
-            IsOpen = true;
+            SetStandardLoadingActive(true);
         }
 
         public static void Hide()
         {
-            _in.standardLoading.SetActive(false);
-            IsOpen = false;
+            SetStandardLoadingActive(false);
         }
 
         public static async UniTask WaitLoading()
@@ -34,6 +32,18 @@ namespace Game.Scripts.UI.Helpers
             {
                 await UniTask.DelayFrame(1);
             }
+        }
+
+        private static void SetStandardLoadingActive(bool active)
+        {
+            if (_in == null || _in.standardLoading == null)
+            {
+                IsOpen = false;
+                return;
+            }
+
+            _in.standardLoading.SetActive(active);
+            IsOpen = active;
         }
     }
 }

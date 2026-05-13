@@ -8,6 +8,7 @@ namespace Game.Scripts.UI.HUD
     public class GameplayGUI : MonoBehaviour
     {
         public static GameplayGUI In;
+        public Transform ShotResultTextTransform => isPenetrationText != null ? isPenetrationText.transform : null;
         
         [SerializeField] private Button buttonPause;
         [SerializeField] private TMP_Text isPenetrationText;

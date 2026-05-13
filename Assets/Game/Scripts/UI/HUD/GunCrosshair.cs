@@ -30,6 +30,7 @@ namespace Game.Scripts.UI.HUD
         private bool[] _sniperHiddenObjectStates;
         private Transform _sniperHiddenRoot;
         private int _sniperHiddenRootChildCount = -1;
+        private bool _sniperModeApplied;
 
         private void OnEnable()
         {
@@ -40,6 +41,11 @@ namespace Game.Scripts.UI.HUD
 
         private void OnDisable()
         {
+            if (_sniperModeApplied)
+            {
+                ApplySniperPresentation(false);
+            }
+
             ClientGameplaySettings.ServerCrosshairChanged -= OnServerCrosshairSettingChanged;
         }
 
@@ -117,8 +123,19 @@ namespace Game.Scripts.UI.HUD
 
         private void ApplySniperPresentation(bool sniperMode)
         {
-            ApplySniperHudVisibility(sniperMode);
+            if (_sniperModeApplied == sniperMode)
+            {
+                ApplySniperPersistentElements(sniperMode);
+                return;
+            }
 
+            _sniperModeApplied = sniperMode;
+            ApplySniperHudVisibility(sniperMode);
+            ApplySniperPersistentElements(sniperMode);
+        }
+
+        private void ApplySniperPersistentElements(bool sniperMode)
+        {
             if (sniperOverlay != null)
             {
                 sniperOverlay.SetActive(sniperMode);
@@ -137,6 +154,13 @@ namespace Game.Scripts.UI.HUD
 
         private void ApplySniperHudVisibility(bool sniperMode)
         {
+            if (!sniperMode)
+            {
+                RestoreSniperHiddenObjects();
+                ClearSniperHiddenObjects();
+                return;
+            }
+
             Transform root = GetSniperHiddenRoot();
             if (root == null)
             {
@@ -149,6 +173,8 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
+            CaptureSniperHiddenObjectStates();
+
             for (int i = 0; i < _sniperHiddenObjects.Length; i++)
             {
                 GameObject target = _sniperHiddenObjects[i];
@@ -157,15 +183,7 @@ namespace Game.Scripts.UI.HUD
                     continue;
                 }
 
-                if (sniperMode)
-                {
-                    _sniperHiddenObjectStates[i] = target.activeSelf;
-                    target.SetActive(false);
-                }
-                else
-                {
-                    target.SetActive(_sniperHiddenObjectStates[i]);
-                }
+                target.SetActive(false);
             }
         }
 
@@ -217,9 +235,49 @@ namespace Game.Scripts.UI.HUD
                 }
 
                 _sniperHiddenObjects[index] = child.gameObject;
-                _sniperHiddenObjectStates[index] = child.gameObject.activeSelf;
                 index++;
             }
+        }
+
+        private void CaptureSniperHiddenObjectStates()
+        {
+            if (_sniperHiddenObjects == null || _sniperHiddenObjectStates == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _sniperHiddenObjects.Length; i++)
+            {
+                GameObject target = _sniperHiddenObjects[i];
+                _sniperHiddenObjectStates[i] = target != null && target.activeSelf;
+            }
+        }
+
+        private void RestoreSniperHiddenObjects()
+        {
+            if (_sniperHiddenObjects == null || _sniperHiddenObjectStates == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _sniperHiddenObjects.Length; i++)
+            {
+                GameObject target = _sniperHiddenObjects[i];
+                if (target == null)
+                {
+                    continue;
+                }
+
+                target.SetActive(_sniperHiddenObjectStates[i]);
+            }
+        }
+
+        private void ClearSniperHiddenObjects()
+        {
+            _sniperHiddenObjects = null;
+            _sniperHiddenObjectStates = null;
+            _sniperHiddenRoot = null;
+            _sniperHiddenRootChildCount = -1;
         }
 
         private bool ShouldKeepVisibleInSniper(Transform child)
@@ -231,6 +289,26 @@ namespace Game.Scripts.UI.HUD
 
             Transform crosshairGroup = crosshair != null ? crosshair.parent : null;
             if (IsSameOrParentOf(child, crosshairGroup))
+            {
+                return true;
+            }
+
+            if (IsSameOrParentOf(child, serverCrosshair))
+            {
+                return true;
+            }
+
+            if (IsSameOrParentOf(child, fillImage != null ? fillImage.transform : null))
+            {
+                return true;
+            }
+
+            if (IsSameOrParentOf(child, reloadText != null ? reloadText.transform : null))
+            {
+                return true;
+            }
+
+            if (IsSameOrParentOf(child, ammoLeftText != null ? ammoLeftText.transform : null))
             {
                 return true;
             }
@@ -249,6 +327,11 @@ namespace Game.Scripts.UI.HUD
 
             Transform reticleRootTransform = sniperReticleOnlyRoot != null ? sniperReticleOnlyRoot.transform : null;
             if (IsSameOrParentOf(child, reticleRootTransform))
+            {
+                return true;
+            }
+
+            if (GameplayGUI.In != null && IsSameOrParentOf(child, GameplayGUI.In.ShotResultTextTransform))
             {
                 return true;
             }

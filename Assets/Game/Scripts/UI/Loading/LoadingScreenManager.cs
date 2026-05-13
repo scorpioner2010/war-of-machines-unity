@@ -5,6 +5,7 @@ using Game.Scripts.MenuController;
 using Game.Scripts.UI.MainMenu;
 using System.Collections;
 using UnityEngine;
+using StandardLoading = Game.Scripts.UI.Helpers.Loading;
 
 namespace Game.Scripts.UI.Loading 
 {
@@ -83,13 +84,25 @@ namespace Game.Scripts.UI.Loading
         public static void ShowLoading()
         {
             CurrentMode = LoadingScreenMode.SceneLoading;
+            StandardLoading.Hide();
             MenuManager.OpenMenu(MenuType.LoadScreen);
         }
 
         public static void ShowConnectionLoading()
         {
             CurrentMode = LoadingScreenMode.Connection;
-            MenuManager.OpenMenu(MenuType.LoadScreen);
+            StandardLoading.Show();
+        }
+
+        public static void HideConnectionLoading()
+        {
+            if (CurrentMode != LoadingScreenMode.Connection)
+            {
+                return;
+            }
+
+            StandardLoading.Hide();
+            CurrentMode = LoadingScreenMode.SceneLoading;
         }
 
         public static void HideLoading()

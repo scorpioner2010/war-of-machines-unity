@@ -170,6 +170,8 @@ namespace Game.Scripts.UI.Helpers
 
             if (networkManager.ClientManager.StartConnection() == false)
             {
+                LoadingScreenManager.HideConnectionLoading();
+
                 if (connect != null)
                 {
                     connect.interactable = true;
@@ -228,6 +230,7 @@ namespace Game.Scripts.UI.Helpers
             if (_clientState == LocalConnectionState.Started)
             {
                 RegisterClientInfo();
+                LoadingScreenManager.HideConnectionLoading();
             }
             else if (_clientState == LocalConnectionState.Stopped)
             {
@@ -236,9 +239,13 @@ namespace Game.Scripts.UI.Helpers
                     connect.interactable = true;
                 }
 
-                if (autoStartMode == NetworkAutoStartMode.Client)
+                if (autoStartMode == NetworkAutoStartMode.Client && _isStoppingConnections == false)
                 {
                     LoadingScreenManager.ShowConnectionLoading();
+                }
+                else
+                {
+                    LoadingScreenManager.HideConnectionLoading();
                 }
             }
 
