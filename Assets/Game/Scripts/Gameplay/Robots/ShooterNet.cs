@@ -402,6 +402,7 @@ namespace Game.Scripts.Gameplay.Robots
             float serverDeg = _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
             float serverDiameter = globalDispersion.GetUiDiameter(serverDeg, dispersion.MinDispersion);
             _crosshair.SetAimingDiameters(localDiameter, serverDiameter);
+            _crosshair.SetAimStatus(_ownerDispersion.CurrentDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
         }
 
         private GunDispersionGlobalSettings GetGlobalDispersion()

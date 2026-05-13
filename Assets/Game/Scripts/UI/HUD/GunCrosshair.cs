@@ -13,16 +13,29 @@ namespace Game.Scripts.UI.HUD
         public Image  fillImage;
         public TMP_Text reloadText; 
         public TMP_Text ammoLeftText;
+        public TMP_Text aimStatusText;
+        [SerializeField] private GameObject regularHudRoot;
+        [SerializeField] private GameObject sniperOverlay;
+        [SerializeField] private GameObject sniperReticleOnlyRoot;
+        [SerializeField] private Color aimedColor = new Color(0.5f, 1f, 0.5f, 1f);
+        [SerializeField] private Color aimingColor = new Color(1f, 0.86f, 0.2f, 1f);
+        [SerializeField] private string aimedText = "AIM READY";
+        [SerializeField] private string aimingTextPrefix = "AIM ";
 
         private Vector2 _crosshairBaseSize;
         private Vector2 _serverCrosshairBaseSize;
         private bool _crosshairBaseSizeCached;
         private bool _serverCrosshairBaseSizeCached;
+        private GameObject[] _sniperHiddenObjects;
+        private bool[] _sniperHiddenObjectStates;
+        private Transform _sniperHiddenRoot;
+        private int _sniperHiddenRootChildCount = -1;
 
         private void OnEnable()
         {
             ClientGameplaySettings.ServerCrosshairChanged += OnServerCrosshairSettingChanged;
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
+            ApplySniperPresentation(false);
         }
 
         private void OnDisable()
@@ -72,6 +85,196 @@ namespace Game.Scripts.UI.HUD
             {
                 serverCrosshair.gameObject.SetActive(enabled);
             }
+        }
+
+        public void SetAimStatus(float currentDispersionDeg, float minDispersionDeg, float maxDispersionDeg)
+        {
+            if (aimStatusText == null)
+            {
+                return;
+            }
+
+            float min = Mathf.Max(0f, minDispersionDeg);
+            float max = Mathf.Max(min + 0.0001f, maxDispersionDeg);
+            float t = Mathf.InverseLerp(max, min, Mathf.Clamp(currentDispersionDeg, min, max));
+            int percent = Mathf.RoundToInt(t * 100f);
+
+            if (percent >= 99)
+            {
+                aimStatusText.text = aimedText;
+                aimStatusText.color = aimedColor;
+                return;
+            }
+
+            aimStatusText.text = aimingTextPrefix + percent + "%";
+            aimStatusText.color = aimingColor;
+        }
+
+        public void SetSniperMode(bool enabled)
+        {
+            ApplySniperPresentation(enabled);
+        }
+
+        private void ApplySniperPresentation(bool sniperMode)
+        {
+            ApplySniperHudVisibility(sniperMode);
+
+            if (sniperOverlay != null)
+            {
+                sniperOverlay.SetActive(sniperMode);
+            }
+
+            if (sniperReticleOnlyRoot != null)
+            {
+                sniperReticleOnlyRoot.SetActive(sniperMode);
+            }
+
+            if (crosshair != null)
+            {
+                crosshair.gameObject.SetActive(true);
+            }
+        }
+
+        private void ApplySniperHudVisibility(bool sniperMode)
+        {
+            Transform root = GetSniperHiddenRoot();
+            if (root == null)
+            {
+                return;
+            }
+
+            EnsureSniperHiddenObjects(root);
+            if (_sniperHiddenObjects == null || _sniperHiddenObjectStates == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _sniperHiddenObjects.Length; i++)
+            {
+                GameObject target = _sniperHiddenObjects[i];
+                if (target == null)
+                {
+                    continue;
+                }
+
+                if (sniperMode)
+                {
+                    _sniperHiddenObjectStates[i] = target.activeSelf;
+                    target.SetActive(false);
+                }
+                else
+                {
+                    target.SetActive(_sniperHiddenObjectStates[i]);
+                }
+            }
+        }
+
+        private Transform GetSniperHiddenRoot()
+        {
+            if (regularHudRoot != null)
+            {
+                return regularHudRoot.transform;
+            }
+
+            if (crosshair == null || crosshair.parent == null)
+            {
+                return null;
+            }
+
+            return crosshair.parent.parent;
+        }
+
+        private void EnsureSniperHiddenObjects(Transform root)
+        {
+            if (_sniperHiddenObjects != null && _sniperHiddenRoot == root && _sniperHiddenRootChildCount == root.childCount)
+            {
+                return;
+            }
+
+            _sniperHiddenRoot = root;
+            _sniperHiddenRootChildCount = root.childCount;
+
+            int count = 0;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (!ShouldKeepVisibleInSniper(child))
+                {
+                    count++;
+                }
+            }
+
+            _sniperHiddenObjects = new GameObject[count];
+            _sniperHiddenObjectStates = new bool[count];
+
+            int index = 0;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (ShouldKeepVisibleInSniper(child))
+                {
+                    continue;
+                }
+
+                _sniperHiddenObjects[index] = child.gameObject;
+                _sniperHiddenObjectStates[index] = child.gameObject.activeSelf;
+                index++;
+            }
+        }
+
+        private bool ShouldKeepVisibleInSniper(Transform child)
+        {
+            if (child == null)
+            {
+                return true;
+            }
+
+            Transform crosshairGroup = crosshair != null ? crosshair.parent : null;
+            if (IsSameOrParentOf(child, crosshairGroup))
+            {
+                return true;
+            }
+
+            Transform aimStatusTransform = aimStatusText != null ? aimStatusText.transform : null;
+            if (IsSameOrParentOf(child, aimStatusTransform))
+            {
+                return true;
+            }
+
+            Transform overlayTransform = sniperOverlay != null ? sniperOverlay.transform : null;
+            if (IsSameOrParentOf(child, overlayTransform))
+            {
+                return true;
+            }
+
+            Transform reticleRootTransform = sniperReticleOnlyRoot != null ? sniperReticleOnlyRoot.transform : null;
+            if (IsSameOrParentOf(child, reticleRootTransform))
+            {
+                return true;
+            }
+
+            return child.name == "BlackScreen";
+        }
+
+        private static bool IsSameOrParentOf(Transform possibleParent, Transform target)
+        {
+            if (possibleParent == null || target == null)
+            {
+                return false;
+            }
+
+            Transform current = target;
+            while (current != null)
+            {
+                if (current == possibleParent)
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
     }
 }

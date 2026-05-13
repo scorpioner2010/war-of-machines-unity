@@ -8,9 +8,16 @@ using UnityEngine;
 
 namespace Game.Scripts.UI.Loading 
 {
+    public enum LoadingScreenMode
+    {
+        SceneLoading = 0,
+        Connection = 1
+    }
+
     public class LoadingScreenManager : MonoBehaviour
     {
         private bool _isSubscribed;
+        public static LoadingScreenMode CurrentMode { get; private set; } = LoadingScreenMode.SceneLoading;
 
         private IEnumerator Start()
         {
@@ -75,6 +82,13 @@ namespace Game.Scripts.UI.Loading
 
         public static void ShowLoading()
         {
+            CurrentMode = LoadingScreenMode.SceneLoading;
+            MenuManager.OpenMenu(MenuType.LoadScreen);
+        }
+
+        public static void ShowConnectionLoading()
+        {
+            CurrentMode = LoadingScreenMode.Connection;
             MenuManager.OpenMenu(MenuType.LoadScreen);
         }
 

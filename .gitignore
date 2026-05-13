@@ -89,3 +89,4 @@ Logs
 *.sln
 *.csproj
 UserSettings
+.ai

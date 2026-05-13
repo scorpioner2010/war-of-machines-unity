@@ -6,6 +6,7 @@ using Game.Scripts.Core.Services;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Player.Data;
 using Game.Scripts.Server;
+using Game.Scripts.UI.Loading;
 using System.Collections;
 using System.Net;
 using System.Net.Sockets;
@@ -165,6 +166,8 @@ namespace Game.Scripts.UI.Helpers
                 connect.interactable = false;
             }
 
+            LoadingScreenManager.ShowConnectionLoading();
+
             if (networkManager.ClientManager.StartConnection() == false)
             {
                 if (connect != null)
@@ -231,6 +234,11 @@ namespace Game.Scripts.UI.Helpers
                 if (connect != null)
                 {
                     connect.interactable = true;
+                }
+
+                if (autoStartMode == NetworkAutoStartMode.Client)
+                {
+                    LoadingScreenManager.ShowConnectionLoading();
                 }
             }
 
