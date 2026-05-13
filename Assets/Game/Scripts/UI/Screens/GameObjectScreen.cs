@@ -12,13 +12,15 @@ namespace Game.Scripts.UI.Helpers
 
             if (screen == null)
             {
+                return;
             }
+
             screen.SetActive(false);
         }
 
         public static void SetActiveScreen(bool isActive)
         {
-            if (_in == null)
+            if (_in == null || _in.screen == null)
             {
                 return;
             }

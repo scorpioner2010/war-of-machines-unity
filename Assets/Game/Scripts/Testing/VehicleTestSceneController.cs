@@ -7,6 +7,7 @@ using FishNet.Object;
 using FishNet.Transporting;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.UI.HUD;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -20,6 +21,8 @@ namespace Game.Scripts.Testing
         public Transform spawnPoint;
         public Camera testCamera;
         public NetworkManager networkManager;
+        public GameObject clientGameplayHudPrefab;
+        public bool replaceSceneGameplayHud = true;
         public bool autoStartHost = true;
         public ushort localTestPort = 7780;
         public bool autoSelectAvailablePort = true;
@@ -46,10 +49,12 @@ namespace Game.Scripts.Testing
         private bool _networkStartInProgress;
         private bool _testCursorMode = true;
         private Rect _testGuiArea;
+        private GameObject _spawnedGameplayHud;
 
         private void Awake()
         {
             ResolveSceneReferences();
+            EnsureGameplayHud();
             ResolveNetworkManager();
         }
 
@@ -392,6 +397,125 @@ namespace Game.Scripts.Testing
             }
 
             cameraSync.gameplayCamera = testCamera;
+        }
+
+        private void EnsureGameplayHud()
+        {
+            if (clientGameplayHudPrefab == null || _spawnedGameplayHud != null)
+            {
+                return;
+            }
+
+            Canvas canvas = FindGameplayCanvas();
+            if (canvas == null)
+            {
+                _status = "Scene setup error: gameplay Canvas is missing.";
+                return;
+            }
+
+            GameObject sceneHud = FindDirectChild(canvas.transform, "GameplayHUD");
+            GameObject sceneUiRoot = FindRootObjectInScene("UI");
+            int siblingIndex = sceneHud != null ? sceneHud.transform.GetSiblingIndex() : canvas.transform.childCount;
+
+            _spawnedGameplayHud = Instantiate(clientGameplayHudPrefab, canvas.transform, false);
+            _spawnedGameplayHud.name = clientGameplayHudPrefab.name;
+            _spawnedGameplayHud.SetActive(true);
+            _spawnedGameplayHud.transform.SetSiblingIndex(Mathf.Clamp(siblingIndex, 0, canvas.transform.childCount - 1));
+
+            ConfigureGameplayHud(_spawnedGameplayHud, canvas);
+
+            if (replaceSceneGameplayHud && sceneHud != null && sceneHud != _spawnedGameplayHud)
+            {
+                sceneHud.SetActive(false);
+                Destroy(sceneHud);
+            }
+
+            if (replaceSceneGameplayHud && sceneUiRoot != null && sceneUiRoot != _spawnedGameplayHud)
+            {
+                sceneUiRoot.SetActive(false);
+                Destroy(sceneUiRoot);
+            }
+        }
+
+        private Canvas FindGameplayCanvas()
+        {
+            Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+            Canvas fallback = null;
+
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas canvas = canvases[i];
+                if (canvas == null || canvas.gameObject.scene != gameObject.scene)
+                {
+                    continue;
+                }
+
+                if (fallback == null)
+                {
+                    fallback = canvas;
+                }
+
+                if (canvas.name == "Canvas")
+                {
+                    return canvas;
+                }
+            }
+
+            return fallback;
+        }
+
+        private GameObject FindRootObjectInScene(string objectName)
+        {
+            GameObject[] roots = gameObject.scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root != null && root.name == objectName)
+                {
+                    return root;
+                }
+            }
+
+            return null;
+        }
+
+        private static GameObject FindDirectChild(Transform parent, string childName)
+        {
+            if (parent == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child != null && child.name == childName)
+                {
+                    return child.gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        private static void ConfigureGameplayHud(GameObject hudRoot, Canvas canvas)
+        {
+            if (hudRoot == null || canvas == null)
+            {
+                return;
+            }
+
+            GunCrosshair[] crosshairs = hudRoot.GetComponentsInChildren<GunCrosshair>(true);
+            for (int i = 0; i < crosshairs.Length; i++)
+            {
+                GunCrosshair crosshair = crosshairs[i];
+                if (crosshair == null)
+                {
+                    continue;
+                }
+
+                crosshair.canvas = canvas;
+            }
         }
 
         private void ResolveNetworkManager()

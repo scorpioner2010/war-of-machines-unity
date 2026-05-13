@@ -65,6 +65,12 @@ namespace Game.Scripts.UI.Settings
 
         private void OnBackClicked()
         {
+            if (MenuManager.PreviousType == MenuType.GameplayPause)
+            {
+                MenuManager.OpenMenu(MenuType.GameplayPause);
+                return;
+            }
+
             MenuManager.OpenMenu(MenuType.MainMenu);
         }
         

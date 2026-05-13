@@ -17,7 +17,12 @@ namespace Game.Scripts.UI.Loading
 
     public class LoadingScreenManager : MonoBehaviour
     {
+        private const string DefaultConnectionStatus = "Trying to connect to battle server";
+
         private bool _isSubscribed;
+        private static string _connectionStatusText = DefaultConnectionStatus;
+        private static int _connectionLoadingVersion;
+
         public static LoadingScreenMode CurrentMode { get; private set; } = LoadingScreenMode.SceneLoading;
 
         private IEnumerator Start()
@@ -88,21 +93,69 @@ namespace Game.Scripts.UI.Loading
             MenuManager.OpenMenu(MenuType.LoadScreen);
         }
 
-        public static void ShowConnectionLoading()
+        public static void ShowConnectionLoading(string statusText = null)
         {
+            _connectionLoadingVersion++;
             CurrentMode = LoadingScreenMode.Connection;
+            SetConnectionStatus(string.IsNullOrWhiteSpace(statusText) ? DefaultConnectionStatus : statusText);
             StandardLoading.Show();
         }
 
-        public static void HideConnectionLoading()
+        public static void SetConnectionStatus(string statusText)
+        {
+            if (string.IsNullOrWhiteSpace(statusText))
+            {
+                _connectionStatusText = DefaultConnectionStatus;
+                return;
+            }
+
+            _connectionStatusText = statusText;
+        }
+
+        public static bool TryGetConnectionStatus(out string statusText)
+        {
+            statusText = _connectionStatusText;
+            return CurrentMode == LoadingScreenMode.Connection && !string.IsNullOrWhiteSpace(statusText);
+        }
+
+        public static void HideConnectionLoading(float delaySeconds = 0f)
         {
             if (CurrentMode != LoadingScreenMode.Connection)
             {
                 return;
             }
 
+            if (delaySeconds > 0f)
+            {
+                int version = ++_connectionLoadingVersion;
+                HideConnectionLoadingDelayed(version, delaySeconds).Forget();
+                return;
+            }
+
+            HideConnectionLoadingNow();
+        }
+
+        private static async UniTask HideConnectionLoadingDelayed(int version, float delaySeconds)
+        {
+            int delayMilliseconds = Mathf.RoundToInt(Mathf.Max(0f, delaySeconds) * 1000f);
+            if (delayMilliseconds > 0)
+            {
+                await UniTask.Delay(delayMilliseconds, ignoreTimeScale: true);
+            }
+
+            if (version != _connectionLoadingVersion || CurrentMode != LoadingScreenMode.Connection)
+            {
+                return;
+            }
+
+            HideConnectionLoadingNow();
+        }
+
+        private static void HideConnectionLoadingNow()
+        {
             StandardLoading.Hide();
             CurrentMode = LoadingScreenMode.SceneLoading;
+            _connectionStatusText = DefaultConnectionStatus;
         }
 
         public static void HideLoading()

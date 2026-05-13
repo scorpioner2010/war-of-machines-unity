@@ -12,5 +12,6 @@ namespace Game.Scripts.MenuController
         DevelopmentTree = 10,
         EndGame = 11,
         GameResult = 12,
+        GameplayPause = 13,
     }
 }

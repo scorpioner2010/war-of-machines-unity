@@ -1,5 +1,6 @@
-using System;
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.MenuController;
+using Game.Scripts.Networking.Lobby;
 using Game.Scripts.UI.Loading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,42 +10,105 @@ namespace Game.Scripts.UI.HUD
 {
     public class PauseMenu : MonoBehaviour
     {
-        [SerializeField] private GameObject pauseMenu;
+        [SerializeField] private Menu menu;
         [SerializeField] private Button resumeButton;
+        [SerializeField] private Button settingsButton;
         [SerializeField] private Button disconnectButton;
-        
-        public event Action OnDisconnectPressed;
-        
+
+        private bool _registered;
+
         public void Awake()
         {
-            resumeButton.onClick.AddListener(ResumeButtonPressed);
-            disconnectButton.onClick.AddListener(DisconnectButtonPressed);
+            if (resumeButton != null)
+            {
+                resumeButton.onClick.AddListener(ResumeButtonPressed);
+            }
+            if (settingsButton != null)
+            {
+                settingsButton.onClick.AddListener(SettingsButtonPressed);
+            }
+            if (disconnectButton != null)
+            {
+                disconnectButton.onClick.AddListener(DisconnectButtonPressed);
+            }
+        }
+
+        private void Start()
+        {
+            TryRegister();
+        }
+
+        private void OnDestroy()
+        {
+            if (resumeButton != null)
+            {
+                resumeButton.onClick.RemoveListener(ResumeButtonPressed);
+            }
+            if (settingsButton != null)
+            {
+                settingsButton.onClick.RemoveListener(SettingsButtonPressed);
+            }
+            if (disconnectButton != null)
+            {
+                disconnectButton.onClick.RemoveListener(DisconnectButtonPressed);
+            }
         }
         
         public void DisconnectButtonPressed()
-        {
-            OnDisconnectPressed?.Invoke();
-            pauseMenu.SetActive(false);
-            
-            LoadingScreenManager.ShowLoading();
-            LoadingScreenManager.HideLoading(); //hide with delay 1 second
-        }
-        
-        private void ResumeButtonPressed()
-        {
-            pauseMenu.SetActive(false);
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-        
-        public void OpenPause()
         {
             if (IsVehicleTestScene())
             {
                 return;
             }
 
-            pauseMenu.SetActive(true);
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+
+            if (GameplaySpawner.In != null)
+            {
+                GameplaySpawner.In.ReturnToMainMenu();
+            }
+            else
+            {
+                MenuManager.OpenMenu(MenuType.MainMenu);
+            }
+
+            LoadingScreenManager.ShowLoading();
+            LoadingScreenManager.HideLoading();
+        }
+        
+        private void ResumeButtonPressed()
+        {
+            if (IsVehicleTestScene())
+            {
+                return;
+            }
+
+            MenuManager.OpenMenu(MenuType.GameplayHUD);
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        private void SettingsButtonPressed()
+        {
+            if (IsVehicleTestScene())
+            {
+                return;
+            }
+
+            MenuManager.OpenMenu(MenuType.Settings);
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
+        
+        public void OpenPause()
+        {
+            if (IsVehicleTestScene() || !TryRegister())
+            {
+                return;
+            }
+
+            MenuManager.OpenMenu(MenuType.GameplayPause);
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
@@ -58,19 +122,40 @@ namespace Game.Scripts.UI.HUD
 
             if (InputManager.Escape)
             {
-                if (!pauseMenu.activeInHierarchy)
+                if (!TryRegister())
                 {
-                    pauseMenu.SetActive(true);
-                    Cursor.visible = true;
-                    Cursor.lockState = CursorLockMode.None;
+                    return;
                 }
-                else
+
+                if (MenuManager.CurrentType == MenuType.GameplayHUD)
                 {
-                    pauseMenu.SetActive(false);
-                    Cursor.visible = false;
-                    Cursor.lockState = CursorLockMode.Locked;
+                    OpenPause();
+                }
+                else if (MenuManager.CurrentType == MenuType.GameplayPause)
+                {
+                    ResumeButtonPressed();
+                }
+                else if (MenuManager.CurrentType == MenuType.Settings && MenuManager.PreviousType == MenuType.GameplayPause)
+                {
+                    OpenPause();
                 }
             }
+        }
+
+        private bool TryRegister()
+        {
+            if (_registered)
+            {
+                return true;
+            }
+
+            if (IsVehicleTestScene())
+            {
+                return false;
+            }
+
+            _registered = MenuManager.RegisterMenu(MenuType.GameplayPause, menu);
+            return _registered;
         }
 
         private static bool IsVehicleTestScene()

@@ -14,6 +14,7 @@ namespace Game.Scripts.MenuController
         public static Action<MenuType> OnDisable;
         public static Action<MenuType> OnEnable;
         public static MenuType CurrentType { get; private set; }
+        public static MenuType PreviousType { get; private set; }
         public static bool IsReady => _in != null && _in._map != null;
         
         private void Awake()
@@ -23,9 +24,26 @@ namespace Game.Scripts.MenuController
             
             foreach (MenuEntry e in menus)
             {
+                if (e.controller == null)
+                {
+                    continue;
+                }
+
                 _map[e.type] = e.controller;
                 e.controller.SetActive(false);
             }
+        }
+
+        public static bool RegisterMenu(MenuType type, Menu controller)
+        {
+            if (!IsReady || controller == null)
+            {
+                return false;
+            }
+
+            _in._map[type] = controller;
+            controller.SetActive(false);
+            return true;
         }
 
         public static void OpenMenu(MenuType type)
@@ -35,10 +53,20 @@ namespace Game.Scripts.MenuController
                 return;
             }
 
+            if (CurrentType != type)
+            {
+                PreviousType = CurrentType;
+            }
+
             CurrentType = type;
             OnEnable?.Invoke(type);
             foreach (KeyValuePair<MenuType, Menu> kv in _in._map)
             {
+                if (kv.Value == null)
+                {
+                    continue;
+                }
+
                 if (kv.Key == type)
                 {
                     kv.Value.Open();

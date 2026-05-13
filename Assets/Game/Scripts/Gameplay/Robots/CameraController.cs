@@ -31,10 +31,11 @@ namespace Game.Scripts.Gameplay.Robots
         private int _currentZoomStep = NormalZoomStep;
         private int _lastNonSniperZoomStep = NormalZoomStep;
         private bool _sniperUiApplied;
+        private bool _initialized;
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
         {
-            if (context.IsOwner)
+            if (context.IsOwner && !context.IsMenu)
             {
                 Init();
             }
@@ -60,31 +61,55 @@ namespace Game.Scripts.Gameplay.Robots
             _currentZoomStep = NormalZoomStep;
             _lastNonSniperZoomStep = NormalZoomStep;
             ApplyZoomStep(NormalZoomStep, true);
+            _initialized = true;
+            ApplyCameraTransform(true);
         }
 
         private void Update()
+        {
+            if (!_initialized || rig == null)
+            {
+                return;
+            }
+
+            bool inputBlocked = InputManager.IsGameplayInputBlockedByUi;
+            if (!inputBlocked)
+            {
+                UpdateAimInputs();
+
+                float mouseSensitivity = GetMouseSensitivity();
+                _X += Input.GetAxis("Mouse X") * xSpeed * mouseSensitivity * 0.02f;
+                _Y -= Input.GetAxis("Mouse Y") * ySpeed * mouseSensitivity * 0.02f;
+
+                _Y = Mathf.Clamp(_Y, -20, 80);
+            }
+
+            ApplyCameraTransform(false);
+            UpdateFov();
+        }
+
+        private void ApplyCameraTransform(bool immediate)
         {
             if (rig == null)
             {
                 return;
             }
 
-            UpdateAimInputs();
-
-            float mouseSensitivity = GetMouseSensitivity();
-            _X += Input.GetAxis("Mouse X") * xSpeed * mouseSensitivity * 0.02f;
-            _Y -= Input.GetAxis("Mouse Y") * ySpeed * mouseSensitivity * 0.02f;
-
-            _Y = Mathf.Clamp(_Y, -20, 80);
-
             Quaternion rotation = Quaternion.Euler(_Y, _X, 0);
-            float cameraT = 1f - Mathf.Exp(-Mathf.Max(0.01f, cameraLerpSpeed) * Time.deltaTime);
-            distance = Mathf.Lerp(distance, _targetDistance, cameraT);
+            if (immediate)
+            {
+                distance = _targetDistance;
+            }
+            else
+            {
+                float cameraT = 1f - Mathf.Exp(-Mathf.Max(0.01f, cameraLerpSpeed) * Time.deltaTime);
+                distance = Mathf.Lerp(distance, _targetDistance, cameraT);
+            }
+
             Vector3 position = rotation * new Vector3(0.0f, 0.0f, -distance) + rig.position;
 
             transform.rotation = rotation;
             transform.position = position;
-            UpdateFov();
         }
 
         private void UpdateAimInputs()
@@ -345,7 +370,7 @@ namespace Game.Scripts.Gameplay.Robots
                 crosshair.SetSniperMode(enabled);
             }
 
-            BlackScreen.SetActiveScreen(enabled);
+            SniperScopeOverlay.SetActiveScreen(enabled);
         }
     }
 }

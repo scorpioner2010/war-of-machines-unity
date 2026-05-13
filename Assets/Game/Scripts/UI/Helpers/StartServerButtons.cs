@@ -42,6 +42,7 @@ namespace Game.Scripts.UI.Helpers
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
         private LocalConnectionState _serverState = LocalConnectionState.Stopped;
         private bool _clientInfoRegistered;
+        private bool _clientStartRequested;
         private bool _isStoppingConnections;
         private Coroutine _serverHeartbeatCoroutine;
 
@@ -142,10 +143,16 @@ namespace Game.Scripts.UI.Helpers
                 if (_clientState == LocalConnectionState.Stopped)
                 {
                     OnConnectClicked();
+                    LoadingScreenManager.SetConnectionStatus("Connection attempt " + (attempts + 1) + " / " + maxAttempts);
                     attempts++;
                 }
 
                 yield return retryDelay;
+            }
+
+            if (_clientState != LocalConnectionState.Started)
+            {
+                LoadingScreenManager.SetConnectionStatus("Connection failed. Battle server is not responding");
             }
         }
 
@@ -166,11 +173,14 @@ namespace Game.Scripts.UI.Helpers
                 connect.interactable = false;
             }
 
-            LoadingScreenManager.ShowConnectionLoading();
+            _clientStartRequested = true;
+            LoadingScreenManager.ShowConnectionLoading("Trying to connect to battle server");
 
             if (networkManager.ClientManager.StartConnection() == false)
             {
-                LoadingScreenManager.HideConnectionLoading();
+                _clientStartRequested = false;
+                LoadingScreenManager.SetConnectionStatus("Connection failed. Client could not start");
+                LoadingScreenManager.HideConnectionLoading(2f);
 
                 if (connect != null)
                 {
@@ -229,8 +239,10 @@ namespace Game.Scripts.UI.Helpers
 
             if (_clientState == LocalConnectionState.Started)
             {
+                _clientStartRequested = false;
                 RegisterClientInfo();
-                LoadingScreenManager.HideConnectionLoading();
+                LoadingScreenManager.SetConnectionStatus("Connected to battle server");
+                LoadingScreenManager.HideConnectionLoading(0.6f);
             }
             else if (_clientState == LocalConnectionState.Stopped)
             {
@@ -241,11 +253,17 @@ namespace Game.Scripts.UI.Helpers
 
                 if (autoStartMode == NetworkAutoStartMode.Client && _isStoppingConnections == false)
                 {
-                    LoadingScreenManager.ShowConnectionLoading();
+                    _clientStartRequested = false;
+                    LoadingScreenManager.ShowConnectionLoading("Connection failed. Retrying");
                 }
                 else
                 {
-                    LoadingScreenManager.HideConnectionLoading();
+                    bool failedConnect = _clientStartRequested && !_isStoppingConnections;
+                    _clientStartRequested = false;
+                    LoadingScreenManager.SetConnectionStatus(failedConnect
+                        ? "Connection failed. Battle server is not responding"
+                        : "Connection stopped");
+                    LoadingScreenManager.HideConnectionLoading(failedConnect ? 2f : 1f);
                 }
             }
 

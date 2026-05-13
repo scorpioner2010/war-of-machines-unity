@@ -32,8 +32,14 @@ namespace Game.Scripts.UI.HUD
         private int _sniperHiddenRootChildCount = -1;
         private bool _sniperModeApplied;
 
+        private void Awake()
+        {
+            ResolveCanvasReference();
+        }
+
         private void OnEnable()
         {
+            ResolveCanvasReference();
             ClientGameplaySettings.ServerCrosshairChanged += OnServerCrosshairSettingChanged;
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
             ApplySniperPresentation(false);
@@ -336,7 +342,17 @@ namespace Game.Scripts.UI.HUD
                 return true;
             }
 
-            return child.name == "BlackScreen";
+            return child.name == "SniperScopeOverlay";
+        }
+
+        private void ResolveCanvasReference()
+        {
+            if (canvas != null)
+            {
+                return;
+            }
+
+            canvas = GetComponentInParent<Canvas>();
         }
 
         private static bool IsSameOrParentOf(Transform possibleParent, Transform target)

@@ -1,6 +1,7 @@
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Game.Scripts.MenuController;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -56,6 +57,25 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         public bool IsControlsBlocked => _controlsBlocked;
+        public static bool IsGameplayInputBlockedByUi
+        {
+            get
+            {
+                if (!MenuManager.IsReady)
+                {
+                    return false;
+                }
+
+                if (MenuManager.CurrentType == MenuType.GameplayPause || MenuManager.CurrentType == MenuType.EndGame)
+                {
+                    return true;
+                }
+
+                return MenuManager.CurrentType == MenuType.Settings && MenuManager.PreviousType == MenuType.GameplayPause;
+            }
+        }
+
+        private bool IsLocalInputBlocked => _controlsBlocked || IsGameplayInputBlockedByUi;
         private bool HasLocalInput => IsOwner;
 
         public Vector2 Move
@@ -68,7 +88,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (HasLocalInput)
                 {
-                    return _moveLocal;
+                    return IsLocalInputBlocked ? Vector2.zero : _moveLocal;
                 }
                 return Vector2.zero;
             }
@@ -84,7 +104,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (HasLocalInput)
                 {
-                    return _shootLocal;
+                    return !IsLocalInputBlocked && _shootLocal;
                 }
                 return false;
             }
@@ -100,7 +120,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (HasLocalInput)
                 {
-                    return _actionLocal;
+                    return !IsLocalInputBlocked && _actionLocal;
                 }
                 return false;
             }
@@ -116,7 +136,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (HasLocalInput)
                 {
-                    return _moveLocal;
+                    return IsLocalInputBlocked ? Vector2.zero : _moveLocal;
                 }
                 return _animMove.Value;
             }
@@ -132,7 +152,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (HasLocalInput)
                 {
-                    return _shootLocal;
+                    return !IsLocalInputBlocked && _shootLocal;
                 }
                 return _animShoot.Value;
             }
@@ -148,7 +168,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (HasLocalInput)
                 {
-                    return _actionLocal;
+                    return !IsLocalInputBlocked && _actionLocal;
                 }
                 return _animAction.Value;
             }
@@ -163,7 +183,8 @@ namespace Game.Scripts.Gameplay.Robots
 
             float x = 0f;
             float y = 0f;
-            if (!_controlsBlocked)
+            bool blocked = IsLocalInputBlocked;
+            if (!blocked)
             {
                 if (Input.GetKey(KeyCode.A))
                 {
@@ -184,8 +205,8 @@ namespace Game.Scripts.Gameplay.Robots
                 }
             }
 
-            bool newShoot = !_controlsBlocked && Input.GetMouseButton(0);
-            bool newAction = !_controlsBlocked && Input.GetKey(KeyCode.Space);
+            bool newShoot = !blocked && Input.GetMouseButton(0);
+            bool newAction = !blocked && Input.GetKey(KeyCode.Space);
 
             _moveLocal = new Vector2(x, y);
             _shootLocal = newShoot;
@@ -195,7 +216,7 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 aimPoint;
             Vector3 aimForward;
 
-            if (_controlsBlocked)
+            if (blocked)
             {
                 yawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
                 pitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);

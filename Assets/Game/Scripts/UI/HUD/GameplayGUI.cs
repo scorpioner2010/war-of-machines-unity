@@ -1,7 +1,6 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Game.Scripts.UI.HUD
 {
@@ -10,21 +9,14 @@ namespace Game.Scripts.UI.HUD
         public static GameplayGUI In;
         public Transform ShotResultTextTransform => isPenetrationText != null ? isPenetrationText.transform : null;
         
-        [SerializeField] private Button buttonPause;
         [SerializeField] private TMP_Text isPenetrationText;
         [SerializeField] private float shotResultVisibleTime = 4f;
-        
-        public PauseMenu pauseMenu;
 
         private Coroutine _shotResultRoutine;
 
         public void Awake()
         {
             In = this;
-            if (buttonPause != null && pauseMenu != null)
-            {
-                buttonPause.onClick.AddListener(pauseMenu.OpenPause);
-            }
 
             if (isPenetrationText != null)
             {
@@ -62,10 +54,7 @@ namespace Game.Scripts.UI.HUD
 
         public void OnDestroy()
         {
-            if (buttonPause != null)
-            {
-                buttonPause.onClick.RemoveAllListeners();
-            }
+            In = null;
         }
     }
 }

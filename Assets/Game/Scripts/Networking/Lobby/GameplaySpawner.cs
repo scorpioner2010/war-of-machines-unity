@@ -8,7 +8,6 @@ using FishNet.Transporting;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
-using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Lobby;
 using Game.Scripts.UI.MainMenu;
 using UnityEngine;
@@ -130,11 +129,6 @@ namespace Game.Scripts.Networking.Lobby
             UESceneManager.sceneLoaded += HandleClientSceneLoaded;
             SceneManager.OnLoadEnd += HandleClientLoadEnd;
             SceneManager.OnUnloadEnd += SceneManagerOnUnloadEnd;
-
-            if (GameplayGUI.In != null && GameplayGUI.In.pauseMenu != null)
-            {
-                GameplayGUI.In.pauseMenu.OnDisconnectPressed += ReturnToMainMenu;
-            }
         }
 
         public override void OnStopClient()
@@ -143,11 +137,6 @@ namespace Game.Scripts.Networking.Lobby
             UESceneManager.sceneLoaded -= HandleClientSceneLoaded;
             SceneManager.OnLoadEnd -= HandleClientLoadEnd;
             SceneManager.OnUnloadEnd -= SceneManagerOnUnloadEnd;
-
-            if (GameplayGUI.In != null && GameplayGUI.In.pauseMenu != null)
-            {
-                GameplayGUI.In.pauseMenu.OnDisconnectPressed -= ReturnToMainMenu;
-            }
         }
 
         private void HandleClientSceneLoaded(UEScene scene, LoadSceneMode mode)
@@ -190,6 +179,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             MenuManager.CloseMenu(MenuType.GameplayHUD);
+            MenuManager.CloseMenu(MenuType.GameplayPause);
             
             RequestPlayerDisconnectServerRpc(ClientManager.Connection.ClientId);
             EnsureMainMenuAfterDisconnect().Forget();

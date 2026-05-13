@@ -171,8 +171,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: beec20bd74e97c74d863024397cd6e48, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &20836462
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -269,7 +269,7 @@ GameObject:
   - component: {fileID: 27546798}
   - component: {fileID: 27546801}
   m_Layer: 0
-  m_Name: ButtonPause
+  m_Name: Settings
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -288,11 +288,11 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 155679347}
-  m_Father: {fileID: 581849635}
+  m_Father: {fileID: 1422389843}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 104.8999, y: -57.30005}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: -75}
   m_SizeDelta: {x: 160, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &27546798
@@ -2189,7 +2189,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Pause
+  m_text: Settings
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dd883a248fced426693e05d482ebc9fc, type: 2}
   m_sharedMaterial: {fileID: -4171563015097924827, guid: dd883a248fced426693e05d482ebc9fc,
@@ -5707,13 +5707,11 @@ RectTransform:
   - {fileID: 780847563}
   - {fileID: 364398306}
   - {fileID: 772951569}
-  - {fileID: 27546797}
   - {fileID: 668865237}
   - {fileID: 2019792787}
   - {fileID: 618860851}
   - {fileID: 9123457002}
   - {fileID: 1757963469}
-  - {fileID: 1422389843}
   - {fileID: 414166095}
   - {fileID: 774671602}
   - {fileID: 2102000300}
@@ -5761,7 +5759,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -156, y: -75}
+  m_AnchoredPosition: {x: -220, y: -75}
   m_SizeDelta: {x: 160, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &586059186
@@ -12502,10 +12500,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 543b7e80e90045329b03a2e01bcd51e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buttonPause: {fileID: 27546798}
   isPenetrationText: {fileID: 2102000301}
   shotResultVisibleTime: 4
-  pauseMenu: {fileID: 1555773423}
 --- !u!1 &1195172438
 GameObject:
   m_ObjectHideFlags: 0
@@ -12655,13 +12651,14 @@ GameObject:
   - component: {fileID: 1198449474}
   - component: {fileID: 1198449477}
   - component: {fileID: 1198449476}
+  - component: {fileID: 1198449478}
   m_Layer: 5
-  m_Name: Screen
+  m_Name: SniperScopeMask
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1198449474
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12719,6 +12716,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1198449473}
   m_CullTransparentMesh: 1
+--- !u!225 &1198449478
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198449473}
+  m_Enabled: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1200711067
 GameObject:
   m_ObjectHideFlags: 0
@@ -13317,7 +13326,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 155.99998, y: -74.99999}
+  m_AnchoredPosition: {x: 220, y: -75}
   m_SizeDelta: {x: 160, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1267504234
@@ -14598,12 +14607,12 @@ GameObject:
   - component: {fileID: 1331568747}
   - component: {fileID: 1331568748}
   m_Layer: 0
-  m_Name: BlackScreen
+  m_Name: SniperScopeOverlayController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1331568747
 Transform:
   m_ObjectHideFlags: 0
@@ -14764,7 +14773,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a4e36f7acd30b44039c480e682ea908c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 4e73c03ddd466b94ea4e73153a1e327c, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -15206,6 +15215,7 @@ GameObject:
   - component: {fileID: 1422389843}
   - component: {fileID: 1422389845}
   - component: {fileID: 1422389844}
+  - component: {fileID: 1422389846}
   m_Layer: 0
   m_Name: PauseMenu
   m_TagString: Untagged
@@ -15228,8 +15238,9 @@ RectTransform:
   - {fileID: 2068256391}
   - {fileID: 1908206112}
   - {fileID: 586059185}
+  - {fileID: 27546797}
   - {fileID: 1267504233}
-  m_Father: {fileID: 581849635}
+  m_Father: {fileID: 3576136780716216545}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -15274,6 +15285,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1422389842}
   m_CullTransparentMesh: 1
+--- !u!225 &1422389846
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1422389842}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1427442588
 GameObject:
   m_ObjectHideFlags: 0
@@ -16699,8 +16722,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1555773422}
   - component: {fileID: 1555773423}
+  - component: {fileID: 1555773424}
   m_Layer: 0
-  m_Name: PauseMenu
+  m_Name: GameplayPauseMenu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16730,11 +16754,29 @@ MonoBehaviour:
   m_GameObject: {fileID: 1555773421}
   m_Enabled: 1
   m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9274a647753e0243a879cef3c209868, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  menuRect: {fileID: 1422389843}
+  animationPanel: {fileID: 1422389843}
+  canvasGroup: {fileID: 1422389846}
+  hiddenPosition: {x: 0, y: -800}
+  shownPosition: {x: 0, y: 0}
+--- !u!114 &1555773424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1555773421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 373bc4daf96963941953840b47cba50c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pauseMenu: {fileID: 1422389842}
+  menu: {fileID: 1555773423}
   resumeButton: {fileID: 586059186}
+  settingsButton: {fileID: 27546798}
   disconnectButton: {fileID: 1267504234}
 --- !u!1 &1556684063
 GameObject:
@@ -20740,7 +20782,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Do you want to return to the main menu?
+  m_text: Game Menu
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dd883a248fced426693e05d482ebc9fc, type: 2}
   m_sharedMaterial: {fileID: -4171563015097924827, guid: dd883a248fced426693e05d482ebc9fc,
@@ -22054,7 +22096,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2019792787}
   m_Layer: 5
-  m_Name: BlackScreen
+  m_Name: SniperScopeOverlay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -24631,6 +24673,7 @@ RectTransform:
   - {fileID: 663677753}
   - {fileID: 1841091376}
   - {fileID: 1968510406}
+  - {fileID: 1422389843}
   - {fileID: 2757690526009467585}
   - {fileID: 420603928}
   - {fileID: 1725536999}

@@ -29,6 +29,11 @@ namespace Game.Scripts.UI.Loading
             {
                 networkManager = FindFirstObjectByType<NetworkManager>();
             }
+
+            if (statusText == null)
+            {
+                statusText = GetComponentInChildren<TMP_Text>(true);
+            }
         }
 
         private void OnEnable()
@@ -87,6 +92,12 @@ namespace Game.Scripts.UI.Loading
             if (LoadingScreenManager.CurrentMode == LoadingScreenMode.SceneLoading)
             {
                 statusText.text = sceneLoadingLabel + dots;
+                return;
+            }
+
+            if (LoadingScreenManager.TryGetConnectionStatus(out string explicitStatus))
+            {
+                statusText.text = explicitStatus + dots;
                 return;
             }
 
