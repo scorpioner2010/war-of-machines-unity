@@ -2,6 +2,7 @@ using UnityEngine;
 using Game.Scripts.Core.Services;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Helpers;
+using Game.Scripts.UI.Settings;
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -70,8 +71,9 @@ namespace Game.Scripts.Gameplay.Robots
 
             UpdateAimInputs();
 
-            _X += Input.GetAxis("Mouse X") * xSpeed * 0.02f;
-            _Y -= Input.GetAxis("Mouse Y") * ySpeed * 0.02f;
+            float mouseSensitivity = GetMouseSensitivity();
+            _X += Input.GetAxis("Mouse X") * xSpeed * mouseSensitivity * 0.02f;
+            _Y -= Input.GetAxis("Mouse Y") * ySpeed * mouseSensitivity * 0.02f;
 
             _Y = Mathf.Clamp(_Y, -20, 80);
 
@@ -101,6 +103,16 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 ZoomOut();
             }
+        }
+
+        private float GetMouseSensitivity()
+        {
+            if (IsSniperStep(_currentZoomStep))
+            {
+                return ClientGameplaySettings.SniperMouseSensitivity;
+            }
+
+            return ClientGameplaySettings.GameplayMouseSensitivity;
         }
 
         private int GetScrollDirection()

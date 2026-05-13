@@ -17,6 +17,10 @@ namespace Game.Scripts.UI.Settings
             _model = model;
             _model.Load();
             ClientGameplaySettings.SetServerCrosshairEnabled(_model.ServerCrosshairEnabled, false);
+            ClientGameplaySettings.SetMouseSensitivities(
+                _model.GameplayMouseSensitivity,
+                _model.SniperMouseSensitivity,
+                true);
         }
         
         public void SetPostProcessingVolume(Volume volume)
@@ -71,7 +75,19 @@ namespace Game.Scripts.UI.Settings
 
         public void HandleMouseSensitivityChanged(float value)
         {
-            _model.MouseSensitivity = value;
+            HandleGameplayMouseSensitivityChanged(value);
+        }
+
+        public void HandleGameplayMouseSensitivityChanged(float value)
+        {
+            _model.GameplayMouseSensitivity = ClientGameplaySettings.ClampMouseSensitivity(value);
+            ClientGameplaySettings.SetGameplayMouseSensitivity(_model.GameplayMouseSensitivity);
+        }
+
+        public void HandleSniperMouseSensitivityChanged(float value)
+        {
+            _model.SniperMouseSensitivity = ClientGameplaySettings.ClampMouseSensitivity(value);
+            ClientGameplaySettings.SetSniperMouseSensitivity(_model.SniperMouseSensitivity);
         }
 
         public void HandleInvertXAxisChanged(bool isOn)

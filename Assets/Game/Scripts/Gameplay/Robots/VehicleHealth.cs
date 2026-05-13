@@ -112,12 +112,6 @@ namespace Game.Scripts.Gameplay.Robots
             SetCollidersEnabled(false);
             OnServerDeath?.Invoke(this);
             DiedObserversRpc();
-            TurnOffObject();
-        }
-
-        private void TurnOffObject()
-        {
-            gameObject.SetActive(false);
         }
         
         private void SetCollidersEnabled(bool v)

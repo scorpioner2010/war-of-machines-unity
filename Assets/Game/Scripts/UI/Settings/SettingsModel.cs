@@ -18,6 +18,8 @@ namespace Game.Scripts.UI.Settings
         public float SfxVolume = 1.0f;
 
         public float MouseSensitivity = 1.0f;
+        public float GameplayMouseSensitivity = ClientGameplaySettings.DefaultGameplayMouseSensitivity;
+        public float SniperMouseSensitivity = ClientGameplaySettings.DefaultSniperMouseSensitivity;
         public bool InvertXAxis = false;
         public bool InvertYAxis = false;
         public string WalkKey = "WASD";
@@ -45,6 +47,8 @@ namespace Game.Scripts.UI.Settings
             else
             {
             }
+
+            ValidateControls();
         }
         
         public void Save()
@@ -70,7 +74,18 @@ namespace Game.Scripts.UI.Settings
 
         public void SaveControls()
         {
+            ValidateControls();
             Save();
+        }
+
+        private void ValidateControls()
+        {
+            GameplayMouseSensitivity = ClientGameplaySettings.ClampMouseSensitivity(
+                GameplayMouseSensitivity,
+                ClientGameplaySettings.DefaultGameplayMouseSensitivity);
+            SniperMouseSensitivity = ClientGameplaySettings.ClampMouseSensitivity(
+                SniperMouseSensitivity,
+                ClientGameplaySettings.DefaultSniperMouseSensitivity);
         }
     }
 }
