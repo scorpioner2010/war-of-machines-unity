@@ -713,6 +713,12 @@ MonoBehaviour:
   muzzleTransform: {fileID: 1529863960069715363}
   projectileSpeed: 70
   projectileLifeTime: 8
+  maxShotDistance: 2000
+  projectileGravity: 6
+  projectileCollisionRadius: 0.05
+  useBallisticCompensation: 1
+  preferHighArc: 0
+  debugBallisticTrajectory: 0
   projectileUseArc: 1
   projectileArcScale: 0.02
   projectileArcMin: 0

@@ -9,6 +9,7 @@ namespace Toras.Editor
     {
         private bool _showRobotMovement = true;
         private bool _showGunDispersion = true;
+        private bool _showProjectileBallistics = true;
 
         public override void OnInspectorGUI()
         {
@@ -21,6 +22,8 @@ namespace Toras.Editor
 
             EditorGUILayout.Space(4f);
             DrawMatchmaking();
+            EditorGUILayout.Space(6f);
+            DrawProjectileBallistics();
             EditorGUILayout.Space(6f);
             DrawRobotMovement();
             EditorGUILayout.Space(6f);
@@ -161,6 +164,49 @@ namespace Toras.Editor
             }
         }
 
+        private void DrawProjectileBallistics()
+        {
+            SerializedProperty projectileBallistics = serializedObject.FindProperty("projectileBallistics");
+            _showProjectileBallistics = EditorGUILayout.Foldout(
+                _showProjectileBallistics,
+                new GUIContent("Projectile Ballistics", "Server authoritative projectile arc settings. Clients receive these values for prediction."),
+                true
+            );
+
+            if (!_showProjectileBallistics)
+            {
+                return;
+            }
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.LabelField("Trajectory", EditorStyles.miniBoldLabel);
+                DrawChildProperty(
+                    projectileBallistics,
+                    "projectileGravity",
+                    "Downward acceleration used by projectile simulation. Higher values make a bigger arc; 0 disables drop."
+                );
+                DrawChildProperty(
+                    projectileBallistics,
+                    "useBallisticCompensation",
+                    "Aims the initial velocity upward so the ballistic path passes near the aim point at the configured speed."
+                );
+                DrawChildProperty(
+                    projectileBallistics,
+                    "preferHighArc",
+                    "Uses the high-angle ballistic solution when available. Keep this off for regular tank shells."
+                );
+
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Debug", EditorStyles.miniBoldLabel);
+                DrawChildProperty(
+                    projectileBallistics,
+                    "debugBallisticTrajectory",
+                    "Enables optional trajectory, aim point, gravity, and sweep debug visualization."
+                );
+            }
+        }
+
         private void DrawGunDispersion()
         {
             SerializedProperty gunDispersion = serializedObject.FindProperty("gunDispersion");
@@ -252,6 +298,11 @@ namespace Toras.Editor
 
         private static void DrawChildProperty(SerializedProperty parent, string relativePropertyName, string tooltip)
         {
+            if (parent == null)
+            {
+                return;
+            }
+
             SerializedProperty property = parent.FindPropertyRelative(relativePropertyName);
             DrawSerializedProperty(property, tooltip);
         }

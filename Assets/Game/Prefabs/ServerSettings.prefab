@@ -77,3 +77,8 @@ MonoBehaviour:
     uiPixelsPerDegree: 42
     serverSyncInterval: 0.05
     serverSyncDeadZoneDeg: 0.03
+  projectileBallistics:
+    projectileGravity: 9
+    useBallisticCompensation: 1
+    preferHighArc: 0
+    debugBallisticTrajectory: 0

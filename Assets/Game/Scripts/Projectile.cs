@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Gameplay.Robots;
 using UnityEngine;
 
 public interface IDamageable
@@ -8,70 +9,69 @@ public interface IDamageable
 
 public class Projectile : MonoBehaviour
 {
-    private const float FlightLifetimePadding = 0.25f;
-    private const float MaxFlightLifetime = 5f;
-    private const int FlightLifetimeSamples = 32;
     private const int CollisionBufferSize = 128;
-    private const float CollisionCastPadding = 0.15f;
+    private const int TravelDistanceSamples = 12;
+    private const float CollisionCastPadding = 0.01f;
+    private const float MinLifetime = 0.01f;
 
     private static readonly RaycastHit[] CollisionBuffer = new RaycastHit[CollisionBufferSize];
 
     public LayerMask hitMask = ~0;
     public float hitRadius = 0.05f;
     public int damage = 40;
+    public GameObject explosionFX;
 
-    private float _initialSpeed;
-    private float _lifeTime;
-    private float _arriveThreshold = 0.1f;
+    [Header("Debug")]
+    public bool debugDrawTrajectory;
+    public bool debugDrawSweepSegment;
+    public bool debugDrawCollisionRadius;
+    public bool debugDrawHitPoint;
+    public bool debugDrawVelocityDirection;
+    public bool debugBallisticTrajectory;
+    [Min(0.1f)] public float debugTrajectorySeconds = 3f;
+    [Range(4, 96)] public int debugTrajectorySteps = 32;
+    [Min(0f)] public float debugDrawDuration = 0.05f;
+    [Min(0f)] public float debugHitDrawDuration = 2f;
 
-    private bool _useArc;
-    private float _arcScale;
-    private float _arcMin;
-    private float _arcMax;
-    private float _arcExponent;
-    private AnimationCurve _arcCurve;
-    private bool _arcAlongWorldUp;
+    private Vector3 _origin;
+    private Vector3 _initialVelocity;
+    private Vector3 _gravity;
+    private Vector3 _previousPosition;
+    private Vector3 _currentVelocity;
+    private Vector3 _lastHitPoint;
+    private Vector3 _lastHitNormal = Vector3.up;
+    private Vector3 _debugAimPoint;
+    private Vector3 _debugInitialDirection;
 
-    private bool _useSlowdown;
-    private float _slowdownAmount;
-    private float _slowdownExponent;
-    private AnimationCurve _slowdownCurve;
-    private float _minSpeedMultiplier;
+    private float _elapsedTime;
+    private float _maxLifetime;
+    private float _maxDistance;
+    private float _travelledDistance;
+    private float _collisionRadius;
+    private float _pendingAuthoritativeCatchupTime;
+    private float _debugGravityValue;
+    private float _debugEstimatedDrop;
 
-    private Vector3 _startPoint;
-    private Vector3 _originalStartPoint;
-    private Vector3 _targetPoint;
-    private float _spawnTime;
-    private float _totalDistance;
-    private float _distanceTraveled;
     private bool _initialized;
-
-    private float _arcHeightComputed;
-    private Vector3 _arcUp;
-
-    private float _passedTimeCatchup;
-
-    private Vector3 _prevPos;
     private bool _authoritative;
-    private bool _hasResolvedTarget;
-    private bool _explodeAtResolvedTarget;
-    private Vector3 _resolvedImpactNormal = Vector3.up;
-    private Action _onAuthoritativeResolvedTarget;
-    private bool _resolvedTargetHandled;
     private bool _visualsEnabled = true;
     private bool _liveCollisionEnabled;
+    private bool _resolvedTargetHandled;
+    private bool _hasLastHitPoint;
+    private bool _hasDebugAimPoint;
+    private bool _debugUsedBallisticCompensation;
+    private bool _debugBallisticSolutionFound;
+
     private Transform _ignoredRoot;
     private Action<RaycastHit, Vector3> _onAuthoritativeLiveHit;
     private Action _onAuthoritativeLiveMiss;
-    private float _missContinuationMaxDistance;
-    private bool _missContinuationUsed;
-    private Vector3 _lastTravelDirection;
-    private float _continuationSpeedMultiplier = -1f;
-    private bool _useMissContinuationArc;
-    private Vector3 _missContinuationDirection;
-    private Vector3 _missContinuationArcCoefficient;
 
-    public GameObject explosionFX;
+    public Vector3 Origin => _origin;
+    public Vector3 InitialVelocity => _initialVelocity;
+    public Vector3 Gravity => _gravity;
+    public float ElapsedTime => _elapsedTime;
+    public float TravelledDistance => _travelledDistance;
+    public bool IsAuthoritative => _authoritative;
 
     public void SetVisualsEnabled(bool enabled)
     {
@@ -107,66 +107,83 @@ public class Projectile : MonoBehaviour
     }
 
     public void Init(
-        Vector3 targetPoint,
-        float initialSpeed,
-        float lifeTime,
-        bool useArc,
-        float arcScale,
-        float arcMin,
-        float arcMax,
-        float arcExponent,
-        AnimationCurve arcCurve,
-        bool arcAlongWorldUp,
-        bool useSlowdown,
-        float slowdownAmount,
-        float slowdownExponent,
-        AnimationCurve slowdownCurve,
-        float minSpeedMultiplier = 0.05f,
+        Vector3 origin,
+        Vector3 initialVelocity,
+        Vector3 gravity,
+        float maxLifetime,
+        float maxDistance,
+        float collisionRadius,
         float passedTime = 0f,
-        bool authoritative = false
-    )
+        bool authoritative = false)
     {
-        _startPoint = transform.position;
-        _originalStartPoint = _startPoint;
-        _targetPoint = targetPoint;
+        _origin = BallisticProjectileMath.IsFinite(origin) ? origin : transform.position;
+        _initialVelocity = BallisticProjectileMath.IsFinite(initialVelocity) ? initialVelocity : Vector3.zero;
+        _gravity = BallisticProjectileMath.IsFinite(gravity) ? gravity : Vector3.zero;
+        _maxLifetime = Mathf.Max(MinLifetime, maxLifetime);
+        _maxDistance = Mathf.Max(0f, maxDistance);
+        _collisionRadius = Mathf.Max(0f, collisionRadius);
+        hitRadius = _collisionRadius;
 
-        _initialSpeed = Mathf.Max(0.0001f, initialSpeed);
-        _lifeTime = ClampLifetime(lifeTime);
-        _spawnTime = Time.time;
+        _authoritative = authoritative;
+        _liveCollisionEnabled = false;
+        _resolvedTargetHandled = false;
+        _hasLastHitPoint = false;
 
-        _useArc = useArc;
-        _arcScale = arcScale;
-        _arcMin = arcMin;
-        _arcMax = arcMax;
-        _arcExponent = Mathf.Max(0.0001f, arcExponent);
-        _arcCurve = (arcCurve != null && arcCurve.length > 0) ? arcCurve : DefaultArcCurve();
-        _arcAlongWorldUp = arcAlongWorldUp;
+        _elapsedTime = authoritative ? 0f : Mathf.Max(0f, passedTime);
+        _pendingAuthoritativeCatchupTime = authoritative ? Mathf.Max(0f, passedTime) : 0f;
+        _travelledDistance = EstimateTravelledDistance(0f, _elapsedTime);
 
-        _useSlowdown = useSlowdown;
-        _slowdownAmount = Mathf.Clamp01(slowdownAmount);
-        _slowdownExponent = Mathf.Max(0.0001f, slowdownExponent);
-        _slowdownCurve = (slowdownCurve != null && slowdownCurve.length > 0) ? slowdownCurve : DefaultSlowdownCurve();
-        _minSpeedMultiplier = Mathf.Clamp(minSpeedMultiplier, 0.01f, 1f);
+        Vector3 currentPosition = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, _elapsedTime);
+        transform.position = currentPosition;
+        _previousPosition = currentPosition;
+        _currentVelocity = BallisticProjectileMath.GetVelocity(_initialVelocity, _gravity, _elapsedTime);
+        ApplyRotation(_currentVelocity);
 
-        _distanceTraveled = 0f;
-        _continuationSpeedMultiplier = -1f;
-        _useMissContinuationArc = false;
-        RecomputeTrajectory();
-        ExtendLifetimeToReachTarget();
-
-        _passedTimeCatchup = Mathf.Max(0f, passedTime);
         _initialized = true;
         ConfigureScriptedPhysics();
+    }
 
-        Vector3 toTarget = (_targetPoint - _startPoint);
-        if (toTarget.sqrMagnitude > 1e-6f)
+    public void ReconfigureBallistic(Vector3 initialVelocity, Vector3 gravity)
+    {
+        if (!BallisticProjectileMath.IsFinite(initialVelocity) || !BallisticProjectileMath.IsFinite(gravity))
         {
-            transform.rotation = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
+            return;
         }
 
-        _prevPos = transform.position;
-        _authoritative = authoritative;
-        _lastTravelDirection = toTarget.sqrMagnitude > 1e-6f ? toTarget.normalized : transform.forward;
+        _initialVelocity = initialVelocity;
+        _gravity = gravity;
+
+        Vector3 correctedPosition = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, _elapsedTime);
+        _currentVelocity = BallisticProjectileMath.GetVelocity(_initialVelocity, _gravity, _elapsedTime);
+        _previousPosition = correctedPosition;
+        transform.position = correctedPosition;
+        ApplyRotation(_currentVelocity);
+    }
+
+    public void ConfigureBallisticDebug(
+        Vector3 aimPoint,
+        Vector3 initialVelocity,
+        Vector3 gravity,
+        float estimatedDirectDrop,
+        bool usedBallisticCompensation,
+        bool ballisticSolutionFound,
+        bool enableDebug)
+    {
+        _hasDebugAimPoint = BallisticProjectileMath.IsFinite(aimPoint);
+        _debugAimPoint = aimPoint;
+        _debugInitialDirection = initialVelocity.sqrMagnitude > 0.000001f
+            ? initialVelocity.normalized
+            : Vector3.forward;
+        _debugGravityValue = gravity.magnitude;
+        _debugEstimatedDrop = Mathf.Max(0f, estimatedDirectDrop);
+        _debugUsedBallisticCompensation = usedBallisticCompensation;
+        _debugBallisticSolutionFound = ballisticSolutionFound;
+
+        if (enableDebug)
+        {
+            debugBallisticTrajectory = true;
+            debugDrawVelocityDirection = true;
+        }
     }
 
     private void ConfigureScriptedPhysics()
@@ -193,13 +210,17 @@ public class Projectile : MonoBehaviour
 
     public void ConfigureResolvedImpact(Vector3 targetPoint, Vector3 impactNormal, Action onAuthoritativeImpact = null)
     {
-        ConfigureResolvedTarget(targetPoint, impactNormal, true, onAuthoritativeImpact);
     }
 
     public void ResolveImpactNow(Vector3 impactPoint, Vector3 impactNormal)
     {
+        _hasLastHitPoint = true;
+        _lastHitPoint = impactPoint;
+        _lastHitNormal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal.normalized : Vector3.up;
+
         transform.position = impactPoint;
-        Explode(impactPoint, impactNormal);
+        DrawDebugHit(impactPoint, _lastHitNormal);
+        Explode(impactPoint, _lastHitNormal);
         Destroy(gameObject);
     }
 
@@ -210,29 +231,25 @@ public class Projectile : MonoBehaviour
 
     public void ConfigureResolvedMiss(Vector3 targetPoint, float missContinuationMaxDistance, Action onAuthoritativeMiss = null)
     {
-        ConfigureResolvedTarget(targetPoint, Vector3.up, false, onAuthoritativeMiss);
         SetMissContinuationMaxDistance(missContinuationMaxDistance);
+
+        if (onAuthoritativeMiss != null)
+        {
+            _onAuthoritativeLiveMiss = onAuthoritativeMiss;
+        }
     }
 
     public void SetMissContinuationMaxDistance(float maxDistance)
     {
-        _missContinuationMaxDistance = Mathf.Max(0f, maxDistance);
+        SetMaxDistance(maxDistance);
     }
 
-    private void ConfigureResolvedTarget(Vector3 targetPoint, Vector3 impactNormal, bool explodeAtTarget, Action onAuthoritativeArrival)
+    public void SetMaxDistance(float maxDistance)
     {
-        _targetPoint = targetPoint;
-        _resolvedImpactNormal = impactNormal.sqrMagnitude > 1e-6f ? impactNormal.normalized : Vector3.up;
-        _hasResolvedTarget = true;
-        _explodeAtResolvedTarget = explodeAtTarget;
-        _resolvedTargetHandled = false;
-        _liveCollisionEnabled = false;
-        _useMissContinuationArc = false;
-
-        _onAuthoritativeResolvedTarget = onAuthoritativeArrival;
-
-        RecomputeTrajectory();
-        ExtendLifetimeToReachTarget();
+        if (maxDistance > 0f)
+        {
+            _maxDistance = Mathf.Max(_maxDistance, maxDistance);
+        }
     }
 
     public void ConfigureLiveCollision(
@@ -241,127 +258,12 @@ public class Projectile : MonoBehaviour
         Action onAuthoritativeMiss,
         float missContinuationMaxDistance = 0f)
     {
-        _hasResolvedTarget = false;
-        _explodeAtResolvedTarget = false;
-        _resolvedTargetHandled = false;
-        _liveCollisionEnabled = true;
-        _useMissContinuationArc = false;
         _ignoredRoot = ignoredRoot;
         _onAuthoritativeLiveHit = onAuthoritativeHit;
         _onAuthoritativeLiveMiss = onAuthoritativeMiss;
+        _liveCollisionEnabled = _authoritative;
+        _resolvedTargetHandled = false;
         SetMissContinuationMaxDistance(missContinuationMaxDistance);
-    }
-
-    private void RecomputeTrajectory()
-    {
-        _totalDistance = Vector3.Distance(_startPoint, _targetPoint);
-
-        float scaled = Mathf.Pow(_totalDistance, _arcExponent) * _arcScale;
-        _arcHeightComputed = Mathf.Clamp(scaled, _arcMin, _arcMax);
-        _arcUp = _arcAlongWorldUp ? Vector3.up : ComputeArcUp(_startPoint, _targetPoint);
-    }
-
-    private void ExtendLifetimeToReachTarget()
-    {
-        float estimatedFlightTime = EstimateFlightTime();
-        if (!IsFinite(estimatedFlightTime) || estimatedFlightTime <= 0f)
-        {
-            return;
-        }
-
-        _lifeTime = ClampLifetime(Mathf.Max(_lifeTime, estimatedFlightTime + FlightLifetimePadding));
-    }
-
-    private float EstimateFlightTime()
-    {
-        if (_totalDistance <= 0f)
-        {
-            return 0f;
-        }
-
-        float result = 0f;
-        float lastFraction = 0f;
-        for (int i = 1; i <= FlightLifetimeSamples; i++)
-        {
-            float fraction = i / (float)FlightLifetimeSamples;
-            float midFraction = (lastFraction + fraction) * 0.5f;
-            float segmentDistance = _totalDistance * (fraction - lastFraction);
-            float speed = _initialSpeed * GetSpeedMultiplier(midFraction);
-            if (speed <= 0.001f)
-            {
-                return _lifeTime;
-            }
-
-            result += segmentDistance / speed;
-            lastFraction = fraction;
-        }
-
-        return result;
-    }
-
-    private float GetSpeedMultiplier(float fraction)
-    {
-        float slowdownEval = _useSlowdown ? _slowdownCurve.Evaluate(fraction) : 1f;
-        float speedMul = 1f - (_useSlowdown ? (_slowdownAmount * Mathf.Pow(fraction, _slowdownExponent) * slowdownEval) : 0f);
-        return Mathf.Clamp(speedMul, _minSpeedMultiplier, 1f);
-    }
-
-    private static bool IsFinite(float value)
-    {
-        return !float.IsNaN(value) && !float.IsInfinity(value);
-    }
-
-    private static float ClampLifetime(float lifeTime)
-    {
-        return Mathf.Clamp(lifeTime, 0.01f, MaxFlightLifetime);
-    }
-
-    private AnimationCurve DefaultArcCurve()
-    {
-        return new AnimationCurve(
-            new Keyframe(0f, 0f, 0f, 4f),
-            new Keyframe(0.5f, 1f, 0f, 0f),
-            new Keyframe(1f, 0f, 4f, 0f)
-        );
-    }
-
-    private AnimationCurve DefaultSlowdownCurve()
-    {
-        return new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 1f));
-    }
-
-    private Vector3 ComputeArcUp(Vector3 start, Vector3 target)
-    {
-        Vector3 dir = (target - start).normalized;
-        Vector3 any = Mathf.Abs(Vector3.Dot(dir, Vector3.up)) > 0.99f ? Vector3.right : Vector3.up;
-        Vector3 up = Vector3.ProjectOnPlane(any, dir).normalized;
-        if (up.sqrMagnitude < 1e-6f)
-        {
-            return Vector3.up;
-        }
-        return up;
-    }
-
-    private void Explode(Vector3 pos, Vector3 normal)
-    {
-        if (_visualsEnabled && explosionFX != null)
-        {
-            Instantiate(explosionFX, pos, Quaternion.LookRotation(normal != Vector3.zero ? normal : Vector3.up));
-        }
-    }
-
-    private void DestroyWithoutExplosion()
-    {
-        Destroy(gameObject);
-    }
-
-    private void CompleteLiveMiss()
-    {
-        if (_liveCollisionEnabled && _authoritative && !_resolvedTargetHandled)
-        {
-            _resolvedTargetHandled = true;
-            _onAuthoritativeLiveMiss?.Invoke();
-        }
     }
 
     private void Update()
@@ -371,118 +273,145 @@ public class Projectile : MonoBehaviour
             return;
         }
 
-        if (Time.time - _spawnTime >= _lifeTime)
+        float dt = Time.deltaTime + _pendingAuthoritativeCatchupTime;
+        _pendingAuthoritativeCatchupTime = 0f;
+        if (dt <= 0f)
         {
-            CompleteLiveMiss();
-            DestroyWithoutExplosion();
             return;
         }
 
-        float fraction = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(_distanceTraveled / _totalDistance);
+        Vector3 previousPosition = _previousPosition;
+        float previousTime = _elapsedTime;
+        _elapsedTime += dt;
 
-        float speedMultiplier = _continuationSpeedMultiplier > 0f
-            ? _continuationSpeedMultiplier
-            : GetSpeedMultiplier(fraction);
-        float currentSpeed = _initialSpeed * speedMultiplier;
+        BallisticProjectileMath.TravelSegment segment = BallisticProjectileMath.GetTravelSegment(
+            _origin,
+            _initialVelocity,
+            _gravity,
+            previousTime,
+            _elapsedTime);
 
-        float catchupDelta = 0f;
-        if (_passedTimeCatchup > 0f)
+        Vector3 newPosition = segment.CurrentPosition;
+        _currentVelocity = segment.CurrentVelocity;
+
+        Vector3 travel = newPosition - previousPosition;
+        float segmentDistance = travel.magnitude;
+        Vector3 travelDirection = segmentDistance > 0.000001f
+            ? travel / segmentDistance
+            : GetSafeVelocityDirection();
+
+        if (segmentDistance > 0f)
         {
-            float stepCatch = _passedTimeCatchup * 0.08f;
-            _passedTimeCatchup -= stepCatch;
-            if (_passedTimeCatchup <= (Time.deltaTime * 0.5f))
-            {
-                stepCatch += _passedTimeCatchup;
-                _passedTimeCatchup = 0f;
-            }
-            catchupDelta = stepCatch;
+            _travelledDistance += segmentDistance;
         }
 
-        float dt = Time.deltaTime + catchupDelta;
+        DrawDebugStep(previousPosition, newPosition, _currentVelocity);
 
-        float stepLen = currentSpeed * dt;
-        _distanceTraveled += stepLen;
-
-        float newFraction = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(_distanceTraveled / _totalDistance);
-        Vector3 newPos = GetTrajectoryPosition(_distanceTraveled);
-
-        Vector3 travel = newPos - _prevPos;
-        float dist = travel.magnitude;
-        if (dist > 1e-6f)
+        if (_liveCollisionEnabled && segmentDistance > 0.000001f)
         {
-            _lastTravelDirection = travel / dist;
-        }
-
-        if (_liveCollisionEnabled && dist > 1e-6f)
-        {
-            Vector3 dir = _lastTravelDirection;
-            _lastTravelDirection = dir;
-            if (TryCastCollision(_prevPos, dir, dist + GetCollisionCastPadding(), out RaycastHit hit))
+            float castDistance = segmentDistance + GetCollisionCastPadding();
+            if (TryCastCollision(previousPosition, travelDirection, castDistance, out RaycastHit hit))
             {
-                if (_authoritative)
-                {
-                    if (!_resolvedTargetHandled)
-                    {
-                        _resolvedTargetHandled = true;
-                        _onAuthoritativeLiveHit?.Invoke(hit, dir);
-                    }
-                }
-
-                Explode(hit.point, hit.normal);
-                Destroy(gameObject);
+                HandleLiveHit(hit, travelDirection);
                 return;
             }
         }
 
-        float lookAheadDistance = Mathf.Max(0.01f, _initialSpeed * 0.02f);
-        float aheadDist = Mathf.Min(_distanceTraveled + lookAheadDistance, _totalDistance);
-        Vector3 aheadPos = GetTrajectoryPosition(aheadDist);
+        transform.position = newPosition;
+        _previousPosition = newPosition;
+        ApplyRotation(_currentVelocity);
 
-        Vector3 vdir = (aheadPos - newPos);
-        if (vdir.sqrMagnitude > 1e-8f)
+        if (HasExceededLimits())
         {
-            transform.rotation = Quaternion.LookRotation(vdir.normalized, Vector3.up);
+            CompleteLiveMiss();
+            DestroyWithoutExplosion();
+        }
+    }
+
+    private void HandleLiveHit(RaycastHit hit, Vector3 travelDirection)
+    {
+        _hasLastHitPoint = true;
+        _lastHitPoint = hit.point;
+        _lastHitNormal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal.normalized : Vector3.up;
+        transform.position = hit.point;
+        _previousPosition = hit.point;
+
+        if (_authoritative && !_resolvedTargetHandled)
+        {
+            _resolvedTargetHandled = true;
+            _onAuthoritativeLiveHit?.Invoke(hit, travelDirection);
         }
 
-        _prevPos = newPos;
-        transform.position = newPos;
+        DrawDebugHit(hit.point, _lastHitNormal);
+        Explode(hit.point, _lastHitNormal);
+        Destroy(gameObject);
+    }
 
-        if (newFraction >= 1f || Vector3.Distance(transform.position, _targetPoint) <= _arriveThreshold)
+    private bool HasExceededLimits()
+    {
+        if (_elapsedTime >= _maxLifetime)
         {
-            OnArrived();
+            return true;
         }
+
+        if (_maxDistance > 0f && _travelledDistance >= _maxDistance)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private float EstimateTravelledDistance(float startTime, float endTime)
+    {
+        if (endTime <= startTime)
+        {
+            return 0f;
+        }
+
+        int samples = Mathf.Max(1, TravelDistanceSamples);
+        float distance = 0f;
+        Vector3 previous = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, startTime);
+        for (int i = 1; i <= samples; i++)
+        {
+            float t = Mathf.Lerp(startTime, endTime, i / (float)samples);
+            Vector3 current = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, t);
+            distance += Vector3.Distance(previous, current);
+            previous = current;
+        }
+
+        return distance;
     }
 
     private float GetCollisionCastPadding()
     {
-        return Mathf.Max(CollisionCastPadding, hitRadius, _arriveThreshold);
+        return Mathf.Max(CollisionCastPadding, _collisionRadius * 0.5f);
     }
 
-    private Vector3 GetTrajectoryPosition(float distance)
+    private Vector3 GetSafeVelocityDirection()
     {
-        if (_useMissContinuationArc)
+        if (_currentVelocity.sqrMagnitude > 0.000001f)
         {
-            float clampedDistance = Mathf.Clamp(distance, 0f, _totalDistance);
-            return _startPoint
-                   + _missContinuationDirection * clampedDistance
-                   + _missContinuationArcCoefficient * (clampedDistance * clampedDistance);
+            return _currentVelocity.normalized;
         }
 
-        float fraction = (_totalDistance <= 0f) ? 1f : Mathf.Clamp01(distance / _totalDistance);
-        Vector3 basePos = Vector3.Lerp(_startPoint, _targetPoint, fraction);
-        float heightMul = _useArc ? _arcCurve.Evaluate(fraction) : 0f;
-        return basePos + _arcUp * (_arcHeightComputed * heightMul);
+        if (_initialVelocity.sqrMagnitude > 0.000001f)
+        {
+            return _initialVelocity.normalized;
+        }
+
+        return transform.forward.sqrMagnitude > 0.000001f ? transform.forward : Vector3.forward;
     }
 
-    private bool TryCastCollision(Vector3 origin, Vector3 dir, float distance, out RaycastHit bestHit)
+    private bool TryCastCollision(Vector3 origin, Vector3 direction, float distance, out RaycastHit bestHit)
     {
         int count;
-        if (hitRadius > 0f)
+        if (_collisionRadius > 0f)
         {
             count = Physics.SphereCastNonAlloc(
                 origin,
-                hitRadius,
-                dir,
+                _collisionRadius,
+                direction,
                 CollisionBuffer,
                 distance,
                 hitMask,
@@ -493,7 +422,7 @@ public class Projectile : MonoBehaviour
         {
             count = Physics.RaycastNonAlloc(
                 origin,
-                dir,
+                direction,
                 CollisionBuffer,
                 distance,
                 hitMask,
@@ -550,109 +479,153 @@ public class Projectile : MonoBehaviour
         return false;
     }
 
-    private void OnArrived()
+    private void ApplyRotation(Vector3 velocity)
     {
-        if (_hasResolvedTarget)
+        if (velocity.sqrMagnitude > 0.000001f)
         {
-            if (!_explodeAtResolvedTarget && TryContinueMissFlight())
-            {
-                return;
-            }
+            transform.rotation = Quaternion.LookRotation(velocity.normalized, Vector3.up);
+        }
+    }
 
-            transform.position = _targetPoint;
+    private void Explode(Vector3 position, Vector3 normal)
+    {
+        if (_visualsEnabled && explosionFX != null)
+        {
+            Vector3 safeNormal = normal.sqrMagnitude > 0.000001f ? normal.normalized : Vector3.up;
+            Instantiate(explosionFX, position, Quaternion.LookRotation(safeNormal));
+        }
+    }
 
-            if (_authoritative && !_resolvedTargetHandled)
-            {
-                _resolvedTargetHandled = true;
-                _onAuthoritativeResolvedTarget?.Invoke();
-            }
+    private void DestroyWithoutExplosion()
+    {
+        Destroy(gameObject);
+    }
 
-            if (_explodeAtResolvedTarget)
-            {
-                Explode(_targetPoint, _resolvedImpactNormal);
-            }
+    private void CompleteLiveMiss()
+    {
+        if (_liveCollisionEnabled && _authoritative && !_resolvedTargetHandled)
+        {
+            _resolvedTargetHandled = true;
+            _onAuthoritativeLiveMiss?.Invoke();
+        }
+    }
 
-            Destroy(gameObject);
+    private void DrawDebugStep(Vector3 previousPosition, Vector3 newPosition, Vector3 velocity)
+    {
+        if (debugDrawSweepSegment)
+        {
+            Debug.DrawLine(previousPosition, newPosition, Color.yellow, debugDrawDuration);
+        }
+
+        if (debugDrawVelocityDirection && velocity.sqrMagnitude > 0.000001f)
+        {
+            Debug.DrawRay(newPosition, velocity.normalized * 2f, Color.blue, debugDrawDuration);
+        }
+
+        if (debugDrawCollisionRadius && _collisionRadius > 0f)
+        {
+            DrawDebugSphere(newPosition, _collisionRadius, Color.green, debugDrawDuration);
+        }
+
+        if (debugDrawTrajectory || debugBallisticTrajectory)
+        {
+            DrawDebugTrajectory(_elapsedTime, debugTrajectorySeconds, debugTrajectorySteps, debugDrawDuration);
+        }
+    }
+
+    private void DrawDebugHit(Vector3 hitPoint, Vector3 hitNormal)
+    {
+        if (!debugDrawHitPoint)
+        {
             return;
         }
 
-        if (TryContinueMissFlight())
+        DrawDebugSphere(hitPoint, Mathf.Max(0.05f, _collisionRadius), Color.red, debugHitDrawDuration);
+        Debug.DrawRay(hitPoint, hitNormal.normalized * 1.5f, Color.red, debugHitDrawDuration);
+    }
+
+    private void DrawDebugTrajectory(float startTime, float seconds, int steps, float duration)
+    {
+        int safeSteps = Mathf.Clamp(steps, 4, 96);
+        float safeSeconds = Mathf.Max(0.1f, seconds);
+        Vector3 previous = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, startTime);
+        for (int i = 1; i <= safeSteps; i++)
+        {
+            float t = startTime + safeSeconds * (i / (float)safeSteps);
+            Vector3 current = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, t);
+            Debug.DrawLine(previous, current, Color.cyan, duration);
+            previous = current;
+        }
+    }
+
+    private static void DrawDebugSphere(Vector3 center, float radius, Color color, float duration)
+    {
+        float r = Mathf.Max(0.001f, radius);
+        Debug.DrawLine(center + Vector3.right * r, center - Vector3.right * r, color, duration);
+        Debug.DrawLine(center + Vector3.up * r, center - Vector3.up * r, color, duration);
+        Debug.DrawLine(center + Vector3.forward * r, center - Vector3.forward * r, color, duration);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (!_initialized)
         {
             return;
         }
 
-        CompleteLiveMiss();
-        DestroyWithoutExplosion();
-    }
-
-    private bool TryContinueMissFlight()
-    {
-        if (_missContinuationUsed || _missContinuationMaxDistance <= 0f)
+        if (debugDrawTrajectory || debugBallisticTrajectory)
         {
-            return false;
+            Gizmos.color = Color.cyan;
+            int safeSteps = Mathf.Clamp(debugTrajectorySteps, 4, 96);
+            float safeSeconds = Mathf.Max(0.1f, debugTrajectorySeconds);
+            Vector3 previous = transform.position;
+            for (int i = 1; i <= safeSteps; i++)
+            {
+                float t = _elapsedTime + safeSeconds * (i / (float)safeSteps);
+                Vector3 current = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, t);
+                Gizmos.DrawLine(previous, current);
+                previous = current;
+            }
         }
 
-        float traveledFromOriginal = Vector3.Distance(_originalStartPoint, transform.position);
-        float remainingDistance = _missContinuationMaxDistance - traveledFromOriginal;
-        if (remainingDistance <= Mathf.Max(_arriveThreshold, 0.1f))
+        if (debugBallisticTrajectory && _hasDebugAimPoint)
         {
-            return false;
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(_debugAimPoint, 0.25f);
+            Gizmos.DrawLine(_origin, _origin + _debugInitialDirection * 4f);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(_debugAimPoint, _debugAimPoint + Vector3.down * Mathf.Max(0.25f, _debugEstimatedDrop));
+
+            Gizmos.color = _debugUsedBallisticCompensation && _debugBallisticSolutionFound
+                ? Color.green
+                : Color.white;
+            Gizmos.DrawLine(_origin, _origin + _gravity.normalized * Mathf.Clamp(_debugGravityValue, 0.25f, 4f));
         }
 
-        Vector3 direction = GetMissContinuationDirection();
-
-        if (direction.sqrMagnitude <= 0.000001f)
+        if (debugDrawSweepSegment)
         {
-            return false;
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(_previousPosition, transform.position);
         }
 
-        direction.Normalize();
-        _missContinuationUsed = true;
-        _startPoint = transform.position;
-        _useMissContinuationArc = true;
-        _missContinuationDirection = direction;
-        _missContinuationArcCoefficient = ComputeMissContinuationArcCoefficient();
-        _targetPoint = _startPoint
-                       + _missContinuationDirection * remainingDistance
-                       + _missContinuationArcCoefficient * (remainingDistance * remainingDistance);
-        _distanceTraveled = 0f;
-        _prevPos = _startPoint;
-        _hasResolvedTarget = false;
-        _explodeAtResolvedTarget = false;
-        _continuationSpeedMultiplier = GetSpeedMultiplier(1f);
-
-        _totalDistance = remainingDistance;
-        _spawnTime = Time.time;
-        _lifeTime = ClampLifetime(EstimateFlightTime() + FlightLifetimePadding);
-
-        return true;
-    }
-
-    private Vector3 GetMissContinuationDirection()
-    {
-        if (_lastTravelDirection.sqrMagnitude > 0.000001f)
+        if (debugDrawCollisionRadius && _collisionRadius > 0f)
         {
-            return _lastTravelDirection;
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(transform.position, _collisionRadius);
         }
 
-        Vector3 direction = _targetPoint - _startPoint;
-        if (direction.sqrMagnitude > 0.000001f)
+        if (debugDrawVelocityDirection && _currentVelocity.sqrMagnitude > 0.000001f)
         {
-            return direction;
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(transform.position, transform.position + _currentVelocity.normalized * 2f);
         }
 
-        return transform.forward;
-    }
-
-    private Vector3 ComputeMissContinuationArcCoefficient()
-    {
-        float distance = Mathf.Max(_totalDistance, 0.001f);
-        float curveCoefficient = _arcHeightComputed * 4f / (distance * distance);
-        if (!_useArc || curveCoefficient <= 0.000001f)
+        if (debugDrawHitPoint && _hasLastHitPoint)
         {
-            return Vector3.zero;
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(_lastHitPoint, Mathf.Max(0.05f, _collisionRadius));
+            Gizmos.DrawLine(_lastHitPoint, _lastHitPoint + _lastHitNormal.normalized * 1.5f);
         }
-
-        return -_arcUp * curveCoefficient;
     }
 }

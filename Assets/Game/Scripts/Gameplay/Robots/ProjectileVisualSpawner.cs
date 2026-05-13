@@ -11,19 +11,12 @@ namespace Game.Scripts.Gameplay.Robots
         public Vector3 StartPosition;
         public Vector3 AimPoint;
         public float InitialSpeed;
+        public Vector3 Gravity;
         public float LifeTime;
-        public bool UseArc;
-        public float ArcScale;
-        public float ArcMin;
-        public float ArcMax;
-        public float ArcExponent;
-        public AnimationCurve ArcCurve;
-        public bool ArcAlongWorldUp;
-        public bool UseSlowdown;
-        public float SlowdownAmount;
-        public float SlowdownExponent;
-        public AnimationCurve SlowdownCurve;
-        public float MinSpeedMultiplier;
+        public float CollisionRadius;
+        public bool UseBallisticCompensation;
+        public bool PreferHighArc;
+        public bool DebugBallisticTrajectory;
         public float PassedTime;
         public bool Authoritative;
         public bool ExplodeOnArrival;
@@ -45,25 +38,43 @@ namespace Game.Scripts.Gameplay.Robots
 
             projectile.hitMask = spawnParams.HitMask;
             projectile.damage = spawnParams.Damage;
+
+            Vector3 initialVelocity = BuildInitialVelocity(
+                spawnParams,
+                out bool usedBallisticCompensation,
+                out bool ballisticSolutionFound);
+
             projectile.Init(
-                targetPoint: spawnParams.AimPoint,
-                initialSpeed: spawnParams.InitialSpeed,
-                lifeTime: spawnParams.LifeTime,
-                useArc: spawnParams.UseArc,
-                arcScale: spawnParams.ArcScale,
-                arcMin: spawnParams.ArcMin,
-                arcMax: spawnParams.ArcMax,
-                arcExponent: spawnParams.ArcExponent,
-                arcCurve: spawnParams.ArcCurve,
-                arcAlongWorldUp: spawnParams.ArcAlongWorldUp,
-                useSlowdown: spawnParams.UseSlowdown,
-                slowdownAmount: spawnParams.SlowdownAmount,
-                slowdownExponent: spawnParams.SlowdownExponent,
-                slowdownCurve: spawnParams.SlowdownCurve,
-                minSpeedMultiplier: spawnParams.MinSpeedMultiplier,
+                origin: spawnParams.StartPosition,
+                initialVelocity: initialVelocity,
+                gravity: spawnParams.Gravity,
+                maxLifetime: spawnParams.LifeTime,
+                maxDistance: spawnParams.MaxShotDistance,
+                collisionRadius: spawnParams.CollisionRadius,
                 passedTime: spawnParams.PassedTime,
                 authoritative: spawnParams.Authoritative
             );
+            projectile.ConfigureBallisticDebug(
+                spawnParams.AimPoint,
+                initialVelocity,
+                spawnParams.Gravity,
+                BallisticProjectileMath.EstimateDirectDrop(
+                    spawnParams.StartPosition,
+                    spawnParams.AimPoint,
+                    spawnParams.InitialSpeed,
+                    spawnParams.Gravity),
+                usedBallisticCompensation,
+                ballisticSolutionFound,
+                spawnParams.DebugBallisticTrajectory);
+
+            if (spawnParams.DebugBallisticTrajectory)
+            {
+                string mode = usedBallisticCompensation
+                    ? (spawnParams.PreferHighArc ? "ballistic compensated high arc" : "ballistic compensated low arc")
+                    : "direct";
+                Debug.Log(
+                    $"Projectile ballistic debug: mode={mode}, gravity={spawnParams.Gravity.magnitude:0.###}, speed={spawnParams.InitialSpeed:0.###}, estimatedDirectDrop={BallisticProjectileMath.EstimateDirectDrop(spawnParams.StartPosition, spawnParams.AimPoint, spawnParams.InitialSpeed, spawnParams.Gravity):0.###}, solutionFound={ballisticSolutionFound}");
+            }
 
             if (spawnParams.ConfigureResolvedTarget)
             {
@@ -89,6 +100,43 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return projectile;
+        }
+
+        public static Vector3 BuildInitialVelocity(
+            ProjectileVisualSpawnParams spawnParams,
+            out bool usedBallisticCompensation,
+            out bool ballisticSolutionFound)
+        {
+            usedBallisticCompensation = false;
+            ballisticSolutionFound = false;
+
+            if (spawnParams.UseBallisticCompensation && spawnParams.Gravity.sqrMagnitude > 0.000001f)
+            {
+                ballisticSolutionFound = BallisticProjectileMath.TryBuildBallisticInitialVelocity(
+                    spawnParams.StartPosition,
+                    spawnParams.AimPoint,
+                    spawnParams.InitialSpeed,
+                    spawnParams.Gravity,
+                    spawnParams.PreferHighArc,
+                    out Vector3 ballisticVelocity);
+
+                if (ballisticSolutionFound)
+                {
+                    usedBallisticCompensation = true;
+                    return ballisticVelocity;
+                }
+
+                if (spawnParams.DebugBallisticTrajectory)
+                {
+                    Debug.LogWarning("Projectile ballistic solution was not reachable. Falling back to direct initial velocity.");
+                }
+            }
+
+            return BallisticProjectileMath.BuildDirectInitialVelocity(
+                spawnParams.StartPosition,
+                spawnParams.AimPoint,
+                spawnParams.InitialSpeed,
+                Quaternion.identity);
         }
 
         public static void SpawnImpactFx(Projectile projectilePrefab, Vector3 impactPoint, Vector3 impactNormal)

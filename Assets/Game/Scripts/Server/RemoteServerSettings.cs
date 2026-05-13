@@ -8,6 +8,7 @@ namespace Game.Scripts.Server
         public static int FindRoomSeconds { get; private set; } = 60;
         public static GunDispersionGlobalSettings GunDispersion { get; } = new GunDispersionGlobalSettings();
         public static RobotMovementGlobalSettings RobotMovement { get; } = new RobotMovementGlobalSettings();
+        public static ProjectileBallisticsGlobalSettings ProjectileBallistics { get; } = new ProjectileBallisticsGlobalSettings();
         public static bool IsLoaded { get; private set; }
 
         public static void Apply(
@@ -41,7 +42,11 @@ namespace Game.Scripts.Server
             float gunDispersionUiMaxDiameter,
             float gunDispersionUiPixelsPerDegree,
             float gunDispersionServerSyncInterval,
-            float gunDispersionServerSyncDeadZoneDeg)
+            float gunDispersionServerSyncDeadZoneDeg,
+            float projectileGravity,
+            bool projectileUseBallisticCompensation,
+            bool projectilePreferHighArc,
+            bool projectileDebugBallisticTrajectory)
         {
             MaxPlayersForFindRoom = maxPlayersForFindRoom > 0 ? maxPlayersForFindRoom : 1;
             FindRoomSeconds = findRoomSeconds > 0 ? findRoomSeconds : 60;
@@ -76,6 +81,12 @@ namespace Game.Scripts.Server
             GunDispersion.uiPixelsPerDegree = gunDispersionUiPixelsPerDegree > 0f ? gunDispersionUiPixelsPerDegree : GunDispersionGlobalSettings.Default.uiPixelsPerDegree;
             GunDispersion.serverSyncInterval = gunDispersionServerSyncInterval > 0f ? gunDispersionServerSyncInterval : GunDispersionGlobalSettings.Default.serverSyncInterval;
             GunDispersion.serverSyncDeadZoneDeg = gunDispersionServerSyncDeadZoneDeg >= 0f ? gunDispersionServerSyncDeadZoneDeg : GunDispersionGlobalSettings.Default.serverSyncDeadZoneDeg;
+
+            ProjectileBallistics.projectileGravity = projectileGravity >= 0f ? projectileGravity : ProjectileBallisticsGlobalSettings.Default.projectileGravity;
+            ProjectileBallistics.useBallisticCompensation = projectileUseBallisticCompensation;
+            ProjectileBallistics.preferHighArc = projectilePreferHighArc;
+            ProjectileBallistics.debugBallisticTrajectory = projectileDebugBallisticTrajectory;
+            ProjectileBallistics.Validate();
 
             IsLoaded = true;
         }

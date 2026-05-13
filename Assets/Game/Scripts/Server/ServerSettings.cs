@@ -124,6 +124,61 @@ namespace Game.Scripts.Server
         }
     }
 
+    [System.Serializable]
+    public class ProjectileBallisticsGlobalSettings
+    {
+        private static readonly ProjectileBallisticsGlobalSettings DefaultSettings = new ProjectileBallisticsGlobalSettings();
+
+        [Header("Trajectory")]
+        [Min(0f)] public float projectileGravity = 6f;
+        public bool useBallisticCompensation = true;
+        public bool preferHighArc;
+
+        [Header("Debug")]
+        public bool debugBallisticTrajectory;
+
+        public static ProjectileBallisticsGlobalSettings Default
+        {
+            get
+            {
+                return DefaultSettings;
+            }
+        }
+
+        public void Validate()
+        {
+            projectileGravity = ClampFinite(projectileGravity, 0f, Default.projectileGravity);
+        }
+
+        public void CopyFrom(ProjectileBallisticsGlobalSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            projectileGravity = source.projectileGravity;
+            useBallisticCompensation = source.useBallisticCompensation;
+            preferHighArc = source.preferHighArc;
+            debugBallisticTrajectory = source.debugBallisticTrajectory;
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+    }
+
     public class ServerSettings : MonoBehaviour
     {
         public static ServerSettings In;
@@ -132,6 +187,7 @@ namespace Game.Scripts.Server
         public int findRoomSeconds = 60;
         public RobotMovementGlobalSettings robotMovement = new RobotMovementGlobalSettings();
         public GunDispersionGlobalSettings gunDispersion = new GunDispersionGlobalSettings();
+        public ProjectileBallisticsGlobalSettings projectileBallistics = new ProjectileBallisticsGlobalSettings();
         
         private void Awake()
         {
@@ -185,6 +241,17 @@ namespace Game.Scripts.Server
             return In.robotMovement;
         }
 
+        public static ProjectileBallisticsGlobalSettings GetProjectileBallistics()
+        {
+            if (In == null || In.projectileBallistics == null)
+            {
+                return ProjectileBallisticsGlobalSettings.Default;
+            }
+
+            In.projectileBallistics.Validate();
+            return In.projectileBallistics;
+        }
+
         private void ValidateSettings()
         {
             if (maxPlayersForFindRoom < 1)
@@ -200,6 +267,11 @@ namespace Game.Scripts.Server
             if (robotMovement != null)
             {
                 robotMovement.Validate();
+            }
+
+            if (projectileBallistics != null)
+            {
+                projectileBallistics.Validate();
             }
         }
     }

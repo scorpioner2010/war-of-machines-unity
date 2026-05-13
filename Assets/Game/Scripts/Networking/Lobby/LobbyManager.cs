@@ -65,6 +65,7 @@ namespace Game.Scripts.Networking.Lobby
 
             GunDispersionGlobalSettings gunDispersion = ServerSettings.GetGunDispersion();
             RobotMovementGlobalSettings robotMovement = ServerSettings.GetRobotMovement();
+            ProjectileBallisticsGlobalSettings projectileBallistics = ServerSettings.GetProjectileBallistics();
             TargetServerSettingsRpc(
                 sender,
                 ServerSettings.GetMaxPlayersForFindRoom(),
@@ -97,7 +98,11 @@ namespace Game.Scripts.Networking.Lobby
                 gunDispersion.uiMaxDiameter,
                 gunDispersion.uiPixelsPerDegree,
                 gunDispersion.serverSyncInterval,
-                gunDispersion.serverSyncDeadZoneDeg
+                gunDispersion.serverSyncDeadZoneDeg,
+                projectileBallistics.projectileGravity,
+                projectileBallistics.useBallisticCompensation,
+                projectileBallistics.preferHighArc,
+                projectileBallistics.debugBallisticTrajectory
             );
         }
 
@@ -134,7 +139,11 @@ namespace Game.Scripts.Networking.Lobby
             float gunDispersionUiMaxDiameter,
             float gunDispersionUiPixelsPerDegree,
             float gunDispersionServerSyncInterval,
-            float gunDispersionServerSyncDeadZoneDeg)
+            float gunDispersionServerSyncDeadZoneDeg,
+            float projectileGravity,
+            bool projectileUseBallisticCompensation,
+            bool projectilePreferHighArc,
+            bool projectileDebugBallisticTrajectory)
         {
             RemoteServerSettings.Apply(
                 maxPlayersForFindRoom,
@@ -167,7 +176,11 @@ namespace Game.Scripts.Networking.Lobby
                 gunDispersionUiMaxDiameter,
                 gunDispersionUiPixelsPerDegree,
                 gunDispersionServerSyncInterval,
-                gunDispersionServerSyncDeadZoneDeg
+                gunDispersionServerSyncDeadZoneDeg,
+                projectileGravity,
+                projectileUseBallisticCompensation,
+                projectilePreferHighArc,
+                projectileDebugBallisticTrajectory
             );
         }
 

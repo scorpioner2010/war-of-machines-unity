@@ -21,19 +21,40 @@ namespace Game.Scripts.Gameplay.Robots
         public float projectileSpeed = VehicleRuntimeStats.DefaultShellSpeed;
         public float projectileLifeTime = 8f;
         public float maxShotDistance = 2000f;
+        [Tooltip("Fallback value only. Runtime shots use ServerSettings projectile ballistics.")]
+        [Min(0f)] public float projectileGravity = 6f;
+        [Min(0f)] public float projectileCollisionRadius = 0.05f;
+        [Tooltip("Fallback value only. Runtime shots use ServerSettings projectile ballistics.")]
+        public bool useBallisticCompensation = true;
+        [Tooltip("Fallback value only. Runtime shots use ServerSettings projectile ballistics.")]
+        public bool preferHighArc;
+        [Tooltip("Fallback value only. Runtime shots use ServerSettings projectile ballistics.")]
+        public bool debugBallisticTrajectory;
 
+        [Tooltip("Legacy artificial arc flag; ignored by ballistic projectile simulation. Use projectileGravity instead.")]
         public bool projectileUseArc = true;
+        [Tooltip("Legacy artificial arc field; ignored by ballistic projectile simulation.")]
         public float projectileArcScale = 0.02f;
+        [Tooltip("Legacy artificial arc field; ignored by ballistic projectile simulation.")]
         public float projectileArcMin = 0f;
+        [Tooltip("Legacy artificial arc field; ignored by ballistic projectile simulation.")]
         public float projectileArcMax = 50f;
+        [Tooltip("Legacy artificial arc field; ignored by ballistic projectile simulation.")]
         public float projectileArcExponent = 1f;
+        [Tooltip("Legacy artificial arc field; ignored by ballistic projectile simulation.")]
         public AnimationCurve projectileArcCurve;
+        [Tooltip("Legacy artificial arc field; ignored by ballistic projectile simulation.")]
         public bool projectileArcAlongWorldUp = true;
 
+        [Tooltip("Legacy slowdown field; ignored by ballistic projectile simulation.")]
         public bool projectileUseSlowdown = true;
+        [Tooltip("Legacy slowdown field; ignored by ballistic projectile simulation.")]
         [Range(0f, 1f)] public float projectileSlowdownAmount = 0.5f;
+        [Tooltip("Legacy slowdown field; ignored by ballistic projectile simulation.")]
         public float projectileSlowdownExponent = 1f;
+        [Tooltip("Legacy slowdown field; ignored by ballistic projectile simulation.")]
         public AnimationCurve projectileSlowdownCurve;
+        [Tooltip("Legacy slowdown field; ignored by ballistic projectile simulation.")]
         [Range(0f, 1f)] public float projectileMinSpeedMultiplier = 0.1f;
 
         public LayerMask hitMask = ~0;
@@ -168,7 +189,10 @@ namespace Game.Scripts.Gameplay.Robots
                 InitOwnerDispersion();
             }
 
-            DispersedShotRay predictedRay = BuildDispersedShotRay(startPos, baseAimPoint, shotId, _ownerDispersion.CurrentDeg, GetGlobalDispersion());
+            float predictedDispersionDeg = _serverDispersionDeg.Value > 0f
+                ? _serverDispersionDeg.Value
+                : _ownerDispersion.CurrentDeg;
+            DispersedShotRay predictedRay = BuildDispersedShotRay(startPos, baseAimPoint, shotId, predictedDispersionDeg, GetGlobalDispersion());
 
             Projectile predicted = SpawnLocal(startPos, predictedRay.TargetPoint, 0f, false, false, Vector3.up, true);
             _predictedProjectiles[shotId] = predicted;
@@ -230,6 +254,30 @@ namespace Game.Scripts.Gameplay.Robots
             System.Action onAuthoritativeImpact = null,
             bool configureResolvedTarget = true)
         {
+            ProjectileVisualSpawnParams spawnParams = CreateProjectileSpawnParams(
+                startPos,
+                aimPoint,
+                passedTime,
+                authoritative,
+                explodeOnArrival,
+                impactNormal,
+                visible,
+                onAuthoritativeImpact,
+                configureResolvedTarget);
+            return ProjectileVisualSpawner.Spawn(spawnParams);
+        }
+
+        private ProjectileVisualSpawnParams CreateProjectileSpawnParams(
+            Vector3 startPos,
+            Vector3 aimPoint,
+            float passedTime,
+            bool authoritative,
+            bool explodeOnArrival,
+            Vector3 impactNormal,
+            bool visible,
+            System.Action onAuthoritativeImpact,
+            bool configureResolvedTarget)
+        {
             ProjectileVisualSpawnParams spawnParams = new ProjectileVisualSpawnParams
             {
                 ProjectilePrefab = projectilePrefab,
@@ -238,19 +286,12 @@ namespace Game.Scripts.Gameplay.Robots
                 StartPosition = startPos,
                 AimPoint = aimPoint,
                 InitialSpeed = projectileSpeed,
+                Gravity = GetProjectileGravity(),
                 LifeTime = projectileLifeTime,
-                UseArc = projectileUseArc,
-                ArcScale = projectileArcScale,
-                ArcMin = projectileArcMin,
-                ArcMax = projectileArcMax,
-                ArcExponent = projectileArcExponent,
-                ArcCurve = projectileArcCurve,
-                ArcAlongWorldUp = projectileArcAlongWorldUp,
-                UseSlowdown = projectileUseSlowdown,
-                SlowdownAmount = projectileSlowdownAmount,
-                SlowdownExponent = projectileSlowdownExponent,
-                SlowdownCurve = projectileSlowdownCurve,
-                MinSpeedMultiplier = projectileMinSpeedMultiplier,
+                CollisionRadius = GetProjectileCollisionRadius(),
+                UseBallisticCompensation = ShouldUseBallisticCompensation(),
+                PreferHighArc = ShouldPreferHighArc(),
+                DebugBallisticTrajectory = ShouldDebugBallisticTrajectory(),
                 PassedTime = passedTime,
                 Authoritative = authoritative,
                 ExplodeOnArrival = explodeOnArrival,
@@ -261,7 +302,7 @@ namespace Game.Scripts.Gameplay.Robots
                 MaxShotDistance = GetMaxShotDistance()
             };
 
-            return ProjectileVisualSpawner.Spawn(spawnParams);
+            return spawnParams;
         }
 
         [ServerRpc(RequireOwnership = true)]
@@ -297,7 +338,8 @@ namespace Game.Scripts.Gameplay.Robots
             ConfigureOwnerProjectileTrajectoryTargetRpc(sender, shotId, dispersedRay.TargetPoint);
 
             bool serverVisualVisible = !(sender.IsLocalClient && IsClientInitialized);
-            Projectile serverProjectile = SpawnLocal(
+            Projectile serverProjectile = null;
+            serverProjectile = SpawnLocal(
                 startPos,
                 dispersedRay.TargetPoint,
                 passed,
@@ -314,7 +356,10 @@ namespace Game.Scripts.Gameplay.Robots
                 serverProjectile.ConfigureLiveCollision(
                     vehicleRoot != null ? vehicleRoot.transform : null,
                     (hit, direction) => HandleAuthoritativeProjectileHit(sender, shotId, hit, direction),
-                    () => HandleAuthoritativeProjectileMiss(sender, shotId, dispersedRay.TargetPoint),
+                    () => HandleAuthoritativeProjectileMiss(
+                        sender,
+                        shotId,
+                        serverProjectile != null ? serverProjectile.transform.position : dispersedRay.TargetPoint),
                     GetMaxShotDistance()
                 );
             }
@@ -407,6 +452,16 @@ namespace Game.Scripts.Gameplay.Robots
             return RemoteServerSettings.GunDispersion;
         }
 
+        private ProjectileBallisticsGlobalSettings GetProjectileBallistics()
+        {
+            if (IsServerInitialized)
+            {
+                return ServerSettings.GetProjectileBallistics();
+            }
+
+            return RemoteServerSettings.ProjectileBallistics;
+        }
+
         private DispersedShotRay BuildDispersedShotRay(Vector3 startPos, Vector3 aimPoint, int shotId, float dispersionDeg, GunDispersionGlobalSettings globalDispersion)
         {
             globalDispersion ??= GunDispersionGlobalSettings.Default;
@@ -467,6 +522,69 @@ namespace Game.Scripts.Gameplay.Robots
         private float GetMaxShotDistance()
         {
             return Mathf.Max(1f, maxShotDistance);
+        }
+
+        private Vector3 GetProjectileGravity()
+        {
+            ProjectileBallisticsGlobalSettings ballistics = GetProjectileBallistics();
+            float gravity = ballistics != null
+                ? ballistics.projectileGravity
+                : projectileGravity;
+
+            if (float.IsNaN(gravity) || float.IsInfinity(gravity))
+            {
+                gravity = ProjectileBallisticsGlobalSettings.Default.projectileGravity;
+            }
+
+            if (gravity <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            return Vector3.down * gravity;
+        }
+
+        private bool ShouldUseBallisticCompensation()
+        {
+            ProjectileBallisticsGlobalSettings ballistics = GetProjectileBallistics();
+            if (ballistics == null)
+            {
+                return useBallisticCompensation;
+            }
+
+            return ballistics.useBallisticCompensation;
+        }
+
+        private bool ShouldPreferHighArc()
+        {
+            ProjectileBallisticsGlobalSettings ballistics = GetProjectileBallistics();
+            if (ballistics == null)
+            {
+                return preferHighArc;
+            }
+
+            return ballistics.preferHighArc;
+        }
+
+        private bool ShouldDebugBallisticTrajectory()
+        {
+            ProjectileBallisticsGlobalSettings ballistics = GetProjectileBallistics();
+            if (ballistics == null)
+            {
+                return debugBallisticTrajectory;
+            }
+
+            return ballistics.debugBallisticTrajectory;
+        }
+
+        private float GetProjectileCollisionRadius()
+        {
+            if (projectileCollisionRadius > 0f)
+            {
+                return projectileCollisionRadius;
+            }
+
+            return projectilePrefab != null ? Mathf.Max(0f, projectilePrefab.hitRadius) : 0f;
         }
 
         private Vector2 GetDeterministicUnitCircle(int shotId)
@@ -645,7 +763,7 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [TargetRpc]
-        private void ConfigureOwnerProjectileTrajectoryTargetRpc(NetworkConnection conn, int shotId, Vector3 targetPoint)
+        private void ConfigureOwnerProjectileTrajectoryTargetRpc(NetworkConnection conn, int shotId, Vector3 serverAimPoint)
         {
             if (!_predictedProjectiles.TryGetValue(shotId, out Projectile projectile))
             {
@@ -658,7 +776,46 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            projectile.ConfigureResolvedMiss(targetPoint, GetMaxShotDistance());
+            CorrectPredictedProjectileTrajectory(projectile, serverAimPoint);
+            projectile.SetMaxDistance(GetMaxShotDistance());
+        }
+
+        private void CorrectPredictedProjectileTrajectory(Projectile projectile, Vector3 serverAimPoint)
+        {
+            if (projectile == null)
+            {
+                return;
+            }
+
+            ProjectileVisualSpawnParams spawnParams = CreateProjectileSpawnParams(
+                projectile.Origin,
+                serverAimPoint,
+                0f,
+                false,
+                false,
+                Vector3.up,
+                true,
+                null,
+                false);
+
+            Vector3 initialVelocity = ProjectileVisualSpawner.BuildInitialVelocity(
+                spawnParams,
+                out bool usedBallisticCompensation,
+                out bool ballisticSolutionFound);
+
+            projectile.ReconfigureBallistic(initialVelocity, spawnParams.Gravity);
+            projectile.ConfigureBallisticDebug(
+                serverAimPoint,
+                initialVelocity,
+                spawnParams.Gravity,
+                BallisticProjectileMath.EstimateDirectDrop(
+                    spawnParams.StartPosition,
+                    spawnParams.AimPoint,
+                    spawnParams.InitialSpeed,
+                    spawnParams.Gravity),
+                usedBallisticCompensation,
+                ballisticSolutionFound,
+                spawnParams.DebugBallisticTrajectory);
         }
 
         [TargetRpc]
@@ -689,7 +846,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             else
             {
-                projectile.SetMissContinuationMaxDistance(GetMaxShotDistance());
+                projectile.SetMaxDistance(GetMaxShotDistance());
             }
 
             _predictedProjectiles.Remove(shotId);
@@ -725,7 +882,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             else
             {
-                projectile.SetMissContinuationMaxDistance(GetMaxShotDistance());
+                projectile.SetMaxDistance(GetMaxShotDistance());
             }
 
             _observedProjectiles.Remove(shotId);
