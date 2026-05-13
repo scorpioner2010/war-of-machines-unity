@@ -49,9 +49,17 @@ namespace Game.Scripts.Gameplay.Robots
         public float referenceGunTraverseDegPerSec = 35f;
         public float referenceCameraAimDegPerSec = 120f;
 
+        [Header("Database Accuracy")]
+        [Tooltip("Distance used by database accuracy. World of Tanks style accuracy is meters of maximum radial spread at 100 meters.")]
+        public float accuracyReferenceDistanceMeters = 100f;
+
         [Header("UI")]
-        public float uiMinDiameter = 80f;
+        [Tooltip("Smallest possible ring diameter for a hypothetical zero-dispersion gun.")]
+        public float uiMinDiameter = 55f;
         public float uiMaxDiameter = 340f;
+        [Tooltip("How much fully aimed weapon accuracy contributes to the final ring size.")]
+        public float uiFullyAimedPixelsPerDegree = 85f;
+        [Tooltip("How much movement/rotation/shot bloom expands the ring above fully aimed accuracy.")]
         public float uiPixelsPerDegree = 42f;
 
         [Header("Networking")]
@@ -66,10 +74,52 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        public float GetUiDiameter(float dispersionDeg, float minDispersionDeg)
+        public float GetUiDiameter(float dispersionDeg, float fullyAimedDispersionDeg)
         {
-            float diameter = uiMinDiameter + Mathf.Max(0f, dispersionDeg - Mathf.Max(0f, minDispersionDeg)) * uiPixelsPerDegree;
+            Validate();
+
+            float fullyAimedDeg = Mathf.Max(0f, fullyAimedDispersionDeg);
+            float currentDeg = Mathf.Max(fullyAimedDeg, dispersionDeg);
+            float fullyAimedDiameter = fullyAimedDeg * uiFullyAimedPixelsPerDegree;
+            float bloomDiameter = Mathf.Max(0f, currentDeg - fullyAimedDeg) * uiPixelsPerDegree;
+            float diameter = uiMinDiameter + fullyAimedDiameter + bloomDiameter;
             return Mathf.Clamp(diameter, uiMinDiameter, uiMaxDiameter);
+        }
+
+        public float GetAccuracyDispersionDeg(float accuracyMetersAtReferenceDistance, float fallbackDispersionDeg)
+        {
+            if (float.IsNaN(accuracyMetersAtReferenceDistance)
+                || float.IsInfinity(accuracyMetersAtReferenceDistance)
+                || accuracyMetersAtReferenceDistance <= 0f)
+            {
+                return Mathf.Max(0f, fallbackDispersionDeg);
+            }
+
+            Validate();
+
+            float referenceDistance = Mathf.Max(0.0001f, accuracyReferenceDistanceMeters);
+            return Mathf.Atan(Mathf.Max(0f, accuracyMetersAtReferenceDistance) / referenceDistance) * Mathf.Rad2Deg;
+        }
+
+        public void Validate()
+        {
+            accuracyReferenceDistanceMeters = ClampFinite(accuracyReferenceDistanceMeters, 0.0001f, Default.accuracyReferenceDistanceMeters);
+            uiMinDiameter = ClampFinite(uiMinDiameter, 1f, Default.uiMinDiameter);
+            uiMaxDiameter = ClampFinite(uiMaxDiameter, uiMinDiameter, Default.uiMaxDiameter);
+            if (uiMaxDiameter < uiMinDiameter)
+            {
+                uiMaxDiameter = uiMinDiameter;
+            }
+
+            uiFullyAimedPixelsPerDegree = ClampFinite(uiFullyAimedPixelsPerDegree, 0f, Default.uiFullyAimedPixelsPerDegree);
+            uiPixelsPerDegree = ClampFinite(uiPixelsPerDegree, 0f, Default.uiPixelsPerDegree);
+            expandTime = ClampFinite(expandTime, 0.001f, Default.expandTime);
+            referenceHullTraverseDegPerSec = ClampFinite(referenceHullTraverseDegPerSec, 0.001f, Default.referenceHullTraverseDegPerSec);
+            referenceTurretTraverseDegPerSec = ClampFinite(referenceTurretTraverseDegPerSec, 0.001f, Default.referenceTurretTraverseDegPerSec);
+            referenceGunTraverseDegPerSec = ClampFinite(referenceGunTraverseDegPerSec, 0.001f, Default.referenceGunTraverseDegPerSec);
+            referenceCameraAimDegPerSec = ClampFinite(referenceCameraAimDegPerSec, 0.001f, Default.referenceCameraAimDegPerSec);
+            serverSyncInterval = ClampFinite(serverSyncInterval, 0.001f, Default.serverSyncInterval);
+            serverSyncDeadZoneDeg = ClampFinite(serverSyncDeadZoneDeg, 0f, Default.serverSyncDeadZoneDeg);
         }
 
         public void CopyFrom(GunDispersionGlobalSettings source)
@@ -85,11 +135,28 @@ namespace Game.Scripts.Gameplay.Robots
             referenceTurretTraverseDegPerSec = source.referenceTurretTraverseDegPerSec;
             referenceGunTraverseDegPerSec = source.referenceGunTraverseDegPerSec;
             referenceCameraAimDegPerSec = source.referenceCameraAimDegPerSec;
+            accuracyReferenceDistanceMeters = source.accuracyReferenceDistanceMeters;
             uiMinDiameter = source.uiMinDiameter;
             uiMaxDiameter = source.uiMaxDiameter;
+            uiFullyAimedPixelsPerDegree = source.uiFullyAimedPixelsPerDegree;
             uiPixelsPerDegree = source.uiPixelsPerDegree;
             serverSyncInterval = source.serverSyncInterval;
             serverSyncDeadZoneDeg = source.serverSyncDeadZoneDeg;
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
         }
     }
 
@@ -109,6 +176,13 @@ namespace Game.Scripts.Gameplay.Robots
             CurrentDeg = settings != null ? settings.MinDispersion : 0f;
             _forcedExpandTargetDeg = 0f;
             Sample(root, includeCamera: true);
+        }
+
+        public void ForceFullyAimed(VehicleRoot root, GunDispersionSettings settings, bool includeCameraAimMotion)
+        {
+            CurrentDeg = settings != null ? settings.MinDispersion : 0f;
+            _forcedExpandTargetDeg = 0f;
+            Sample(root, includeCameraAimMotion);
         }
 
         public float Tick(

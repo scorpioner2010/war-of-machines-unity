@@ -7,6 +7,7 @@ using FishNet.Object;
 using FishNet.Transporting;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,6 +23,7 @@ namespace Game.Scripts.Testing
         public Camera testCamera;
         public NetworkManager networkManager;
         public GameObject clientGameplayHudPrefab;
+        public VehicleTestRuntimeSettings testRuntimeSettings;
         public bool replaceSceneGameplayHud = true;
         public bool autoStartHost = true;
         public ushort localTestPort = 7780;
@@ -54,6 +56,7 @@ namespace Game.Scripts.Testing
         private void Awake()
         {
             ResolveSceneReferences();
+            ResolveTestRuntimeSettings();
             EnsureGameplayHud();
             ResolveNetworkManager();
         }
@@ -105,6 +108,11 @@ namespace Game.Scripts.Testing
             {
                 SetTestCursorMode(false);
             }
+
+            if (_spawnedVehicle != null && testRuntimeSettings != null)
+            {
+                testRuntimeSettings.ApplyToVehicle(_spawnedVehicle);
+            }
         }
 
         private void OnGUI()
@@ -125,6 +133,8 @@ namespace Game.Scripts.Testing
             DrawVehicleList();
             GUILayout.Space(8f);
             DrawSelectedStats();
+            GUILayout.Space(8f);
+            DrawTestSettingsSummary();
             GUILayout.Space(8f);
 
             VehicleRuntimeStats selected = GetSelected();
@@ -229,6 +239,32 @@ namespace Game.Scripts.Testing
             GUILayout.EndScrollView();
         }
 
+        private void DrawTestSettingsSummary()
+        {
+            if (testRuntimeSettings == null)
+            {
+                GUILayout.Label("Test runtime settings: missing.");
+                return;
+            }
+
+            string status = testRuntimeSettings.HasActiveTestParameters
+                ? "Test overrides ON"
+                : "Test overrides OFF";
+            GUILayout.Label(status);
+            if (testRuntimeSettings.HasActiveTestParameters)
+            {
+                GUILayout.Label("Reload: " + testRuntimeSettings.reloadTime.ToString("0.###") + " s");
+                GUILayout.Label("Shells: " + testRuntimeSettings.shellsCount);
+            }
+
+            GUILayout.Label(testRuntimeSettings.createHitMarkerSphere
+                ? "Hit markers ON"
+                : "Hit markers OFF");
+            GUILayout.Label(testRuntimeSettings.forceFullyAimedAccuracyOnly
+                ? "Accuracy debug: fully aimed accuracy only ON"
+                : "Accuracy debug OFF");
+        }
+
         private string BuildStatsText(VehicleRuntimeStats stats)
         {
             _builder.Length = 0;
@@ -241,7 +277,8 @@ namespace Game.Scripts.Testing
             _builder.Append("Shell speed: ").Append(stats.ShellSpeed).Append('\n');
             _builder.Append("Ammo: ").Append(stats.ShellsCount).Append('\n');
             _builder.Append("Reload: ").Append(stats.ReloadTime).Append(" s\n");
-            _builder.Append("Accuracy: ").Append(stats.Accuracy).Append('\n');
+            _builder.Append("Accuracy @100m: ").Append(stats.Accuracy).Append(" m\n");
+            AppendResolvedAccuracyStats(stats);
             _builder.Append("Aim time: ").Append(stats.AimTime).Append(" s\n");
             _builder.Append("Speed: ").Append(stats.Speed).Append('\n');
             _builder.Append("Acceleration: ").Append(stats.Acceleration).Append('\n');
@@ -252,6 +289,15 @@ namespace Game.Scripts.Testing
             _builder.Append("Turret armor: ").Append(stats.TurretArmor.Front).Append('/')
                 .Append(stats.TurretArmor.Side).Append('/').Append(stats.TurretArmor.Rear);
             return _builder.ToString();
+        }
+
+        private void AppendResolvedAccuracyStats(VehicleRuntimeStats stats)
+        {
+            GunDispersionGlobalSettings dispersionSettings = ServerSettings.GetGunDispersion();
+            float dispersionDeg = dispersionSettings.GetAccuracyDispersionDeg(stats.Accuracy, 0f);
+            float ringDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg);
+            _builder.Append("Fully aimed dispersion: ").Append(dispersionDeg.ToString("0.###")).Append(" deg\n");
+            _builder.Append("Fully aimed ring: ").Append(ringDiameter.ToString("0.#")).Append(" px\n");
         }
 
         private VehicleRuntimeStats GetSelected()
@@ -299,6 +345,13 @@ namespace Game.Scripts.Testing
                 return;
             }
 
+            VehicleRuntimeStats runtimeStats = BuildRuntimeStatsForSpawn(stats);
+            if (runtimeStats == null)
+            {
+                _status = "Cannot spawn selected vehicle: runtime stats missing.";
+                return;
+            }
+
             DespawnCurrent();
 
             Vector3 position = GetSpawnPosition();
@@ -313,7 +366,7 @@ namespace Game.Scripts.Testing
                 AlignVisualBoundsToGround(_spawnedVehicle, groundY);
             }
 
-            _spawnedVehicle.ServerApplyRuntimeStats(stats, syncObservers: false);
+            _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: false);
 
             NetworkObject networkObject = _spawnedVehicle.networkObject != null
                 ? _spawnedVehicle.networkObject
@@ -328,7 +381,11 @@ namespace Game.Scripts.Testing
             }
 
             networkManager.ServerManager.Spawn(networkObject, networkManager.ClientManager.Connection, gameObject.scene);
-            _spawnedVehicle.ServerApplyRuntimeStats(stats, syncObservers: true);
+            _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: true);
+            if (testRuntimeSettings != null)
+            {
+                testRuntimeSettings.ApplyToVehicle(_spawnedVehicle);
+            }
 
             if (_spawnedVehicle.characterInit != null)
             {
@@ -337,7 +394,21 @@ namespace Game.Scripts.Testing
 
             SetTestCursorMode(false);
 
-            _status = "Spawned " + stats.Name + ".";
+            _status = "Spawned " + runtimeStats.Name + ".";
+            if (testRuntimeSettings != null && testRuntimeSettings.HasActiveTestParameters)
+            {
+                _status += " Test combat overrides applied.";
+            }
+        }
+
+        private VehicleRuntimeStats BuildRuntimeStatsForSpawn(VehicleRuntimeStats source)
+        {
+            if (testRuntimeSettings != null)
+            {
+                return testRuntimeSettings.BuildRuntimeStats(source);
+            }
+
+            return source != null ? source.Clone() : null;
         }
 
         private void DespawnCurrent()
@@ -397,6 +468,25 @@ namespace Game.Scripts.Testing
             }
 
             cameraSync.gameplayCamera = testCamera;
+        }
+
+        private void ResolveTestRuntimeSettings()
+        {
+            if (testRuntimeSettings != null)
+            {
+                return;
+            }
+
+            VehicleTestRuntimeSettings[] settings = FindObjectsByType<VehicleTestRuntimeSettings>(FindObjectsSortMode.None);
+            for (int i = 0; i < settings.Length; i++)
+            {
+                VehicleTestRuntimeSettings candidate = settings[i];
+                if (candidate != null && candidate.gameObject.scene == gameObject.scene)
+                {
+                    testRuntimeSettings = candidate;
+                    return;
+                }
+            }
         }
 
         private void EnsureGameplayHud()

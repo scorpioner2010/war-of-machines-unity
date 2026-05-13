@@ -324,7 +324,7 @@ namespace Game.Scripts.UI.MainMenu
                 AppendFloat(builder, "Shell speed", data.ShellSpeed, " m/s", "0.#");
                 AppendInt(builder, "Ammo", data.ShellsCount, string.Empty);
                 AppendFloat(builder, "Reload", data.ReloadTime, " s", "0.##");
-                AppendFloat(builder, "Accuracy", data.Accuracy, string.Empty, "0.##");
+                AppendFloat(builder, "Accuracy @100m", data.Accuracy, " m", "0.##");
                 AppendFloat(builder, "Aim time", data.AimTime, " s", "0.##");
             }
 

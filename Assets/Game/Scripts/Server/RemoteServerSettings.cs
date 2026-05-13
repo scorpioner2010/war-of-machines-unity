@@ -38,8 +38,10 @@ namespace Game.Scripts.Server
             float gunDispersionReferenceTurretTraverse,
             float gunDispersionReferenceGunTraverse,
             float gunDispersionReferenceCameraAim,
+            float gunDispersionAccuracyReferenceDistanceMeters,
             float gunDispersionUiMinDiameter,
             float gunDispersionUiMaxDiameter,
+            float gunDispersionUiFullyAimedPixelsPerDegree,
             float gunDispersionUiPixelsPerDegree,
             float gunDispersionServerSyncInterval,
             float gunDispersionServerSyncDeadZoneDeg,
@@ -76,11 +78,14 @@ namespace Game.Scripts.Server
             GunDispersion.referenceTurretTraverseDegPerSec = gunDispersionReferenceTurretTraverse > 0f ? gunDispersionReferenceTurretTraverse : GunDispersionGlobalSettings.Default.referenceTurretTraverseDegPerSec;
             GunDispersion.referenceGunTraverseDegPerSec = gunDispersionReferenceGunTraverse > 0f ? gunDispersionReferenceGunTraverse : GunDispersionGlobalSettings.Default.referenceGunTraverseDegPerSec;
             GunDispersion.referenceCameraAimDegPerSec = gunDispersionReferenceCameraAim > 0f ? gunDispersionReferenceCameraAim : GunDispersionGlobalSettings.Default.referenceCameraAimDegPerSec;
+            GunDispersion.accuracyReferenceDistanceMeters = gunDispersionAccuracyReferenceDistanceMeters > 0f ? gunDispersionAccuracyReferenceDistanceMeters : GunDispersionGlobalSettings.Default.accuracyReferenceDistanceMeters;
             GunDispersion.uiMinDiameter = gunDispersionUiMinDiameter > 0f ? gunDispersionUiMinDiameter : GunDispersionGlobalSettings.Default.uiMinDiameter;
             GunDispersion.uiMaxDiameter = gunDispersionUiMaxDiameter > GunDispersion.uiMinDiameter ? gunDispersionUiMaxDiameter : GunDispersionGlobalSettings.Default.uiMaxDiameter;
-            GunDispersion.uiPixelsPerDegree = gunDispersionUiPixelsPerDegree > 0f ? gunDispersionUiPixelsPerDegree : GunDispersionGlobalSettings.Default.uiPixelsPerDegree;
+            GunDispersion.uiFullyAimedPixelsPerDegree = gunDispersionUiFullyAimedPixelsPerDegree >= 0f ? gunDispersionUiFullyAimedPixelsPerDegree : GunDispersionGlobalSettings.Default.uiFullyAimedPixelsPerDegree;
+            GunDispersion.uiPixelsPerDegree = gunDispersionUiPixelsPerDegree >= 0f ? gunDispersionUiPixelsPerDegree : GunDispersionGlobalSettings.Default.uiPixelsPerDegree;
             GunDispersion.serverSyncInterval = gunDispersionServerSyncInterval > 0f ? gunDispersionServerSyncInterval : GunDispersionGlobalSettings.Default.serverSyncInterval;
             GunDispersion.serverSyncDeadZoneDeg = gunDispersionServerSyncDeadZoneDeg >= 0f ? gunDispersionServerSyncDeadZoneDeg : GunDispersionGlobalSettings.Default.serverSyncDeadZoneDeg;
+            GunDispersion.Validate();
 
             ProjectileBallistics.projectileGravity = projectileGravity >= 0f ? projectileGravity : ProjectileBallisticsGlobalSettings.Default.projectileGravity;
             ProjectileBallistics.useBallisticCompensation = projectileUseBallisticCompensation;

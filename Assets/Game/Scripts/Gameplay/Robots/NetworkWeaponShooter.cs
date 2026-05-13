@@ -11,6 +11,8 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class NetworkWeaponShooter : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
+        public static event System.Action<Vector3, Vector3> AuthoritativeProjectileHit;
+
         public VehicleRoot vehicleRoot;
 
         public Projectile projectilePrefab;
@@ -78,10 +80,16 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly GunDispersionModel _ownerDispersion = new GunDispersionModel();
         private readonly GunDispersionModel _serverDispersion = new GunDispersionModel();
         private readonly SyncVar<float> _serverDispersionDeg = new();
+        private bool _testAccuracyDebugMode;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+        }
+
+        public void SetTestAccuracyDebugMode(bool enabled)
+        {
+            _testAccuracyDebugMode = enabled;
         }
 
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
@@ -99,14 +107,37 @@ namespace Game.Scripts.Gameplay.Robots
                 shellPenetrationMm = stats.Penetration;
             }
 
-            if (stats.Accuracy > 0f)
-            {
-                dispersion.minDispersionDeg = stats.Accuracy;
-            }
+            ApplyAccuracyStats(stats.Accuracy);
 
             if (stats.AimTime > 0f)
             {
                 dispersion.aimTime = stats.AimTime;
+            }
+
+            if (_serverDispersionInitialized)
+            {
+                InitServerDispersion();
+            }
+
+            if (_ownerDispersionInitialized)
+            {
+                InitOwnerDispersion();
+            }
+        }
+
+        private void ApplyAccuracyStats(float databaseAccuracy)
+        {
+            if (dispersion == null || databaseAccuracy <= 0f)
+            {
+                return;
+            }
+
+            GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+            float minDispersionDeg = globalDispersion.GetAccuracyDispersionDeg(databaseAccuracy, dispersion.MinDispersion);
+            dispersion.minDispersionDeg = minDispersionDeg;
+            if (dispersion.maxDispersionDeg < minDispersionDeg)
+            {
+                dispersion.maxDispersionDeg = minDispersionDeg;
             }
         }
 
@@ -133,7 +164,16 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-                float serverDeg = _serverDispersion.Tick(vehicleRoot, dispersion, globalDispersion, Time.deltaTime, includeCameraAimMotion: false);
+                float serverDeg;
+                if (_testAccuracyDebugMode)
+                {
+                    _serverDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: false);
+                    serverDeg = _serverDispersion.CurrentDeg;
+                }
+                else
+                {
+                    serverDeg = _serverDispersion.Tick(vehicleRoot, dispersion, globalDispersion, Time.deltaTime, includeCameraAimMotion: false);
+                }
                 SyncServerDispersion(serverDeg, globalDispersion, force: false);
             }
 
@@ -144,7 +184,14 @@ namespace Game.Scripts.Gameplay.Robots
                     InitOwnerDispersion();
                 }
 
-                _ownerDispersion.Tick(vehicleRoot, dispersion, GetGlobalDispersion(), Time.deltaTime, includeCameraAimMotion: true);
+                if (_testAccuracyDebugMode)
+                {
+                    _ownerDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: true);
+                }
+                else
+                {
+                    _ownerDispersion.Tick(vehicleRoot, dispersion, GetGlobalDispersion(), Time.deltaTime, includeCameraAimMotion: true);
+                }
                 ApplyCrosshairDispersion();
             }
         }
@@ -189,9 +236,18 @@ namespace Game.Scripts.Gameplay.Robots
                 InitOwnerDispersion();
             }
 
-            float predictedDispersionDeg = _serverDispersionDeg.Value > 0f
-                ? _serverDispersionDeg.Value
-                : _ownerDispersion.CurrentDeg;
+            float predictedDispersionDeg;
+            if (_testAccuracyDebugMode)
+            {
+                _ownerDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: true);
+                predictedDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
+            }
+            else
+            {
+                predictedDispersionDeg = _serverDispersionDeg.Value > 0f
+                    ? _serverDispersionDeg.Value
+                    : _ownerDispersion.CurrentDeg;
+            }
             DispersedShotRay predictedRay = BuildDispersedShotRay(startPos, baseAimPoint, shotId, predictedDispersionDeg, GetGlobalDispersion());
 
             Projectile predicted = SpawnLocal(startPos, predictedRay.TargetPoint, 0f, false, false, Vector3.up, true);
@@ -211,25 +267,17 @@ namespace Game.Scripts.Gameplay.Robots
             WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
             if (weaponAim != null)
             {
-                if (CameraSync.In != null)
+                Vector3 currentGunAimPoint = weaponAim.GetCurrentAimPointForOrigin(startPos);
+                if (IsFinite(currentGunAimPoint) && (currentGunAimPoint - startPos).sqrMagnitude > 0.01f)
                 {
-                    weaponAim.ResolveCameraAim(CameraSync.In.transform, out Vector3 cameraAimPoint, out _);
-                    if (IsFinite(cameraAimPoint) && (cameraAimPoint - startPos).sqrMagnitude > 0.01f)
-                    {
-                        return cameraAimPoint;
-                    }
+                    return currentGunAimPoint;
                 }
 
-                Vector3 desiredAimPoint = weaponAim.DesiredAimPoint;
-                if (IsFinite(desiredAimPoint) && (desiredAimPoint - startPos).sqrMagnitude > 0.01f)
+                Vector3 gunForward = GetGunShotForward(weaponAim);
+                if (IsFinite(gunForward) && gunForward.sqrMagnitude > 0.000001f)
                 {
-                    return desiredAimPoint;
-                }
-
-                Vector3 currentAimPoint = weaponAim.GetCurrentAimPointForOrigin(startPos);
-                if (IsFinite(currentAimPoint) && (currentAimPoint - startPos).sqrMagnitude > 0.01f)
-                {
-                    return currentAimPoint;
+                    gunForward.Normalize();
+                    return startPos + gunForward * GetMaxShotDistance();
                 }
             }
 
@@ -241,6 +289,16 @@ namespace Game.Scripts.Gameplay.Robots
 
             forward.Normalize();
             return startPos + forward * GetMaxShotDistance();
+        }
+
+        private Vector3 GetGunShotForward(WeaponAimController weaponAim)
+        {
+            if (weaponAim == null || weaponAim.gun == null)
+            {
+                return muzzleTransform != null ? muzzleTransform.forward : transform.forward;
+            }
+
+            return WeaponAimController.ToWorldAxis(weaponAim.gun, weaponAim.localForwardAxis);
         }
 
         private Projectile SpawnLocal(
@@ -333,7 +391,14 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-            DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, _serverDispersion.CurrentDeg, globalDispersion);
+            float shotDispersionDeg = _serverDispersion.CurrentDeg;
+            if (_testAccuracyDebugMode)
+            {
+                _serverDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: false);
+                shotDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
+            }
+
+            DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, shotDispersionDeg, globalDispersion);
             AddServerShotBloom();
             ConfigureOwnerProjectileTrajectoryTargetRpc(sender, shotId, dispersedRay.TargetPoint);
 
@@ -384,6 +449,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void AddOwnerShotBloom()
         {
+            if (_testAccuracyDebugMode)
+            {
+                return;
+            }
+
             if (!_ownerDispersionInitialized)
             {
                 InitOwnerDispersion();
@@ -395,6 +465,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void AddServerShotBloom()
         {
+            if (_testAccuracyDebugMode)
+            {
+                return;
+            }
+
             if (!_serverDispersionInitialized)
             {
                 InitServerDispersion();
@@ -435,11 +510,14 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-            float localDiameter = globalDispersion.GetUiDiameter(_ownerDispersion.CurrentDeg, dispersion.MinDispersion);
-            float serverDeg = _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
+            float localDeg = _testAccuracyDebugMode ? dispersion.MinDispersion : _ownerDispersion.CurrentDeg;
+            float localDiameter = globalDispersion.GetUiDiameter(localDeg, dispersion.MinDispersion);
+            float serverDeg = _testAccuracyDebugMode
+                ? localDeg
+                : _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
             float serverDiameter = globalDispersion.GetUiDiameter(serverDeg, dispersion.MinDispersion);
             _crosshair.SetAimingDiameters(localDiameter, serverDiameter);
-            _crosshair.SetAimStatus(_ownerDispersion.CurrentDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
+            _crosshair.SetAimStatus(localDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
         }
 
         private GunDispersionGlobalSettings GetGlobalDispersion()
@@ -619,6 +697,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             ResolvedShot shot = ResolveProjectileHit(hit, shotDirection);
+            AuthoritativeProjectileHit?.Invoke(hit.point, hit.normal);
             ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, shot.Point, shot.Normal, shot.Hit);
             ResolveObserversProjectileTargetRpc(shotId, shot.Point, shot.Normal, shot.Hit);
             ApplyResolvedShotDamage(shooterConnection, shot);

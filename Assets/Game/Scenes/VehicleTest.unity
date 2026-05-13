@@ -169,7 +169,9 @@ MonoBehaviour:
   spawnPoint: {fileID: 200101}
   testCamera: {fileID: 200002}
   networkManager: {fileID: 0}
-  clientGameplayHudPrefab: {fileID: 1968510405, guid: 5545b2e272ed4fa59730ac5e8472a937, type: 3}
+  clientGameplayHudPrefab: {fileID: 1968510405, guid: 5545b2e272ed4fa59730ac5e8472a937,
+    type: 3}
+  testRuntimeSettings: {fileID: 900123456791}
   replaceSceneGameplayHud: 1
   autoStartHost: 1
   localTestPort: 7780
@@ -904,11 +906,67 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3533032834666098081, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: gunDispersion.uiMinDiameter
+      value: 20
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 37920e9282dd1184faf512fea6cfe275, type: 3}
+--- !u!1 &900123456789
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 900123456790}
+  - component: {fileID: 900123456791}
+  m_Layer: 0
+  m_Name: VehicleTestRuntimeSettings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &900123456790
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900123456789}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &900123456791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900123456789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e3c82514aee42aeadd276bc80383cd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  activateTestParameters: 1
+  reloadTime: 0.1
+  shellsCount: 999
+  forceFullyAimedAccuracyOnly: 1
+  createHitMarkerSphere: 1
+  hitMarkerRadius: 0.18
+  hitMarkerColor: {r: 1, g: 0.052777845, b: 0.05098039, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -922,3 +980,4 @@ SceneRoots:
   - {fileID: 200200}
   - {fileID: 200101}
   - {fileID: 1900086809}
+  - {fileID: 900123456790}

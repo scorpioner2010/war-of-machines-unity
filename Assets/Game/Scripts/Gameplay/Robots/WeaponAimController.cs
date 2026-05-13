@@ -46,6 +46,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         public enum Axis { X, Y, Z }
 
+        public float CurrentLocalPitch => _localPitch;
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;

@@ -227,6 +227,7 @@ namespace Game.Scripts.Server
                 return GunDispersionGlobalSettings.Default;
             }
 
+            In.gunDispersion.Validate();
             return In.gunDispersion;
         }
 
@@ -267,6 +268,11 @@ namespace Game.Scripts.Server
             if (robotMovement != null)
             {
                 robotMovement.Validate();
+            }
+
+            if (gunDispersion != null)
+            {
+                gunDispersion.Validate();
             }
 
             if (projectileBallistics != null)

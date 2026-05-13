@@ -38,6 +38,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private float _turretYawLocal;
         private float _gunPitchLocal;
+        private bool _aimLockHeldLocal;
+        private float _lockedTurretYawLocal;
+        private float _lockedGunPitchLocal;
+        private Vector3 _lockedAimPointLocal;
+        private Vector3 _lockedAimForwardLocal;
 
         private const float YawPitchSendDeadzoneDeg = 0.03f;
         private const float AimPointSendDeadzoneSqr = 0.02f * 0.02f;
@@ -207,6 +212,16 @@ namespace Game.Scripts.Gameplay.Robots
 
             bool newShoot = !blocked && Input.GetMouseButton(0);
             bool newAction = !blocked && Input.GetKey(KeyCode.Space);
+            bool aimLocked = !blocked && Input.GetMouseButton(1);
+
+            if (!aimLocked)
+            {
+                _aimLockHeldLocal = false;
+            }
+            else if (!_aimLockHeldLocal)
+            {
+                CaptureAimLock();
+            }
 
             _moveLocal = new Vector2(x, y);
             _shootLocal = newShoot;
@@ -222,6 +237,13 @@ namespace Game.Scripts.Gameplay.Robots
                 pitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
                 aimPoint = _lastAimPointLocal;
                 aimForward = _lastAimForwardLocal;
+            }
+            else if (aimLocked)
+            {
+                yawDeg = _lockedTurretYawLocal;
+                pitchDeg = _lockedGunPitchLocal;
+                aimPoint = _lockedAimPointLocal;
+                aimForward = _lockedAimForwardLocal;
             }
             else
             {
@@ -385,6 +407,81 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 vehicleRoot.weaponAimAtCamera.SetTargetPitch(pitchDeg);
             }
+        }
+
+        private void CaptureAimLock()
+        {
+            _aimLockHeldLocal = true;
+            _lockedTurretYawLocal = _turretYawLocal;
+            _lockedGunPitchLocal = _gunPitchLocal;
+            _lockedAimPointLocal = _lastAimPointLocal;
+            _lockedAimForwardLocal = _lastAimForwardLocal;
+
+            WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
+            if (vehicleRoot != null && vehicleRoot.robotHullRotation != null)
+            {
+                _lockedTurretYawLocal = vehicleRoot.robotHullRotation.CurrentLocalYaw;
+            }
+
+            if (weaponAim != null)
+            {
+                _lockedGunPitchLocal = weaponAim.CurrentLocalPitch;
+                _lockedAimPointLocal = weaponAim.CurrentAimPoint;
+                _lockedAimForwardLocal = GetWeaponForward(weaponAim);
+            }
+
+            if (!IsFinite(_lockedAimForwardLocal) || _lockedAimForwardLocal.sqrMagnitude <= 0.000001f)
+            {
+                _lockedAimForwardLocal = CameraSync.In != null ? CameraSync.In.transform.forward : transform.forward;
+            }
+
+            if (!IsFinite(_lockedAimPointLocal) || _lockedAimPointLocal == Vector3.zero)
+            {
+                _lockedAimPointLocal = BuildAimLockFallbackPoint(weaponAim, _lockedAimForwardLocal);
+            }
+
+            _turretYawLocal = _lockedTurretYawLocal;
+            _gunPitchLocal = _lockedGunPitchLocal;
+            _lastAimPointLocal = _lockedAimPointLocal;
+            _lastAimForwardLocal = _lockedAimForwardLocal;
+        }
+
+        private Vector3 GetWeaponForward(WeaponAimController weaponAim)
+        {
+            if (weaponAim == null || weaponAim.gun == null)
+            {
+                return transform.forward;
+            }
+
+            return WeaponAimController.ToWorldAxis(weaponAim.gun, weaponAim.localForwardAxis);
+        }
+
+        private Vector3 BuildAimLockFallbackPoint(WeaponAimController weaponAim, Vector3 forward)
+        {
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                forward = transform.forward;
+            }
+
+            forward.Normalize();
+
+            if (weaponAim != null && weaponAim.gun != null)
+            {
+                float distance = Mathf.Max(0.25f, weaponAim.maxAimDistance);
+                return weaponAim.gun.position + forward * distance;
+            }
+
+            return transform.position + forward * 500f;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x)
+                   && !float.IsNaN(value.y)
+                   && !float.IsNaN(value.z)
+                   && !float.IsInfinity(value.x)
+                   && !float.IsInfinity(value.y)
+                   && !float.IsInfinity(value.z);
         }
 
     }

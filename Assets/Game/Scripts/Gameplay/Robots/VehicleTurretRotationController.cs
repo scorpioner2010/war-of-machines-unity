@@ -15,6 +15,8 @@ namespace Game.Scripts.Gameplay.Robots
         private float _targetYawServer;
         private Transform _chassisTransform;
 
+        public float CurrentLocalYaw => _localYaw;
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;

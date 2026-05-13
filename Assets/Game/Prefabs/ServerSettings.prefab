@@ -72,8 +72,10 @@ MonoBehaviour:
     referenceTurretTraverseDegPerSec: 45
     referenceGunTraverseDegPerSec: 35
     referenceCameraAimDegPerSec: 120
-    uiMinDiameter: 80
+    accuracyReferenceDistanceMeters: 100
+    uiMinDiameter: 55
     uiMaxDiameter: 340
+    uiFullyAimedPixelsPerDegree: 85
     uiPixelsPerDegree: 42
     serverSyncInterval: 0.05
     serverSyncDeadZoneDeg: 0.03
