@@ -5,14 +5,12 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
-using Game.Scripts.API.Models;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Lobby;
 using Game.Scripts.UI.MainMenu;
-using Game.Scripts.World.Spawns;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UEScene = UnityEngine.SceneManagement.Scene;
@@ -32,6 +30,8 @@ namespace Game.Scripts.Networking.Lobby
         public GameplayTimer gameplayTimerPrefab;
         
         private UEScene _additiveServerScene;
+        private readonly MatchSceneOffsetService _sceneOffsetService = new MatchSceneOffsetService();
+        private readonly MatchVehicleSpawner _vehicleSpawner = new MatchVehicleSpawner();
         public int sceneOffsetX;
         private const float SceneValidationTimeout = 10f;
         private const int EndGameDelayMilliseconds = 2000;
@@ -97,10 +97,7 @@ namespace Game.Scripts.Networking.Lobby
 
             int usedOffset = sceneOffsetX;
             
-            foreach (GameObject go in scene.GetRootGameObjects())
-            {
-                go.transform.position += Vector3.right * usedOffset;
-            }
+            _sceneOffsetService.ApplyOffset(scene, usedOffset);
 
             sceneOffsetX += 500;
             _additiveServerScene = scene;
@@ -175,14 +172,13 @@ namespace Game.Scripts.Networking.Lobby
                     continue;
                 }
                 
-                foreach (GameObject go in scene.GetRootGameObjects())
-                {
-                    go.transform.position += Vector3.right * offset;
-                }
+                _sceneOffsetService.ApplyOffset(scene, offset);
             }
         }
 
-        private void SceneManagerOnUnloadEnd(SceneUnloadEndEventArgs obj) { }
+        private void SceneManagerOnUnloadEnd(SceneUnloadEndEventArgs obj)
+        {
+        }
         
         public void ReturnToMainMenu()
         {
@@ -362,63 +358,16 @@ namespace Game.Scripts.Networking.Lobby
         
         private async UniTask SpawnPlayerAsync(ServerRoom serverRoom, NetworkConnection connection)
         {
-            float elapsedTime = 0f;
-            
-            while (!_additiveServerScene.IsValid() && elapsedTime < SceneValidationTimeout)
-            {
-                elapsedTime += Time.deltaTime;
-                await UniTask.DelayFrame(1);
-            }
-
-            if (!_additiveServerScene.IsValid())
-            {
-                return;
-            }
-
-            Player player = serverRoom.GetPlayerByConnection(connection);
-            if (player == null)
-            {
-                return;
-            }
-
-            SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(_additiveServerScene, player.team);
-            if (spawnPoint == null)
-            {
-                return;
-            }
-            
-            PlayerProfile profile = ServerPlayerSessions.GetProfile(connection.ClientId);
-            if (profile == null)
-            {
-                return;
-            }
-
-            string vehicleCode = !string.IsNullOrEmpty(player.activeVehicleCode)
-                ? player.activeVehicleCode
-                : profile.activeVehicleCode;
-
-            VehicleRoot vehicle = ResourceManager.GetPrefab(vehicleCode);
-            if (vehicle == null)
-            {
-                return;
-            }
-
-            VehicleRoot vehicleRoot = Instantiate(vehicle, spawnPoint.transform.position, spawnPoint.transform.rotation);
-            VehicleRuntimeStats stats = await VehicleStatsProvider.GetAsync(player.activeVehicleId, vehicleCode);
-            if (stats != null)
-            {
-                vehicleRoot.ServerApplyRuntimeStats(stats, syncObservers: false);
-            }
-
-            ServerManager.Spawn(vehicleRoot.networkObject, connection, _additiveServerScene);
-            if (stats != null)
-            {
-                vehicleRoot.ServerApplyRuntimeStats(stats, syncObservers: true);
-            }
-
-            player.playerRoot = vehicleRoot;
-            player.playerRoot.health.OnServerDeath += _ => HandleRobotDeath(serverRoom);
-            player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, player.team, _additiveServerScene);
+            await _vehicleSpawner.SpawnPlayerAsync(
+                serverRoom,
+                connection,
+                _additiveServerScene,
+                SceneValidationTimeout,
+                ServerManager,
+                vehicleRoot =>
+                {
+                    vehicleRoot.health.OnServerDeath += _ => HandleRobotDeath(serverRoom);
+                });
         }
 
         [Server]
@@ -610,10 +559,7 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            foreach (GameObject go in scene.GetRootGameObjects())
-            {
-                go.transform.position += Vector3.right * offset;
-            }
+            _sceneOffsetService.ApplyOffset(scene, offset);
         }
 
         private UEScene GetSceneByHandleLocal(int handle)

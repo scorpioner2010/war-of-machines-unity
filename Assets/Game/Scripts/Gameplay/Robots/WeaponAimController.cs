@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class WeaponAimAtCamera : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
+    public class WeaponAimController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         private const int AimRaycastBufferSize = 64;
         private static readonly RaycastHit[] AimRaycastBuffer = new RaycastHit[AimRaycastBufferSize];

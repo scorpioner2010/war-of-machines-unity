@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class RobotHullRotation : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
+    public class VehicleTurretRotationController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
 

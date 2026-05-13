@@ -21,18 +21,11 @@ namespace Game.Scripts.API.ServerManagers
         [SerializeField] private Button registerButton; 
         
         private const string LastLoginName = "LastLogin";
-        private const string LastPasswordName = "LastPassword";
 
         public static string LastLogin
         {
             get => PlayerPrefs.GetString(LastLoginName, string.Empty);
             set => PlayerPrefs.SetString(LastLoginName, value);
-        }
-
-        public static string LastPassword
-        {
-            get => PlayerPrefs.GetString(LastPasswordName, string.Empty);
-            set => PlayerPrefs.SetString(LastPasswordName, value);
         }
 
         public override void OnStartServer()
@@ -68,7 +61,7 @@ namespace Game.Scripts.API.ServerManagers
             registerButton.onClick.AddListener(RegisterButtonClicked);
             
             userLoginInputField.text = LastLogin;
-            userPasswordInputField.text = LastPassword;
+            userPasswordInputField.text = string.Empty;
             
             MenuManager.OpenMenu(MenuType.Auth);
         }
@@ -160,10 +153,7 @@ namespace Game.Scripts.API.ServerManagers
             }
             
             string userLogin = userLoginInputField.text.Trim();
-            string password = userPasswordInputField.text.Trim();
-
             LastLogin = userLogin;
-            LastPassword = password;
         }
         
         [TargetRpc]

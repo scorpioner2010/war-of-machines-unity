@@ -11,16 +11,16 @@ namespace Game.Scripts.Gameplay.Robots
     public class VehicleRoot : NetworkBehaviour
     {
         public NetworkObject networkObject;
-        public CharacterInit characterInit;
+        public VehicleNetworkInitializer characterInit;
         public InputManager inputManager;
-        public Health health;
-        public ObjectMover objectMover;
-        public UISenerd uiSenerd;
+        public VehicleHealth health;
+        public VehicleMovementController objectMover;
+        public VehicleHudInitializer uiSenerd;
         public CameraController cameraController;
-        public RobotHullRotation robotHullRotation;
-        public WeaponAimAtCamera weaponAimAtCamera;
-        public GunReticleUIFollower gunReticleUIFollower;
-        public ShooterNet shooterNet;
+        public VehicleTurretRotationController robotHullRotation;
+        public WeaponAimController weaponAimAtCamera;
+        public WeaponReticlePresenter gunReticleUIFollower;
+        public NetworkWeaponShooter shooterNet;
         public WeaponReloadController weaponReloadController;
         public CaterpillarTrack caterpillarTrack;
         public RobotFootAnimator footAnimator;
@@ -84,7 +84,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             if (characterInit == null)
             {
-                characterInit = GetComponentInChildren<CharacterInit>(true);
+                characterInit = GetComponentInChildren<VehicleNetworkInitializer>(true);
             }
             if (inputManager == null)
             {
@@ -92,15 +92,15 @@ namespace Game.Scripts.Gameplay.Robots
             }
             if (health == null)
             {
-                health = GetComponentInChildren<Health>(true);
+                health = GetComponentInChildren<VehicleHealth>(true);
             }
             if (objectMover == null)
             {
-                objectMover = GetComponentInChildren<ObjectMover>(true);
+                objectMover = GetComponentInChildren<VehicleMovementController>(true);
             }
             if (uiSenerd == null)
             {
-                uiSenerd = GetComponentInChildren<UISenerd>(true);
+                uiSenerd = GetComponentInChildren<VehicleHudInitializer>(true);
             }
             if (cameraController == null)
             {
@@ -108,19 +108,19 @@ namespace Game.Scripts.Gameplay.Robots
             }
             if (robotHullRotation == null)
             {
-                robotHullRotation = GetComponentInChildren<RobotHullRotation>(true);
+                robotHullRotation = GetComponentInChildren<VehicleTurretRotationController>(true);
             }
             if (weaponAimAtCamera == null)
             {
-                weaponAimAtCamera = GetComponentInChildren<WeaponAimAtCamera>(true);
+                weaponAimAtCamera = GetComponentInChildren<WeaponAimController>(true);
             }
             if (gunReticleUIFollower == null)
             {
-                gunReticleUIFollower = GetComponentInChildren<GunReticleUIFollower>(true);
+                gunReticleUIFollower = GetComponentInChildren<WeaponReticlePresenter>(true);
             }
             if (shooterNet == null)
             {
-                shooterNet = GetComponentInChildren<ShooterNet>(true);
+                shooterNet = GetComponentInChildren<NetworkWeaponShooter>(true);
             }
             if (weaponReloadController == null)
             {

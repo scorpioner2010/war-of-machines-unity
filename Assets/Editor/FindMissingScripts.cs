@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace Toras.Editor
 {
-    public class FindMissingsScripts : MonoBehaviour
+    public class FindMissingScripts : MonoBehaviour
     {
-        [MenuItem("TorasDeveloper/Fund missing script in project")]
-        static void FundMissingScriptsInProject()
+        [MenuItem("TorasDeveloper/Find missing script in project")]
+        private static void FindMissingScriptsInProject()
         {
             var c = AssetDatabase.GetAllAssetPaths()
                 .Where(path => path.EndsWith(".prefab", System.StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -26,10 +26,10 @@ namespace Toras.Editor
             }
         }
 
-        [MenuItem("TorasDeveloper/Fund missing script in scene")]
-        static void FindMissingInScene()
+        [MenuItem("TorasDeveloper/Find missing script in scene")]
+        private static void FindMissingInScene()
         {
-            foreach (var gameObject in GameObject.FindObjectsOfType<GameObject>(true))
+            foreach (var gameObject in GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 foreach (var component in gameObject.GetComponentsInChildren<Component>())
                 {

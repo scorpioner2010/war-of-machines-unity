@@ -18,7 +18,7 @@ namespace Game.Scripts.Gameplay.Robots
         Bot,
     }
 
-    public class CharacterInit : NetworkBehaviour, IVehicleRootAware
+    public class VehicleNetworkInitializer : NetworkBehaviour, IVehicleRootAware
     {
         public VehicleRoot playerRoot;
 

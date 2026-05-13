@@ -3,7 +3,7 @@ using Game.Scripts.Server;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class ObjectMover : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
+    public class VehicleMovementController : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
         public CharacterController controller;

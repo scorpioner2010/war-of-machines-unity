@@ -38,7 +38,6 @@ namespace Game.Scripts.Gameplay.Robots
         private float _turretYawLocal;
         private float _gunPitchLocal;
 
-        private const float AngleQuantization = 100f;
         private const float YawPitchSendDeadzoneDeg = 0.03f;
         private const float AimPointSendDeadzoneSqr = 0.02f * 0.02f;
 
@@ -198,8 +197,8 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (_controlsBlocked)
             {
-                yawDeg = DequantizeAngle01(_lastSentYawQ);
-                pitchDeg = DequantizeAngle01(_lastSentPitchQ);
+                yawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
+                pitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
                 aimPoint = _lastAimPointLocal;
                 aimForward = _lastAimForwardLocal;
             }
@@ -227,11 +226,11 @@ namespace Game.Scripts.Gameplay.Robots
             }
             ApplyLocalAimTargets(yawDeg, pitchDeg);
 
-            short yawQ = QuantizeAngle01(yawDeg);
-            short pitchQ = QuantizeAngle01(pitchDeg);
+            short yawQ = AngleQuantization.QuantizeAngle01(yawDeg);
+            short pitchQ = AngleQuantization.QuantizeAngle01(pitchDeg);
 
-            float lastYawDeg = DequantizeAngle01(_lastSentYawQ);
-            float lastPitchDeg = DequantizeAngle01(_lastSentPitchQ);
+            float lastYawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
+            float lastPitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
 
             bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= YawPitchSendDeadzoneDeg;
             bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= YawPitchSendDeadzoneDeg;
@@ -321,8 +320,8 @@ namespace Game.Scripts.Gameplay.Robots
             _animShoot.Value = _shootServer;
             _animAction.Value = _actionServer;
 
-            float yawDeg = DequantizeAngle01(yawQ);
-            float pitchDeg = DequantizeAngle01(pitchQ);
+            float yawDeg = AngleQuantization.DequantizeAngle01(yawQ);
+            float pitchDeg = AngleQuantization.DequantizeAngle01(pitchQ);
 
             vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(aimPoint, aimForward);
             vehicleRoot.robotHullRotation.SetTargetYawServer(yawDeg);
@@ -331,60 +330,23 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ComputeLocalYawPitch(out float yawDeg, out float pitchDeg, out Vector3 cameraAimPoint, out Vector3 cameraAimForward)
         {
-            yawDeg = 0f;
-            pitchDeg = 0f;
-            cameraAimPoint = Vector3.zero;
-            cameraAimForward = Vector3.zero;
+            Transform cameraTransform = CameraSync.In != null ? CameraSync.In.transform : null;
+            VehicleAimInputResult result = VehicleAimInputSolver.Solve(
+                vehicleRoot,
+                cameraTransform,
+                _turretYawLocal,
+                _gunPitchLocal);
 
-            if (vehicleRoot == null || vehicleRoot.objectMover == null || vehicleRoot.robotHullRotation == null || vehicleRoot.weaponAimAtCamera == null)
+            if (result.HasState)
             {
-                return;
+                _turretYawLocal = result.YawDeg;
+                _gunPitchLocal = result.PitchDeg;
             }
 
-            WeaponAimAtCamera weaponAim = vehicleRoot.weaponAimAtCamera;
-            Transform chassis = vehicleRoot.objectMover.transform;
-            Vector3 chassisFwd = chassis.forward;
-            chassisFwd.y = 0f;
-
-            Transform camTr = CameraSync.In != null ? CameraSync.In.transform : null;
-            if (camTr == null)
-            {
-                _turretYawLocal = 0f;
-                _gunPitchLocal = 0f;
-                cameraAimPoint = weaponAim != null
-                    ? weaponAim.CurrentAimPoint
-                    : Vector3.zero;
-                return;
-            }
-
-            weaponAim.ResolveCameraAim(camTr, out cameraAimPoint, out cameraAimForward);
-
-            Vector3 targetYawFlat = cameraAimPoint - vehicleRoot.robotHullRotation.transform.position;
-            targetYawFlat.y = 0f;
-            if (targetYawFlat.sqrMagnitude <= 1e-6f)
-            {
-                targetYawFlat = cameraAimForward;
-                targetYawFlat.y = 0f;
-            }
-
-            if (chassisFwd.sqrMagnitude > 1e-6f && targetYawFlat.sqrMagnitude > 1e-6f)
-            {
-                chassisFwd.Normalize();
-                targetYawFlat.Normalize();
-                _turretYawLocal = Vector3.SignedAngle(chassisFwd, targetYawFlat, Vector3.up);
-
-                float maxLocalYaw = vehicleRoot.robotHullRotation.maxLocalYaw;
-                if (maxLocalYaw > 0f)
-                {
-                    float half = Mathf.Abs(maxLocalYaw);
-                    _turretYawLocal = Mathf.Clamp(_turretYawLocal, -half, half);
-                }
-            }
-
-            _gunPitchLocal = ComputeTargetGunPitch(cameraAimPoint, cameraAimForward, _turretYawLocal);
-
-            yawDeg = _turretYawLocal;
-            pitchDeg = _gunPitchLocal;
+            yawDeg = result.YawDeg;
+            pitchDeg = result.PitchDeg;
+            cameraAimPoint = result.CameraAimPoint;
+            cameraAimForward = result.CameraAimForward;
         }
 
         private void ApplyLocalAimTargets(float yawDeg, float pitchDeg)
@@ -402,87 +364,6 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 vehicleRoot.weaponAimAtCamera.SetTargetPitch(pitchDeg);
             }
-        }
-
-        private static short QuantizeAngle01(float deg)
-        {
-            float clamped = Mathf.Clamp(deg, -180f, 180f);
-            return (short)Mathf.RoundToInt(clamped * AngleQuantization);
-        }
-
-        private static float DequantizeAngle01(short q)
-        {
-            return q / AngleQuantization;
-        }
-
-        private float ComputeTargetGunPitch(Vector3 cameraAimPoint, Vector3 cameraAimForward, float targetYawDeg)
-        {
-            WeaponAimAtCamera weaponAim = vehicleRoot.weaponAimAtCamera;
-            Transform gun = weaponAim.gun;
-            if (gun == null)
-            {
-                return 0f;
-            }
-
-            Transform turret = vehicleRoot.robotHullRotation.transform;
-            Transform chassis = vehicleRoot.objectMover.transform;
-            Quaternion targetTurretRotation = chassis.rotation * Quaternion.Euler(0f, targetYawDeg, 0f);
-            Quaternion turretDelta = targetTurretRotation * Quaternion.Inverse(turret.rotation);
-
-            Vector3 targetGunPosition = turret.position + turretDelta * (gun.position - turret.position);
-            Quaternion targetParentRotation = gun.parent != null
-                ? turretDelta * gun.parent.rotation
-                : targetTurretRotation;
-
-            Quaternion baseGunRotation = targetParentRotation * weaponAim.InitialLocalRotation;
-            Vector3 pitchAxisWorld = baseGunRotation * AxisToVector(weaponAim.localPitchAxis);
-            Vector3 forwardWorld = baseGunRotation * AxisToVector(weaponAim.localForwardAxis);
-
-            if (pitchAxisWorld.sqrMagnitude <= 1e-6f || forwardWorld.sqrMagnitude <= 1e-6f)
-            {
-                return _gunPitchLocal;
-            }
-
-            pitchAxisWorld.Normalize();
-            forwardWorld.Normalize();
-
-            Vector3 targetDirection = cameraAimPoint - targetGunPosition;
-            if (targetDirection.sqrMagnitude <= 1e-6f)
-            {
-                targetDirection = cameraAimForward;
-            }
-            if (targetDirection.sqrMagnitude <= 1e-6f)
-            {
-                return _gunPitchLocal;
-            }
-
-            targetDirection.Normalize();
-
-            Vector3 forwardProjected = Vector3.ProjectOnPlane(forwardWorld, pitchAxisWorld);
-            Vector3 targetProjected = Vector3.ProjectOnPlane(targetDirection, pitchAxisWorld);
-            if (forwardProjected.sqrMagnitude <= 1e-6f || targetProjected.sqrMagnitude <= 1e-6f)
-            {
-                return _gunPitchLocal;
-            }
-
-            forwardProjected.Normalize();
-            targetProjected.Normalize();
-
-            float pitch = Vector3.SignedAngle(forwardProjected, targetProjected, pitchAxisWorld) + weaponAim.pitchOffset;
-            return Mathf.Clamp(pitch, weaponAim.minPitch, weaponAim.maxPitch);
-        }
-
-        private static Vector3 AxisToVector(WeaponAimAtCamera.Axis a)
-        {
-            if (a == WeaponAimAtCamera.Axis.X)
-            {
-                return Vector3.right;
-            }
-            if (a == WeaponAimAtCamera.Axis.Y)
-            {
-                return Vector3.up;
-            }
-            return Vector3.forward;
         }
 
     }

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class GunReticleUIFollower : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
+    public class WeaponReticlePresenter : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
 
@@ -215,17 +215,17 @@ namespace Game.Scripts.Gameplay.Robots
             localPoint.y = Mathf.Clamp(localPoint.y, -half.y, half.y);
         }
 
-        private static Vector3 GetGunForwardWorld(Transform gun, WeaponAimAtCamera.Axis forwardAxis)
+        private static Vector3 GetGunForwardWorld(Transform gun, WeaponAimController.Axis forwardAxis)
         {
             if (gun == null)
             {
                 return Vector3.forward;
             }
-            if (forwardAxis == WeaponAimAtCamera.Axis.X)
+            if (forwardAxis == WeaponAimController.Axis.X)
             {
                 return gun.right;
             }
-            if (forwardAxis == WeaponAimAtCamera.Axis.Y)
+            if (forwardAxis == WeaponAimController.Axis.Y)
             {
                 return gun.up;
             }

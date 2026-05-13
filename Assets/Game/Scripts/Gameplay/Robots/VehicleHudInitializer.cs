@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class UISenerd : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
+    public class VehicleHudInitializer : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
         public bool isActive;

@@ -20120,7 +20120,7 @@ PrefabInstance:
     - target: {fileID: 4058065141393512657, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: m_Name
-      value: Menues
+      value: Menus
       objectReference: {fileID: 0}
     - target: {fileID: 4385746463272264918, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}

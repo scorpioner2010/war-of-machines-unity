@@ -3,14 +3,13 @@ using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Game.Scripts.Core.Services;
-using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class ShooterNet : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
+    public class NetworkWeaponShooter : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
 
@@ -143,7 +142,7 @@ namespace Game.Scripts.Gameplay.Robots
             public Vector3 Normal;
             public bool TargetIsRobot;
             public float Damage;
-            public Health TargetHealth;
+            public VehicleHealth TargetHealth;
             public VehicleRoot TargetRoot;
             public ShotHudStatus HudStatus;
         }
@@ -185,7 +184,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private Vector3 GetShotAimPoint(Vector3 startPos)
         {
-            WeaponAimAtCamera weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
+            WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
             if (weaponAim != null)
             {
                 if (CameraSync.In != null)
@@ -231,45 +230,38 @@ namespace Game.Scripts.Gameplay.Robots
             System.Action onAuthoritativeImpact = null,
             bool configureResolvedTarget = true)
         {
-            Projectile proj = Instantiate(projectilePrefab, startPos, Quaternion.identity);
-            proj.hitMask = hitMask;
-            proj.damage = Mathf.RoundToInt(Mathf.Max(0f, damageMax));
-            proj.Init(
-                targetPoint: aimPoint,
-                initialSpeed: projectileSpeed,
-                lifeTime: projectileLifeTime,
-                useArc: projectileUseArc,
-                arcScale: projectileArcScale,
-                arcMin: projectileArcMin,
-                arcMax: projectileArcMax,
-                arcExponent: projectileArcExponent,
-                arcCurve: projectileArcCurve,
-                arcAlongWorldUp: projectileArcAlongWorldUp,
-                useSlowdown: projectileUseSlowdown,
-                slowdownAmount: projectileSlowdownAmount,
-                slowdownExponent: projectileSlowdownExponent,
-                slowdownCurve: projectileSlowdownCurve,
-                minSpeedMultiplier: projectileMinSpeedMultiplier,
-                passedTime: passedTime,
-                authoritative: authoritative
-            );
-            if (configureResolvedTarget)
+            ProjectileVisualSpawnParams spawnParams = new ProjectileVisualSpawnParams
             {
-                if (explodeOnArrival)
-                {
-                    proj.ConfigureResolvedImpact(aimPoint, impactNormal, onAuthoritativeImpact);
-                }
-                else
-                {
-                    proj.ConfigureResolvedMiss(aimPoint, GetMaxShotDistance(), onAuthoritativeImpact);
-                }
-            }
+                ProjectilePrefab = projectilePrefab,
+                HitMask = hitMask,
+                Damage = Mathf.RoundToInt(Mathf.Max(0f, damageMax)),
+                StartPosition = startPos,
+                AimPoint = aimPoint,
+                InitialSpeed = projectileSpeed,
+                LifeTime = projectileLifeTime,
+                UseArc = projectileUseArc,
+                ArcScale = projectileArcScale,
+                ArcMin = projectileArcMin,
+                ArcMax = projectileArcMax,
+                ArcExponent = projectileArcExponent,
+                ArcCurve = projectileArcCurve,
+                ArcAlongWorldUp = projectileArcAlongWorldUp,
+                UseSlowdown = projectileUseSlowdown,
+                SlowdownAmount = projectileSlowdownAmount,
+                SlowdownExponent = projectileSlowdownExponent,
+                SlowdownCurve = projectileSlowdownCurve,
+                MinSpeedMultiplier = projectileMinSpeedMultiplier,
+                PassedTime = passedTime,
+                Authoritative = authoritative,
+                ExplodeOnArrival = explodeOnArrival,
+                ImpactNormal = impactNormal,
+                Visible = visible,
+                OnAuthoritativeImpact = onAuthoritativeImpact,
+                ConfigureResolvedTarget = configureResolvedTarget,
+                MaxShotDistance = GetMaxShotDistance()
+            };
 
-            if (!visible)
-            {
-                proj.SetVisualsEnabled(false);
-            }
-            return proj;
+            return ProjectileVisualSpawner.Spawn(spawnParams);
         }
 
         [ServerRpc(RequireOwnership = true)]
@@ -553,12 +545,12 @@ namespace Game.Scripts.Gameplay.Robots
 
         private ResolvedShot BuildResolvedShot(ServerHitResolver.HitResult hr, Vector3 missPoint, Vector3 missNormal)
         {
-            Health targetHealth = null;
+            VehicleHealth targetHealth = null;
             VehicleRoot targetRoot = null;
 
             if (hr.hit && hr.collider != null)
             {
-                targetHealth = hr.collider.GetComponentInParent<Health>();
+                targetHealth = hr.collider.GetComponentInParent<VehicleHealth>();
                 if (targetHealth != null)
                 {
                     targetRoot = targetHealth.GetComponentInParent<VehicleRoot>();
@@ -574,7 +566,7 @@ namespace Game.Scripts.Gameplay.Robots
                     {
                         targetHealth = targetRoot.health != null
                             ? targetRoot.health
-                            : targetRoot.GetComponentInChildren<Health>(true);
+                            : targetRoot.GetComponentInChildren<VehicleHealth>(true);
                     }
                 }
             }
@@ -619,15 +611,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (shot.TargetIsRobot && shot.TargetHealth != null && shot.Damage > 0f)
             {
-                bool wasDead = shot.TargetHealth.IsDead;
-                bool willKill = !wasDead && shot.TargetHealth.Current > 0f && shot.TargetHealth.Current - shot.Damage <= 0f;
-
-                if (GameplaySpawner.In != null)
-                {
-                    GameplaySpawner.In.RecordHitStats(vehicleRoot, shot.TargetRoot, shot.Damage, willKill);
-                }
-
-                shot.TargetHealth.ServerApplyDamage(shot.Damage);
+                DamageService.ApplyVehicleShotDamage(vehicleRoot, shot.TargetRoot, shot.TargetHealth, shot.Damage);
             }
 
             ShowShotResultTargetRpc(shooterConnection, (byte)shot.HudStatus);
@@ -749,13 +733,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void SpawnImpactFx(Vector3 impactPoint, Vector3 impactNormal)
         {
-            if (projectilePrefab == null || projectilePrefab.explosionFX == null)
-            {
-                return;
-            }
-
-            Vector3 normal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal : Vector3.up;
-            Instantiate(projectilePrefab.explosionFX, impactPoint, Quaternion.LookRotation(normal));
+            ProjectileVisualSpawner.SpawnImpactFx(projectilePrefab, impactPoint, impactNormal);
         }
 
         [TargetRpc]

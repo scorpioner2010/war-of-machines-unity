@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class BoodyNormalRotator : MonoBehaviour
+    public class BodyNormalRotator : MonoBehaviour
     {
         public float raycastLength = 2f;
         public float surfaceCheckRadius = 1f;

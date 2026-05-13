@@ -8,12 +8,12 @@ using NaughtyAttributes;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class Health : NetworkBehaviour, IVehicleStatsConsumer
+    public class VehicleHealth : NetworkBehaviour, IVehicleStatsConsumer
     {
         [Min(1f)] public float maxHealth = 100f;
 
         public Action<float, float, float> OnDamaged;
-        public Action<Health> OnServerDeath;
+        public Action<VehicleHealth> OnServerDeath;
         public UnityEvent onDeath;
 
         private readonly SyncVar<float> _hp = new();
