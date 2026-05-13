@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -57,10 +58,16 @@ namespace Game.Scripts.Gameplay.Robots
         [Tooltip("Smallest possible ring diameter for a hypothetical zero-dispersion gun.")]
         public float uiMinDiameter = 55f;
         public float uiMaxDiameter = 340f;
-        [Tooltip("How much fully aimed weapon accuracy contributes to the final ring size.")]
-        public float uiFullyAimedPixelsPerDegree = 85f;
-        [Tooltip("How much movement/rotation/shot bloom expands the ring above fully aimed accuracy.")]
-        public float uiPixelsPerDegree = 42f;
+        [Tooltip("How much fully aimed weapon accuracy contributes to the final ring size at maximum zoom/sniper mode.")]
+        [FormerlySerializedAs("uiFullyAimedPixelsPerDegree")]
+        public float uiFullyAimedPixelsPerDegreeAtMaxZoom = 85f;
+        [Tooltip("How much fully aimed weapon accuracy contributes to the final ring size at maximum third-person camera distance.")]
+        public float uiFullyAimedPixelsPerDegreeAtMaxDistance = 34f;
+        [Tooltip("How much movement/rotation/shot bloom expands the ring above fully aimed accuracy at maximum zoom/sniper mode.")]
+        [FormerlySerializedAs("uiPixelsPerDegree")]
+        public float uiBloomPixelsPerDegreeAtMaxZoom = 42f;
+        [Tooltip("How much movement/rotation/shot bloom expands the ring above fully aimed accuracy at maximum third-person camera distance.")]
+        public float uiBloomPixelsPerDegreeAtMaxDistance = 17f;
 
         [Header("Networking")]
         public float serverSyncInterval = 0.05f;
@@ -76,12 +83,26 @@ namespace Game.Scripts.Gameplay.Robots
 
         public float GetUiDiameter(float dispersionDeg, float fullyAimedDispersionDeg)
         {
+            return GetUiDiameter(dispersionDeg, fullyAimedDispersionDeg, 1f);
+        }
+
+        public float GetUiDiameter(float dispersionDeg, float fullyAimedDispersionDeg, float cameraZoom01)
+        {
             Validate();
 
             float fullyAimedDeg = Mathf.Max(0f, fullyAimedDispersionDeg);
             float currentDeg = Mathf.Max(fullyAimedDeg, dispersionDeg);
-            float fullyAimedDiameter = fullyAimedDeg * uiFullyAimedPixelsPerDegree;
-            float bloomDiameter = Mathf.Max(0f, currentDeg - fullyAimedDeg) * uiPixelsPerDegree;
+            float zoom = Clamp01Finite(cameraZoom01, 1f);
+            float fullyAimedPixelsPerDegree = Mathf.Lerp(
+                uiFullyAimedPixelsPerDegreeAtMaxDistance,
+                uiFullyAimedPixelsPerDegreeAtMaxZoom,
+                zoom);
+            float bloomPixelsPerDegree = Mathf.Lerp(
+                uiBloomPixelsPerDegreeAtMaxDistance,
+                uiBloomPixelsPerDegreeAtMaxZoom,
+                zoom);
+            float fullyAimedDiameter = fullyAimedDeg * fullyAimedPixelsPerDegree;
+            float bloomDiameter = Mathf.Max(0f, currentDeg - fullyAimedDeg) * bloomPixelsPerDegree;
             float diameter = uiMinDiameter + fullyAimedDiameter + bloomDiameter;
             return Mathf.Clamp(diameter, uiMinDiameter, uiMaxDiameter);
         }
@@ -111,8 +132,10 @@ namespace Game.Scripts.Gameplay.Robots
                 uiMaxDiameter = uiMinDiameter;
             }
 
-            uiFullyAimedPixelsPerDegree = ClampFinite(uiFullyAimedPixelsPerDegree, 0f, Default.uiFullyAimedPixelsPerDegree);
-            uiPixelsPerDegree = ClampFinite(uiPixelsPerDegree, 0f, Default.uiPixelsPerDegree);
+            uiFullyAimedPixelsPerDegreeAtMaxZoom = ClampFinite(uiFullyAimedPixelsPerDegreeAtMaxZoom, 0f, Default.uiFullyAimedPixelsPerDegreeAtMaxZoom);
+            uiFullyAimedPixelsPerDegreeAtMaxDistance = ClampFinite(uiFullyAimedPixelsPerDegreeAtMaxDistance, 0f, Default.uiFullyAimedPixelsPerDegreeAtMaxDistance);
+            uiBloomPixelsPerDegreeAtMaxZoom = ClampFinite(uiBloomPixelsPerDegreeAtMaxZoom, 0f, Default.uiBloomPixelsPerDegreeAtMaxZoom);
+            uiBloomPixelsPerDegreeAtMaxDistance = ClampFinite(uiBloomPixelsPerDegreeAtMaxDistance, 0f, Default.uiBloomPixelsPerDegreeAtMaxDistance);
             expandTime = ClampFinite(expandTime, 0.001f, Default.expandTime);
             referenceHullTraverseDegPerSec = ClampFinite(referenceHullTraverseDegPerSec, 0.001f, Default.referenceHullTraverseDegPerSec);
             referenceTurretTraverseDegPerSec = ClampFinite(referenceTurretTraverseDegPerSec, 0.001f, Default.referenceTurretTraverseDegPerSec);
@@ -138,8 +161,10 @@ namespace Game.Scripts.Gameplay.Robots
             accuracyReferenceDistanceMeters = source.accuracyReferenceDistanceMeters;
             uiMinDiameter = source.uiMinDiameter;
             uiMaxDiameter = source.uiMaxDiameter;
-            uiFullyAimedPixelsPerDegree = source.uiFullyAimedPixelsPerDegree;
-            uiPixelsPerDegree = source.uiPixelsPerDegree;
+            uiFullyAimedPixelsPerDegreeAtMaxZoom = source.uiFullyAimedPixelsPerDegreeAtMaxZoom;
+            uiFullyAimedPixelsPerDegreeAtMaxDistance = source.uiFullyAimedPixelsPerDegreeAtMaxDistance;
+            uiBloomPixelsPerDegreeAtMaxZoom = source.uiBloomPixelsPerDegreeAtMaxZoom;
+            uiBloomPixelsPerDegreeAtMaxDistance = source.uiBloomPixelsPerDegreeAtMaxDistance;
             serverSyncInterval = source.serverSyncInterval;
             serverSyncDeadZoneDeg = source.serverSyncDeadZoneDeg;
         }
@@ -157,6 +182,16 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return Mathf.Max(minValue, value);
+        }
+
+        private static float Clamp01Finite(float value, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                return Mathf.Clamp01(fallback);
+            }
+
+            return Mathf.Clamp01(value);
         }
     }
 

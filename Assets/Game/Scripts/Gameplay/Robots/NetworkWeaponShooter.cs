@@ -510,14 +510,25 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+            float uiZoom01 = GetCrosshairUiZoom01();
             float localDeg = _testAccuracyDebugMode ? dispersion.MinDispersion : _ownerDispersion.CurrentDeg;
-            float localDiameter = globalDispersion.GetUiDiameter(localDeg, dispersion.MinDispersion);
+            float localDiameter = globalDispersion.GetUiDiameter(localDeg, dispersion.MinDispersion, uiZoom01);
             float serverDeg = _testAccuracyDebugMode
                 ? localDeg
                 : _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
-            float serverDiameter = globalDispersion.GetUiDiameter(serverDeg, dispersion.MinDispersion);
+            float serverDiameter = globalDispersion.GetUiDiameter(serverDeg, dispersion.MinDispersion, uiZoom01);
             _crosshair.SetAimingDiameters(localDiameter, serverDiameter);
             _crosshair.SetAimStatus(localDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
+        }
+
+        private float GetCrosshairUiZoom01()
+        {
+            if (vehicleRoot == null || vehicleRoot.cameraController == null)
+            {
+                return 1f;
+            }
+
+            return vehicleRoot.cameraController.GetAimUiZoom01();
         }
 
         private GunDispersionGlobalSettings GetGlobalDispersion()

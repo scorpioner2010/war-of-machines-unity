@@ -258,6 +258,14 @@ namespace Toras.Editor
                 );
 
                 EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Database Accuracy", EditorStyles.miniBoldLabel);
+                DrawChildProperty(
+                    gunDispersion,
+                    "accuracyReferenceDistanceMeters",
+                    "Reference distance for database accuracy. Accuracy is interpreted as meters of spread at this distance."
+                );
+
+                EditorGUILayout.Space(4f);
                 EditorGUILayout.LabelField("UI", EditorStyles.miniBoldLabel);
                 DrawChildProperty(
                     gunDispersion,
@@ -271,8 +279,24 @@ namespace Toras.Editor
                 );
                 DrawChildProperty(
                     gunDispersion,
-                    "uiPixelsPerDegree",
-                    "Скільки пікселів додається до діаметра прицілу за кожен градус розкиду понад мінімальний."
+                    "uiFullyAimedPixelsPerDegreeAtMaxZoom",
+                    "Pixels per degree for fully aimed accuracy at maximum zoom/sniper mode."
+                );
+
+                DrawChildProperty(
+                    gunDispersion,
+                    "uiFullyAimedPixelsPerDegreeAtMaxDistance",
+                    "Pixels per degree for fully aimed accuracy at maximum third-person camera distance."
+                );
+                DrawChildProperty(
+                    gunDispersion,
+                    "uiBloomPixelsPerDegreeAtMaxZoom",
+                    "Pixels per degree for movement/rotation/shot bloom at maximum zoom/sniper mode."
+                );
+                DrawChildProperty(
+                    gunDispersion,
+                    "uiBloomPixelsPerDegreeAtMaxDistance",
+                    "Pixels per degree for movement/rotation/shot bloom at maximum third-person camera distance."
                 );
 
                 EditorGUILayout.Space(4f);

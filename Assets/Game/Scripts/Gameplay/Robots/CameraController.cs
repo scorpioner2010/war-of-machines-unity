@@ -65,6 +65,24 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyCameraTransform(true);
         }
 
+        public float GetAimUiZoom01()
+        {
+            float normalDistance = _normalDistance > 0.01f
+                ? _normalDistance
+                : Mathf.Max(0.01f, distance);
+            float sniperCameraDistance = Mathf.Max(0.01f, sniperDistance);
+            float minDistance = Mathf.Min(normalDistance, sniperCameraDistance);
+            float maxDistance = Mathf.Max(normalDistance, sniperCameraDistance);
+            if (maxDistance <= minDistance + 0.0001f)
+            {
+                return IsSniperStep(_currentZoomStep) ? 1f : 0f;
+            }
+
+            float clampedDistance = Mathf.Clamp(distance, minDistance, maxDistance);
+            float distance01 = Mathf.InverseLerp(minDistance, maxDistance, clampedDistance);
+            return Mathf.Clamp01(1f - distance01);
+        }
+
         private void Update()
         {
             if (!_initialized || rig == null)

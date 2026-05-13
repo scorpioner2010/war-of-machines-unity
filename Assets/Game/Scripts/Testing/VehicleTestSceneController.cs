@@ -295,9 +295,11 @@ namespace Game.Scripts.Testing
         {
             GunDispersionGlobalSettings dispersionSettings = ServerSettings.GetGunDispersion();
             float dispersionDeg = dispersionSettings.GetAccuracyDispersionDeg(stats.Accuracy, 0f);
-            float ringDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg);
+            float farRingDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg, 0f);
+            float zoomRingDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg, 1f);
             _builder.Append("Fully aimed dispersion: ").Append(dispersionDeg.ToString("0.###")).Append(" deg\n");
-            _builder.Append("Fully aimed ring: ").Append(ringDiameter.ToString("0.#")).Append(" px\n");
+            _builder.Append("Fully aimed ring far: ").Append(farRingDiameter.ToString("0.#")).Append(" px\n");
+            _builder.Append("Fully aimed ring zoom: ").Append(zoomRingDiameter.ToString("0.#")).Append(" px\n");
         }
 
         private VehicleRuntimeStats GetSelected()

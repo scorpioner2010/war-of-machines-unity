@@ -906,11 +906,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3533032834666098081, guid: 37920e9282dd1184faf512fea6cfe275,
-        type: 3}
-      propertyPath: gunDispersion.uiMinDiameter
-      value: 20
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -960,7 +955,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6e3c82514aee42aeadd276bc80383cd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activateTestParameters: 1
+  activateTestParameters: 0
   reloadTime: 0.1
   shellsCount: 999
   forceFullyAimedAccuracyOnly: 1

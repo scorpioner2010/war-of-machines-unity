@@ -41,8 +41,10 @@ namespace Game.Scripts.Server
             float gunDispersionAccuracyReferenceDistanceMeters,
             float gunDispersionUiMinDiameter,
             float gunDispersionUiMaxDiameter,
-            float gunDispersionUiFullyAimedPixelsPerDegree,
-            float gunDispersionUiPixelsPerDegree,
+            float gunDispersionUiFullyAimedPixelsPerDegreeAtMaxZoom,
+            float gunDispersionUiFullyAimedPixelsPerDegreeAtMaxDistance,
+            float gunDispersionUiBloomPixelsPerDegreeAtMaxZoom,
+            float gunDispersionUiBloomPixelsPerDegreeAtMaxDistance,
             float gunDispersionServerSyncInterval,
             float gunDispersionServerSyncDeadZoneDeg,
             float projectileGravity,
@@ -81,8 +83,10 @@ namespace Game.Scripts.Server
             GunDispersion.accuracyReferenceDistanceMeters = gunDispersionAccuracyReferenceDistanceMeters > 0f ? gunDispersionAccuracyReferenceDistanceMeters : GunDispersionGlobalSettings.Default.accuracyReferenceDistanceMeters;
             GunDispersion.uiMinDiameter = gunDispersionUiMinDiameter > 0f ? gunDispersionUiMinDiameter : GunDispersionGlobalSettings.Default.uiMinDiameter;
             GunDispersion.uiMaxDiameter = gunDispersionUiMaxDiameter > GunDispersion.uiMinDiameter ? gunDispersionUiMaxDiameter : GunDispersionGlobalSettings.Default.uiMaxDiameter;
-            GunDispersion.uiFullyAimedPixelsPerDegree = gunDispersionUiFullyAimedPixelsPerDegree >= 0f ? gunDispersionUiFullyAimedPixelsPerDegree : GunDispersionGlobalSettings.Default.uiFullyAimedPixelsPerDegree;
-            GunDispersion.uiPixelsPerDegree = gunDispersionUiPixelsPerDegree >= 0f ? gunDispersionUiPixelsPerDegree : GunDispersionGlobalSettings.Default.uiPixelsPerDegree;
+            GunDispersion.uiFullyAimedPixelsPerDegreeAtMaxZoom = gunDispersionUiFullyAimedPixelsPerDegreeAtMaxZoom >= 0f ? gunDispersionUiFullyAimedPixelsPerDegreeAtMaxZoom : GunDispersionGlobalSettings.Default.uiFullyAimedPixelsPerDegreeAtMaxZoom;
+            GunDispersion.uiFullyAimedPixelsPerDegreeAtMaxDistance = gunDispersionUiFullyAimedPixelsPerDegreeAtMaxDistance >= 0f ? gunDispersionUiFullyAimedPixelsPerDegreeAtMaxDistance : GunDispersionGlobalSettings.Default.uiFullyAimedPixelsPerDegreeAtMaxDistance;
+            GunDispersion.uiBloomPixelsPerDegreeAtMaxZoom = gunDispersionUiBloomPixelsPerDegreeAtMaxZoom >= 0f ? gunDispersionUiBloomPixelsPerDegreeAtMaxZoom : GunDispersionGlobalSettings.Default.uiBloomPixelsPerDegreeAtMaxZoom;
+            GunDispersion.uiBloomPixelsPerDegreeAtMaxDistance = gunDispersionUiBloomPixelsPerDegreeAtMaxDistance >= 0f ? gunDispersionUiBloomPixelsPerDegreeAtMaxDistance : GunDispersionGlobalSettings.Default.uiBloomPixelsPerDegreeAtMaxDistance;
             GunDispersion.serverSyncInterval = gunDispersionServerSyncInterval > 0f ? gunDispersionServerSyncInterval : GunDispersionGlobalSettings.Default.serverSyncInterval;
             GunDispersion.serverSyncDeadZoneDeg = gunDispersionServerSyncDeadZoneDeg >= 0f ? gunDispersionServerSyncDeadZoneDeg : GunDispersionGlobalSettings.Default.serverSyncDeadZoneDeg;
             GunDispersion.Validate();
