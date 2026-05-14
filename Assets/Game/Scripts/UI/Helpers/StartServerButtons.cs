@@ -26,6 +26,8 @@ namespace Game.Scripts.UI.Helpers
 
     public class StartServerButtons : MonoBehaviour
     {
+        private const string UnityServerStatusEndpoint = "/unity-server/status";
+
         public static string LastServerStatus { get; private set; } = "Server start not requested.";
 
         [SerializeField] private NetworkManager networkManager;
@@ -38,12 +40,20 @@ namespace Game.Scripts.UI.Helpers
         [SerializeField] private float clientRetryDelaySeconds = 1f;
         [SerializeField] private int clientMaxStartAttempts = 30;
         [SerializeField] private float serverHeartbeatIntervalSeconds = 2f;
+        [SerializeField] private bool requestClientServerAddressFromApi = true;
+        [SerializeField] private int serverLookupTimeoutSeconds = 5;
+        [SerializeField] private float apiLookupStatusMinimumSeconds = 1.8f;
+        [SerializeField] private float apiAddressReceivedStatusSeconds = 0.9f;
+        [SerializeField] private float dedicatedConnectStatusMinimumSeconds = 1.8f;
+        [SerializeField] private float connectedStatusVisibleSeconds = 2f;
+        [SerializeField] private string advertisedServerAddress;
 
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
         private LocalConnectionState _serverState = LocalConnectionState.Stopped;
         private bool _clientInfoRegistered;
         private bool _clientStartRequested;
         private bool _isStoppingConnections;
+        private Coroutine _clientConnectCoroutine;
         private Coroutine _serverHeartbeatCoroutine;
 
         private void Awake()
@@ -140,10 +150,10 @@ namespace Game.Scripts.UI.Helpers
 
             while (_clientState != LocalConnectionState.Started && attempts < maxAttempts)
             {
-                if (_clientState == LocalConnectionState.Stopped)
+                if (_clientState == LocalConnectionState.Stopped && _clientConnectCoroutine == null && _clientStartRequested == false)
                 {
-                    OnConnectClicked();
                     LoadingScreenManager.SetConnectionStatus("Connection attempt " + (attempts + 1) + " / " + maxAttempts);
+                    OnConnectClicked();
                     attempts++;
                 }
 
@@ -168,25 +178,254 @@ namespace Game.Scripts.UI.Helpers
                 return;
             }
 
+            if (_clientConnectCoroutine != null)
+            {
+                return;
+            }
+
+            if (_clientStartRequested)
+            {
+                return;
+            }
+
+            _clientConnectCoroutine = StartCoroutine(StartClientConnection());
+        }
+
+        private IEnumerator StartClientConnection()
+        {
             if (connect != null)
             {
                 connect.interactable = false;
             }
 
             _clientStartRequested = true;
-            LoadingScreenManager.ShowConnectionLoading("Trying to connect to battle server");
+            LoadingScreenManager.ShowConnectionLoading("Preparing multiplayer connection");
 
-            if (networkManager.ClientManager.StartConnection() == false)
+            bool started;
+            if (requestClientServerAddressFromApi)
             {
-                _clientStartRequested = false;
-                LoadingScreenManager.SetConnectionStatus("Connection failed. Client could not start");
-                LoadingScreenManager.HideConnectionLoading(2f);
+                ServerConnectionInfo connectionInfo = default;
+                bool hasConnectionInfo = false;
+                string lookupError = string.Empty;
+                float apiStageStartedAt = Time.unscaledTime;
 
-                if (connect != null)
+                LoadingScreenManager.SetConnectionStatus("API: requesting multiplayer server address");
+                yield return RequestActiveServerConnectionInfo((isSuccess, result, message) =>
                 {
-                    connect.interactable = true;
+                    hasConnectionInfo = isSuccess;
+                    connectionInfo = result;
+                    lookupError = message;
+                });
+                yield return WaitForMinimumStatusTime(apiStageStartedAt, apiLookupStatusMinimumSeconds);
+
+                if (hasConnectionInfo == false)
+                {
+                    FailClientStart("Connection failed. " + lookupError, 2f);
+                    _clientConnectCoroutine = null;
+                    yield break;
                 }
+
+                LoadingScreenManager.SetConnectionStatus("API: server address received " + connectionInfo.Address + ":" + connectionInfo.Port);
+                yield return WaitForStatusTime(apiAddressReceivedStatusSeconds);
+
+                float connectStageStartedAt = Time.unscaledTime;
+                LoadingScreenManager.SetConnectionStatus("Dedicated server: connecting to " + connectionInfo.Address + ":" + connectionInfo.Port);
+                yield return WaitForMinimumStatusTime(connectStageStartedAt, dedicatedConnectStatusMinimumSeconds);
+                started = networkManager.ClientManager.StartConnection(connectionInfo.Address, connectionInfo.Port);
             }
+            else
+            {
+                float connectStageStartedAt = Time.unscaledTime;
+                LoadingScreenManager.SetConnectionStatus("Dedicated server: connecting");
+                yield return WaitForMinimumStatusTime(connectStageStartedAt, dedicatedConnectStatusMinimumSeconds);
+                started = networkManager.ClientManager.StartConnection();
+            }
+
+            if (started == false)
+            {
+                FailClientStart("Connection failed. Client could not start", 2f);
+            }
+
+            _clientConnectCoroutine = null;
+        }
+
+        private IEnumerator RequestActiveServerConnectionInfo(System.Action<bool, ServerConnectionInfo, string> onComplete)
+        {
+            string url = HttpLink.APIBase + UnityServerStatusEndpoint;
+
+            using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET))
+            {
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.certificateHandler = new AcceptAllCertificates();
+                request.timeout = Mathf.Max(1, serverLookupTimeoutSeconds);
+
+                yield return request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    onComplete(false, default, "Server API is not available: " + request.responseCode + " " + request.error);
+                    yield break;
+                }
+
+                string responseText = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
+                if (string.IsNullOrWhiteSpace(responseText))
+                {
+                    onComplete(false, default, "Server API returned an empty response");
+                    yield break;
+                }
+
+                UnityServerStatusResponse response;
+                try
+                {
+                    response = JsonUtility.FromJson<UnityServerStatusResponse>(responseText);
+                }
+                catch (System.ArgumentException)
+                {
+                    onComplete(false, default, "Server API returned invalid JSON");
+                    yield break;
+                }
+
+                ushort fallbackPort = GetConfiguredClientPort();
+                if (TryGetServerConnectionInfo(response, fallbackPort, out ServerConnectionInfo connectionInfo, out string error) == false)
+                {
+                    onComplete(false, default, error);
+                    yield break;
+                }
+
+                onComplete(true, connectionInfo, string.Empty);
+            }
+        }
+
+        private static bool TryGetServerConnectionInfo(UnityServerStatusResponse response, ushort fallbackPort, out ServerConnectionInfo connectionInfo, out string error)
+        {
+            connectionInfo = default;
+            error = string.Empty;
+
+            if (response == null)
+            {
+                error = "Server API returned invalid server status";
+                return false;
+            }
+
+            if (response.isOnline == false)
+            {
+                error = "Battle server is offline";
+                return false;
+            }
+
+            string address = GetResponseAddress(response);
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                error = "Server API did not return a battle server address";
+                return false;
+            }
+
+            int port = GetResponsePort(response);
+            if (port <= 0)
+            {
+                port = fallbackPort;
+            }
+
+            if (port <= 0 || port > ushort.MaxValue)
+            {
+                error = "Server API returned an invalid battle server port";
+                return false;
+            }
+
+            connectionInfo = new ServerConnectionInfo
+            {
+                Address = address.Trim(),
+                Port = (ushort)port
+            };
+
+            return true;
+        }
+
+        private static string GetResponseAddress(UnityServerStatusResponse response)
+        {
+            if (string.IsNullOrWhiteSpace(response.address) == false)
+            {
+                return response.address;
+            }
+
+            if (string.IsNullOrWhiteSpace(response.publicIp) == false)
+            {
+                return response.publicIp;
+            }
+
+            if (string.IsNullOrWhiteSpace(response.ipAddress) == false)
+            {
+                return response.ipAddress;
+            }
+
+            return string.Empty;
+        }
+
+        private static int GetResponsePort(UnityServerStatusResponse response)
+        {
+            if (response.port > 0)
+            {
+                return response.port;
+            }
+
+            if (response.gamePort > 0)
+            {
+                return response.gamePort;
+            }
+
+            if (response.serverPort > 0)
+            {
+                return response.serverPort;
+            }
+
+            return 0;
+        }
+
+        private ushort GetConfiguredClientPort()
+        {
+            if (networkManager == null || networkManager.TransportManager == null || networkManager.TransportManager.Transport == null)
+            {
+                return 0;
+            }
+
+            return networkManager.TransportManager.Transport.GetPort();
+        }
+
+        private IEnumerator WaitForMinimumStatusTime(float startedAt, float minimumSeconds)
+        {
+            float remainingSeconds = Mathf.Max(0f, GetStageStatusSeconds(minimumSeconds) - (Time.unscaledTime - startedAt));
+            if (remainingSeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(remainingSeconds);
+            }
+        }
+
+        private IEnumerator WaitForStatusTime(float seconds)
+        {
+            float waitSeconds = Mathf.Max(0f, seconds);
+            if (waitSeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(waitSeconds);
+            }
+        }
+
+        private static float GetStageStatusSeconds(float seconds)
+        {
+            return Mathf.Clamp(seconds, 1f, 2f);
+        }
+
+        private void FailClientStart(string statusText, float hideDelaySeconds)
+        {
+            _clientStartRequested = false;
+            LoadingScreenManager.SetConnectionStatus(statusText);
+            LoadingScreenManager.HideConnectionLoading(hideDelaySeconds);
+
+            if (connect != null)
+            {
+                connect.interactable = true;
+            }
+
+            RefreshControls();
         }
 
         private void OnServerClicked()
@@ -241,8 +480,8 @@ namespace Game.Scripts.UI.Helpers
             {
                 _clientStartRequested = false;
                 RegisterClientInfo();
-                LoadingScreenManager.SetConnectionStatus("Connected to battle server");
-                LoadingScreenManager.HideConnectionLoading(0.6f);
+                LoadingScreenManager.SetConnectionStatus("Dedicated server: connected");
+                LoadingScreenManager.HideConnectionLoading(GetStageStatusSeconds(connectedStatusVisibleSeconds));
             }
             else if (_clientState == LocalConnectionState.Stopped)
             {
@@ -340,12 +579,14 @@ namespace Game.Scripts.UI.Helpers
                 playersOnline = GetPlayersOnline(),
                 maxPlayers = GetMaxPlayers(),
                 activeMatches = GetActiveMatches(),
+                address = GetAdvertisedServerAddress(),
+                port = GetServerPort(),
                 message = "Unity server running"
             };
 
             string json = JsonUtility.ToJson(payload);
             byte[] body = Encoding.UTF8.GetBytes(json);
-            string url = HttpLink.APIBase + "/unity-server/status";
+            string url = HttpLink.APIBase + UnityServerStatusEndpoint;
 
             using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
             {
@@ -482,6 +723,16 @@ namespace Game.Scripts.UI.Helpers
             return networkManager.TransportManager.Transport.GetPort();
         }
 
+        private string GetAdvertisedServerAddress()
+        {
+            if (string.IsNullOrWhiteSpace(advertisedServerAddress))
+            {
+                return string.Empty;
+            }
+
+            return advertisedServerAddress.Trim();
+        }
+
         private void StopNetworkConnections(string reason)
         {
             if (_isStoppingConnections || networkManager == null)
@@ -511,7 +762,29 @@ namespace Game.Scripts.UI.Helpers
             public int playersOnline;
             public int maxPlayers;
             public int activeMatches;
+            public string address;
+            public int port;
             public string message;
+        }
+
+        [System.Serializable]
+        private class UnityServerStatusResponse
+        {
+            public bool isOnline;
+            public string status;
+            public string address;
+            public string publicIp;
+            public string ipAddress;
+            public int port;
+            public int gamePort;
+            public int serverPort;
+            public string message;
+        }
+
+        private struct ServerConnectionInfo
+        {
+            public string Address;
+            public ushort Port;
         }
     }
 }
