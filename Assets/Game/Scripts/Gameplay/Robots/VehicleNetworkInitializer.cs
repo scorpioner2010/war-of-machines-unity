@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Game.Script.Player.UI;
+using Game.Scripts.UI.HUD;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Player.Data;

@@ -291,7 +291,7 @@ namespace Game.Scripts.Networking.Lobby
         [TargetRpc]
         private void TargetStartGameResponseRpc(NetworkConnection target)
         {
-            MenuManager.CloseMenu(MenuType.FindGame);
+            MenuManager.CloseMenu(MenuType.Matchmaking);
         }
 
         private List<NetworkConnection> GetRealPlayerConnections(ServerRoom room)

@@ -4,9 +4,9 @@ namespace Game.Scripts.UI.Tree
 {
     public class TreeGrid : MonoBehaviour
     {
-        public Vehicle vehicleType;
+        public VehicleClass vehicleType;
 
-        public void Init(Vehicle vehicle)
+        public void Init(VehicleClass vehicle)
         {
             vehicleType = vehicle;
         }

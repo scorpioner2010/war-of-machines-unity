@@ -251,49 +251,82 @@ namespace Game.Scripts.UI.Helpers
 
         private IEnumerator RequestActiveServerConnectionInfo(System.Action<bool, ServerConnectionInfo, string> onComplete)
         {
-            string url = HttpLink.APIBase + UnityServerStatusEndpoint;
+            string[] apiBases = HttpLink.GetBaseCandidates();
+            string lastError = "Server API is not available";
 
-            using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET))
+            for (int i = 0; i < apiBases.Length; i++)
             {
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.certificateHandler = new AcceptAllCertificates();
-                request.timeout = Mathf.Max(1, serverLookupTimeoutSeconds);
+                string apiBase = apiBases[i];
+                string url = apiBase + UnityServerStatusEndpoint;
 
-                yield return request.SendWebRequest();
-
-                if (request.result != UnityWebRequest.Result.Success)
+                using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET))
                 {
-                    onComplete(false, default, "Server API is not available: " + request.responseCode + " " + request.error);
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.certificateHandler = new AcceptAllCertificates();
+                    request.timeout = GetApiRequestTimeoutSeconds(apiBase);
+
+                    yield return request.SendWebRequest();
+
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        lastError = FormatApiRequestError(apiBase, request);
+                        continue;
+                    }
+
+                    string responseText = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
+                    if (string.IsNullOrWhiteSpace(responseText))
+                    {
+                        lastError = "Server API returned an empty response from " + apiBase;
+                        continue;
+                    }
+
+                    if (TryReadServerConnectionInfo(responseText, out ServerConnectionInfo connectionInfo, out string error) == false)
+                    {
+                        lastError = error;
+                        continue;
+                    }
+
+                    HttpLink.SetResolvedBase(apiBase);
+                    onComplete(true, connectionInfo, string.Empty);
                     yield break;
                 }
-
-                string responseText = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
-                if (string.IsNullOrWhiteSpace(responseText))
-                {
-                    onComplete(false, default, "Server API returned an empty response");
-                    yield break;
-                }
-
-                UnityServerStatusResponse response;
-                try
-                {
-                    response = JsonUtility.FromJson<UnityServerStatusResponse>(responseText);
-                }
-                catch (System.ArgumentException)
-                {
-                    onComplete(false, default, "Server API returned invalid JSON");
-                    yield break;
-                }
-
-                ushort fallbackPort = GetConfiguredClientPort();
-                if (TryGetServerConnectionInfo(response, fallbackPort, out ServerConnectionInfo connectionInfo, out string error) == false)
-                {
-                    onComplete(false, default, error);
-                    yield break;
-                }
-
-                onComplete(true, connectionInfo, string.Empty);
             }
+
+            onComplete(false, default, lastError);
+        }
+
+        private bool TryReadServerConnectionInfo(string responseText, out ServerConnectionInfo connectionInfo, out string error)
+        {
+            UnityServerStatusResponse response;
+            try
+            {
+                response = JsonUtility.FromJson<UnityServerStatusResponse>(responseText);
+            }
+            catch (System.ArgumentException)
+            {
+                connectionInfo = default;
+                error = "Server API returned invalid JSON";
+                return false;
+            }
+
+            ushort fallbackPort = GetConfiguredClientPort();
+            return TryGetServerConnectionInfo(response, fallbackPort, out connectionInfo, out error);
+        }
+
+        private int GetApiRequestTimeoutSeconds(string apiBase)
+        {
+            int timeoutSeconds = Mathf.Max(1, serverLookupTimeoutSeconds);
+            if (HttpLink.IsLocalBase(apiBase))
+            {
+                return Mathf.Min(timeoutSeconds, 2);
+            }
+
+            return timeoutSeconds;
+        }
+
+        private static string FormatApiRequestError(string apiBase, UnityWebRequest request)
+        {
+            return "Server API is not available at " + apiBase + ": " + request.responseCode + " " + request.error;
         }
 
         private static bool TryGetServerConnectionInfo(UnityServerStatusResponse response, ushort fallbackPort, out ServerConnectionInfo connectionInfo, out string error)
@@ -343,22 +376,50 @@ namespace Game.Scripts.UI.Helpers
 
         private static string GetResponseAddress(UnityServerStatusResponse response)
         {
+            string address = string.Empty;
             if (string.IsNullOrWhiteSpace(response.address) == false)
             {
-                return response.address;
+                address = response.address;
             }
-
-            if (string.IsNullOrWhiteSpace(response.publicIp) == false)
+            else if (string.IsNullOrWhiteSpace(response.publicIp) == false)
             {
-                return response.publicIp;
+                address = response.publicIp;
             }
-
-            if (string.IsNullOrWhiteSpace(response.ipAddress) == false)
+            else if (string.IsNullOrWhiteSpace(response.ipAddress) == false)
             {
-                return response.ipAddress;
+                address = response.ipAddress;
             }
 
-            return string.Empty;
+            return NormalizeConnectionAddress(address);
+        }
+
+        private static string NormalizeConnectionAddress(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return string.Empty;
+            }
+
+            string value = address.Trim();
+            if (HttpLink.IsLocal)
+            {
+                if (string.Equals(value, "localhost", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(value, "::1", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(value, "0:0:0:0:0:0:0:1", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return "127.0.0.1";
+                }
+
+                if (IPAddress.TryParse(value, out IPAddress ipAddress))
+                {
+                    if (IPAddress.IsLoopback(ipAddress))
+                    {
+                        return "127.0.0.1";
+                    }
+                }
+            }
+
+            return value;
         }
 
         private static int GetResponsePort(UnityServerStatusResponse response)
@@ -586,22 +647,35 @@ namespace Game.Scripts.UI.Helpers
 
             string json = JsonUtility.ToJson(payload);
             byte[] body = Encoding.UTF8.GetBytes(json);
-            string url = HttpLink.APIBase + UnityServerStatusEndpoint;
+            string[] apiBases = HttpLink.GetBaseCandidates();
+            string lastError = string.Empty;
 
-            using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
+            for (int i = 0; i < apiBases.Length; i++)
             {
-                request.uploadHandler = new UploadHandlerRaw(body);
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.certificateHandler = new AcceptAllCertificates();
-                request.SetRequestHeader("Content-Type", "application/json");
+                string apiBase = apiBases[i];
+                string url = apiBase + UnityServerStatusEndpoint;
 
-                yield return request.SendWebRequest();
-
-                if (request.result != UnityWebRequest.Result.Success)
+                using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
                 {
-                    Debug.LogWarning("Unity server heartbeat failed: " + request.responseCode + " " + request.error);
+                    request.uploadHandler = new UploadHandlerRaw(body);
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.certificateHandler = new AcceptAllCertificates();
+                    request.timeout = GetApiRequestTimeoutSeconds(apiBase);
+                    request.SetRequestHeader("Content-Type", "application/json");
+
+                    yield return request.SendWebRequest();
+
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        HttpLink.SetResolvedBase(apiBase);
+                        yield break;
+                    }
+
+                    lastError = FormatApiRequestError(apiBase, request);
                 }
             }
+
+            Debug.LogWarning("Unity server heartbeat failed: " + lastError);
         }
 
         private int GetPlayersOnline()
@@ -727,10 +801,15 @@ namespace Game.Scripts.UI.Helpers
         {
             if (string.IsNullOrWhiteSpace(advertisedServerAddress))
             {
+                if (HttpLink.IsLocal)
+                {
+                    return "127.0.0.1";
+                }
+
                 return string.Empty;
             }
 
-            return advertisedServerAddress.Trim();
+            return NormalizeConnectionAddress(advertisedServerAddress);
         }
 
         private void StopNetworkConnections(string reason)

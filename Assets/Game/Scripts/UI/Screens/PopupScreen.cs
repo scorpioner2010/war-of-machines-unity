@@ -29,7 +29,7 @@ namespace Game.Scripts.UI.Screens
             _in.popup.SetActive(false);
         }
 
-        public static void ShowText(string message, Color color, Action act = null, TypePopup  typePopup = TypePopup.Info)
+        public static void ShowText(string message, Color color, Action act = null, PopupType typePopup = PopupType.Info)
         {
             if (_in == null)
             {
@@ -52,9 +52,9 @@ namespace Game.Scripts.UI.Screens
                 });
             }
 
-            _in.confirm.gameObject.SetActive(typePopup == TypePopup.Confirm);
-            _in.cancel.gameObject.SetActive(typePopup == TypePopup.Confirm);
-            _in.ok.gameObject.SetActive(typePopup == TypePopup.Info);
+            _in.confirm.gameObject.SetActive(typePopup == PopupType.Confirm);
+            _in.cancel.gameObject.SetActive(typePopup == PopupType.Confirm);
+            _in.ok.gameObject.SetActive(typePopup == PopupType.Info);
             
             _in.popup.SetActive(true);
             _in.gameObject.SetActive(true);

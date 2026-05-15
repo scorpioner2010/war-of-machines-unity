@@ -26,7 +26,7 @@ namespace Game.Scripts.Networking.Lobby
     {
         public static GameplaySpawner In;
         public GameMaps[] scenes;
-        public GameplayTimer gameplayTimerPrefab;
+        public NetworkGameplayTimer gameplayTimerPrefab;
         
         private UEScene _additiveServerScene;
         private readonly MatchSceneOffsetService _sceneOffsetService = new MatchSceneOffsetService();
@@ -335,7 +335,7 @@ namespace Game.Scripts.Networking.Lobby
 
         private void SpawnTimer(ServerRoom serverRoom)
         {
-            GameplayTimer timer = Instantiate(gameplayTimerPrefab, Vector3.zero, Quaternion.identity);
+            NetworkGameplayTimer timer = Instantiate(gameplayTimerPrefab, Vector3.zero, Quaternion.identity);
             timer.serverRoom = serverRoom;
             ServerManager.Spawn(timer.networkObject, LocalConnection, _additiveServerScene);
             serverRoom.gameplayTimer =  timer;

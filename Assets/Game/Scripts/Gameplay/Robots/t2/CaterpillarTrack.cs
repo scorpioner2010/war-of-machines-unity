@@ -11,8 +11,8 @@ namespace Game.Scripts.Gameplay.Robots.t2
         public float turnInPlaceSpeed = 0.7f;
         public float turnWhileMovingSpeed = 0.5f;
 
-        public RotateObject[] rightWheels;
-        public RotateObject[] leftWheels;
+        public WheelSpinAnimator[] rightWheels;
+        public WheelSpinAnimator[] leftWheels;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -72,7 +72,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
             {
                 for (int i = 0; i < leftWheels.Length; i++)
                 {
-                    RotateObject wheel = leftWheels[i];
+                    WheelSpinAnimator wheel = leftWheels[i];
                     if (wheel != null)
                     {
                         wheel.currentSpeed = leftInputSpeed;
@@ -84,7 +84,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
             {
                 for (int i = 0; i < rightWheels.Length; i++)
                 {
-                    RotateObject wheel = rightWheels[i];
+                    WheelSpinAnimator wheel = rightWheels[i];
                     if (wheel != null)
                     {
                         wheel.currentSpeed = rightInputSpeed;

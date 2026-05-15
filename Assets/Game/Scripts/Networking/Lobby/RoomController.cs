@@ -52,7 +52,7 @@ namespace Game.Scripts.Networking.Lobby
         [TargetRpc]
         private void UpdateTimerTargetRpc(NetworkConnection target, float time, int players)
         {
-            FindGame.UpdateInfo(time, players);
+            MatchmakingStatusView.UpdateInfo(time, players);
         }
 
         public void FindMatch()
@@ -63,7 +63,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             lobbyManager.FindMatchServerRpc(currentMap.ToString());
-            MenuManager.OpenMenu(MenuType.FindGame);
+            MenuManager.OpenMenu(MenuType.Matchmaking);
         }
 
         public void Cancel()

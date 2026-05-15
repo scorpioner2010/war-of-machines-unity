@@ -10,6 +10,7 @@ using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Helpers;
+using Game.Scripts.Core.Resources;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
@@ -97,7 +98,7 @@ namespace Game.Scripts.UI.MainMenu
                     }
 
                     VehicleSlotVehicleData vehicleData = new VehicleSlotVehicleData();
-                    vehicleData.Icon = ResourceManager.GetIcon(vehicle.code);
+                    vehicleData.Icon = GameResourceManager.GetIcon(vehicle.code);
                     vehicleData.VehicleId = vehicle.vehicleId;
                     vehicleData.IsSelected = selected != null && selected.vehicleId == vehicle.vehicleId;
                     vehicleData.Name = vehicle.name;
@@ -120,7 +121,7 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            VehicleRoot vehicleRoot = ResourceManager.GetPrefab(selected.code);
+            VehicleRoot vehicleRoot = GameResourceManager.GetPrefab(selected.code);
             if (vehicleRoot == null || !IsBuildCurrent(view, buildVersion))
             {
                 return;

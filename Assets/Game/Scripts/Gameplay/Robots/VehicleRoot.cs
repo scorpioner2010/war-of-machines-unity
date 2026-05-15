@@ -1,5 +1,4 @@
 using FishNet.Object;
-using Game.Script.Player.UI;
 using Game.Scripts.Gameplay.Robots.t1;
 using Game.Scripts.Gameplay.Robots.t2;
 using Game.Scripts.UI.HUD;
@@ -12,7 +11,7 @@ namespace Game.Scripts.Gameplay.Robots
     {
         public NetworkObject networkObject;
         public VehicleNetworkInitializer characterInit;
-        public InputManager inputManager;
+        public VehicleInputController inputManager;
         public VehicleHealth health;
         public VehicleMovementController objectMover;
         public VehicleHudInitializer uiSenerd;
@@ -88,7 +87,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             if (inputManager == null)
             {
-                inputManager = GetComponentInChildren<InputManager>(true);
+                inputManager = GetComponentInChildren<VehicleInputController>(true);
             }
             if (health == null)
             {

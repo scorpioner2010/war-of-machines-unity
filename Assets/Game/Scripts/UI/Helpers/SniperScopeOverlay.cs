@@ -1,8 +1,9 @@
 using UnityEngine;
+using Game.Scripts.UI.Screens;
 
 namespace Game.Scripts.UI.Helpers
 {
-    public class SniperScopeOverlay : GameObjectScreen<SniperScopeOverlay>
+    public class SniperScopeOverlay : UIScreenBase<SniperScopeOverlay>
     {
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField, Min(0f)] private float fadeDuration = 0.18f;

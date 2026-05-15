@@ -120,7 +120,7 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
-            if (InputManager.Escape)
+            if (VehicleInputController.Escape)
             {
                 if (!TryRegister())
                 {

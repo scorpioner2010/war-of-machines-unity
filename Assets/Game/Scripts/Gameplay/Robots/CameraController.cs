@@ -90,7 +90,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            bool inputBlocked = InputManager.IsGameplayInputBlockedByUi;
+            bool inputBlocked = VehicleInputController.IsGameplayInputBlockedByUi;
             if (!inputBlocked)
             {
                 UpdateAimInputs();

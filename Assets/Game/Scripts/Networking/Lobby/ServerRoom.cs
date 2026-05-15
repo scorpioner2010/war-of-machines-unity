@@ -23,7 +23,7 @@ namespace Game.Scripts.Networking.Lobby
         public List<Player> players = new List<Player>();
         public bool isAutoRoom;
         public event Action<ServerRoom> OnTimeIsUp;
-        public GameplayTimer gameplayTimer;
+        public NetworkGameplayTimer gameplayTimer;
         public bool isGameFinished;
         public bool spawnStarted;
         public bool matchEndSubmitted;

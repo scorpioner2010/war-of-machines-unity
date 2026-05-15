@@ -8,6 +8,7 @@ using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Helpers;
+using Game.Scripts.Core.Resources;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
@@ -433,7 +434,7 @@ namespace Game.Scripts.UI.Tree
 
             ApplyTreeItemState(item, progress);
         
-            Sprite sprite = ResourceManager.GetIcon(node.code);
+            Sprite sprite = GameResourceManager.GetIcon(node.code);
             item.image.sprite = sprite;
         
             item.button.onClick.AddListener(() =>
@@ -582,7 +583,7 @@ namespace Game.Scripts.UI.Tree
             {
                 Helpers.Loading.Show();
                 ResearchVehicleServerRpc(progress.Node.id, progress.PredecessorVehicleId);
-            }, TypePopup.Confirm);
+            }, PopupType.Confirm);
         }
 
         private void TryBuy(VehicleResearchProgress progress)
@@ -611,7 +612,7 @@ namespace Game.Scripts.UI.Tree
             {
                 Helpers.Loading.Show();
                 BuyVehicleServerRpc(lite.code);
-            }, TypePopup.Confirm);
+            }, PopupType.Confirm);
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -790,19 +791,19 @@ namespace Game.Scripts.UI.Tree
             Helpers.Loading.Hide();
         }
         
-        private Vehicle ParseVehicleClass(string cls)
+        private VehicleClass ParseVehicleClass(string cls)
         {
             if (string.Equals(cls, "Guardian", StringComparison.OrdinalIgnoreCase))
             {
-                return Vehicle.Guardian;
+                return VehicleClass.Guardian;
             }
 
             if (string.Equals(cls, "Colossus", StringComparison.OrdinalIgnoreCase))
             {
-                return Vehicle.Colossus;
+                return VehicleClass.Colossus;
             }
 
-            return Vehicle.Scout;
+            return VehicleClass.Scout;
         }
 
         private async UniTask RedrawActive(int index)

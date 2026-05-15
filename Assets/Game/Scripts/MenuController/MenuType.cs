@@ -7,7 +7,7 @@ namespace Game.Scripts.MenuController
         Settings = 2,
         Skin = 3,
         GameplayHUD = 7,
-        FindGame = 8,
+        Matchmaking = 8,
         LoadScreen = 9,
         DevelopmentTree = 10,
         EndGame = 11,

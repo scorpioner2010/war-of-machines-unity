@@ -99,7 +99,7 @@ namespace Game.Scripts.Testing
 
         private void Update()
         {
-            if (InputManager.Escape)
+            if (VehicleInputController.Escape)
             {
                 SetTestCursorMode(!_testCursorMode);
             }

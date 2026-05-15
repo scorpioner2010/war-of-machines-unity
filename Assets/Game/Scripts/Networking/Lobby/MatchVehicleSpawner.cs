@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Managing.Server;
 using Game.Scripts.API.Models;
+using Game.Scripts.Core.Resources;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.World.Spawns;
@@ -56,7 +57,7 @@ namespace Game.Scripts.Networking.Lobby
                 ? player.activeVehicleCode
                 : profile.activeVehicleCode;
 
-            VehicleRoot vehicle = ResourceManager.GetPrefab(vehicleCode);
+            VehicleRoot vehicle = GameResourceManager.GetPrefab(vehicleCode);
             if (vehicle == null)
             {
                 return null;
