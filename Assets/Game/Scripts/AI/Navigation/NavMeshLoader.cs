@@ -11,6 +11,11 @@ namespace Game.Scripts.AI.Navigation
 
         private void Start()
         {
+            Reload();
+        }
+
+        public void Reload()
+        {
             if (navMeshSurface != null && navMeshData != null)
             {
                 navMeshSurface.RemoveData();

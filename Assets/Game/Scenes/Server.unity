@@ -677,7 +677,7 @@ MonoBehaviour:
   scenes: 00000000
   gameplayTimerPrefab: {fileID: 5805746888609840445, guid: 91566732414fc37489fd74a6230dc973,
     type: 3}
-  sceneOffsetX: 0
+  sceneSlotSpacingX: 500
 --- !u!4 &1510332973
 Transform:
   m_ObjectHideFlags: 0
@@ -910,6 +910,13 @@ MonoBehaviour:
   clientRetryDelaySeconds: 1
   clientMaxStartAttempts: 30
   serverHeartbeatIntervalSeconds: 2
+  requestClientServerAddressFromApi: 1
+  serverLookupTimeoutSeconds: 5
+  apiLookupStatusMinimumSeconds: 1.8
+  apiAddressReceivedStatusSeconds: 0.9
+  dedicatedConnectStatusMinimumSeconds: 1.8
+  connectedStatusVisibleSeconds: 2
+  advertisedServerAddress: 
 --- !u!4 &1731322153
 Transform:
   m_ObjectHideFlags: 0
@@ -1255,6 +1262,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3533032834666098081, guid: 37920e9282dd1184faf512fea6cfe275,
+        type: 3}
+      propertyPath: findRoomSeconds
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
