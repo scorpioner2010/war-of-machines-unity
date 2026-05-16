@@ -49,6 +49,30 @@ public class RobotRegistry : ScriptableObject
 
         return string.Empty;
     }
+
+    public void FillValidCodes(List<string> results)
+    {
+        if (results == null)
+        {
+            return;
+        }
+
+        if (items == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            Item item = items[i];
+            if (item == null || string.IsNullOrEmpty(item.code) || item.prefab == null)
+            {
+                continue;
+            }
+
+            results.Add(item.code);
+        }
+    }
     
     public Sprite GetIcon(string code)
     {

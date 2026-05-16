@@ -27,6 +27,7 @@ namespace Game.Scripts.UI.HUD
             }
 
             vehicleRoot.health.OnDamaged += OnDamaged;
+            vehicleRoot.health.onDeath.AddListener(OnDeath);
         }
 
         private void OnDestroy()
@@ -34,6 +35,7 @@ namespace Game.Scripts.UI.HUD
             if (vehicleRoot != null && vehicleRoot.health != null)
             {
                 vehicleRoot.health.OnDamaged -= OnDamaged;
+                vehicleRoot.health.onDeath.RemoveListener(OnDeath);
             }
         }
 
@@ -42,6 +44,11 @@ namespace Game.Scripts.UI.HUD
             float cur01 = Mathf.Clamp01(currentHealth / Mathf.Max(1f, maxHealth));
             hpView.fillAmount = cur01;
             ShowFloatingText(damageAmount);
+        }
+
+        private void OnDeath()
+        {
+            gameObject.SetActive(false);
         }
         
         private void ShowFloatingText(float dmg)

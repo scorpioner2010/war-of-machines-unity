@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Game.Scripts.Core.Resources;
 using UnityEngine;
 
@@ -22,15 +23,22 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            string vehicleCode = ResolveVehicleCode(defaultVehicleCode);
-            if (string.IsNullOrEmpty(vehicleCode))
+            List<string> vehicleCodes = BuildVehicleCodePool(defaultVehicleCode);
+            if (vehicleCodes.Count == 0)
             {
-                Debug.LogWarning("Cannot add match bots: default bot vehicle code is empty and registry fallback was not found.");
+                Debug.LogWarning("Cannot add match bots: no bot vehicle codes were found in registry or default settings.");
                 return;
             }
 
+            Shuffle(vehicleCodes);
+
             for (int i = 0; i < botsToAdd; i++)
             {
+                if (i > 0 && i % vehicleCodes.Count == 0)
+                {
+                    Shuffle(vehicleCodes);
+                }
+
                 Player bot = new Player
                 {
                     loginName = BuildBotName(room),
@@ -39,7 +47,7 @@ namespace Game.Scripts.Networking.Lobby
                     userId = 0,
                     mmr = BotMmr,
                     activeVehicleId = 0,
-                    activeVehicleCode = vehicleCode,
+                    activeVehicleCode = vehicleCodes[i % vehicleCodes.Count],
                     team = MatchTeam.None,
                     isBot = true,
                     randomPlayerConnected = true
@@ -66,14 +74,42 @@ namespace Game.Scripts.Networking.Lobby
             return count;
         }
 
-        private static string ResolveVehicleCode(string defaultVehicleCode)
+        private static List<string> BuildVehicleCodePool(string defaultVehicleCode)
         {
-            if (!string.IsNullOrEmpty(defaultVehicleCode))
+            List<string> vehicleCodes = new List<string>(16);
+            GameResourceManager.FillVehicleCodes(vehicleCodes);
+
+            if (vehicleCodes.Count == 0 && !string.IsNullOrEmpty(defaultVehicleCode))
             {
-                return defaultVehicleCode;
+                vehicleCodes.Add(defaultVehicleCode);
             }
 
-            return GameResourceManager.GetFirstVehicleCode();
+            if (vehicleCodes.Count == 0)
+            {
+                string fallbackCode = GameResourceManager.GetFirstVehicleCode();
+                if (!string.IsNullOrEmpty(fallbackCode))
+                {
+                    vehicleCodes.Add(fallbackCode);
+                }
+            }
+
+            return vehicleCodes;
+        }
+
+        private static void Shuffle(List<string> values)
+        {
+            if (values == null)
+            {
+                return;
+            }
+
+            for (int i = values.Count - 1; i > 0; i--)
+            {
+                int swapIndex = Random.Range(0, i + 1);
+                string temp = values[i];
+                values[i] = values[swapIndex];
+                values[swapIndex] = temp;
+            }
         }
 
         private static string BuildBotName(ServerRoom room)

@@ -1,4 +1,5 @@
 using Game.Scripts.Gameplay.Robots;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Scripts.Core.Resources
@@ -31,6 +32,21 @@ namespace Game.Scripts.Core.Resources
             }
 
             return _instance.registry.GetFirstCode();
+        }
+
+        public static void FillVehicleCodes(List<string> results)
+        {
+            if (results == null)
+            {
+                return;
+            }
+
+            if (_instance == null || _instance.registry == null)
+            {
+                return;
+            }
+
+            _instance.registry.FillValidCodes(results);
         }
 
         public static Sprite GetIcon(string code)
