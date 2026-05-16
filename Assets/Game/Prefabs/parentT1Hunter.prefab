@@ -160,7 +160,6 @@ GameObject:
   - component: {fileID: 9174269650456579425}
   - component: {fileID: 6143560918247520422}
   - component: {fileID: 2256879642197945629}
-  - component: {fileID: 8755481769833723737}
   m_Layer: 0
   m_Name: ChassisMain
   m_TagString: Untagged
@@ -283,27 +282,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerRoot: {fileID: 5798367828239414435}
-  bobbingAmplitude: 0.05
-  bobbingFrequency: 2
+  walkingBobbingAmplitude: 0.1
+  walkingBobbingFrequency: 2
+  turningBobbingAmplitude: 0.1
+  turningBobbingFrequency: 3
   inputThreshold: 0.01
-  isWalkingBobbing: 1
---- !u!114 &8755481769833723737
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 331624823617908616}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c9b0c41d275a5fb4eb2aa23a37cbeac5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerRoot: {fileID: 5798367828239414435}
-  bobbingAmplitude: 0.05
-  bobbingFrequency: 3
-  inputThreshold: 0.01
-  isWalkingBobbing: 0
+  footSpreadReference: 1.1
+  smoothingSpeed: 8
 --- !u!1 &360747763325710878
 GameObject:
   m_ObjectHideFlags: 0
