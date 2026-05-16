@@ -254,7 +254,13 @@ namespace Game.Scripts.Networking.Lobby
 
         private void LoadScene(ServerRoom room, List<NetworkConnection> connections)
         {
-            int offset = GameplaySpawner.In.sceneOffsetX;
+            if (GameplaySpawner.In == null)
+            {
+                Debug.LogWarning("Cannot load gameplay scene without GameplaySpawner.");
+                return;
+            }
+
+            int offset = GameplaySpawner.In.ReserveSceneSlot(room);
             room.loadedSceneName = room.selectedLocation;
 
             SceneLoadData sceneLoadData = new SceneLoadData(room.selectedLocation)

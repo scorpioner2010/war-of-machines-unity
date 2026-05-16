@@ -5,12 +5,14 @@ using FishNet.Connection;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Server;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Scripts.Networking.Lobby
 {
     public class ServerRoom : MonoBehaviour
     {
         private const int DefaultMmr = 1000;
+        public const int NoSceneSlot = -1;
 
         public string roomId;
         public string roomName;
@@ -20,6 +22,8 @@ namespace Game.Scripts.Networking.Lobby
         public DateTime CreatedTime;
         public string loadedSceneName;
         public int handle;
+        public int sceneSlotIndex = NoSceneSlot;
+        public int sceneOffsetX;
         public List<Player> players = new List<Player>();
         public bool isAutoRoom;
         public event Action<ServerRoom> OnTimeIsUp;
@@ -32,6 +36,8 @@ namespace Game.Scripts.Networking.Lobby
 
         public bool IsEmpty => players.Count == 0;
         public bool IsActiveMatch => isInGame && !matchRewardsSent;
+        public bool HasSceneSlot => sceneSlotIndex != NoSceneSlot;
+        public bool HasLoadedScene => handle != 0;
 
         private void OnDestroy()
         {
@@ -39,6 +45,54 @@ namespace Game.Scripts.Networking.Lobby
             {
                 Destroy(gameplayTimer.gameObject);
             }
+        }
+
+        public void AssignSceneSlot(int slotIndex, int offsetX)
+        {
+            sceneSlotIndex = slotIndex;
+            sceneOffsetX = offsetX;
+        }
+
+        public void AssignLoadedScene(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            loadedSceneName = scene.name;
+            handle = scene.handle;
+        }
+
+        public Scene GetLoadedScene()
+        {
+            if (!HasLoadedScene)
+            {
+                return default;
+            }
+
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (scene.handle == handle)
+                {
+                    return scene;
+                }
+            }
+
+            return default;
+        }
+
+        public void ClearSceneSlot()
+        {
+            sceneSlotIndex = NoSceneSlot;
+            sceneOffsetX = 0;
+        }
+
+        public void ClearLoadedScene()
+        {
+            loadedSceneName = string.Empty;
+            handle = 0;
         }
 
         private void SyncedTimeOnChange(float newTime)

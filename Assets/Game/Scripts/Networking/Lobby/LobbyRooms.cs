@@ -111,6 +111,7 @@ namespace Game.Scripts.Networking.Lobby
 
             if (serverRoom.GetPlayers().Count == 0)
             {
+                ReleaseRoomSceneSlot(serverRoom);
                 Rooms.Remove(roomId);
                 Object.Destroy(serverRoom.gameObject);
             }
@@ -124,7 +125,16 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             Rooms.Remove(serverRoom.roomId);
+            ReleaseRoomSceneSlot(serverRoom);
             Object.Destroy(serverRoom.gameObject);
+        }
+
+        private static void ReleaseRoomSceneSlot(ServerRoom serverRoom)
+        {
+            if (GameplaySpawner.In != null)
+            {
+                GameplaySpawner.In.ReleaseRoomSceneSlot(serverRoom);
+            }
         }
         
         public static ServerRoom GetRoomByConnection(NetworkConnection conn)

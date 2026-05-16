@@ -27,33 +27,41 @@ namespace Game.Scripts.Networking.Lobby
         public static GameplaySpawner In;
         public GameMaps[] scenes;
         public NetworkGameplayTimer gameplayTimerPrefab;
-        
-        private UEScene _additiveServerScene;
+
+        [SerializeField] private int sceneSlotSpacingX = 500;
+
         private readonly MatchSceneOffsetService _sceneOffsetService = new MatchSceneOffsetService();
         private readonly MatchVehicleSpawner _vehicleSpawner = new MatchVehicleSpawner();
-        public int sceneOffsetX;
+        private readonly Dictionary<int, int> _sceneSlotsByHandle = new Dictionary<int, int>();
+        private readonly Dictionary<int, ServerRoom> _roomsBySceneHandle = new Dictionary<int, ServerRoom>();
+        private MatchSceneSlotAllocator _sceneSlotAllocator;
         private const float SceneValidationTimeout = 10f;
         private const int EndGameDelayMilliseconds = 2000;
+        private const int DefaultSceneSlotSpacingX = 500;
 
         private void Awake()
         {
             In = this;
+            _sceneSlotAllocator = new MatchSceneSlotAllocator(GetSceneSlotSpacing());
         }
 
         public override void OnStartServer()
         {
             base.OnStartServer();
-            UESceneManager.sceneLoaded += HandleServerSceneLoaded;
             SceneManager.OnLoadEnd += HandleServerLoadEnd;
+            SceneManager.OnUnloadEnd += SceneManagerOnUnloadEnd;
             ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
         }
 
         public override void OnStopServer()
         {
             base.OnStopServer();
-            UESceneManager.sceneLoaded -= HandleServerSceneLoaded;
             SceneManager.OnLoadEnd -= HandleServerLoadEnd;
+            SceneManager.OnUnloadEnd -= SceneManagerOnUnloadEnd;
             ServerManager.OnRemoteConnectionState -= OnRemoteConnectionState;
+            _sceneSlotsByHandle.Clear();
+            _roomsBySceneHandle.Clear();
+            _sceneSlotAllocator.Clear();
             PendingBattleResults.Clear();
         }
 
@@ -87,39 +95,119 @@ namespace Game.Scripts.Networking.Lobby
             }
         }
 
-        private void HandleServerSceneLoaded(UEScene scene, LoadSceneMode mode)
+        private void HandleServerLoadEnd(SceneLoadEndEventArgs args)
         {
-            if (!IsValidScene(scene))
+            ServerRoom serverRoom = GetLoadedServerRoom(args);
+            if (serverRoom == null)
             {
                 return;
             }
 
-            int usedOffset = sceneOffsetX;
-            
-            _sceneOffsetService.ApplyOffset(scene, usedOffset);
-
-            sceneOffsetX += 500;
-            _additiveServerScene = scene;
-
-            ApplySceneOffsetClientRpc(scene.handle, usedOffset);
+            foreach (Scene scene in args.LoadedScenes)
+            {
+                if (IsRoomLoadedScene(serverRoom, scene))
+                {
+                    RegisterRoomScene(serverRoom, scene);
+                    return;
+                }
+            }
         }
 
-        private void HandleServerLoadEnd(SceneLoadEndEventArgs args)
+        public int ReserveSceneSlot(ServerRoom serverRoom)
         {
-            foreach (object param in args.QueueData.SceneLoadData.Params.ServerParams)
+            if (serverRoom == null)
             {
-                if (param is ServerRoom info)
+                return 0;
+            }
+
+            if (_sceneSlotAllocator == null)
+            {
+                _sceneSlotAllocator = new MatchSceneSlotAllocator(GetSceneSlotSpacing());
+            }
+
+            if (serverRoom.HasSceneSlot)
+            {
+                return serverRoom.sceneOffsetX;
+            }
+
+            int slot = _sceneSlotAllocator.ReserveSlot();
+            int offset = _sceneSlotAllocator.GetOffset(slot);
+            serverRoom.AssignSceneSlot(slot, offset);
+            return offset;
+        }
+
+        public void ReleaseRoomSceneSlot(ServerRoom serverRoom)
+        {
+            if (serverRoom == null || !serverRoom.HasSceneSlot)
+            {
+                return;
+            }
+
+            if (serverRoom.HasLoadedScene && serverRoom.GetLoadedScene().IsValid())
+            {
+                return;
+            }
+
+            if (serverRoom.HasLoadedScene)
+            {
+                _sceneSlotsByHandle.Remove(serverRoom.handle);
+                _roomsBySceneHandle.Remove(serverRoom.handle);
+                serverRoom.ClearLoadedScene();
+            }
+
+            ReleaseSceneSlot(serverRoom.sceneSlotIndex);
+            serverRoom.ClearSceneSlot();
+        }
+
+        private ServerRoom GetLoadedServerRoom(SceneLoadEndEventArgs args)
+        {
+            object[] serverParams = args.QueueData.SceneLoadData.Params.ServerParams;
+            if (serverParams == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < serverParams.Length; i++)
+            {
+                if (serverParams[i] is ServerRoom roomInfo)
                 {
-                    ServerRoom serverRoom = LobbyRooms.GetRoomById(info.roomId);
-                    
-                    foreach (Scene sc in args.LoadedScenes)
-                    {
-                        if (sc.name == serverRoom.loadedSceneName)
-                        {
-                            serverRoom.handle = sc.handle;
-                        }
-                    }
+                    return LobbyRooms.GetRoomById(roomInfo.roomId);
                 }
+            }
+
+            return null;
+        }
+
+        private bool IsRoomLoadedScene(ServerRoom serverRoom, Scene scene)
+        {
+            if (serverRoom == null || !IsValidScene(scene))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(serverRoom.loadedSceneName) && scene.name == serverRoom.loadedSceneName)
+            {
+                return true;
+            }
+
+            return scene.name == serverRoom.selectedLocation;
+        }
+
+        private void RegisterRoomScene(ServerRoom serverRoom, Scene scene)
+        {
+            if (serverRoom == null || !scene.IsValid())
+            {
+                return;
+            }
+
+            int offset = ReserveSceneSlot(serverRoom);
+            serverRoom.AssignLoadedScene(scene);
+
+            if (!_sceneSlotsByHandle.ContainsKey(scene.handle))
+            {
+                _sceneSlotsByHandle[scene.handle] = serverRoom.sceneSlotIndex;
+                _roomsBySceneHandle[scene.handle] = serverRoom;
+                _sceneOffsetService.ApplyOffset(scene, offset);
             }
         }
 
@@ -128,7 +216,6 @@ namespace Game.Scripts.Networking.Lobby
             base.OnStartClient();
             UESceneManager.sceneLoaded += HandleClientSceneLoaded;
             SceneManager.OnLoadEnd += HandleClientLoadEnd;
-            SceneManager.OnUnloadEnd += SceneManagerOnUnloadEnd;
         }
 
         public override void OnStopClient()
@@ -136,7 +223,6 @@ namespace Game.Scripts.Networking.Lobby
             base.OnStopClient();
             UESceneManager.sceneLoaded -= HandleClientSceneLoaded;
             SceneManager.OnLoadEnd -= HandleClientLoadEnd;
-            SceneManager.OnUnloadEnd -= SceneManagerOnUnloadEnd;
         }
 
         private void HandleClientSceneLoaded(UEScene scene, LoadSceneMode mode)
@@ -151,6 +237,11 @@ namespace Game.Scripts.Networking.Lobby
         
         private void HandleClientLoadEnd(SceneLoadEndEventArgs args)
         {
+            if (IsServerInitialized)
+            {
+                return;
+            }
+
             byte[] cp = args.QueueData.SceneLoadData.Params.ClientParams;
             int offset = (cp != null && cp.Length >= 4) ? BitConverter.ToInt32(cp, 0) : 0;
 
@@ -167,6 +258,15 @@ namespace Game.Scripts.Networking.Lobby
 
         private void SceneManagerOnUnloadEnd(SceneUnloadEndEventArgs obj)
         {
+            if (!IsServerInitialized || obj.UnloadedScenesV2 == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < obj.UnloadedScenesV2.Count; i++)
+            {
+                ReleaseSceneSlotForHandle(obj.UnloadedScenesV2[i].Handle);
+            }
         }
         
         public void ReturnToMainMenu()
@@ -214,11 +314,11 @@ namespace Game.Scripts.Networking.Lobby
                     if (serverRoom.IsActiveMatch)
                     {
                         AbandonPlayer(serverRoom, player);
-                        SceneManager.UnloadConnectionScenes(conn, new SceneUnloadData(serverRoom.loadedSceneName));
+                        UnloadRoomSceneForConnection(conn, serverRoom);
                         return;
                     }
 
-                    SceneManager.UnloadConnectionScenes(conn, new SceneUnloadData(serverRoom.loadedSceneName));
+                    UnloadRoomSceneForConnection(conn, serverRoom);
 
                     LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
 
@@ -228,6 +328,43 @@ namespace Game.Scripts.Networking.Lobby
                     }
                 }
             }
+        }
+
+        private void UnloadRoomSceneForConnection(NetworkConnection connection, ServerRoom serverRoom)
+        {
+            if (connection == null || serverRoom == null)
+            {
+                return;
+            }
+
+            SceneUnloadData sceneUnloadData = CreateRoomSceneUnloadData(serverRoom);
+            if (sceneUnloadData == null)
+            {
+                return;
+            }
+
+            SceneManager.UnloadConnectionScenes(connection, sceneUnloadData);
+        }
+
+        private SceneUnloadData CreateRoomSceneUnloadData(ServerRoom serverRoom)
+        {
+            if (serverRoom == null)
+            {
+                return null;
+            }
+
+            UEScene scene = serverRoom.GetLoadedScene();
+            if (scene.IsValid())
+            {
+                return new SceneUnloadData(scene);
+            }
+
+            if (!string.IsNullOrEmpty(serverRoom.loadedSceneName))
+            {
+                return new SceneUnloadData(serverRoom.loadedSceneName);
+            }
+
+            return null;
         }
 
         [Server]
@@ -335,9 +472,15 @@ namespace Game.Scripts.Networking.Lobby
 
         private void SpawnTimer(ServerRoom serverRoom)
         {
+            UEScene roomScene = serverRoom.GetLoadedScene();
+            if (!roomScene.IsValid())
+            {
+                return;
+            }
+
             NetworkGameplayTimer timer = Instantiate(gameplayTimerPrefab, Vector3.zero, Quaternion.identity);
             timer.serverRoom = serverRoom;
-            ServerManager.Spawn(timer.networkObject, LocalConnection, _additiveServerScene);
+            ServerManager.Spawn(timer.networkObject, LocalConnection, roomScene);
             serverRoom.gameplayTimer =  timer;
         }
         
@@ -348,10 +491,16 @@ namespace Game.Scripts.Networking.Lobby
         
         private async UniTask SpawnPlayerAsync(ServerRoom serverRoom, NetworkConnection connection)
         {
+            UEScene roomScene = serverRoom.GetLoadedScene();
+            if (!roomScene.IsValid())
+            {
+                return;
+            }
+
             await _vehicleSpawner.SpawnPlayerAsync(
                 serverRoom,
                 connection,
-                _additiveServerScene,
+                roomScene,
                 SceneValidationTimeout,
                 ServerManager,
                 vehicleRoot =>
@@ -539,30 +688,46 @@ namespace Game.Scripts.Networking.Lobby
             EndGameUI.Show(result);
         }
 
-        [ObserversRpc]
-        private void ApplySceneOffsetClientRpc(int sceneHandle, int offset)
+        private void ReleaseSceneSlotForHandle(int sceneHandle)
         {
-            UEScene scene = GetSceneByHandleLocal(sceneHandle);
-            
-            if (!scene.IsValid())
+            if (!_sceneSlotsByHandle.TryGetValue(sceneHandle, out int slot))
             {
                 return;
             }
 
-            _sceneOffsetService.ApplyOffset(scene, offset);
-        }
+            _sceneSlotsByHandle.Remove(sceneHandle);
 
-        private UEScene GetSceneByHandleLocal(int handle)
-        {
-            for (int i = 0; i < UESceneManager.sceneCount; i++)
+            if (_roomsBySceneHandle.TryGetValue(sceneHandle, out ServerRoom serverRoom))
             {
-                Scene s = UESceneManager.GetSceneAt(i);
-                if (s.handle == handle)
+                _roomsBySceneHandle.Remove(sceneHandle);
+                if (serverRoom != null)
                 {
-                    return s;
+                    serverRoom.ClearLoadedScene();
+                    serverRoom.ClearSceneSlot();
                 }
             }
-            return default;
+
+            ReleaseSceneSlot(slot);
+        }
+
+        private void ReleaseSceneSlot(int slot)
+        {
+            if (_sceneSlotAllocator == null)
+            {
+                return;
+            }
+
+            _sceneSlotAllocator.ReleaseSlot(slot);
+        }
+
+        private int GetSceneSlotSpacing()
+        {
+            if (sceneSlotSpacingX > 0)
+            {
+                return sceneSlotSpacingX;
+            }
+
+            return DefaultSceneSlotSpacingX;
         }
 
     }
