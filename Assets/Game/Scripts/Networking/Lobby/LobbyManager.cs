@@ -18,6 +18,8 @@ namespace Game.Scripts.Networking.Lobby
     {
         [SerializeField] private ServerRoom serverRoomPrefab;
 
+        private readonly MatchBotPopulationService _botPopulationService = new MatchBotPopulationService();
+
         public override void OnStartClient()
         {
             base.OnStartClient();
@@ -229,6 +231,14 @@ namespace Game.Scripts.Networking.Lobby
             {
                 LobbyRooms.RemoveRoom(room);
                 return;
+            }
+
+            if (ServerSettings.AreBotsEnabled())
+            {
+                _botPopulationService.AddBots(
+                    room,
+                    ServerSettings.GetBotsPerMatch(),
+                    ServerSettings.GetDefaultBotVehicleCode());
             }
 
             room.isInGame = true;

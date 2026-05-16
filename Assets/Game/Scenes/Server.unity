@@ -1263,11 +1263,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3533032834666098081, guid: 37920e9282dd1184faf512fea6cfe275,
-        type: 3}
-      propertyPath: findRoomSeconds
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

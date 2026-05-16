@@ -7,6 +7,7 @@ namespace Toras.Editor
     [CustomEditor(typeof(ServerSettings))]
     public class ServerSettingsEditor : UnityEditor.Editor
     {
+        private bool _showBots = true;
         private bool _showRobotMovement = true;
         private bool _showGunDispersion = true;
         private bool _showProjectileBallistics = true;
@@ -22,6 +23,8 @@ namespace Toras.Editor
 
             EditorGUILayout.Space(4f);
             DrawMatchmaking();
+            EditorGUILayout.Space(6f);
+            DrawBots();
             EditorGUILayout.Space(6f);
             DrawProjectileBallistics();
             EditorGUILayout.Space(6f);
@@ -43,6 +46,73 @@ namespace Toras.Editor
                 "findRoomSeconds",
                 "Скільки секунд триває пошук кімнати або очікування матчмейкінгу. Якщо значення менше або дорівнює нулю, код використовує 60 секунд."
             );
+        }
+
+        private void DrawBots()
+        {
+            EditorGUILayout.LabelField("Bots", EditorStyles.boldLabel);
+            DrawProperty(
+                "botsEnabled",
+                "Enables server-side match bots. Bots are spawned by the server and replicated to clients."
+            );
+            DrawProperty(
+                "botsPerMatch",
+                "How many bots the server adds to each match after real players are assigned to the room."
+            );
+            DrawProperty(
+                "defaultBotVehicleCode",
+                "Vehicle registry code used for bots. If empty, the first valid registry item is used."
+            );
+
+            SerializedProperty botWander = serializedObject.FindProperty("botWander");
+            _showBots = EditorGUILayout.Foldout(
+                _showBots,
+                new GUIContent("Bot Wander", "Very light server-only input wandering for bots."),
+                true
+            );
+
+            if (!_showBots)
+            {
+                return;
+            }
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.LabelField("Movement", EditorStyles.miniBoldLabel);
+                DrawChildProperty(botWander, "thinkInterval", "How often a bot checks whether it should change input.");
+                DrawChildProperty(botWander, "minMoveDuration", "Minimum time a bot keeps one movement input.");
+                DrawChildProperty(botWander, "maxMoveDuration", "Maximum time a bot keeps one movement input.");
+                DrawChildProperty(botWander, "forwardInput", "Forward input used while wandering.");
+                DrawChildProperty(botWander, "maxGentleTurnInput", "Maximum random gentle turn input while moving forward.");
+                DrawChildProperty(botWander, "strongTurnChance", "Chance to pick a stronger turn for the next movement segment.");
+                DrawChildProperty(botWander, "strongTurnInput", "Turn input used for strong turns.");
+                DrawChildProperty(botWander, "idleChance", "Chance to choose a short idle segment instead of moving.");
+
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Waypoint Path", EditorStyles.miniBoldLabel);
+                DrawChildProperty(botWander, "waypointReachDistance", "Distance at which the bot advances to the next waypoint.");
+                DrawChildProperty(botWander, "minDestinationDistance", "Minimum distance from bot to a random destination waypoint.");
+                DrawChildProperty(botWander, "destinationPickAttempts", "How many destination nodes are tried before accepting a closer one.");
+                DrawChildProperty(botWander, "repathCooldown", "Minimum delay between graph path searches for one bot.");
+                DrawChildProperty(botWander, "targetRepathDistance", "Moving target distance change required before rebuilding the path.");
+                DrawChildProperty(botWander, "turnFullInputAngle", "Angle mapped to full left or right input.");
+                DrawChildProperty(botWander, "slowTurnAngle", "Bot slows down when target angle is above this value.");
+                DrawChildProperty(botWander, "stopTurnAngle", "Bot stops forward movement when target angle is above this value.");
+                DrawChildProperty(botWander, "slowForwardInput", "Forward input used during a large turn.");
+
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Stuck Recovery", EditorStyles.miniBoldLabel);
+                DrawChildProperty(botWander, "stuckCheckInterval", "How often the bot checks if it stopped making progress.");
+                DrawChildProperty(botWander, "stuckDistance", "Minimum movement counted as progress between stuck checks.");
+                DrawChildProperty(botWander, "unstickDuration", "How long the bot reverses and turns when stuck.");
+                DrawChildProperty(botWander, "unstickReverseInput", "Reverse input used when stuck.");
+                DrawChildProperty(botWander, "unstickTurnInput", "Turn input used when stuck.");
+
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Dynamic Avoidance", EditorStyles.miniBoldLabel);
+                DrawChildProperty(botWander, "dynamicAvoidanceRadius", "Radius used for lightweight avoidance of other robots.");
+                DrawChildProperty(botWander, "dynamicAvoidanceWeight", "How strongly nearby robots bend the desired movement direction.");
+            }
         }
 
         private void DrawRobotMovement()

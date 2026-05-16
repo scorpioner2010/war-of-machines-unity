@@ -30,6 +30,25 @@ public class RobotRegistry : ScriptableObject
         
         return null;
     }
+
+    public string GetFirstCode()
+    {
+        if (items == null)
+        {
+            return string.Empty;
+        }
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            Item item = items[i];
+            if (item != null && !string.IsNullOrEmpty(item.code) && item.prefab != null)
+            {
+                return item.code;
+            }
+        }
+
+        return string.Empty;
+    }
     
     public Sprite GetIcon(string code)
     {

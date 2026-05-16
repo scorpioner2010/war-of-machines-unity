@@ -458,7 +458,7 @@ namespace Game.Scripts.Networking.Lobby
 
                 if (player.isBot)
                 {
-                    SpawnBot(serverRoom, player);
+                    await SpawnBotAsync(serverRoom, player);
                 }
                 else
                 {
@@ -484,9 +484,24 @@ namespace Game.Scripts.Networking.Lobby
             serverRoom.gameplayTimer =  timer;
         }
         
-        private void SpawnBot(ServerRoom serverRoom, Player player)
+        private async UniTask SpawnBotAsync(ServerRoom serverRoom, Player player)
         {
-            return;
+            UEScene roomScene = serverRoom.GetLoadedScene();
+            if (!roomScene.IsValid())
+            {
+                return;
+            }
+
+            await _vehicleSpawner.SpawnBotAsync(
+                serverRoom,
+                player,
+                roomScene,
+                SceneValidationTimeout,
+                ServerManager,
+                vehicleRoot =>
+                {
+                    vehicleRoot.health.OnServerDeath += _ => HandleRobotDeath(serverRoom);
+                });
         }
         
         private async UniTask SpawnPlayerAsync(ServerRoom serverRoom, NetworkConnection connection)

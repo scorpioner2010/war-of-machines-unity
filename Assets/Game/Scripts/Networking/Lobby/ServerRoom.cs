@@ -281,18 +281,25 @@ namespace Game.Scripts.Networking.Lobby
 
         public void AssignTeams()
         {
-            List<Player> playersForBalance = new List<Player>();
+            List<Player> realPlayers = new List<Player>();
+            List<Player> botPlayers = new List<Player>();
 
-            foreach (Player player in players)
+            for (int i = 0; i < players.Count; i++)
             {
+                Player player = players[i];
                 if (player != null)
                 {
                     player.team = MatchTeam.None;
-                    playersForBalance.Add(player);
+                    if (player.isBot)
+                    {
+                        botPlayers.Add(player);
+                    }
+                    else
+                    {
+                        realPlayers.Add(player);
+                    }
                 }
             }
-
-            playersForBalance.Sort(CompareForTeamBalance);
 
             int redCount = 0;
             int blueCount = 0;
@@ -300,9 +307,29 @@ namespace Game.Scripts.Networking.Lobby
             int blueMmr = 0;
             bool preferRed = true;
 
+            realPlayers.Sort(CompareForTeamBalance);
+            AssignPlayersToBalancedTeams(realPlayers, ref redCount, ref blueCount, ref redMmr, ref blueMmr, ref preferRed);
+
+            botPlayers.Sort(CompareForTeamBalance);
+            AssignPlayersToBalancedTeams(botPlayers, ref redCount, ref blueCount, ref redMmr, ref blueMmr, ref preferRed);
+        }
+
+        private static void AssignPlayersToBalancedTeams(
+            List<Player> playersForBalance,
+            ref int redCount,
+            ref int blueCount,
+            ref int redMmr,
+            ref int blueMmr,
+            ref bool preferRed)
+        {
             for (int i = 0; i < playersForBalance.Count; i++)
             {
                 Player player = playersForBalance[i];
+                if (player == null)
+                {
+                    continue;
+                }
+
                 MatchTeam team = ChooseTeam(redCount, blueCount, redMmr, blueMmr, preferRed);
 
                 player.team = team;

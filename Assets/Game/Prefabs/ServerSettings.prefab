@@ -45,7 +45,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPlayersForFindRoom: 20
-  findRoomSeconds: 10
+  findRoomSeconds: 1
+  botsEnabled: 1
+  botsPerMatch: 20
+  defaultBotVehicleCode: ia_l1_starter
+  botWander:
+    thinkInterval: 0.25
+    minMoveDuration: 1.2
+    maxMoveDuration: 3.2
+    forwardInput: 1
+    maxGentleTurnInput: 0.35
+    strongTurnChance: 0.18
+    strongTurnInput: 0.85
+    idleChance: 0
+    waypointReachDistance: 2.4
+    minDestinationDistance: 12
+    destinationPickAttempts: 8
+    repathCooldown: 0.75
+    targetRepathDistance: 5
+    turnFullInputAngle: 90
+    slowTurnAngle: 55
+    stopTurnAngle: 115
+    slowForwardInput: 0.35
+    stuckCheckInterval: 1.25
+    stuckDistance: 0.45
+    unstickDuration: 0.8
+    unstickReverseInput: -0.55
+    unstickTurnInput: 1
+    dynamicAvoidanceRadius: 4
+    dynamicAvoidanceWeight: 0.65
   robotMovement:
     fallbackMaxSpeed: 10
     fallbackAcceleration: 30

@@ -1,12 +1,13 @@
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Game.Scripts.AI.WaypointGraph;
 using Game.Scripts.MenuController;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class VehicleInputController : NetworkBehaviour, IVehicleRootAware
+    public class VehicleInputController : NetworkBehaviour, IVehicleRootAware, IBotInputReceiver
     {
         public VehicleRoot vehicleRoot;
 
@@ -59,6 +60,34 @@ namespace Game.Scripts.Gameplay.Robots
         public void SetControlsBlocked(bool blocked)
         {
             _controlsBlocked = blocked;
+        }
+
+        [Server]
+        public void ApplyBotInput(float forward, float turn)
+        {
+            ServerSetExternalInput(VehicleServerInput.Movement(new Vector2(turn, forward)), true);
+        }
+
+        [Server]
+        public void ServerSetExternalInput(VehicleServerInput input)
+        {
+            ServerSetExternalInput(input, true);
+        }
+
+        [Server]
+        public void ServerSetExternalInput(VehicleServerInput input, bool syncAnimation)
+        {
+            Vector2 move = input.Move;
+            move.x = Mathf.Clamp(move.x, -1f, 1f);
+            move.y = Mathf.Clamp(move.y, -1f, 1f);
+
+            ApplyServerInput(move, input.Shoot, input.Action, syncAnimation);
+        }
+
+        [Server]
+        public void ServerClearExternalInput()
+        {
+            ApplyServerInput(Vector2.zero, false, false, true);
         }
 
         public bool IsControlsBlocked => _controlsBlocked;
@@ -355,13 +384,7 @@ namespace Game.Scripts.Gameplay.Robots
             moveX = Mathf.Clamp(moveX, -1f, 1f);
             moveY = Mathf.Clamp(moveY, -1f, 1f);
 
-            _moveServer = new Vector2(moveX, moveY);
-            _shootServer = shoot;
-            _actionServer = action;
-
-            _animMove.Value = _moveServer;
-            _animShoot.Value = _shootServer;
-            _animAction.Value = _actionServer;
+            ApplyServerInput(new Vector2(moveX, moveY), shoot, action, true);
 
             float yawDeg = AngleQuantization.DequantizeAngle01(yawQ);
             float pitchDeg = AngleQuantization.DequantizeAngle01(pitchQ);
@@ -369,6 +392,20 @@ namespace Game.Scripts.Gameplay.Robots
             vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(aimPoint, aimForward);
             vehicleRoot.robotHullRotation.SetTargetYawServer(yawDeg);
             vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(pitchDeg);
+        }
+
+        private void ApplyServerInput(Vector2 move, bool shoot, bool action, bool syncAnimation)
+        {
+            _moveServer = move;
+            _shootServer = shoot;
+            _actionServer = action;
+
+            if (syncAnimation)
+            {
+                _animMove.Value = _moveServer;
+                _animShoot.Value = _shootServer;
+                _animAction.Value = _actionServer;
+            }
         }
 
         private void ComputeLocalYawPitch(out float yawDeg, out float pitchDeg, out Vector3 cameraAimPoint, out Vector3 cameraAimForward)

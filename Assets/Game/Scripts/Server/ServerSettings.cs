@@ -125,6 +125,138 @@ namespace Game.Scripts.Server
     }
 
     [System.Serializable]
+    public class BotWanderSettings
+    {
+        private static readonly BotWanderSettings DefaultSettings = new BotWanderSettings();
+
+        [Header("Movement")]
+        public float thinkInterval = 0.25f;
+        public float minMoveDuration = 1.2f;
+        public float maxMoveDuration = 3.2f;
+        public float forwardInput = 1f;
+        public float maxGentleTurnInput = 0.35f;
+        public float strongTurnChance = 0.18f;
+        public float strongTurnInput = 0.85f;
+        public float idleChance = 0f;
+
+        [Header("Waypoint Path")]
+        public float waypointReachDistance = 2.4f;
+        public float minDestinationDistance = 12f;
+        public int destinationPickAttempts = 8;
+        public float repathCooldown = 0.75f;
+        public float targetRepathDistance = 5f;
+        public float turnFullInputAngle = 90f;
+        public float slowTurnAngle = 55f;
+        public float stopTurnAngle = 115f;
+        public float slowForwardInput = 0.35f;
+
+        [Header("Stuck Recovery")]
+        public float stuckCheckInterval = 1.25f;
+        public float stuckDistance = 0.45f;
+        public float unstickDuration = 0.8f;
+        public float unstickReverseInput = -0.55f;
+        public float unstickTurnInput = 1f;
+
+        [Header("Dynamic Avoidance")]
+        public float dynamicAvoidanceRadius = 4f;
+        public float dynamicAvoidanceWeight = 0.65f;
+
+        public static BotWanderSettings Default
+        {
+            get
+            {
+                return DefaultSettings;
+            }
+        }
+
+        public void Validate()
+        {
+            thinkInterval = ClampFinite(thinkInterval, 0.05f, Default.thinkInterval);
+            minMoveDuration = ClampFinite(minMoveDuration, 0.1f, Default.minMoveDuration);
+            maxMoveDuration = ClampFinite(maxMoveDuration, minMoveDuration, Default.maxMoveDuration);
+            forwardInput = ClampInput(forwardInput, Default.forwardInput);
+            maxGentleTurnInput = ClampInput(Mathf.Abs(maxGentleTurnInput), Default.maxGentleTurnInput);
+            strongTurnChance = Mathf.Clamp01(ClampFinite(strongTurnChance, 0f, Default.strongTurnChance));
+            strongTurnInput = ClampInput(Mathf.Abs(strongTurnInput), Default.strongTurnInput);
+            idleChance = Mathf.Clamp01(ClampFinite(idleChance, 0f, Default.idleChance));
+            waypointReachDistance = ClampFinite(waypointReachDistance, 0.1f, Default.waypointReachDistance);
+            minDestinationDistance = ClampFinite(minDestinationDistance, 0f, Default.minDestinationDistance);
+            destinationPickAttempts = Mathf.Max(1, destinationPickAttempts);
+            repathCooldown = ClampFinite(repathCooldown, 0.1f, Default.repathCooldown);
+            targetRepathDistance = ClampFinite(targetRepathDistance, 0.1f, Default.targetRepathDistance);
+            turnFullInputAngle = ClampFinite(turnFullInputAngle, 1f, Default.turnFullInputAngle);
+            slowTurnAngle = ClampFinite(slowTurnAngle, 0f, Default.slowTurnAngle);
+            stopTurnAngle = ClampFinite(stopTurnAngle, slowTurnAngle, Default.stopTurnAngle);
+            slowForwardInput = ClampInput(slowForwardInput, Default.slowForwardInput);
+            stuckCheckInterval = ClampFinite(stuckCheckInterval, 0.25f, Default.stuckCheckInterval);
+            stuckDistance = ClampFinite(stuckDistance, 0.05f, Default.stuckDistance);
+            unstickDuration = ClampFinite(unstickDuration, 0.1f, Default.unstickDuration);
+            unstickReverseInput = ClampInput(unstickReverseInput, Default.unstickReverseInput);
+            unstickTurnInput = ClampInput(Mathf.Abs(unstickTurnInput), Default.unstickTurnInput);
+            dynamicAvoidanceRadius = ClampFinite(dynamicAvoidanceRadius, 0f, Default.dynamicAvoidanceRadius);
+            dynamicAvoidanceWeight = ClampFinite(dynamicAvoidanceWeight, 0f, Default.dynamicAvoidanceWeight);
+        }
+
+        public void CopyFrom(BotWanderSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            thinkInterval = source.thinkInterval;
+            minMoveDuration = source.minMoveDuration;
+            maxMoveDuration = source.maxMoveDuration;
+            forwardInput = source.forwardInput;
+            maxGentleTurnInput = source.maxGentleTurnInput;
+            strongTurnChance = source.strongTurnChance;
+            strongTurnInput = source.strongTurnInput;
+            idleChance = source.idleChance;
+            waypointReachDistance = source.waypointReachDistance;
+            minDestinationDistance = source.minDestinationDistance;
+            destinationPickAttempts = source.destinationPickAttempts;
+            repathCooldown = source.repathCooldown;
+            targetRepathDistance = source.targetRepathDistance;
+            turnFullInputAngle = source.turnFullInputAngle;
+            slowTurnAngle = source.slowTurnAngle;
+            stopTurnAngle = source.stopTurnAngle;
+            slowForwardInput = source.slowForwardInput;
+            stuckCheckInterval = source.stuckCheckInterval;
+            stuckDistance = source.stuckDistance;
+            unstickDuration = source.unstickDuration;
+            unstickReverseInput = source.unstickReverseInput;
+            unstickTurnInput = source.unstickTurnInput;
+            dynamicAvoidanceRadius = source.dynamicAvoidanceRadius;
+            dynamicAvoidanceWeight = source.dynamicAvoidanceWeight;
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+
+        private static float ClampInput(float value, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                return Mathf.Clamp(fallback, -1f, 1f);
+            }
+
+            return Mathf.Clamp(value, -1f, 1f);
+        }
+    }
+
+    [System.Serializable]
     public class ProjectileBallisticsGlobalSettings
     {
         private static readonly ProjectileBallisticsGlobalSettings DefaultSettings = new ProjectileBallisticsGlobalSettings();
@@ -185,6 +317,11 @@ namespace Game.Scripts.Server
         
         public int maxPlayersForFindRoom = 1;
         public int findRoomSeconds = 60;
+        [Header("Bots")]
+        public bool botsEnabled = true;
+        [Min(0)] public int botsPerMatch = 6;
+        public string defaultBotVehicleCode = "ia_l1_starter";
+        public BotWanderSettings botWander = new BotWanderSettings();
         public RobotMovementGlobalSettings robotMovement = new RobotMovementGlobalSettings();
         public GunDispersionGlobalSettings gunDispersion = new GunDispersionGlobalSettings();
         public ProjectileBallisticsGlobalSettings projectileBallistics = new ProjectileBallisticsGlobalSettings();
@@ -218,6 +355,42 @@ namespace Game.Scripts.Server
             }
 
             return In.findRoomSeconds;
+        }
+
+        public static bool AreBotsEnabled()
+        {
+            return In != null && In.botsEnabled;
+        }
+
+        public static int GetBotsPerMatch()
+        {
+            if (In == null || In.botsPerMatch <= 0)
+            {
+                return 0;
+            }
+
+            return In.botsPerMatch;
+        }
+
+        public static string GetDefaultBotVehicleCode()
+        {
+            if (In == null)
+            {
+                return string.Empty;
+            }
+
+            return string.IsNullOrEmpty(In.defaultBotVehicleCode) ? string.Empty : In.defaultBotVehicleCode;
+        }
+
+        public static BotWanderSettings GetBotWander()
+        {
+            if (In == null || In.botWander == null)
+            {
+                return BotWanderSettings.Default;
+            }
+
+            In.botWander.Validate();
+            return In.botWander;
         }
 
         public static GunDispersionGlobalSettings GetGunDispersion()
@@ -263,6 +436,16 @@ namespace Game.Scripts.Server
             if (findRoomSeconds < 1)
             {
                 findRoomSeconds = 1;
+            }
+
+            if (botsPerMatch < 0)
+            {
+                botsPerMatch = 0;
+            }
+
+            if (botWander != null)
+            {
+                botWander.Validate();
             }
 
             if (robotMovement != null)
