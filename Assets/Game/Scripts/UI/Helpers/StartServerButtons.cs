@@ -42,10 +42,6 @@ namespace Game.Scripts.UI.Helpers
         [SerializeField] private float serverHeartbeatIntervalSeconds = 2f;
         [SerializeField] private bool requestClientServerAddressFromApi = true;
         [SerializeField] private int serverLookupTimeoutSeconds = 5;
-        [SerializeField] private float apiLookupStatusMinimumSeconds = 1.8f;
-        [SerializeField] private float apiAddressReceivedStatusSeconds = 0.9f;
-        [SerializeField] private float dedicatedConnectStatusMinimumSeconds = 1.8f;
-        [SerializeField] private float connectedStatusVisibleSeconds = 2f;
         [SerializeField] private string advertisedServerAddress;
 
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
@@ -152,7 +148,7 @@ namespace Game.Scripts.UI.Helpers
             {
                 if (_clientState == LocalConnectionState.Stopped && _clientConnectCoroutine == null && _clientStartRequested == false)
                 {
-                    LoadingScreenManager.SetConnectionStatus("Connection attempt " + (attempts + 1) + " / " + maxAttempts);
+                    MenuLoadingScreenManager.SetConnectionStatus("Connection attempt " + (attempts + 1) + " / " + maxAttempts);
                     OnConnectClicked();
                     attempts++;
                 }
@@ -162,7 +158,7 @@ namespace Game.Scripts.UI.Helpers
 
             if (_clientState != LocalConnectionState.Started)
             {
-                LoadingScreenManager.SetConnectionStatus("Connection failed. Battle server is not responding");
+                MenuLoadingScreenManager.SetConnectionStatus("Connection failed. Battle server is not responding");
             }
         }
 
@@ -199,7 +195,7 @@ namespace Game.Scripts.UI.Helpers
             }
 
             _clientStartRequested = true;
-            LoadingScreenManager.ShowConnectionLoading("Preparing multiplayer connection");
+            MenuLoadingScreenManager.ShowConnectionLoading("Preparing multiplayer connection");
 
             bool started;
             if (requestClientServerAddressFromApi)
@@ -207,43 +203,35 @@ namespace Game.Scripts.UI.Helpers
                 ServerConnectionInfo connectionInfo = default;
                 bool hasConnectionInfo = false;
                 string lookupError = string.Empty;
-                float apiStageStartedAt = Time.unscaledTime;
 
-                LoadingScreenManager.SetConnectionStatus("API: requesting multiplayer server address");
+                MenuLoadingScreenManager.SetConnectionStatus("API: requesting multiplayer server address");
                 yield return RequestActiveServerConnectionInfo((isSuccess, result, message) =>
                 {
                     hasConnectionInfo = isSuccess;
                     connectionInfo = result;
                     lookupError = message;
                 });
-                yield return WaitForMinimumStatusTime(apiStageStartedAt, apiLookupStatusMinimumSeconds);
 
                 if (hasConnectionInfo == false)
                 {
-                    FailClientStart("Connection failed. " + lookupError, 2f);
+                    FailClientStart("Connection failed. " + lookupError);
                     _clientConnectCoroutine = null;
                     yield break;
                 }
 
-                LoadingScreenManager.SetConnectionStatus("API: server address received " + connectionInfo.Address + ":" + connectionInfo.Port);
-                yield return WaitForStatusTime(apiAddressReceivedStatusSeconds);
-
-                float connectStageStartedAt = Time.unscaledTime;
-                LoadingScreenManager.SetConnectionStatus("Dedicated server: connecting to " + connectionInfo.Address + ":" + connectionInfo.Port);
-                yield return WaitForMinimumStatusTime(connectStageStartedAt, dedicatedConnectStatusMinimumSeconds);
+                MenuLoadingScreenManager.SetConnectionStatus("API: server address received " + connectionInfo.Address + ":" + connectionInfo.Port);
+                MenuLoadingScreenManager.SetConnectionStatus("Dedicated server: connecting to " + connectionInfo.Address + ":" + connectionInfo.Port);
                 started = networkManager.ClientManager.StartConnection(connectionInfo.Address, connectionInfo.Port);
             }
             else
             {
-                float connectStageStartedAt = Time.unscaledTime;
-                LoadingScreenManager.SetConnectionStatus("Dedicated server: connecting");
-                yield return WaitForMinimumStatusTime(connectStageStartedAt, dedicatedConnectStatusMinimumSeconds);
+                MenuLoadingScreenManager.SetConnectionStatus("Dedicated server: connecting");
                 started = networkManager.ClientManager.StartConnection();
             }
 
             if (started == false)
             {
-                FailClientStart("Connection failed. Client could not start", 2f);
+                FailClientStart("Connection failed. Client could not start");
             }
 
             _clientConnectCoroutine = null;
@@ -452,34 +440,11 @@ namespace Game.Scripts.UI.Helpers
             return networkManager.TransportManager.Transport.GetPort();
         }
 
-        private IEnumerator WaitForMinimumStatusTime(float startedAt, float minimumSeconds)
-        {
-            float remainingSeconds = Mathf.Max(0f, GetStageStatusSeconds(minimumSeconds) - (Time.unscaledTime - startedAt));
-            if (remainingSeconds > 0f)
-            {
-                yield return new WaitForSecondsRealtime(remainingSeconds);
-            }
-        }
-
-        private IEnumerator WaitForStatusTime(float seconds)
-        {
-            float waitSeconds = Mathf.Max(0f, seconds);
-            if (waitSeconds > 0f)
-            {
-                yield return new WaitForSecondsRealtime(waitSeconds);
-            }
-        }
-
-        private static float GetStageStatusSeconds(float seconds)
-        {
-            return Mathf.Clamp(seconds, 1f, 2f);
-        }
-
-        private void FailClientStart(string statusText, float hideDelaySeconds)
+        private void FailClientStart(string statusText)
         {
             _clientStartRequested = false;
-            LoadingScreenManager.SetConnectionStatus(statusText);
-            LoadingScreenManager.HideConnectionLoading(hideDelaySeconds);
+            MenuLoadingScreenManager.SetConnectionStatus(statusText);
+            MenuLoadingScreenManager.HideConnectionLoading();
 
             if (connect != null)
             {
@@ -541,8 +506,8 @@ namespace Game.Scripts.UI.Helpers
             {
                 _clientStartRequested = false;
                 RegisterClientInfo();
-                LoadingScreenManager.SetConnectionStatus("Dedicated server: connected");
-                LoadingScreenManager.HideConnectionLoading(GetStageStatusSeconds(connectedStatusVisibleSeconds));
+                MenuLoadingScreenManager.SetConnectionStatus("Dedicated server: connected");
+                MenuLoadingScreenManager.HideConnectionLoading();
             }
             else if (_clientState == LocalConnectionState.Stopped)
             {
@@ -554,16 +519,16 @@ namespace Game.Scripts.UI.Helpers
                 if (autoStartMode == NetworkAutoStartMode.Client && _isStoppingConnections == false)
                 {
                     _clientStartRequested = false;
-                    LoadingScreenManager.ShowConnectionLoading("Connection failed. Retrying");
+                    MenuLoadingScreenManager.ShowConnectionLoading("Connection failed. Retrying");
                 }
                 else
                 {
                     bool failedConnect = _clientStartRequested && !_isStoppingConnections;
                     _clientStartRequested = false;
-                    LoadingScreenManager.SetConnectionStatus(failedConnect
+                    MenuLoadingScreenManager.SetConnectionStatus(failedConnect
                         ? "Connection failed. Battle server is not responding"
                         : "Connection stopped");
-                    LoadingScreenManager.HideConnectionLoading(failedConnect ? 2f : 1f);
+                    MenuLoadingScreenManager.HideConnectionLoading();
                 }
             }
 

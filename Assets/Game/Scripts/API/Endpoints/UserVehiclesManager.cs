@@ -9,6 +9,8 @@ namespace Game.Scripts.API.Endpoints
 {
     public abstract class UserVehiclesManager
     {
+        private const float DefaultViewRange = 100f;
+
         public static async UniTask<(bool ok, string msg, UserVehicleResponse response)> GetMyVehicles(string token)
         {
             string url = HttpLink.APIBase + "/user-vehicles/me";
@@ -27,7 +29,9 @@ namespace Game.Scripts.API.Endpoints
             if (req.result == UnityWebRequest.Result.Success)
             {
                 var obj = JsonUtility.FromJson<UserVehicleResponseWrapper>("{\"data\":" + resp + "}");
-                return (true, resp, obj.data);
+                UserVehicleResponse data = obj != null ? obj.data : null;
+                NormalizeUserVehicleResponse(data);
+                return (true, resp, data);
             }
 
             return (false, resp, null);
@@ -134,6 +138,7 @@ namespace Game.Scripts.API.Endpoints
             if (req.result == UnityWebRequest.Result.Success)
             {
                 var data = JsonUtility.FromJson<VehicleXpResponse>(resp);
+                NormalizeVehicleXpResponse(data);
                 return (true, resp, data);
             }
 
@@ -189,6 +194,50 @@ namespace Game.Scripts.API.Endpoints
 
             return (false, resp, null);
         }
+
+        private static void NormalizeUserVehicleResponse(UserVehicleResponse response)
+        {
+            if (response == null || response.vehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < response.vehicles.Length; i++)
+            {
+                UserVehicleEntry vehicle = response.vehicles[i];
+                if (vehicle != null)
+                {
+                    vehicle.viewRange = ResolveViewRange(vehicle.viewRange);
+                }
+            }
+        }
+
+        private static void NormalizeVehicleXpResponse(VehicleXpResponse response)
+        {
+            if (response == null || response.vehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < response.vehicles.Length; i++)
+            {
+                VehicleXpItem vehicle = response.vehicles[i];
+                if (vehicle != null)
+                {
+                    vehicle.viewRange = ResolveViewRange(vehicle.viewRange);
+                }
+            }
+        }
+
+        private static float ResolveViewRange(float value)
+        {
+            if (value > 0f)
+            {
+                return value;
+            }
+
+            return DefaultViewRange;
+        }
     }
 
     [Serializable]
@@ -214,6 +263,7 @@ namespace Game.Scripts.API.Endpoints
         public int xp;
         public bool isActive;
         public bool isResearched;
+        public float viewRange;
     }
 
     [Serializable]
@@ -231,6 +281,7 @@ namespace Game.Scripts.API.Endpoints
         public int xp;
         public bool isActive;
         public bool isResearched;
+        public float viewRange;
     }
 
     [Serializable]

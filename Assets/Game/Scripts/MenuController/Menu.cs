@@ -19,13 +19,24 @@ namespace Game.Scripts.MenuController
         [SerializeField] private Vector2 hiddenPosition = new (0, -800);
         [SerializeField] private Vector2 shownPosition = new (0, 0);
 
+        public Transform MenuParent => menuRect != null ? menuRect.parent : null;
+
         public void SetActive(bool isActive)
         {
-            menuRect.gameObject.SetActive(isActive);
+            if (menuRect != null)
+            {
+                menuRect.gameObject.SetActive(isActive);
+            }
         }
 
         private void Awake()
         {
+            if (!IsConfigured())
+            {
+                _state = MenuState.Idle;
+                return;
+            }
+
             canvasGroup.alpha = 0f;
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
@@ -36,12 +47,18 @@ namespace Game.Scripts.MenuController
 
         public void Open()
         {
-            if (_state != MenuState.Idle)
+            if (!IsConfigured())
+            {
+                return;
+            }
+
+            if (_state == MenuState.Opened || _state == MenuState.Opening)
             {
                 return;
             }
 
             SetActive(true);
+            BringToFront();
             _state = MenuState.Opening;
             canvasGroup.alpha = 0f;
             canvasGroup.interactable = true;
@@ -61,7 +78,12 @@ namespace Game.Scripts.MenuController
 
         public async UniTask CloseAsync()
         {
-            if (_state != MenuState.Opened)
+            if (!IsConfigured())
+            {
+                return;
+            }
+
+            if (_state == MenuState.Idle || _state == MenuState.Closing)
             {
                 return;
             }
@@ -75,12 +97,47 @@ namespace Game.Scripts.MenuController
             
             _sequence.Append(canvasGroup.DOFade(0f, _duration));
             _sequence.Join(animationPanel.DOAnchorPos(hiddenPosition, _duration).SetEase(Ease.InBack));
-            
-            await _sequence.AsyncWaitForCompletion();
+
+            Sequence closeSequence = _sequence;
+            await closeSequence.AsyncWaitForCompletion();
+
+            if (_state != MenuState.Closing || _sequence != closeSequence)
+            {
+                return;
+            }
+
             canvasGroup.alpha = 0f;
             _state = MenuState.Idle;
             canvasGroup.blocksRaycasts = false;
             SetActive(false);
+        }
+
+        private bool IsConfigured()
+        {
+            return menuRect != null && animationPanel != null && canvasGroup != null;
+        }
+
+        private void BringToFront()
+        {
+            Canvas canvas = menuRect.GetComponentInParent<Canvas>();
+            if (canvas == null)
+            {
+                menuRect.SetAsLastSibling();
+                return;
+            }
+
+            Transform current = menuRect;
+            while (current.parent != null && current.parent != canvas.transform)
+            {
+                current = current.parent;
+            }
+
+            if (current.parent == canvas.transform)
+            {
+                current.SetAsLastSibling();
+            }
+
+            menuRect.SetAsLastSibling();
         }
     }
 }

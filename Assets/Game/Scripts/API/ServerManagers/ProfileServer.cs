@@ -29,7 +29,7 @@ namespace Game.Scripts.API.ServerManagers
                 return;
             }
 
-            Loading.Show();
+            StandardLoadingOverlay.Show();
             _in.GetProfileServerRpc();
         }
 
@@ -92,7 +92,7 @@ namespace Game.Scripts.API.ServerManagers
                 Popup.ShowText(errorMessage, Color.red);
             }
 
-            Loading.Hide();
+            StandardLoadingOverlay.Hide();
         }
     }
 }

@@ -339,6 +339,13 @@ namespace Game.Scripts.UI.MainMenu
                 AppendText(builder, "Turret armor", data.TurretArmor);
             }
 
+            bool hasScouting = data.ViewRange > 0f;
+            if (hasScouting)
+            {
+                AppendHeader(builder, "SCOUTING");
+                AppendFloat(builder, "View range", data.ViewRange, " m", "0.#");
+            }
+
             bool hasMobility = data.Speed > 0f
                 || data.Acceleration > 0f
                 || data.TraverseSpeed > 0f
@@ -561,6 +568,7 @@ namespace Game.Scripts.UI.MainMenu
         public float ReloadTime;
         public float Accuracy;
         public float AimTime;
+        public float ViewRange;
         public float Speed;
         public float Acceleration;
         public float TraverseSpeed;
@@ -590,6 +598,7 @@ namespace Game.Scripts.UI.MainMenu
             ReloadTime = vehicle.reloadTime;
             Accuracy = vehicle.accuracy;
             AimTime = vehicle.aimTime;
+            ViewRange = VehicleRuntimeStats.ResolveViewRange(vehicle.viewRange);
             Speed = vehicle.speed;
             Acceleration = vehicle.acceleration;
             TraverseSpeed = vehicle.traverseSpeed;

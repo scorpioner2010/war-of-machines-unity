@@ -8,6 +8,8 @@ namespace Game.Scripts.API
 {
     public abstract class VehiclesManager
     {
+        private const float DefaultViewRange = 100f;
+
         public static async UniTask<(bool isSuccess, string message, VehicleLite[] items)> GetAll(string faction = null, string branch = null)
         {
             string url = HttpLink.APIBase + "/vehicles";
@@ -38,6 +40,7 @@ namespace Game.Scripts.API
             if (request.result == UnityWebRequest.Result.Success)
             {
                 VehicleLite[] arr = JsonHelper.FromJson<VehicleLite>(resp);
+                NormalizeVehicleLites(arr);
                 return (true, resp, arr);
             }
 
@@ -61,6 +64,7 @@ namespace Game.Scripts.API
             if (request.result == UnityWebRequest.Result.Success)
             {
                 VehicleLite item = JsonUtility.FromJson<VehicleLite>(resp);
+                NormalizeVehicleLite(item);
                 return (true, resp, item);
             }
 
@@ -84,6 +88,7 @@ namespace Game.Scripts.API
             if (request.result == UnityWebRequest.Result.Success)
             {
                 VehicleLite item = JsonUtility.FromJson<VehicleLite>(resp);
+                NormalizeVehicleLite(item);
                 return (true, resp, item);
             }
 
@@ -133,7 +138,58 @@ namespace Game.Scripts.API
                 return (false, resp, default);
 
             var graph = JsonUtility.FromJson<VehicleGraph>(resp);
+            NormalizeVehicleGraph(graph);
             return (true, resp, graph);
+        }
+
+        private static void NormalizeVehicleLites(VehicleLite[] vehicles)
+        {
+            if (vehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                NormalizeVehicleLite(vehicles[i]);
+            }
+        }
+
+        private static void NormalizeVehicleLite(VehicleLite vehicle)
+        {
+            if (vehicle == null)
+            {
+                return;
+            }
+
+            vehicle.viewRange = ResolveViewRange(vehicle.viewRange);
+        }
+
+        private static void NormalizeVehicleGraph(VehicleGraph graph)
+        {
+            if (graph == null || graph.nodes == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < graph.nodes.Length; i++)
+            {
+                VehicleNode node = graph.nodes[i];
+                if (node != null)
+                {
+                    node.viewRange = ResolveViewRange(node.viewRange);
+                }
+            }
+        }
+
+        private static float ResolveViewRange(float value)
+        {
+            if (value > 0f)
+            {
+                return value;
+            }
+
+            return DefaultViewRange;
         }
     }
 
@@ -164,6 +220,7 @@ namespace Game.Scripts.API
         public float reloadTime;
         public float accuracy;
         public float aimTime;
+        public float viewRange;
 
         public float speed;
         public float acceleration;
@@ -214,6 +271,7 @@ namespace Game.Scripts.API
         public int shellsCount;
         public float damageMin;
         public float damageMax;
+        public float viewRange;
     }
 
     [Serializable]

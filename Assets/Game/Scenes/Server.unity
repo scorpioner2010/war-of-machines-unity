@@ -912,10 +912,6 @@ MonoBehaviour:
   serverHeartbeatIntervalSeconds: 2
   requestClientServerAddressFromApi: 1
   serverLookupTimeoutSeconds: 5
-  apiLookupStatusMinimumSeconds: 1.8
-  apiAddressReceivedStatusSeconds: 0.9
-  dedicatedConnectStatusMinimumSeconds: 1.8
-  connectedStatusVisibleSeconds: 2
   advertisedServerAddress: 
 --- !u!4 &1731322153
 Transform:

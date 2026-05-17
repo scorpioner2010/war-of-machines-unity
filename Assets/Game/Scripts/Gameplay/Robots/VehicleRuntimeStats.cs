@@ -47,6 +47,7 @@ namespace Game.Scripts.Gameplay.Robots
         public const int DefaultShellsCount = 20;
         public const float DefaultDamageMin = 90f;
         public const float DefaultDamageMax = 110f;
+        public const float DefaultViewRange = 100f;
 
         public int VehicleId;
         public string Code;
@@ -62,6 +63,7 @@ namespace Game.Scripts.Gameplay.Robots
         public float ReloadTime;
         public float Accuracy;
         public float AimTime;
+        public float ViewRange;
         public float Speed;
         public float Acceleration;
         public float TraverseSpeed;
@@ -102,6 +104,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ReloadTime = Mathf.Max(0f, vehicle.reloadTime),
                 Accuracy = Mathf.Max(0f, vehicle.accuracy),
                 AimTime = Mathf.Max(0f, vehicle.aimTime),
+                ViewRange = ResolveViewRange(vehicle.viewRange),
                 Speed = Mathf.Max(0f, vehicle.speed),
                 Acceleration = Mathf.Max(0f, vehicle.acceleration),
                 TraverseSpeed = Mathf.Max(0f, vehicle.traverseSpeed),
@@ -120,6 +123,7 @@ namespace Game.Scripts.Gameplay.Robots
             ResolveDamageRange(DamageMin, DamageMax, out float damageMin, out float damageMax);
             DamageMin = damageMin;
             DamageMax = damageMax;
+            ViewRange = ResolveViewRange(ViewRange);
         }
 
         public static float ResolveShellSpeed(float value)
@@ -140,6 +144,16 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return DefaultShellsCount;
+        }
+
+        public static float ResolveViewRange(float value)
+        {
+            if (value > 0f)
+            {
+                return value;
+            }
+
+            return DefaultViewRange;
         }
 
         public static void ResolveDamageRange(float sourceMin, float sourceMax, out float damageMin, out float damageMax)
@@ -189,6 +203,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ReloadTime = ReloadTime,
                 Accuracy = Accuracy,
                 AimTime = AimTime,
+                ViewRange = ResolveViewRange(ViewRange),
                 Speed = Speed,
                 Acceleration = Acceleration,
                 TraverseSpeed = TraverseSpeed,

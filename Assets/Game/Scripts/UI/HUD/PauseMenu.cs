@@ -73,8 +73,8 @@ namespace Game.Scripts.UI.HUD
                 MenuManager.OpenMenu(MenuType.MainMenu);
             }
 
-            LoadingScreenManager.ShowLoading();
-            LoadingScreenManager.HideLoading();
+            MenuLoadingScreenManager.ShowLoading();
+            MenuLoadingScreenManager.HideLoading();
         }
         
         private void ResumeButtonPressed()

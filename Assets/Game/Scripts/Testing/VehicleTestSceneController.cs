@@ -280,6 +280,7 @@ namespace Game.Scripts.Testing
             _builder.Append("Accuracy @100m: ").Append(stats.Accuracy).Append(" m\n");
             AppendResolvedAccuracyStats(stats);
             _builder.Append("Aim time: ").Append(stats.AimTime).Append(" s\n");
+            _builder.Append("View range: ").Append(stats.ViewRange).Append(" m\n");
             _builder.Append("Speed: ").Append(stats.Speed).Append('\n');
             _builder.Append("Acceleration: ").Append(stats.Acceleration).Append('\n');
             _builder.Append("Traverse: ").Append(stats.TraverseSpeed).Append('\n');
@@ -606,7 +607,7 @@ namespace Game.Scripts.Testing
                     continue;
                 }
 
-                crosshair.canvas = canvas;
+                crosshair.ResolveCanvasReference(canvas);
             }
         }
 

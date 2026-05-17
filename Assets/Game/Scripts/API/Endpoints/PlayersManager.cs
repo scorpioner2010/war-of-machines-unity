@@ -10,6 +10,8 @@ namespace Game.Scripts
 {
     public abstract class PlayersManager
     {
+        private const float DefaultViewRange = 100f;
+
         public static async UniTask<(bool isSuccess, string message, PlayerProfile profile)> GetMyProfile(string token)
         {
             string url = HttpLink.APIBase + "/players/me";
@@ -29,6 +31,7 @@ namespace Game.Scripts
             if (req.result == UnityWebRequest.Result.Success)
             {
                 PlayerProfile profile = JsonUtility.FromJson<PlayerProfile>(resp);
+                NormalizeProfile(profile);
                 return (true, resp, profile);
             }
 
@@ -53,6 +56,61 @@ namespace Game.Scripts
 
             string resp = req.downloadHandler?.text ?? string.Empty;
             return (req.result == UnityWebRequest.Result.Success, resp);
+        }
+
+        private static void NormalizeProfile(PlayerProfile profile)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            NormalizeOwnedVehicles(profile.ownedVehicles);
+            NormalizeResearchedVehicles(profile.researchedVehicles);
+        }
+
+        private static void NormalizeOwnedVehicles(OwnedVehicleDto[] vehicles)
+        {
+            if (vehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                OwnedVehicleDto vehicle = vehicles[i];
+                if (vehicle != null)
+                {
+                    vehicle.viewRange = ResolveViewRange(vehicle.viewRange);
+                }
+            }
+        }
+
+        private static void NormalizeResearchedVehicles(ResearchedVehicleDto[] vehicles)
+        {
+            if (vehicles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                ResearchedVehicleDto vehicle = vehicles[i];
+                if (vehicle != null)
+                {
+                    vehicle.viewRange = ResolveViewRange(vehicle.viewRange);
+                }
+            }
+        }
+
+        private static float ResolveViewRange(float value)
+        {
+            if (value > 0f)
+            {
+                return value;
+            }
+
+            return DefaultViewRange;
         }
     }
 }
@@ -155,6 +213,7 @@ namespace Game.Scripts.API.Models
         public bool isActive;
         public int xp;
         public bool isResearched;
+        public float viewRange;
     }
 
     [System.Serializable]
@@ -163,5 +222,6 @@ namespace Game.Scripts.API.Models
         public int vehicleId;
         public string code;
         public string name;
+        public float viewRange;
     }
 }

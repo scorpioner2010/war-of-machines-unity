@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Game.Scripts.UI.Helpers
 {
-    public class Loading : MonoBehaviour
+    public class StandardLoadingOverlay : MonoBehaviour
     {
-        private static Loading _in;
+        private static StandardLoadingOverlay _in;
         public static bool IsOpen { get; private set; }
         
         public GameObject standardLoading;
@@ -43,6 +43,11 @@ namespace Game.Scripts.UI.Helpers
             }
 
             _in.standardLoading.SetActive(active);
+            if (active)
+            {
+                _in.standardLoading.transform.SetAsLastSibling();
+            }
+
             IsOpen = active;
         }
     }

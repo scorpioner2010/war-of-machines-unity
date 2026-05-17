@@ -2,12 +2,11 @@ using UnityEngine;
 using TMPro;
 using FishNet.Managing;
 using FishNet.Transporting;
-using Game.Scripts.UI.Helpers;
 using UnityEngine.UI;
 
 namespace Game.Scripts.UI.Loading
 {
-    public class LoadingSpinner : MonoBehaviour
+    public class SharedLoadingSpinner : MonoBehaviour
     {
         public float rotationSpeed = -600;
         [SerializeField] private TMP_Text statusText;
@@ -16,8 +15,6 @@ namespace Game.Scripts.UI.Loading
         [SerializeField] private string connectingLabel = "Connecting to battle server";
         [SerializeField] private string connectedLabel = "Connected";
         [SerializeField] private string offlineLabel = "Server offline. Reconnecting";
-        [SerializeField] private float pulseAmplitude = 0f;
-        [SerializeField] private float pulseSpeed = 2.5f;
         [SerializeField] private bool hideGraphicDuringConnection = true;
         [SerializeField] private Graphic spinnerGraphic;
         [SerializeField] private TMP_Text connectionStatusText;
@@ -70,7 +67,7 @@ namespace Game.Scripts.UI.Loading
 
         private void RefreshVisualState()
         {
-            bool isConnectionMode = LoadingScreenManager.CurrentMode == LoadingScreenMode.Connection;
+            bool isConnectionMode = MenuLoadingScreenManager.CurrentMode == MenuLoadingScreenMode.Connection;
             SetSpinnerGraphicVisible(isConnectionMode == false || hideGraphicDuringConnection == false);
             SetConnectionStatusTextVisible(isConnectionMode);
 
@@ -83,8 +80,7 @@ namespace Game.Scripts.UI.Loading
             }
 
             _rectTransform.Rotate(0f, 0f, -rotationSpeed * Time.deltaTime);
-            float pulse = 1f + Mathf.Sin(Time.unscaledTime * pulseSpeed) * pulseAmplitude;
-            _rectTransform.localScale = new Vector3(pulse, pulse, 1f);
+            _rectTransform.localScale = _initialScale;
             UpdateStatusText();
         }
 
@@ -179,7 +175,7 @@ namespace Game.Scripts.UI.Loading
 
         private void UpdateStatusText()
         {
-            TMP_Text targetText = LoadingScreenManager.CurrentMode == LoadingScreenMode.Connection
+            TMP_Text targetText = MenuLoadingScreenManager.CurrentMode == MenuLoadingScreenMode.Connection
                 ? connectionStatusText
                 : statusText;
 
@@ -189,13 +185,13 @@ namespace Game.Scripts.UI.Loading
             }
 
             string dots = BuildDots();
-            if (LoadingScreenManager.CurrentMode == LoadingScreenMode.SceneLoading)
+            if (MenuLoadingScreenManager.CurrentMode == MenuLoadingScreenMode.SceneLoading)
             {
                 targetText.text = sceneLoadingLabel + dots;
                 return;
             }
 
-            if (LoadingScreenManager.TryGetConnectionStatus(out string explicitStatus))
+            if (MenuLoadingScreenManager.TryGetConnectionStatus(out string explicitStatus))
             {
                 targetText.text = explicitStatus;
                 return;

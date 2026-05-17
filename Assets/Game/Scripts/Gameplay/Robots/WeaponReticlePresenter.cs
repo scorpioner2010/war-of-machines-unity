@@ -19,6 +19,8 @@ namespace Game.Scripts.Gameplay.Robots
         private RectTransform _serverCrosshair;
         private RectTransform _reticleRect;
         private Canvas _canvas;
+        private float _nextHudResolveTime;
+        private bool _controlsLocalReticle;
 
         private Vector2 _curLocal;
         private Vector2 _tgtLocal;
@@ -35,7 +37,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
         {
-            if (context.IsOwner && !context.IsMenu)
+            _controlsLocalReticle = context.IsOwner && !context.IsMenu;
+            if (_controlsLocalReticle)
             {
                 Init();
             }
@@ -43,31 +46,62 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void Init()
         {
+            if (!_controlsLocalReticle && (vehicleRoot == null || !vehicleRoot.IsOwner || vehicleRoot.IsMenu))
+            {
+                return;
+            }
+
+            _controlsLocalReticle = true;
+            TryResolveHudReferences(true);
+        }
+
+        private bool TryResolveHudReferences(bool force)
+        {
+            if (!force && Time.unscaledTime < _nextHudResolveTime)
+            {
+                return _canvas != null && _reticleRect != null;
+            }
+
+            _nextHudResolveTime = Time.unscaledTime + 0.25f;
+
             GunCrosshair gunCrosshair = Singleton<GunCrosshair>.CurrentOrNull;
             if (gunCrosshair == null)
             {
-                return;
+                return false;
             }
 
             _reticleRect = gunCrosshair.crosshair;
             _serverCrosshair = gunCrosshair.serverCrosshair;
-            _canvas = gunCrosshair.canvas;
+            _canvas = gunCrosshair.ResolveCanvasReference();
 
             if (_reticleRect != null)
             {
                 _curLocal = _reticleRect.anchoredPosition;
+                _visible = _reticleRect.gameObject.activeSelf;
             }
+
             if (_serverCrosshair != null)
             {
                 _curLocalServer = _serverCrosshair.anchoredPosition;
+                _visibleServer = _serverCrosshair.gameObject.activeSelf;
             }
+
+            return _canvas != null && _reticleRect != null;
         }
 
         private void LateUpdate()
         {
-            if (_canvas == null)
+            if (!_controlsLocalReticle)
             {
                 return;
+            }
+
+            if (_canvas == null || _reticleRect == null)
+            {
+                if (!TryResolveHudReferences(false))
+                {
+                    return;
+                }
             }
 
             if (vehicleRoot == null || vehicleRoot.weaponAimAtCamera == null)

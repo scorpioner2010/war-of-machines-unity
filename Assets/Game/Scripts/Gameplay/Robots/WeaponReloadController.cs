@@ -26,6 +26,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _initialized;
 
         private float _clientReloadRemain;
+        private float _nextHudResolveTime;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -113,7 +114,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            _crosshair = Singleton<GunCrosshair>.CurrentOrNull;
+            TryResolveCrosshair(true);
             _initialized = true;
 
             ApplyHud();
@@ -177,7 +178,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyHud()
         {
-            if (_crosshair == null)
+            if (!TryResolveCrosshair(false))
             {
                 return;
             }
@@ -229,6 +230,23 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 _crosshair.reloadText.text = "READY";
             }
+        }
+
+        private bool TryResolveCrosshair(bool force)
+        {
+            if (_crosshair != null)
+            {
+                return true;
+            }
+
+            if (!force && Time.unscaledTime < _nextHudResolveTime)
+            {
+                return false;
+            }
+
+            _nextHudResolveTime = Time.unscaledTime + 0.25f;
+            _crosshair = Singleton<GunCrosshair>.CurrentOrNull;
+            return _crosshair != null;
         }
     }
 }

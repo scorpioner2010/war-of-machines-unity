@@ -45,6 +45,7 @@ namespace Game.Scripts.Server
             float gunDispersionUiFullyAimedPixelsPerDegreeAtMaxDistance,
             float gunDispersionUiBloomPixelsPerDegreeAtMaxZoom,
             float gunDispersionUiBloomPixelsPerDegreeAtMaxDistance,
+            float gunDispersionUiDiameterLerpSpeed,
             float gunDispersionServerSyncInterval,
             float gunDispersionServerSyncDeadZoneDeg,
             float projectileGravity,
@@ -87,6 +88,7 @@ namespace Game.Scripts.Server
             GunDispersion.uiFullyAimedPixelsPerDegreeAtMaxDistance = gunDispersionUiFullyAimedPixelsPerDegreeAtMaxDistance >= 0f ? gunDispersionUiFullyAimedPixelsPerDegreeAtMaxDistance : GunDispersionGlobalSettings.Default.uiFullyAimedPixelsPerDegreeAtMaxDistance;
             GunDispersion.uiBloomPixelsPerDegreeAtMaxZoom = gunDispersionUiBloomPixelsPerDegreeAtMaxZoom >= 0f ? gunDispersionUiBloomPixelsPerDegreeAtMaxZoom : GunDispersionGlobalSettings.Default.uiBloomPixelsPerDegreeAtMaxZoom;
             GunDispersion.uiBloomPixelsPerDegreeAtMaxDistance = gunDispersionUiBloomPixelsPerDegreeAtMaxDistance >= 0f ? gunDispersionUiBloomPixelsPerDegreeAtMaxDistance : GunDispersionGlobalSettings.Default.uiBloomPixelsPerDegreeAtMaxDistance;
+            GunDispersion.uiDiameterLerpSpeed = gunDispersionUiDiameterLerpSpeed >= 0f ? gunDispersionUiDiameterLerpSpeed : GunDispersionGlobalSettings.Default.uiDiameterLerpSpeed;
             GunDispersion.serverSyncInterval = gunDispersionServerSyncInterval > 0f ? gunDispersionServerSyncInterval : GunDispersionGlobalSettings.Default.serverSyncInterval;
             GunDispersion.serverSyncDeadZoneDeg = gunDispersionServerSyncDeadZoneDeg >= 0f ? gunDispersionServerSyncDeadZoneDeg : GunDispersionGlobalSettings.Default.serverSyncDeadZoneDeg;
             GunDispersion.Validate();

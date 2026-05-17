@@ -9,6 +9,9 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class VehicleRoot : NetworkBehaviour
     {
+        public static event System.Action<VehicleRoot> LocalPlayerVehicleChanged;
+        public static VehicleRoot LocalPlayerVehicle { get; private set; }
+
         public NetworkObject networkObject;
         public VehicleNetworkInitializer characterInit;
         public VehicleInputController inputManager;
@@ -63,11 +66,31 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (!IsMenu)
             {
+                SetLocalPlayerVehicle(this);
                 CameraCrosshair.SetActiveScreen(true);
 
                 Cursor.visible = false;
                 Cursor.lockState = CursorLockMode.Locked;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (LocalPlayerVehicle == this)
+            {
+                SetLocalPlayerVehicle(null);
+            }
+        }
+
+        private static void SetLocalPlayerVehicle(VehicleRoot vehicleRoot)
+        {
+            if (LocalPlayerVehicle == vehicleRoot)
+            {
+                return;
+            }
+
+            LocalPlayerVehicle = vehicleRoot;
+            LocalPlayerVehicleChanged?.Invoke(vehicleRoot);
         }
 
         private void CacheComponents()
@@ -199,6 +222,7 @@ namespace Game.Scripts.Gameplay.Robots
                     _runtimeStats.ReloadTime,
                     _runtimeStats.Accuracy,
                     _runtimeStats.AimTime,
+                    _runtimeStats.ViewRange,
                     _runtimeStats.Speed,
                     _runtimeStats.Acceleration,
                     _runtimeStats.TraverseSpeed,
@@ -252,6 +276,7 @@ namespace Game.Scripts.Gameplay.Robots
             float reloadTime,
             float accuracy,
             float aimTime,
+            float viewRange,
             float speed,
             float acceleration,
             float traverseSpeed,
@@ -278,6 +303,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ReloadTime = reloadTime,
                 Accuracy = accuracy,
                 AimTime = aimTime,
+                ViewRange = viewRange,
                 Speed = speed,
                 Acceleration = acceleration,
                 TraverseSpeed = traverseSpeed,

@@ -68,6 +68,8 @@ namespace Game.Scripts.Gameplay.Robots
         public float uiBloomPixelsPerDegreeAtMaxZoom = 42f;
         [Tooltip("How much movement/rotation/shot bloom expands the ring above fully aimed accuracy at maximum third-person camera distance.")]
         public float uiBloomPixelsPerDegreeAtMaxDistance = 17f;
+        [Tooltip("Visual smoothing speed for the aiming ring diameter. 0 disables smoothing.")]
+        public float uiDiameterLerpSpeed = 18f;
 
         [Header("Networking")]
         public float serverSyncInterval = 0.05f;
@@ -136,6 +138,7 @@ namespace Game.Scripts.Gameplay.Robots
             uiFullyAimedPixelsPerDegreeAtMaxDistance = ClampFinite(uiFullyAimedPixelsPerDegreeAtMaxDistance, 0f, Default.uiFullyAimedPixelsPerDegreeAtMaxDistance);
             uiBloomPixelsPerDegreeAtMaxZoom = ClampFinite(uiBloomPixelsPerDegreeAtMaxZoom, 0f, Default.uiBloomPixelsPerDegreeAtMaxZoom);
             uiBloomPixelsPerDegreeAtMaxDistance = ClampFinite(uiBloomPixelsPerDegreeAtMaxDistance, 0f, Default.uiBloomPixelsPerDegreeAtMaxDistance);
+            uiDiameterLerpSpeed = ClampFinite(uiDiameterLerpSpeed, 0f, Default.uiDiameterLerpSpeed);
             expandTime = ClampFinite(expandTime, 0.001f, Default.expandTime);
             referenceHullTraverseDegPerSec = ClampFinite(referenceHullTraverseDegPerSec, 0.001f, Default.referenceHullTraverseDegPerSec);
             referenceTurretTraverseDegPerSec = ClampFinite(referenceTurretTraverseDegPerSec, 0.001f, Default.referenceTurretTraverseDegPerSec);
@@ -165,6 +168,7 @@ namespace Game.Scripts.Gameplay.Robots
             uiFullyAimedPixelsPerDegreeAtMaxDistance = source.uiFullyAimedPixelsPerDegreeAtMaxDistance;
             uiBloomPixelsPerDegreeAtMaxZoom = source.uiBloomPixelsPerDegreeAtMaxZoom;
             uiBloomPixelsPerDegreeAtMaxDistance = source.uiBloomPixelsPerDegreeAtMaxDistance;
+            uiDiameterLerpSpeed = source.uiDiameterLerpSpeed;
             serverSyncInterval = source.serverSyncInterval;
             serverSyncDeadZoneDeg = source.serverSyncDeadZoneDeg;
         }

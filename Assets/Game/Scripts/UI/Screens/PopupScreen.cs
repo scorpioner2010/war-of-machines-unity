@@ -55,11 +55,22 @@ namespace Game.Scripts.UI.Screens
             _in.confirm.gameObject.SetActive(typePopup == PopupType.Confirm);
             _in.cancel.gameObject.SetActive(typePopup == PopupType.Confirm);
             _in.ok.gameObject.SetActive(typePopup == PopupType.Info);
-            
+
+            _in.BringPopupToFront();
             _in.popup.SetActive(true);
             _in.gameObject.SetActive(true);
             _in.text.color = color;
             _in.text.text = message;
+        }
+
+        private void BringPopupToFront()
+        {
+            if (popup == null)
+            {
+                return;
+            }
+
+            popup.transform.SetAsLastSibling();
         }
     }
 }

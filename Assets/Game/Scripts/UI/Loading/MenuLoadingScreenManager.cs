@@ -5,17 +5,17 @@ using Game.Scripts.MenuController;
 using Game.Scripts.UI.MainMenu;
 using System.Collections;
 using UnityEngine;
-using StandardLoading = Game.Scripts.UI.Helpers.Loading;
+using StandardLoading = Game.Scripts.UI.Helpers.StandardLoadingOverlay;
 
-namespace Game.Scripts.UI.Loading 
+namespace Game.Scripts.UI.Loading
 {
-    public enum LoadingScreenMode
+    public enum MenuLoadingScreenMode
     {
         SceneLoading = 0,
         Connection = 1
     }
 
-    public class LoadingScreenManager : MonoBehaviour
+    public class MenuLoadingScreenManager : MonoBehaviour
     {
         private const string DefaultConnectionStatus = "Trying to connect to battle server";
 
@@ -23,7 +23,7 @@ namespace Game.Scripts.UI.Loading
         private static string _connectionStatusText = DefaultConnectionStatus;
         private static int _connectionLoadingVersion;
 
-        public static LoadingScreenMode CurrentMode { get; private set; } = LoadingScreenMode.SceneLoading;
+        public static MenuLoadingScreenMode CurrentMode { get; private set; } = MenuLoadingScreenMode.SceneLoading;
 
         private IEnumerator Start()
         {
@@ -88,7 +88,7 @@ namespace Game.Scripts.UI.Loading
 
         public static void ShowLoading()
         {
-            CurrentMode = LoadingScreenMode.SceneLoading;
+            CurrentMode = MenuLoadingScreenMode.SceneLoading;
             StandardLoading.Hide();
             MenuManager.OpenMenu(MenuType.LoadScreen);
         }
@@ -96,7 +96,7 @@ namespace Game.Scripts.UI.Loading
         public static void ShowConnectionLoading(string statusText = null)
         {
             _connectionLoadingVersion++;
-            CurrentMode = LoadingScreenMode.Connection;
+            CurrentMode = MenuLoadingScreenMode.Connection;
             SetConnectionStatus(string.IsNullOrWhiteSpace(statusText) ? DefaultConnectionStatus : statusText);
             StandardLoading.Show();
         }
@@ -115,57 +115,29 @@ namespace Game.Scripts.UI.Loading
         public static bool TryGetConnectionStatus(out string statusText)
         {
             statusText = _connectionStatusText;
-            return CurrentMode == LoadingScreenMode.Connection && !string.IsNullOrWhiteSpace(statusText);
+            return CurrentMode == MenuLoadingScreenMode.Connection && !string.IsNullOrWhiteSpace(statusText);
         }
 
-        public static void HideConnectionLoading(float delaySeconds = 0f)
+        public static void HideConnectionLoading()
         {
-            if (CurrentMode != LoadingScreenMode.Connection)
+            if (CurrentMode != MenuLoadingScreenMode.Connection)
             {
                 return;
             }
 
-            if (delaySeconds > 0f)
-            {
-                int version = ++_connectionLoadingVersion;
-                HideConnectionLoadingDelayed(version, delaySeconds).Forget();
-                return;
-            }
-
-            HideConnectionLoadingNow();
-        }
-
-        private static async UniTask HideConnectionLoadingDelayed(int version, float delaySeconds)
-        {
-            int delayMilliseconds = Mathf.RoundToInt(Mathf.Max(0f, delaySeconds) * 1000f);
-            if (delayMilliseconds > 0)
-            {
-                await UniTask.Delay(delayMilliseconds, ignoreTimeScale: true);
-            }
-
-            if (version != _connectionLoadingVersion || CurrentMode != LoadingScreenMode.Connection)
-            {
-                return;
-            }
-
+            _connectionLoadingVersion++;
             HideConnectionLoadingNow();
         }
 
         private static void HideConnectionLoadingNow()
         {
             StandardLoading.Hide();
-            CurrentMode = LoadingScreenMode.SceneLoading;
+            CurrentMode = MenuLoadingScreenMode.SceneLoading;
             _connectionStatusText = DefaultConnectionStatus;
         }
 
         public static void HideLoading()
         {
-            HideLoadingAsync().Forget();
-        }
-
-        private static async UniTask HideLoadingAsync()
-        {
-            await UniTask.Delay(1000);
             MenuManager.CloseMenu(MenuType.LoadScreen);
         }
     }

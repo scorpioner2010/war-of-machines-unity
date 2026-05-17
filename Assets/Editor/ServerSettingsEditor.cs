@@ -368,6 +368,11 @@ namespace Toras.Editor
                     "uiBloomPixelsPerDegreeAtMaxDistance",
                     "Pixels per degree for movement/rotation/shot bloom at maximum third-person camera distance."
                 );
+                DrawChildProperty(
+                    gunDispersion,
+                    "uiDiameterLerpSpeed",
+                    "Visual smoothing speed for the aiming ring diameter. 0 disables smoothing; higher values follow the target faster."
+                );
 
                 EditorGUILayout.Space(4f);
                 EditorGUILayout.LabelField("Networking", EditorStyles.miniBoldLabel);

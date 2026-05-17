@@ -75,7 +75,7 @@ namespace Game.Scripts.API.ServerManagers
 
         private void LoginButtonClicked()
         {
-            Loading.Show();
+            StandardLoadingOverlay.Show();
             
             string userLogin = userLoginInputField.text.Trim();
             string password = userPasswordInputField.text.Trim();
@@ -85,7 +85,7 @@ namespace Game.Scripts.API.ServerManagers
         
         private void RegisterButtonClicked()
         {
-            Loading.Show();
+            StandardLoadingOverlay.Show();
             
             string userLogin = userLoginInputField.text.Trim();
             string password = userPasswordInputField.text.Trim();
@@ -140,7 +140,7 @@ namespace Game.Scripts.API.ServerManagers
         [TargetRpc]
         private void TargetLoginResponseRpc(NetworkConnection target, bool success, string errorMessage)
         {
-            Loading.Hide();
+            StandardLoadingOverlay.Hide();
             
             if (success)
             {
@@ -149,6 +149,7 @@ namespace Game.Scripts.API.ServerManagers
             }
             else
             {
+                MenuManager.OpenMenu(MenuType.Auth);
                 Popup.ShowText(errorMessage, Color.red);
             }
             
@@ -159,6 +160,9 @@ namespace Game.Scripts.API.ServerManagers
         [TargetRpc]
         private void TargetRegisterResponseRpc(NetworkConnection target, bool success, string errorMessage)
         {
+            StandardLoadingOverlay.Hide();
+            MenuManager.OpenMenu(MenuType.Auth);
+
             if (success)
             {
                 Popup.ShowText("Success!", Color.green);
@@ -167,8 +171,6 @@ namespace Game.Scripts.API.ServerManagers
             {
                 Popup.ShowText(errorMessage, Color.red);
             }
-            
-            Loading.Hide();
         }
     }
 }

@@ -10,6 +10,7 @@ namespace Game.Scripts.MenuController
         private static MenuManager _in;
 
         [SerializeField] private List<MenuEntry> menus;
+        [SerializeField] private List<PrefabMenuEntry> prefabMenus;
         private Dictionary<MenuType, Menu> _map;
         public static Action<MenuType> OnDisable;
         public static Action<MenuType> OnEnable;
@@ -32,6 +33,8 @@ namespace Game.Scripts.MenuController
                 _map[e.type] = e.controller;
                 e.controller.SetActive(false);
             }
+
+            SpawnPrefabMenus();
         }
 
         public static bool RegisterMenu(MenuType type, Menu controller)
@@ -71,7 +74,7 @@ namespace Game.Scripts.MenuController
                 {
                     kv.Value.Open();
                 }
-                else
+                else if (ShouldCloseMenu(type, kv.Key))
                 {
                     kv.Value.CloseAsync().Forget();
                 }
@@ -97,6 +100,86 @@ namespace Game.Scripts.MenuController
         {
             public MenuType type;
             public Menu controller;
+        }
+
+        [Serializable]
+        public struct PrefabMenuEntry
+        {
+            public MenuType type;
+            public Menu prefab;
+            public Transform parent;
+        }
+
+        private static bool ShouldCloseMenu(MenuType openingType, MenuType candidateType)
+        {
+            if (candidateType == MenuType.GameplayHUD)
+            {
+                if (openingType == MenuType.GameplayPause)
+                {
+                    return false;
+                }
+
+                if (openingType == MenuType.Settings && PreviousType == MenuType.GameplayPause)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void SpawnPrefabMenus()
+        {
+            if (prefabMenus == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < prefabMenus.Count; i++)
+            {
+                PrefabMenuEntry entry = prefabMenus[i];
+                if (entry.prefab == null)
+                {
+                    continue;
+                }
+
+                Transform parent = entry.parent != null ? entry.parent : FindDefaultPrefabMenuParent();
+                Menu controller = Instantiate(entry.prefab, parent, false);
+                controller.name = entry.prefab.name;
+
+                _map[entry.type] = controller;
+                controller.SetActive(false);
+            }
+        }
+
+        private Transform FindDefaultPrefabMenuParent()
+        {
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas != null)
+            {
+                return canvas.transform;
+            }
+
+            return FindDefaultMenuParent();
+        }
+
+        private Transform FindDefaultMenuParent()
+        {
+            if (menus != null)
+            {
+                for (int i = 0; i < menus.Count; i++)
+                {
+                    Menu controller = menus[i].controller;
+                    if (controller == null || controller.MenuParent == null)
+                    {
+                        continue;
+                    }
+
+                    return controller.MenuParent;
+                }
+            }
+
+            return transform.parent;
         }
     }
 }

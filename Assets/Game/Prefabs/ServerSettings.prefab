@@ -107,6 +107,7 @@ MonoBehaviour:
     uiFullyAimedPixelsPerDegreeAtMaxDistance: 20
     uiBloomPixelsPerDegreeAtMaxZoom: 42
     uiBloomPixelsPerDegreeAtMaxDistance: 17
+    uiDiameterLerpSpeed: 18
     serverSyncInterval: 0.05
     serverSyncDeadZoneDeg: 0.03
   projectileBallistics:

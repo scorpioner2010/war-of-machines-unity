@@ -26,6 +26,10 @@ namespace Game.Scripts.UI.HUD
         private Vector2 _serverCrosshairBaseSize;
         private bool _crosshairBaseSizeCached;
         private bool _serverCrosshairBaseSizeCached;
+        private float _crosshairDiameter;
+        private float _serverCrosshairDiameter;
+        private bool _crosshairDiameterCached;
+        private bool _serverCrosshairDiameterCached;
         private GameObject[] _sniperHiddenObjects;
         private bool[] _sniperHiddenObjectStates;
         private Transform _sniperHiddenRoot;
@@ -57,11 +61,37 @@ namespace Game.Scripts.UI.HUD
 
         public void SetAimingDiameters(float localDiameter, float serverDiameter)
         {
-            ApplyAimingDiameter(crosshair, localDiameter, ref _crosshairBaseSize, ref _crosshairBaseSizeCached);
-            ApplyAimingDiameter(serverCrosshair, serverDiameter, ref _serverCrosshairBaseSize, ref _serverCrosshairBaseSizeCached);
+            SetAimingDiameters(localDiameter, serverDiameter, 0f);
         }
 
-        private static void ApplyAimingDiameter(RectTransform target, float diameter, ref Vector2 baseSize, ref bool baseSizeCached)
+        public void SetAimingDiameters(float localDiameter, float serverDiameter, float smoothingSpeed)
+        {
+            ApplyAimingDiameter(
+                crosshair,
+                localDiameter,
+                smoothingSpeed,
+                ref _crosshairBaseSize,
+                ref _crosshairBaseSizeCached,
+                ref _crosshairDiameter,
+                ref _crosshairDiameterCached);
+            ApplyAimingDiameter(
+                serverCrosshair,
+                serverDiameter,
+                smoothingSpeed,
+                ref _serverCrosshairBaseSize,
+                ref _serverCrosshairBaseSizeCached,
+                ref _serverCrosshairDiameter,
+                ref _serverCrosshairDiameterCached);
+        }
+
+        private static void ApplyAimingDiameter(
+            RectTransform target,
+            float diameter,
+            float smoothingSpeed,
+            ref Vector2 baseSize,
+            ref bool baseSizeCached,
+            ref float currentDiameter,
+            ref bool currentDiameterCached)
         {
             if (target == null)
             {
@@ -75,14 +105,30 @@ namespace Game.Scripts.UI.HUD
             }
 
             float safeDiameter = Mathf.Max(1f, diameter);
+            if (!currentDiameterCached || smoothingSpeed <= 0f)
+            {
+                currentDiameter = safeDiameter;
+                currentDiameterCached = true;
+            }
+            else
+            {
+                float speed = Mathf.Max(0f, smoothingSpeed);
+                float t = 1f - Mathf.Exp(-speed * Time.unscaledDeltaTime);
+                currentDiameter = Mathf.Lerp(currentDiameter, safeDiameter, t);
+                if (Mathf.Abs(currentDiameter - safeDiameter) <= 0.1f)
+                {
+                    currentDiameter = safeDiameter;
+                }
+            }
+
             if (baseSize.x > 0f && baseSize.y > 0f)
             {
-                target.sizeDelta = new Vector2(safeDiameter, safeDiameter);
+                target.sizeDelta = new Vector2(currentDiameter, currentDiameter);
                 return;
             }
 
             float baseDiameter = Mathf.Max(1f, Mathf.Max(Mathf.Abs(baseSize.x), Mathf.Abs(baseSize.y)));
-            float scale = safeDiameter / baseDiameter;
+            float scale = currentDiameter / baseDiameter;
             target.localScale = new Vector3(scale, scale, 1f);
         }
 
@@ -345,14 +391,20 @@ namespace Game.Scripts.UI.HUD
             return child.name == "SniperScopeOverlay";
         }
 
-        private void ResolveCanvasReference()
+        public Canvas ResolveCanvasReference(Canvas preferredCanvas = null)
         {
+            if (preferredCanvas != null)
+            {
+                canvas = preferredCanvas;
+            }
+
             if (canvas != null)
             {
-                return;
+                return canvas;
             }
 
             canvas = GetComponentInParent<Canvas>();
+            return canvas;
         }
 
         private static bool IsSameOrParentOf(Transform possibleParent, Transform target)

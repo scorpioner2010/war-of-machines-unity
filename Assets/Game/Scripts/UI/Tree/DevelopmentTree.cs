@@ -581,7 +581,7 @@ namespace Game.Scripts.UI.Tree
 
             Popup.ShowText(message, Color.green, () =>
             {
-                Helpers.Loading.Show();
+                Helpers.StandardLoadingOverlay.Show();
                 ResearchVehicleServerRpc(progress.Node.id, progress.PredecessorVehicleId);
             }, PopupType.Confirm);
         }
@@ -610,7 +610,7 @@ namespace Game.Scripts.UI.Tree
 
             Popup.ShowText("Do you want buy?\nprice: " + lite.purchaseCost, Color.green, () =>
             {
-                Helpers.Loading.Show();
+                Helpers.StandardLoadingOverlay.Show();
                 BuyVehicleServerRpc(lite.code);
             }, PopupType.Confirm);
         }
@@ -680,7 +680,7 @@ namespace Game.Scripts.UI.Tree
             else
             {
                 Popup.ShowText(errorMessage, Color.red);
-                Helpers.Loading.Hide();
+                Helpers.StandardLoadingOverlay.Hide();
             }
         }
 
@@ -788,7 +788,7 @@ namespace Game.Scripts.UI.Tree
             
             MenuManager.OpenMenu(MenuType.MainMenu);
             RobotView.UpdateUI();
-            Helpers.Loading.Hide();
+            Helpers.StandardLoadingOverlay.Hide();
         }
         
         private VehicleClass ParseVehicleClass(string cls)

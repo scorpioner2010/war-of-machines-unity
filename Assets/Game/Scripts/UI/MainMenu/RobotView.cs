@@ -102,6 +102,7 @@ namespace Game.Scripts.UI.MainMenu
                     vehicleData.VehicleId = vehicle.vehicleId;
                     vehicleData.IsSelected = selected != null && selected.vehicleId == vehicle.vehicleId;
                     vehicleData.Name = vehicle.name;
+                    vehicleData.ViewRange = VehicleRuntimeStats.ResolveViewRange(vehicle.viewRange);
                     vehicleData.ApplyVehicleLite(FindVehicleStats(vehicleStats, vehicle.code, vehicle.vehicleId));
                     vehicles.Add(vehicleData);
                 }
@@ -221,7 +222,7 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            Helpers.Loading.Show();
+            Helpers.StandardLoadingOverlay.Show();
             SelectVehicleServerRpc(id);
         }
 
@@ -259,7 +260,7 @@ namespace Game.Scripts.UI.MainMenu
             else
             {
                 Popup.ShowText(errorMessage, Color.red);
-                Helpers.Loading.Hide();
+                Helpers.StandardLoadingOverlay.Hide();
             }
         }
 
