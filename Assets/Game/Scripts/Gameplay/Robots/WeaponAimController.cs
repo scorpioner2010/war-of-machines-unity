@@ -41,6 +41,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _hasDesiredAimPoint;
         private bool _hasAimPlaneForward;
         private Vector3 _aimPlaneForward;
+        private int _externalDesiredAimFrame = -1;
 
         private const float MinAimDistance = 0.25f;
         private const float AimPointClampPadding = 50f;
@@ -121,6 +122,7 @@ namespace Game.Scripts.Gameplay.Robots
             DesiredAimPoint = ClampAimPoint(aimPoint);
             _hasDesiredAimPoint = true;
             SetAimPlaneForward(aimPlaneForward);
+            _externalDesiredAimFrame = Time.frameCount;
         }
 
         public void ResolveCameraAim(Transform cameraTransform, out Vector3 aimPoint, out Vector3 aimForward)
@@ -224,6 +226,12 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void RefreshDesiredAimPointFromCamera()
         {
+            if (_externalDesiredAimFrame == Time.frameCount)
+            {
+                EnsureDesiredAimPoint();
+                return;
+            }
+
             if (_cam == null)
             {
                 EnsureDesiredAimPoint();

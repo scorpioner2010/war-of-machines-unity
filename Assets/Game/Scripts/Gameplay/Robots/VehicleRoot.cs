@@ -15,6 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
         public NetworkObject networkObject;
         public VehicleNetworkInitializer characterInit;
         public VehicleInputController inputManager;
+        public VehicleAutoAimController autoAimController;
         public VehicleHealth health;
         public VehicleMovementController objectMover;
         public VehicleHudInitializer uiSenerd;
@@ -111,6 +112,14 @@ namespace Game.Scripts.Gameplay.Robots
             if (inputManager == null)
             {
                 inputManager = GetComponentInChildren<VehicleInputController>(true);
+            }
+            if (autoAimController == null)
+            {
+                autoAimController = GetComponentInChildren<VehicleAutoAimController>(true);
+            }
+            if (autoAimController == null)
+            {
+                autoAimController = gameObject.AddComponent<VehicleAutoAimController>();
             }
             if (health == null)
             {

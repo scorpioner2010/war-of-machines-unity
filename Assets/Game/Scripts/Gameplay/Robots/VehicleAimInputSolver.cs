@@ -30,10 +30,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             WeaponAimController weaponAim = vehicleRoot.weaponAimAtCamera;
-            Transform chassis = vehicleRoot.objectMover.transform;
-            Vector3 chassisFwd = chassis.forward;
-            chassisFwd.y = 0f;
-
             if (cameraTransform == null)
             {
                 result.HasState = true;
@@ -42,13 +38,41 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             weaponAim.ResolveCameraAim(cameraTransform, out Vector3 cameraAimPoint, out Vector3 cameraAimForward);
+            return SolveForAimPoint(
+                vehicleRoot,
+                cameraAimPoint,
+                cameraAimForward,
+                currentTurretYawLocal,
+                currentGunPitchLocal);
+        }
+
+        public static VehicleAimInputResult SolveForAimPoint(
+            VehicleRoot vehicleRoot,
+            Vector3 targetAimPoint,
+            Vector3 targetAimForward,
+            float currentTurretYawLocal,
+            float currentGunPitchLocal)
+        {
+            VehicleAimInputResult result = new VehicleAimInputResult();
+
+            if (vehicleRoot == null
+                || vehicleRoot.objectMover == null
+                || vehicleRoot.robotHullRotation == null
+                || vehicleRoot.weaponAimAtCamera == null)
+            {
+                return result;
+            }
+
+            Transform chassis = vehicleRoot.objectMover.transform;
+            Vector3 chassisFwd = chassis.forward;
+            chassisFwd.y = 0f;
 
             float turretYawLocal = currentTurretYawLocal;
-            Vector3 targetYawFlat = cameraAimPoint - vehicleRoot.robotHullRotation.transform.position;
+            Vector3 targetYawFlat = targetAimPoint - vehicleRoot.robotHullRotation.transform.position;
             targetYawFlat.y = 0f;
             if (targetYawFlat.sqrMagnitude <= 1e-6f)
             {
-                targetYawFlat = cameraAimForward;
+                targetYawFlat = targetAimForward;
                 targetYawFlat.y = 0f;
             }
 
@@ -68,16 +92,16 @@ namespace Game.Scripts.Gameplay.Robots
 
             float gunPitchLocal = ComputeTargetGunPitch(
                 vehicleRoot,
-                cameraAimPoint,
-                cameraAimForward,
+                targetAimPoint,
+                targetAimForward,
                 turretYawLocal,
                 currentGunPitchLocal);
 
             result.HasState = true;
             result.YawDeg = turretYawLocal;
             result.PitchDeg = gunPitchLocal;
-            result.CameraAimPoint = cameraAimPoint;
-            result.CameraAimForward = cameraAimForward;
+            result.CameraAimPoint = targetAimPoint;
+            result.CameraAimForward = targetAimForward;
             return result;
         }
 

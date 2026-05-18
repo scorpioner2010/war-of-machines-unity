@@ -10,6 +10,7 @@ namespace Game.Scripts.Gameplay.Robots
     public class VehicleInputController : NetworkBehaviour, IVehicleRootAware, IBotInputReceiver
     {
         public VehicleRoot vehicleRoot;
+        public VehicleAutoAimController autoAimController;
 
         private Vector2 _moveServer;
         private bool _shootServer;
@@ -39,11 +40,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private float _turretYawLocal;
         private float _gunPitchLocal;
-        private bool _aimLockHeldLocal;
-        private float _lockedTurretYawLocal;
-        private float _lockedGunPitchLocal;
-        private Vector3 _lockedAimPointLocal;
-        private Vector3 _lockedAimForwardLocal;
 
         private const float YawPitchSendDeadzoneDeg = 0.03f;
         private const float AimPointSendDeadzoneSqr = 0.02f * 0.02f;
@@ -55,6 +51,7 @@ namespace Game.Scripts.Gameplay.Robots
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+            autoAimController = root != null ? root.autoAimController : null;
         }
 
         public void SetControlsBlocked(bool blocked)
@@ -241,15 +238,18 @@ namespace Game.Scripts.Gameplay.Robots
 
             bool newShoot = !blocked && Input.GetMouseButton(0);
             bool newAction = !blocked && Input.GetKey(KeyCode.Space);
-            bool aimLocked = !blocked && Input.GetMouseButton(1);
-
-            if (!aimLocked)
+            ResolveAutoAimController();
+            if (!blocked && Input.GetMouseButtonDown(1) && autoAimController != null)
             {
-                _aimLockHeldLocal = false;
+                autoAimController.ToggleFromCurrentView();
             }
-            else if (!_aimLockHeldLocal)
+
+            bool autoAimActive = false;
+            Vector3 autoAimPoint = Vector3.zero;
+            Vector3 autoAimForward = Vector3.zero;
+            if (!blocked && autoAimController != null)
             {
-                CaptureAimLock();
+                autoAimActive = autoAimController.TryGetAimTarget(out autoAimPoint, out autoAimForward);
             }
 
             _moveLocal = new Vector2(x, y);
@@ -267,12 +267,11 @@ namespace Game.Scripts.Gameplay.Robots
                 aimPoint = _lastAimPointLocal;
                 aimForward = _lastAimForwardLocal;
             }
-            else if (aimLocked)
+            else if (autoAimActive)
             {
-                yawDeg = _lockedTurretYawLocal;
-                pitchDeg = _lockedGunPitchLocal;
-                aimPoint = _lockedAimPointLocal;
-                aimForward = _lockedAimForwardLocal;
+                ComputeAutoAimYawPitch(autoAimPoint, autoAimForward, out yawDeg, out pitchDeg, out aimPoint, out aimForward);
+                _lastAimPointLocal = aimPoint;
+                _lastAimForwardLocal = aimForward;
             }
             else
             {
@@ -429,6 +428,54 @@ namespace Game.Scripts.Gameplay.Robots
             cameraAimForward = result.CameraAimForward;
         }
 
+        private void ComputeAutoAimYawPitch(
+            Vector3 targetAimPoint,
+            Vector3 targetAimForward,
+            out float yawDeg,
+            out float pitchDeg,
+            out Vector3 cameraAimPoint,
+            out Vector3 cameraAimForward)
+        {
+            VehicleAimInputResult result = VehicleAimInputSolver.SolveForAimPoint(
+                vehicleRoot,
+                targetAimPoint,
+                targetAimForward,
+                _turretYawLocal,
+                _gunPitchLocal);
+
+            if (result.HasState)
+            {
+                _turretYawLocal = result.YawDeg;
+                _gunPitchLocal = result.PitchDeg;
+                yawDeg = result.YawDeg;
+                pitchDeg = result.PitchDeg;
+                cameraAimPoint = result.CameraAimPoint;
+                cameraAimForward = result.CameraAimForward;
+                return;
+            }
+
+            ComputeLocalYawPitch(out yawDeg, out pitchDeg, out cameraAimPoint, out cameraAimForward);
+        }
+
+        private void ResolveAutoAimController()
+        {
+            if (autoAimController != null)
+            {
+                return;
+            }
+
+            if (vehicleRoot == null)
+            {
+                return;
+            }
+
+            autoAimController = vehicleRoot.autoAimController;
+            if (autoAimController == null)
+            {
+                autoAimController = vehicleRoot.GetComponentInChildren<VehicleAutoAimController>(true);
+            }
+        }
+
         private void ApplyLocalAimTargets(float yawDeg, float pitchDeg)
         {
             if (vehicleRoot == null)
@@ -444,81 +491,6 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 vehicleRoot.weaponAimAtCamera.SetTargetPitch(pitchDeg);
             }
-        }
-
-        private void CaptureAimLock()
-        {
-            _aimLockHeldLocal = true;
-            _lockedTurretYawLocal = _turretYawLocal;
-            _lockedGunPitchLocal = _gunPitchLocal;
-            _lockedAimPointLocal = _lastAimPointLocal;
-            _lockedAimForwardLocal = _lastAimForwardLocal;
-
-            WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
-            if (vehicleRoot != null && vehicleRoot.robotHullRotation != null)
-            {
-                _lockedTurretYawLocal = vehicleRoot.robotHullRotation.CurrentLocalYaw;
-            }
-
-            if (weaponAim != null)
-            {
-                _lockedGunPitchLocal = weaponAim.CurrentLocalPitch;
-                _lockedAimPointLocal = weaponAim.CurrentAimPoint;
-                _lockedAimForwardLocal = GetWeaponForward(weaponAim);
-            }
-
-            if (!IsFinite(_lockedAimForwardLocal) || _lockedAimForwardLocal.sqrMagnitude <= 0.000001f)
-            {
-                _lockedAimForwardLocal = CameraSync.In != null ? CameraSync.In.GetAimForward() : transform.forward;
-            }
-
-            if (!IsFinite(_lockedAimPointLocal) || _lockedAimPointLocal == Vector3.zero)
-            {
-                _lockedAimPointLocal = BuildAimLockFallbackPoint(weaponAim, _lockedAimForwardLocal);
-            }
-
-            _turretYawLocal = _lockedTurretYawLocal;
-            _gunPitchLocal = _lockedGunPitchLocal;
-            _lastAimPointLocal = _lockedAimPointLocal;
-            _lastAimForwardLocal = _lockedAimForwardLocal;
-        }
-
-        private Vector3 GetWeaponForward(WeaponAimController weaponAim)
-        {
-            if (weaponAim == null || weaponAim.gun == null)
-            {
-                return transform.forward;
-            }
-
-            return WeaponAimController.ToWorldAxis(weaponAim.gun, weaponAim.localForwardAxis);
-        }
-
-        private Vector3 BuildAimLockFallbackPoint(WeaponAimController weaponAim, Vector3 forward)
-        {
-            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
-            {
-                forward = transform.forward;
-            }
-
-            forward.Normalize();
-
-            if (weaponAim != null && weaponAim.gun != null)
-            {
-                float distance = Mathf.Max(0.25f, weaponAim.maxAimDistance);
-                return weaponAim.gun.position + forward * distance;
-            }
-
-            return transform.position + forward * 500f;
-        }
-
-        private static bool IsFinite(Vector3 value)
-        {
-            return !float.IsNaN(value.x)
-                   && !float.IsNaN(value.y)
-                   && !float.IsNaN(value.z)
-                   && !float.IsInfinity(value.x)
-                   && !float.IsInfinity(value.y)
-                   && !float.IsInfinity(value.z);
         }
 
     }
