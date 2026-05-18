@@ -1,4 +1,5 @@
 using UnityEngine;
+using Game.Scripts.Client;
 using Game.Scripts.UI.Screens;
 
 namespace Game.Scripts.UI.Helpers
@@ -6,7 +7,6 @@ namespace Game.Scripts.UI.Helpers
     public class SniperScopeOverlay : UIScreenBase<SniperScopeOverlay>
     {
         [SerializeField] private CanvasGroup canvasGroup;
-        [SerializeField, Min(0f)] private float fadeDuration = 0.18f;
 
         private static SniperScopeOverlay _instance;
         private Coroutine _fadeRoutine;
@@ -72,6 +72,8 @@ namespace Game.Scripts.UI.Helpers
             }
 
             float targetAlpha = shown ? 1f : 0f;
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            float fadeDuration = settings.sniperScopeOverlayFadeDuration;
             if (fadeDuration <= 0f)
             {
                 SetAlpha(targetAlpha);
@@ -89,6 +91,7 @@ namespace Game.Scripts.UI.Helpers
 
         private System.Collections.IEnumerator FadeTo(float targetAlpha)
         {
+            float fadeDuration = GameplayRuntimeSettingsProvider.Get().sniperScopeOverlayFadeDuration;
             float startAlpha = canvasGroup.alpha;
             float elapsed = 0f;
             while (elapsed < fadeDuration)

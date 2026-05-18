@@ -1,4 +1,5 @@
 using TMPro;
+using Game.Scripts.Client;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
 using UnityEngine;
@@ -18,10 +19,6 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private GameObject regularHudRoot;
         [SerializeField] private GameObject sniperOverlay;
         [SerializeField] private GameObject sniperReticleOnlyRoot;
-        [SerializeField] private Color aimedColor = new Color(0.5f, 1f, 0.5f, 1f);
-        [SerializeField] private Color aimingColor = new Color(1f, 0.86f, 0.2f, 1f);
-        [SerializeField] private string aimedText = "AIM READY";
-        [SerializeField] private string aimingTextPrefix = "AIM ";
 
         private Vector2 _crosshairBaseSize;
         private Vector2 _serverCrosshairBaseSize;
@@ -157,16 +154,17 @@ namespace Game.Scripts.UI.HUD
             float max = Mathf.Max(min + 0.0001f, maxDispersionDeg);
             float t = Mathf.InverseLerp(max, min, Mathf.Clamp(currentDispersionDeg, min, max));
             int percent = Mathf.RoundToInt(t * 100f);
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
 
             if (percent >= 99)
             {
-                aimStatusText.text = aimedText;
-                aimStatusText.color = aimedColor;
+                aimStatusText.text = settings.aimReadyText;
+                aimStatusText.color = settings.aimReadyColor;
                 return;
             }
 
-            aimStatusText.text = aimingTextPrefix + percent + "%";
-            aimStatusText.color = aimingColor;
+            aimStatusText.text = settings.aimProgressTextPrefix + percent + "%";
+            aimStatusText.color = settings.aimProgressColor;
         }
 
         public void SetSniperMode(bool enabled)

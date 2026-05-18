@@ -68,6 +68,8 @@ namespace Game.Scripts.Networking.Lobby
             GunDispersionGlobalSettings gunDispersion = ServerSettings.GetGunDispersion();
             RobotMovementGlobalSettings robotMovement = ServerSettings.GetRobotMovement();
             ProjectileBallisticsGlobalSettings projectileBallistics = ServerSettings.GetProjectileBallistics();
+            VehicleInputSyncSettings vehicleInputSync = ServerSettings.GetVehicleInputSync();
+            MatchSceneGlobalSettings matchScene = ServerSettings.GetMatchScene();
             TargetServerSettingsRpc(
                 sender,
                 ServerSettings.GetMaxPlayersForFindRoom(),
@@ -113,7 +115,14 @@ namespace Game.Scripts.Networking.Lobby
                 projectileBallistics.projectileGravity,
                 projectileBallistics.useBallisticCompensation,
                 projectileBallistics.preferHighArc,
-                projectileBallistics.debugBallisticTrajectory
+                projectileBallistics.debugBallisticTrajectory,
+                vehicleInputSync.sendInterval,
+                vehicleInputSync.yawPitchSendDeadzoneDeg,
+                vehicleInputSync.aimPointSendDeadzoneMeters,
+                matchScene.sceneSlotSpacingX,
+                matchScene.sceneValidationTimeout,
+                matchScene.endGameDelayMilliseconds,
+                matchScene.matchDurationSeconds
             );
         }
 
@@ -163,7 +172,14 @@ namespace Game.Scripts.Networking.Lobby
             float projectileGravity,
             bool projectileUseBallisticCompensation,
             bool projectilePreferHighArc,
-            bool projectileDebugBallisticTrajectory)
+            bool projectileDebugBallisticTrajectory,
+            float inputSendInterval,
+            float inputYawPitchSendDeadzoneDeg,
+            float inputAimPointSendDeadzoneMeters,
+            int matchSceneSlotSpacingX,
+            float matchSceneValidationTimeout,
+            int matchEndGameDelayMilliseconds,
+            float matchDurationSeconds)
         {
             RemoteServerSettings.Apply(
                 maxPlayersForFindRoom,
@@ -209,7 +225,14 @@ namespace Game.Scripts.Networking.Lobby
                 projectileGravity,
                 projectileUseBallisticCompensation,
                 projectilePreferHighArc,
-                projectileDebugBallisticTrajectory
+                projectileDebugBallisticTrajectory,
+                inputSendInterval,
+                inputYawPitchSendDeadzoneDeg,
+                inputAimPointSendDeadzoneMeters,
+                matchSceneSlotSpacingX,
+                matchSceneValidationTimeout,
+                matchEndGameDelayMilliseconds,
+                matchDurationSeconds
             );
         }
 

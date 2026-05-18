@@ -1,5 +1,6 @@
 using UnityEngine;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Client;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
@@ -14,29 +15,17 @@ namespace Game.Scripts.Gameplay.Robots
         public VehicleRoot vehicleRoot;
         public Transform rig;
         public float distance = 10f;
-        public float aimDistance = 6f;
-        public float sniperDistance = 0.25f;
-        public bool sniperCameraFromMuzzle = true;
-        public float sniperForwardOffset = 0.15f;
-        public float sniperVerticalOffset = 0f;
-        public float xSpeed = 120.0f;
-        public float ySpeed = 120.0f;
-        public float normalFov = 60f;
-        public float aimFov = 45f;
-        public float sniperFov = 24f;
-        public float fovLerpSpeed = 10f;
-        public float cameraLerpSpeed = 12f;
-        public float scrollDeadZone = 0.001f;
-        public float[] aimZoomDistances = { 6f, 4f, 2.5f };
 
         private float _X;
         private float _Y;
         private float _normalDistance;
         private float _targetDistance;
+        private float _currentDistance;
         private int _currentZoomStep = NormalZoomStep;
         private int _lastNonSniperZoomStep = NormalZoomStep;
         private bool _sniperUiApplied;
         private bool _initialized;
+        private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
 
         public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
 
@@ -56,6 +45,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void Init()
         {
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+
             if (vehicleRoot == null)
             {
                 vehicleRoot = GetComponentInParent<VehicleRoot>();
@@ -71,11 +62,12 @@ namespace Game.Scripts.Gameplay.Robots
 
                 if (CameraSync.In.gameplayCamera != null)
                 {
-                    CameraSync.In.gameplayCamera.fieldOfView = normalFov;
+                    CameraSync.In.gameplayCamera.fieldOfView = _runtimeSettings.cameraNormalFov;
                 }
             }
 
             _normalDistance = Mathf.Max(0.1f, distance);
+            _currentDistance = _normalDistance;
             _currentZoomStep = NormalZoomStep;
             _lastNonSniperZoomStep = NormalZoomStep;
             ApplyZoomStep(NormalZoomStep, true);
@@ -97,10 +89,12 @@ namespace Game.Scripts.Gameplay.Robots
 
         public float GetAimUiZoom01()
         {
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+
             float normalDistance = _normalDistance > 0.01f
                 ? _normalDistance
                 : Mathf.Max(0.01f, distance);
-            float sniperCameraDistance = Mathf.Max(0.01f, sniperDistance);
+            float sniperCameraDistance = Mathf.Max(0.01f, _runtimeSettings.cameraSniperDistance);
             float minDistance = Mathf.Min(normalDistance, sniperCameraDistance);
             float maxDistance = Mathf.Max(normalDistance, sniperCameraDistance);
             if (maxDistance <= minDistance + 0.0001f)
@@ -108,7 +102,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return IsSniperStep(_currentZoomStep) ? 1f : 0f;
             }
 
-            float clampedDistance = Mathf.Clamp(distance, minDistance, maxDistance);
+            float clampedDistance = Mathf.Clamp(_currentDistance, minDistance, maxDistance);
             float distance01 = Mathf.InverseLerp(minDistance, maxDistance, clampedDistance);
             return Mathf.Clamp01(1f - distance01);
         }
@@ -126,10 +120,11 @@ namespace Game.Scripts.Gameplay.Robots
                 UpdateAimInputs();
 
                 float mouseSensitivity = GetMouseSensitivity();
-                _X += Input.GetAxis("Mouse X") * xSpeed * mouseSensitivity * 0.02f;
-                _Y -= Input.GetAxis("Mouse Y") * ySpeed * mouseSensitivity * 0.02f;
+                _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+                _X += Input.GetAxis("Mouse X") * _runtimeSettings.cameraHorizontalSpeed * mouseSensitivity * 0.02f;
+                _Y -= Input.GetAxis("Mouse Y") * _runtimeSettings.cameraVerticalSpeed * mouseSensitivity * 0.02f;
 
-                _Y = Mathf.Clamp(_Y, -20, 80);
+                _Y = Mathf.Clamp(_Y, _runtimeSettings.cameraMinPitch, _runtimeSettings.cameraMaxPitch);
             }
 
             ApplyCameraTransform(false);
@@ -155,7 +150,7 @@ namespace Game.Scripts.Gameplay.Robots
             Quaternion rotation = Quaternion.Euler(_Y, _X, 0);
             if (IsSniperModeActive && TryGetSniperCameraPosition(rotation, out Vector3 sniperPosition))
             {
-                distance = _targetDistance;
+                _currentDistance = _targetDistance;
                 transform.rotation = rotation;
                 transform.position = sniperPosition;
                 return;
@@ -163,15 +158,16 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (immediate)
             {
-                distance = _targetDistance;
+                _currentDistance = _targetDistance;
             }
             else
             {
-                float cameraT = 1f - Mathf.Exp(-Mathf.Max(0.01f, cameraLerpSpeed) * Time.deltaTime);
-                distance = Mathf.Lerp(distance, _targetDistance, cameraT);
+                _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+                float cameraT = 1f - Mathf.Exp(-Mathf.Max(0.01f, _runtimeSettings.cameraDistanceLerpSpeed) * Time.deltaTime);
+                _currentDistance = Mathf.Lerp(_currentDistance, _targetDistance, cameraT);
             }
 
-            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -distance) + rig.position;
+            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -_currentDistance) + rig.position;
 
             transform.rotation = rotation;
             transform.position = position;
@@ -205,9 +201,10 @@ namespace Game.Scripts.Gameplay.Robots
                 up.Normalize();
             }
 
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
             position = anchor.position
-                       + forward * Mathf.Max(0f, sniperForwardOffset)
-                       + up * sniperVerticalOffset;
+                       + forward * Mathf.Max(0f, _runtimeSettings.cameraSniperForwardOffset)
+                       + up * _runtimeSettings.cameraSniperVerticalOffset;
             return IsFinite(position);
         }
 
@@ -218,7 +215,9 @@ namespace Game.Scripts.Gameplay.Robots
                 return rig;
             }
 
-            if (sniperCameraFromMuzzle
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+
+            if (_runtimeSettings.cameraSniperFromMuzzle
                 && vehicleRoot.shooterNet != null
                 && vehicleRoot.shooterNet.muzzleTransform != null)
             {
@@ -270,7 +269,8 @@ namespace Game.Scripts.Gameplay.Robots
                 scroll = legacyScroll;
             }
 
-            if (Mathf.Abs(scroll) <= Mathf.Max(0.0001f, scrollDeadZone))
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            if (Mathf.Abs(scroll) <= Mathf.Max(0.0001f, _runtimeSettings.cameraScrollDeadZone))
             {
                 return 0;
             }
@@ -378,7 +378,7 @@ namespace Game.Scripts.Gameplay.Robots
             _targetDistance = GetDistanceForZoomStep(zoomStep);
             if (immediate)
             {
-                distance = _targetDistance;
+                _currentDistance = _targetDistance;
                 ApplyCameraFov(GetFovForZoomStep(zoomStep), true);
             }
 
@@ -387,7 +387,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         private int GetMaxNonSniperZoomStep()
         {
-            int count = aimZoomDistances != null ? aimZoomDistances.Length : 0;
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            int count = _runtimeSettings.cameraAimZoomDistances != null ? _runtimeSettings.cameraAimZoomDistances.Length : 0;
             if (count > 0)
             {
                 return count - 1;
@@ -415,35 +416,42 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (IsSniperStep(zoomStep))
             {
-                return Mathf.Max(0.01f, sniperDistance);
+                _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+                return Mathf.Max(0.01f, _runtimeSettings.cameraSniperDistance);
             }
 
-            if (aimZoomDistances != null && zoomStep >= 0 && zoomStep < aimZoomDistances.Length)
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            if (_runtimeSettings.cameraAimZoomDistances != null
+                && zoomStep >= 0
+                && zoomStep < _runtimeSettings.cameraAimZoomDistances.Length)
             {
-                return ClampGameplayDistance(aimZoomDistances[zoomStep]);
+                return ClampGameplayDistance(_runtimeSettings.cameraAimZoomDistances[zoomStep]);
             }
 
-            return ClampGameplayDistance(aimDistance);
+            return ClampGameplayDistance(_runtimeSettings.cameraAimDistance);
         }
 
         private float GetFovForZoomStep(int zoomStep)
         {
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+
             if (zoomStep == NormalZoomStep)
             {
-                return normalFov;
+                return _runtimeSettings.cameraNormalFov;
             }
 
             if (IsSniperStep(zoomStep))
             {
-                return sniperFov;
+                return _runtimeSettings.cameraSniperFov;
             }
 
-            return aimFov;
+            return _runtimeSettings.cameraAimFov;
         }
 
         private float ClampGameplayDistance(float value)
         {
-            float min = Mathf.Max(0.01f, Mathf.Min(sniperDistance, _normalDistance));
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            float min = Mathf.Max(0.01f, Mathf.Min(_runtimeSettings.cameraSniperDistance, _normalDistance));
             float max = Mathf.Max(min, _normalDistance);
             return Mathf.Clamp(Mathf.Max(0.01f, value), min, max);
         }
@@ -472,7 +480,8 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float t = 1f - Mathf.Exp(-Mathf.Max(0.01f, fovLerpSpeed) * Time.deltaTime);
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            float t = 1f - Mathf.Exp(-Mathf.Max(0.01f, _runtimeSettings.cameraFovLerpSpeed) * Time.deltaTime);
             cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, t);
         }
 

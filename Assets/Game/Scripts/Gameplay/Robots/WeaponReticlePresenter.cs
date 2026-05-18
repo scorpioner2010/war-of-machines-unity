@@ -1,4 +1,5 @@
 using Game.Scripts.Core.Services;
+using Game.Scripts.Client;
 using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Settings;
@@ -11,13 +12,6 @@ namespace Game.Scripts.Gameplay.Robots
     {
         public VehicleRoot vehicleRoot;
 
-        public float smoothSpeed = 20f;
-        public bool hideWhenBehindCamera = true;
-        public bool clampToCanvas = true;
-        public float hideWhenAngleGreaterThan = 90f;
-
-        public bool showServerReticle = true;
-        
         private RectTransform _serverCrosshair;
         private RectTransform _reticleRect;
         private Canvas _canvas;
@@ -139,9 +133,10 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
             Vector3 gunFwd = vehicleRoot.weaponAimAtCamera.GetLogicalAimForwardWorld().normalized;
             float angle = Vector3.Angle(gunFwd, cam.transform.forward);
-            if (angle > hideWhenAngleGreaterThan)
+            if (angle > runtimeSettings.reticleHideWhenAngleGreaterThan)
             {
                 SetVisible(false);
                 SetVisibleServer(false);
@@ -163,12 +158,13 @@ namespace Game.Scripts.Gameplay.Robots
                     _reticleRect,
                     ref _curLocal,
                     ref _tgtLocal,
-                    ref _visualAimPoint,
-                    ref _hasVisualAimPoint,
-                    horizontalLerpSpeed,
-                    verticalLerpSpeed))
+                        ref _visualAimPoint,
+                        ref _hasVisualAimPoint,
+                        horizontalLerpSpeed,
+                        verticalLerpSpeed,
+                        runtimeSettings))
             {
-                if (hideWhenBehindCamera)
+                if (runtimeSettings.reticleHideWhenBehindCamera)
                 {
                     SetVisible(false);
                     _hasVisualAimPoint = false;
@@ -183,7 +179,7 @@ namespace Game.Scripts.Gameplay.Robots
                 SetVisible(true);
             }
 
-            if (showServerReticle && ClientGameplaySettings.ServerCrosshairEnabled && _serverCrosshair != null)
+            if (runtimeSettings.reticleShowServerReticle && ClientGameplaySettings.ServerCrosshairEnabled && _serverCrosshair != null)
             {
                 Vector3 srvAim = vehicleRoot.weaponAimAtCamera.ServerAimPoint;
                 if (srvAim == Vector3.zero)
@@ -200,9 +196,10 @@ namespace Game.Scripts.Gameplay.Robots
                         ref _visualAimPointServer,
                         ref _hasVisualAimPointServer,
                         horizontalLerpSpeed,
-                        verticalLerpSpeed))
+                        verticalLerpSpeed,
+                        runtimeSettings))
                 {
-                    if (hideWhenBehindCamera)
+                    if (runtimeSettings.reticleHideWhenBehindCamera)
                     {
                         SetVisibleServer(false);
                         _hasVisualAimPointServer = false;
@@ -226,10 +223,16 @@ namespace Game.Scripts.Gameplay.Robots
 
         private bool WorldToCanvasLocalPoint(Vector3 worldPoint, Camera cam, out Vector2 localPoint)
         {
-            return WorldToCanvasLocalPoint(worldPoint, cam, out localPoint, out _);
+            GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            return WorldToCanvasLocalPoint(worldPoint, cam, out localPoint, out _, runtimeSettings);
         }
 
-        private bool WorldToCanvasLocalPoint(Vector3 worldPoint, Camera cam, out Vector2 localPoint, out float screenDepth)
+        private bool WorldToCanvasLocalPoint(
+            Vector3 worldPoint,
+            Camera cam,
+            out Vector2 localPoint,
+            out float screenDepth,
+            GameplayRuntimeSettings runtimeSettings)
         {
             localPoint = default;
             screenDepth = 0f;
@@ -237,7 +240,7 @@ namespace Game.Scripts.Gameplay.Robots
             screenDepth = sp.z;
             if (sp.z <= 0f)
             {
-                if (!hideWhenBehindCamera)
+                if (!runtimeSettings.reticleHideWhenBehindCamera)
                 {
                     sp *= -1f;
                 }
@@ -263,28 +266,30 @@ namespace Game.Scripts.Gameplay.Robots
             ref Vector3 visualWorldPoint,
             ref bool hasVisualWorldPoint,
             float horizontalLerpSpeed,
-            float verticalLerpSpeed)
+            float verticalLerpSpeed,
+            GameplayRuntimeSettings runtimeSettings)
         {
             if (rect == null)
             {
                 return false;
             }
 
-            if (!WorldToCanvasLocalPoint(targetWorldPoint, cam, out Vector2 targetLocal, out float targetDepth))
+            if (!WorldToCanvasLocalPoint(targetWorldPoint, cam, out Vector2 targetLocal, out float targetDepth, runtimeSettings))
             {
                 return false;
             }
 
-            if (clampToCanvas)
+            if (runtimeSettings.reticleClampToCanvas)
             {
                 ClampToCanvas(ref targetLocal);
             }
 
             Vector2 currentLocal = cur;
-            if (hasVisualWorldPoint && WorldToCanvasLocalPoint(visualWorldPoint, cam, out Vector2 projectedVisualLocal))
+            if (hasVisualWorldPoint
+                && WorldToCanvasLocalPoint(visualWorldPoint, cam, out Vector2 projectedVisualLocal, out _, runtimeSettings))
             {
                 currentLocal = projectedVisualLocal;
-                if (clampToCanvas)
+                if (runtimeSettings.reticleClampToCanvas)
                 {
                     ClampToCanvas(ref currentLocal);
                 }
@@ -301,7 +306,7 @@ namespace Game.Scripts.Gameplay.Robots
             tgt = targetLocal;
             LerpCanvasPoint(ref currentLocal, targetLocal, horizontalLerpSpeed, verticalLerpSpeed);
 
-            if (clampToCanvas)
+            if (runtimeSettings.reticleClampToCanvas)
             {
                 ClampToCanvas(ref currentLocal);
             }
@@ -360,7 +365,8 @@ namespace Game.Scripts.Gameplay.Robots
             GunDispersionGlobalSettings settings = GetGlobalDispersionSettings();
             if (settings == null)
             {
-                float fallback = Mathf.Max(0f, smoothSpeed);
+                GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+                float fallback = Mathf.Max(0f, runtimeSettings.reticleFallbackSmoothSpeed);
                 horizontalLerpSpeed = fallback;
                 verticalLerpSpeed = fallback;
                 return;

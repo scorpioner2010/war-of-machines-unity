@@ -1,13 +1,13 @@
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 
 namespace Game.Scripts.Networking.Lobby
 {
     public class NetworkGameplayTimer : NetworkBehaviour
     {
-        public float startTime = 100;
         public NetworkObject networkObject;
         public readonly SyncVar<float> Timer = new(0);
         public ServerRoom serverRoom;
@@ -27,7 +27,7 @@ namespace Game.Scripts.Networking.Lobby
 
         private async UniTask RunTimer()
         {
-            Timer.Value = startTime;
+            Timer.Value = ServerSettings.GetMatchScene().matchDurationSeconds;
 
             while (Timer.Value >= 0)
             {

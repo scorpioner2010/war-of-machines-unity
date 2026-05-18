@@ -9,6 +9,8 @@ namespace Game.Scripts.Server
         public static GunDispersionGlobalSettings GunDispersion { get; } = new GunDispersionGlobalSettings();
         public static RobotMovementGlobalSettings RobotMovement { get; } = new RobotMovementGlobalSettings();
         public static ProjectileBallisticsGlobalSettings ProjectileBallistics { get; } = new ProjectileBallisticsGlobalSettings();
+        public static VehicleInputSyncSettings VehicleInputSync { get; } = new VehicleInputSyncSettings();
+        public static MatchSceneGlobalSettings MatchScene { get; } = new MatchSceneGlobalSettings();
         public static bool IsLoaded { get; private set; }
 
         public static void Apply(
@@ -55,7 +57,14 @@ namespace Game.Scripts.Server
             float projectileGravity,
             bool projectileUseBallisticCompensation,
             bool projectilePreferHighArc,
-            bool projectileDebugBallisticTrajectory)
+            bool projectileDebugBallisticTrajectory,
+            float inputSendInterval,
+            float inputYawPitchSendDeadzoneDeg,
+            float inputAimPointSendDeadzoneMeters,
+            int matchSceneSlotSpacingX,
+            float matchSceneValidationTimeout,
+            int matchEndGameDelayMilliseconds,
+            float matchDurationSeconds)
         {
             MaxPlayersForFindRoom = maxPlayersForFindRoom > 0 ? maxPlayersForFindRoom : 1;
             FindRoomSeconds = findRoomSeconds > 0 ? findRoomSeconds : 60;
@@ -106,6 +115,17 @@ namespace Game.Scripts.Server
             ProjectileBallistics.preferHighArc = projectilePreferHighArc;
             ProjectileBallistics.debugBallisticTrajectory = projectileDebugBallisticTrajectory;
             ProjectileBallistics.Validate();
+
+            VehicleInputSync.sendInterval = inputSendInterval;
+            VehicleInputSync.yawPitchSendDeadzoneDeg = inputYawPitchSendDeadzoneDeg;
+            VehicleInputSync.aimPointSendDeadzoneMeters = inputAimPointSendDeadzoneMeters;
+            VehicleInputSync.Validate();
+
+            MatchScene.sceneSlotSpacingX = matchSceneSlotSpacingX;
+            MatchScene.sceneValidationTimeout = matchSceneValidationTimeout;
+            MatchScene.endGameDelayMilliseconds = matchEndGameDelayMilliseconds;
+            MatchScene.matchDurationSeconds = matchDurationSeconds;
+            MatchScene.Validate();
 
             IsLoaded = true;
         }

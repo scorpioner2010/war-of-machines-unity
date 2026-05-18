@@ -1,4 +1,5 @@
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.Client;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -10,13 +11,12 @@ namespace Game.Scripts.Gameplay.Robots
 
         public VehicleRoot vehicleRoot;
         public LayerMask acquireMask = ~0;
-        public float maxAcquireDistance = 2000f;
-        public float fallbackTargetHeight = 1.2f;
-        public bool rejectSameTeam = true;
 
         private VehicleRoot _targetRoot;
         private Collider[] _targetArmorColliders;
+        private Collider[] _targetTurretColliders;
         private ArmorMap[] _targetArmorMaps;
+        private Transform _targetTurretTransform;
         private Vector3 _lastTargetPoint;
         private bool _controlsLocalAutoAim;
 
@@ -57,7 +57,9 @@ namespace Game.Scripts.Gameplay.Robots
         {
             _targetRoot = null;
             _targetArmorColliders = null;
+            _targetTurretColliders = null;
             _targetArmorMaps = null;
+            _targetTurretTransform = null;
             _lastTargetPoint = Vector3.zero;
         }
 
@@ -114,7 +116,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         private bool TryAcquire(Ray ray)
         {
-            float maxDistance = Mathf.Max(0.1f, maxAcquireDistance);
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            float maxDistance = Mathf.Max(0.1f, settings.autoAimMaxAcquireDistance);
             int hitCount = Physics.RaycastNonAlloc(
                 ray,
                 RaycastBuffer,
@@ -178,6 +181,10 @@ namespace Game.Scripts.Gameplay.Robots
         {
             _targetRoot = targetRoot;
             _targetArmorColliders = targetRoot.health != null ? targetRoot.health.colliders : null;
+            _targetTurretTransform = targetRoot.robotHullRotation != null ? targetRoot.robotHullRotation.transform : null;
+            _targetTurretColliders = _targetTurretTransform != null
+                ? _targetTurretTransform.GetComponentsInChildren<Collider>(true)
+                : null;
             _targetArmorMaps = targetRoot.GetComponentsInChildren<ArmorMap>(true);
             _lastTargetPoint = IsFinite(hitPoint) ? hitPoint : targetRoot.transform.position;
         }
@@ -191,10 +198,25 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            if (TryGetBoundsFromColliders(_targetArmorColliders, out Bounds bounds)
-                || TryGetBoundsFromArmorMaps(_targetArmorMaps, out bounds))
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            if (settings.autoAimPreferTurretTarget
+                && (TryGetBoundsFromColliders(_targetTurretColliders, out Bounds bounds)
+                    || TryGetBoundsFromArmorMaps(_targetArmorMaps, ArmorMap.ArmorZone.Turret, out bounds)))
             {
                 point = bounds.center;
+                return IsFinite(point);
+            }
+
+            if (settings.autoAimPreferTurretTarget && _targetTurretTransform != null)
+            {
+                point = _targetTurretTransform.position;
+                return IsFinite(point);
+            }
+
+            if (TryGetBoundsFromColliders(_targetArmorColliders, out Bounds fallbackBounds)
+                || TryGetBoundsFromArmorMaps(_targetArmorMaps, ArmorMap.ArmorZone.Auto, out fallbackBounds))
+            {
+                point = fallbackBounds.center;
                 return IsFinite(point);
             }
 
@@ -204,7 +226,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return true;
             }
 
-            point = _targetRoot.transform.position + Vector3.up * Mathf.Max(0f, fallbackTargetHeight);
+            point = _targetRoot.transform.position + Vector3.up * Mathf.Max(0f, settings.autoAimFallbackTargetHeight);
             return IsFinite(point);
         }
 
@@ -240,7 +262,7 @@ namespace Game.Scripts.Gameplay.Robots
             return hasBounds;
         }
 
-        private bool TryGetBoundsFromArmorMaps(ArmorMap[] armorMaps, out Bounds bounds)
+        private bool TryGetBoundsFromArmorMaps(ArmorMap[] armorMaps, ArmorMap.ArmorZone requiredZone, out Bounds bounds)
         {
             bounds = default;
             bool hasBounds = false;
@@ -254,6 +276,11 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 ArmorMap armorMap = armorMaps[i];
                 if (armorMap == null)
+                {
+                    continue;
+                }
+
+                if (requiredZone != ArmorMap.ArmorZone.Auto && armorMap.ResolvedArmorZone != requiredZone)
                 {
                     continue;
                 }
@@ -297,7 +324,8 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            if (!rejectSameTeam)
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            if (!settings.autoAimRejectSameTeam)
             {
                 return true;
             }

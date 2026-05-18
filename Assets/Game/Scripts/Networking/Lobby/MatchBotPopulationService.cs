@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using Game.Scripts.Core.Resources;
+using Game.Scripts.Server;
 using UnityEngine;
 
 namespace Game.Scripts.Networking.Lobby
 {
     public sealed class MatchBotPopulationService
     {
-        private const int BotMmr = 1000;
-        private const string BotNamePrefix = "Bot ";
-
         public void AddBots(ServerRoom room, int requestedBotCount, string defaultVehicleCode)
         {
             if (room == null || requestedBotCount <= 0)
@@ -31,6 +29,8 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             Shuffle(vehicleCodes);
+            int botMmr = ServerSettings.GetBotMmr();
+            string botNamePrefix = ServerSettings.GetBotNamePrefix();
 
             for (int i = 0; i < botsToAdd; i++)
             {
@@ -41,11 +41,11 @@ namespace Game.Scripts.Networking.Lobby
 
                 Player bot = new Player
                 {
-                    loginName = BuildBotName(room),
+                    loginName = BuildBotName(room, botNamePrefix),
                     Connection = null,
                     token = string.Empty,
                     userId = 0,
-                    mmr = BotMmr,
+                    mmr = botMmr,
                     activeVehicleId = 0,
                     activeVehicleCode = vehicleCodes[i % vehicleCodes.Count],
                     team = MatchTeam.None,
@@ -112,12 +112,17 @@ namespace Game.Scripts.Networking.Lobby
             }
         }
 
-        private static string BuildBotName(ServerRoom room)
+        private static string BuildBotName(ServerRoom room, string botNamePrefix)
         {
+            if (string.IsNullOrEmpty(botNamePrefix))
+            {
+                botNamePrefix = "Bot ";
+            }
+
             int index = 1;
             while (index < 10000)
             {
-                string candidate = BotNamePrefix + index;
+                string candidate = botNamePrefix + index;
                 if (room.GetPlayerByName(candidate) == null)
                 {
                     return candidate;
@@ -126,7 +131,7 @@ namespace Game.Scripts.Networking.Lobby
                 index++;
             }
 
-            return BotNamePrefix + Random.Range(10000, 99999);
+            return botNamePrefix + Random.Range(10000, 99999);
         }
     }
 }

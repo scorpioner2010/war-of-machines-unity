@@ -364,11 +364,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 2321927772602250882}
-  smoothSpeed: 20
-  hideWhenBehindCamera: 1
-  clampToCanvas: 1
-  hideWhenAngleGreaterThan: 90
-  showServerReticle: 1
 --- !u!114 &8224641798986285655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -667,10 +662,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 2321927772602250882}
   isActive: 0
-  displaySpeedMultiplier: 10
-  speedSampleInterval: 0.12
-  speedSmoothRate: 8
-  stopSnapThreshold: 0.05
 --- !u!143 &1699867880869822920
 CharacterController:
   m_ObjectHideFlags: 0
@@ -889,23 +880,6 @@ MonoBehaviour:
   vehicleRoot: {fileID: 0}
   rig: {fileID: 6688549383904352704}
   distance: 7
-  aimDistance: 6
-  sniperDistance: 0.25
-  sniperCameraFromMuzzle: 1
-  sniperForwardOffset: 0.15
-  sniperVerticalOffset: 0
-  xSpeed: 120
-  ySpeed: 120
-  normalFov: 60
-  aimFov: 45
-  sniperFov: 24
-  fovLerpSpeed: 10
-  cameraLerpSpeed: 12
-  scrollDeadZone: 0.001
-  aimZoomDistances:
-  - 6
-  - 4
-  - 2.5
 --- !u!1 &2414172230721072739
 GameObject:
   m_ObjectHideFlags: 0
@@ -2355,10 +2329,6 @@ MonoBehaviour:
   hoverMask:
     serializedVersion: 2
     m_Bits: 64
-  maxHoverDistance: 2000
-  outlineWidth: 3
-  outlineColor: {r: 1, g: 0, b: 0, a: 1}
-  rejectSameTeam: 1
 --- !u!1 &7503567715314216954
 GameObject:
   m_ObjectHideFlags: 0

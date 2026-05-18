@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Scripts.Client;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Rendering;
 using UnityEngine;
@@ -14,10 +15,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         public VehicleRoot vehicleRoot;
         public LayerMask hoverMask = ~0;
-        [Min(0.1f)] public float maxHoverDistance = 2000f;
-        [Min(1f)] public float outlineWidth = 3f;
-        public Color outlineColor = Color.red;
-        public bool rejectSameTeam = true;
 
         private readonly List<Renderer> _targetRenderers = new List<Renderer>(64);
         private readonly List<int> _targetSubMeshCounts = new List<int>(64);
@@ -54,13 +51,14 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (_outlined)
             {
+                GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
                 EnsureOutlineRenderers();
                 ScreenSpaceHoverOutlineFeature.SetTarget(
                     this,
                     _targetRenderers,
                     _targetSubMeshCounts,
-                    outlineColor,
-                    outlineWidth
+                    settings.hoverOutlineColor,
+                    settings.hoverOutlineWidth
                 );
                 return;
             }
@@ -130,7 +128,8 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            float maxDistance = Mathf.Max(0.1f, maxHoverDistance);
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            float maxDistance = Mathf.Max(0.1f, settings.hoverOutlineMaxDistance);
             int hitCount = Physics.RaycastNonAlloc(
                 ray,
                 RaycastBuffer,
@@ -195,8 +194,6 @@ namespace Game.Scripts.Gameplay.Robots
                 targetOutline.SetVehicleRoot(targetRoot);
             }
 
-            targetOutline.outlineColor = outlineColor;
-            targetOutline.outlineWidth = outlineWidth;
             return targetOutline;
         }
 
@@ -275,7 +272,8 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            if (!rejectSameTeam)
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            if (!settings.hoverOutlineRejectSameTeam)
             {
                 return true;
             }

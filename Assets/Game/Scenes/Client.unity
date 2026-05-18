@@ -12146,7 +12146,6 @@ MonoBehaviour:
   scenes: 00000000
   gameplayTimerPrefab: {fileID: 5805746888609840445, guid: 91566732414fc37489fd74a6230dc973,
     type: 3}
-  sceneSlotSpacingX: 500
 --- !u!4 &1510332973
 Transform:
   m_ObjectHideFlags: 0
@@ -20840,6 +20839,107 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &910010000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 910010000002}
+  - component: {fileID: 910010000003}
+  m_Layer: 0
+  m_Name: ClientSettings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &910010000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910010000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &910010000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910010000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9a8d3fce3e54a85a599665c3f5874e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameplayRuntime:
+    alliedHpColor: {r: 1, g: 0.08, b: 0.04, a: 1}
+    enemyHpColor: {r: 0.1, g: 0.35, b: 1, a: 1}
+    hpTeamColorRefreshInterval: 0.25
+    ownerHealthBarSmoothSpeed: 10
+    mapAllyIconColor: {r: 0.1, g: 0.35, b: 1, a: 1}
+    mapEnemyIconColor: {r: 1, g: 0.08, b: 0.04, a: 1}
+    mapDestroyedIconColor: {r: 0, g: 0, b: 0, a: 1}
+    mapRotateIcons: 1
+    mapTrackedVehicleIconScale: 0.8
+    mapTrackedVehicleRefreshInterval: 0.5
+    mapFullMapKey: 109
+    autoAimMaxAcquireDistance: 2000
+    autoAimFallbackTargetHeight: 1.2
+    autoAimRejectSameTeam: 1
+    autoAimPreferTurretTarget: 1
+    cameraAimDistance: 6
+    cameraSniperDistance: 0.25
+    cameraSniperFromMuzzle: 1
+    cameraSniperForwardOffset: 0.15
+    cameraSniperVerticalOffset: 0
+    cameraHorizontalSpeed: 120
+    cameraVerticalSpeed: 120
+    cameraMinPitch: -20
+    cameraMaxPitch: 80
+    cameraNormalFov: 60
+    cameraAimFov: 45
+    cameraSniperFov: 24
+    cameraFovLerpSpeed: 10
+    cameraDistanceLerpSpeed: 12
+    cameraScrollDeadZone: 0.001
+    cameraAimZoomDistances:
+    - 6
+    - 4
+    - 2.5
+    aimReadyColor: {r: 0.5, g: 1, b: 0.5, a: 1}
+    aimProgressColor: {r: 1, g: 0.86, b: 0.2, a: 1}
+    aimReadyText: AIM READY
+    aimProgressTextPrefix: 'AIM '
+    reticleFallbackSmoothSpeed: 20
+    reticleHideWhenBehindCamera: 1
+    reticleClampToCanvas: 1
+    reticleHideWhenAngleGreaterThan: 90
+    reticleShowServerReticle: 1
+    hoverOutlineMaxDistance: 2000
+    hoverOutlineWidth: 3
+    hoverOutlineColor: {r: 1, g: 0, b: 0, a: 1}
+    hoverOutlineRejectSameTeam: 1
+    speedHudDisplaySpeedMultiplier: 10
+    speedHudSampleInterval: 0.12
+    speedHudSmoothRate: 8
+    speedHudStopSnapThreshold: 0.05
+    shotResultVisibleTime: 4
+    floatingDamageTextDuration: 0.8
+    floatingDamageTextMoveUp: 1.5
+    floatingDamageTextEndScale: 1.3
+    sniperScopeOverlayFadeDuration: 0.18
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -20854,3 +20954,4 @@ SceneRoots:
   - {fileID: 728920639}
   - {fileID: 1751021264}
   - {fileID: 1766321692}
+  - {fileID: 910010000002}

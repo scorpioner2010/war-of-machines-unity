@@ -3,6 +3,7 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Game.Scripts.AI.WaypointGraph;
 using Game.Scripts.MenuController;
+using Game.Scripts.Server;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -25,7 +26,6 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly SyncVar<bool> _animShoot = new(false);
         private readonly SyncVar<bool> _animAction = new(false);
 
-        private const float SendInterval = 0.05f;
         private float _nextSendTime;
 
         private int _seq;
@@ -40,9 +40,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private float _turretYawLocal;
         private float _gunPitchLocal;
-
-        private const float YawPitchSendDeadzoneDeg = 0.03f;
-        private const float AimPointSendDeadzoneSqr = 0.02f * 0.02f;
 
         private bool _controlsBlocked;
 
@@ -302,9 +299,12 @@ namespace Game.Scripts.Gameplay.Robots
 
             float lastYawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
             float lastPitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
+            VehicleInputSyncSettings inputSync = GetInputSyncSettings();
+            float yawPitchDeadzone = Mathf.Max(0f, inputSync.yawPitchSendDeadzoneDeg);
+            float aimPointDeadzoneSqr = inputSync.GetAimPointSendDeadzoneSqr();
 
-            bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= YawPitchSendDeadzoneDeg;
-            bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= YawPitchSendDeadzoneDeg;
+            bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= yawPitchDeadzone;
+            bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= yawPitchDeadzone;
 
             if (!yawBeyond)
             {
@@ -321,7 +321,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _lastSentAction != newAction ||
                 _lastSentYawQ != yawQ ||
                 _lastSentPitchQ != pitchQ ||
-                (_lastSentAimPoint - aimPoint).sqrMagnitude > AimPointSendDeadzoneSqr;
+                (_lastSentAimPoint - aimPoint).sqrMagnitude > aimPointDeadzoneSqr;
 
             if (Time.unscaledTime >= _nextSendTime || changed)
             {
@@ -344,7 +344,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _lastSentYawQ = yawQ;
                 _lastSentPitchQ = pitchQ;
                 _lastSentAimPoint = aimPoint;
-                _nextSendTime = Time.unscaledTime + SendInterval;
+                _nextSendTime = Time.unscaledTime + Mathf.Max(0.001f, inputSync.sendInterval);
             }
         }
 
@@ -474,6 +474,21 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 autoAimController = vehicleRoot.GetComponentInChildren<VehicleAutoAimController>(true);
             }
+        }
+
+        private VehicleInputSyncSettings GetInputSyncSettings()
+        {
+            if (IsServerInitialized)
+            {
+                return ServerSettings.GetVehicleInputSync();
+            }
+
+            if (RemoteServerSettings.IsLoaded)
+            {
+                return RemoteServerSettings.VehicleInputSync;
+            }
+
+            return VehicleInputSyncSettings.Default;
         }
 
         private void ApplyLocalAimTargets(float yawDeg, float pitchDeg)

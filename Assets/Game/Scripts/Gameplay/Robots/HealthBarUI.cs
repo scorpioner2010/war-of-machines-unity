@@ -1,15 +1,17 @@
 using Game.Scripts.Core.Services;
+using Game.Scripts.Client;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Game.Scripts.Gameplay.Robots
 {
     public class HealthBarUI : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
-        public float smoothSpeed = 10f;
 
         private float _display01;
         private HealthBar _healthBar;
+        private Image _fillImage;
         private bool _active;
 
         public void SetVehicleRoot(VehicleRoot root)
@@ -41,6 +43,8 @@ namespace Game.Scripts.Gameplay.Robots
             float cur01 = Mathf.Clamp01(vehicleRoot.health.Current / Mathf.Max(1f, vehicleRoot.health.maxHealth));
             _display01 = cur01;
             _healthBar.slider.value = _display01;
+            CacheFillImage();
+            ApplyHealthColor();
             RefreshLabel();
 
             _active = true;
@@ -54,6 +58,8 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             float target01 = Mathf.Clamp01(vehicleRoot.health.Current / Mathf.Max(1f, vehicleRoot.health.maxHealth));
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            float smoothSpeed = settings.ownerHealthBarSmoothSpeed;
 
             if (smoothSpeed > 0f)
             {
@@ -66,6 +72,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _healthBar.slider.value = _display01;
+            ApplyHealthColor();
             RefreshLabel();
         }
 
@@ -74,6 +81,26 @@ namespace Game.Scripts.Gameplay.Robots
             int cur = Mathf.RoundToInt(vehicleRoot.health.Current);
             int max = Mathf.RoundToInt(vehicleRoot.health.maxHealth);
             _healthBar.label.text = $"{cur} / {max}";
+        }
+
+        private void ApplyHealthColor()
+        {
+            if (_fillImage == null)
+            {
+                return;
+            }
+
+            _fillImage.color = GameplayRuntimeSettingsProvider.Get().alliedHpColor;
+        }
+
+        private void CacheFillImage()
+        {
+            if (_healthBar == null || _healthBar.slider == null || _healthBar.slider.fillRect == null)
+            {
+                return;
+            }
+
+            _fillImage = _healthBar.slider.fillRect.GetComponent<Image>();
         }
     }
 }

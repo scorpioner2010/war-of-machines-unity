@@ -1,3 +1,4 @@
+using Game.Scripts.Client;
 using Game.Scripts.UI.Robots;
 using UnityEngine;
 
@@ -7,10 +8,6 @@ namespace Game.Scripts.Gameplay.Robots
     {
         public VehicleRoot vehicleRoot;
         public bool isActive;
-        [SerializeField] private float displaySpeedMultiplier = 10f;
-        [SerializeField] private float speedSampleInterval = 0.12f;
-        [SerializeField] private float speedSmoothRate = 8f;
-        [SerializeField] private float stopSnapThreshold = 0.05f;
 
         private Vector3 _prevPos;
         private float _sampleDistance;
@@ -64,13 +61,14 @@ namespace Game.Scripts.Gameplay.Robots
             _sampleDistance += delta.magnitude;
             _sampleTime += Time.deltaTime;
 
-            float sampleInterval = Mathf.Max(0.02f, speedSampleInterval);
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            float sampleInterval = Mathf.Max(0.02f, settings.speedHudSampleInterval);
             if (_sampleTime >= sampleInterval)
             {
                 float speed = _sampleDistance / Mathf.Max(_sampleTime, 0.0001f);
-                _targetDisplaySpeed = speed * Mathf.Max(0f, displaySpeedMultiplier);
+                _targetDisplaySpeed = speed * Mathf.Max(0f, settings.speedHudDisplaySpeedMultiplier);
 
-                if (_targetDisplaySpeed < stopSnapThreshold)
+                if (_targetDisplaySpeed < settings.speedHudStopSnapThreshold)
                 {
                     _targetDisplaySpeed = 0f;
                 }
@@ -79,11 +77,11 @@ namespace Game.Scripts.Gameplay.Robots
                 _sampleTime = 0f;
             }
 
-            float smoothRate = Mathf.Max(0.01f, speedSmoothRate);
+            float smoothRate = Mathf.Max(0.01f, settings.speedHudSmoothRate);
             float tSmooth = 1f - Mathf.Exp(-smoothRate * Time.deltaTime);
             _smoothedDisplaySpeed = Mathf.Lerp(_smoothedDisplaySpeed, _targetDisplaySpeed, tSmooth);
 
-            if (_targetDisplaySpeed <= 0f && _smoothedDisplaySpeed < stopSnapThreshold)
+            if (_targetDisplaySpeed <= 0f && _smoothedDisplaySpeed < settings.speedHudStopSnapThreshold)
             {
                 _smoothedDisplaySpeed = 0f;
             }

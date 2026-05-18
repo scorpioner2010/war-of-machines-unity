@@ -49,6 +49,8 @@ MonoBehaviour:
   botsEnabled: 1
   botsPerMatch: 20
   defaultBotVehicleCode: ia_l1_starter
+  botMmr: 1000
+  botNamePrefix: 'Bot '
   botWander:
     thinkInterval: 0.25
     minMoveDuration: 1.2
@@ -119,3 +121,12 @@ MonoBehaviour:
     useBallisticCompensation: 1
     preferHighArc: 0
     debugBallisticTrajectory: 0
+  vehicleInputSync:
+    sendInterval: 0.05
+    yawPitchSendDeadzoneDeg: 0.03
+    aimPointSendDeadzoneMeters: 0.02
+  matchScene:
+    sceneSlotSpacingX: 500
+    sceneValidationTimeout: 10
+    endGameDelayMilliseconds: 2000
+    matchDurationSeconds: 300

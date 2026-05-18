@@ -8,6 +8,7 @@ using FishNet.Transporting;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
+using Game.Scripts.Server;
 using Game.Scripts.UI.Lobby;
 using Game.Scripts.UI.MainMenu;
 using UnityEngine;
@@ -28,26 +29,21 @@ namespace Game.Scripts.Networking.Lobby
         public GameMaps[] scenes;
         public NetworkGameplayTimer gameplayTimerPrefab;
 
-        [SerializeField] private int sceneSlotSpacingX = 500;
-
         private readonly MatchSceneOffsetService _sceneOffsetService = new MatchSceneOffsetService();
         private readonly MatchVehicleSpawner _vehicleSpawner = new MatchVehicleSpawner();
         private readonly Dictionary<int, int> _sceneSlotsByHandle = new Dictionary<int, int>();
         private readonly Dictionary<int, ServerRoom> _roomsBySceneHandle = new Dictionary<int, ServerRoom>();
         private MatchSceneSlotAllocator _sceneSlotAllocator;
-        private const float SceneValidationTimeout = 10f;
-        private const int EndGameDelayMilliseconds = 2000;
-        private const int DefaultSceneSlotSpacingX = 500;
 
         private void Awake()
         {
             In = this;
-            _sceneSlotAllocator = new MatchSceneSlotAllocator(GetSceneSlotSpacing());
         }
 
         public override void OnStartServer()
         {
             base.OnStartServer();
+            _sceneSlotAllocator = new MatchSceneSlotAllocator(GetSceneSlotSpacing());
             SceneManager.OnLoadEnd += HandleServerLoadEnd;
             SceneManager.OnUnloadEnd += SceneManagerOnUnloadEnd;
             ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
@@ -496,7 +492,7 @@ namespace Game.Scripts.Networking.Lobby
                 serverRoom,
                 player,
                 roomScene,
-                SceneValidationTimeout,
+                GetSceneValidationTimeout(),
                 ServerManager,
                 vehicleRoot =>
                 {
@@ -516,7 +512,7 @@ namespace Game.Scripts.Networking.Lobby
                 serverRoom,
                 connection,
                 roomScene,
-                SceneValidationTimeout,
+                GetSceneValidationTimeout(),
                 ServerManager,
                 vehicleRoot =>
                 {
@@ -694,7 +690,7 @@ namespace Game.Scripts.Networking.Lobby
 
         private async UniTask ShowEndGameDelayed(EndGameResult result)
         {
-            await UniTask.Delay(EndGameDelayMilliseconds, cancellationToken: this.GetCancellationTokenOnDestroy());
+            await UniTask.Delay(GetEndGameDelayMilliseconds(), cancellationToken: this.GetCancellationTokenOnDestroy());
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -737,12 +733,22 @@ namespace Game.Scripts.Networking.Lobby
 
         private int GetSceneSlotSpacing()
         {
-            if (sceneSlotSpacingX > 0)
+            return ServerSettings.GetMatchScene().sceneSlotSpacingX;
+        }
+
+        private float GetSceneValidationTimeout()
+        {
+            return ServerSettings.GetMatchScene().sceneValidationTimeout;
+        }
+
+        private int GetEndGameDelayMilliseconds()
+        {
+            if (IsServerInitialized)
             {
-                return sceneSlotSpacingX;
+                return ServerSettings.GetMatchScene().endGameDelayMilliseconds;
             }
 
-            return DefaultSceneSlotSpacingX;
+            return RemoteServerSettings.MatchScene.endGameDelayMilliseconds;
         }
 
     }

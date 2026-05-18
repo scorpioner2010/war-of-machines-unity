@@ -677,7 +677,6 @@ MonoBehaviour:
   scenes: 00000000
   gameplayTimerPrefab: {fileID: 5805746888609840445, guid: 91566732414fc37489fd74a6230dc973,
     type: 3}
-  sceneSlotSpacingX: 500
 --- !u!4 &1510332973
 Transform:
   m_ObjectHideFlags: 0

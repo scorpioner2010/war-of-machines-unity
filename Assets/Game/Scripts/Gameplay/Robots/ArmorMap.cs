@@ -24,6 +24,8 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _resolvedArmorZoneCached;
         private ArmorZone _resolvedArmorZone;
 
+        public ArmorZone ResolvedArmorZone => ResolveArmorZone();
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;

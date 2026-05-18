@@ -1,4 +1,5 @@
 using System.Collections;
+using Game.Scripts.Client;
 using TMPro;
 using UnityEngine;
 
@@ -10,7 +11,6 @@ namespace Game.Scripts.UI.HUD
         public Transform ShotResultTextTransform => isPenetrationText != null ? isPenetrationText.transform : null;
         
         [SerializeField] private TMP_Text isPenetrationText;
-        [SerializeField] private float shotResultVisibleTime = 4f;
 
         private Coroutine _shotResultRoutine;
 
@@ -47,7 +47,8 @@ namespace Game.Scripts.UI.HUD
         private IEnumerator ShowShotResultRoutine(string message)
         {
             isPenetrationText.text = message;
-            yield return new WaitForSeconds(shotResultVisibleTime);
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            yield return new WaitForSeconds(settings.shotResultVisibleTime);
             isPenetrationText.text = string.Empty;
             _shotResultRoutine = null;
         }

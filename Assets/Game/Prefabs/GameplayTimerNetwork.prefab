@@ -116,5 +116,4 @@ MonoBehaviour:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: 427714077869306214}
   _networkObjectCache: {fileID: 427714077869306214}
-  startTime: 300
   networkObject: {fileID: 427714077869306214}

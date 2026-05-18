@@ -357,6 +357,128 @@ namespace Game.Scripts.Server
         }
     }
 
+    [System.Serializable]
+    public class VehicleInputSyncSettings
+    {
+        private static readonly VehicleInputSyncSettings DefaultSettings = new VehicleInputSyncSettings();
+
+        [Header("Відправка інпуту")]
+        [Tooltip("Максимальна пауза між пакетами керування від власника машини до сервера, якщо інпут не змінюється.")]
+        public float sendInterval = 0.05f;
+        [Tooltip("Мінімальна зміна yaw/pitch у градусах, після якої клієнт відправляє новий напрямок прицілювання.")]
+        public float yawPitchSendDeadzoneDeg = 0.03f;
+        [Tooltip("Мінімальна зміна точки прицілювання в метрах, після якої клієнт відправляє нову точку.")]
+        public float aimPointSendDeadzoneMeters = 0.02f;
+
+        public static VehicleInputSyncSettings Default
+        {
+            get
+            {
+                return DefaultSettings;
+            }
+        }
+
+        public float GetAimPointSendDeadzoneSqr()
+        {
+            float value = Mathf.Max(0f, aimPointSendDeadzoneMeters);
+            return value * value;
+        }
+
+        public void Validate()
+        {
+            sendInterval = ClampFinite(sendInterval, 0.001f, Default.sendInterval);
+            yawPitchSendDeadzoneDeg = ClampFinite(yawPitchSendDeadzoneDeg, 0f, Default.yawPitchSendDeadzoneDeg);
+            aimPointSendDeadzoneMeters = ClampFinite(aimPointSendDeadzoneMeters, 0f, Default.aimPointSendDeadzoneMeters);
+        }
+
+        public void CopyFrom(VehicleInputSyncSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            sendInterval = source.sendInterval;
+            yawPitchSendDeadzoneDeg = source.yawPitchSendDeadzoneDeg;
+            aimPointSendDeadzoneMeters = source.aimPointSendDeadzoneMeters;
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+    }
+
+    [System.Serializable]
+    public class MatchSceneGlobalSettings
+    {
+        private static readonly MatchSceneGlobalSettings DefaultSettings = new MatchSceneGlobalSettings();
+
+        [Header("Сцени матчів")]
+        [Tooltip("Відстань по X між одночасно завантаженими інстансами бойових сцен на сервері.")]
+        public int sceneSlotSpacingX = 500;
+        [Tooltip("Скільки секунд сервер чекає валідну бойову сцену перед скасуванням спавну машини.")]
+        public float sceneValidationTimeout = 10f;
+        [Tooltip("Затримка перед показом екрана результату після завершення бою, у мілісекундах.")]
+        public int endGameDelayMilliseconds = 2000;
+        [Tooltip("Тривалість матчу в секундах до автоматичного завершення нічиєю.")]
+        public float matchDurationSeconds = 300f;
+
+        public static MatchSceneGlobalSettings Default
+        {
+            get
+            {
+                return DefaultSettings;
+            }
+        }
+
+        public void Validate()
+        {
+            sceneSlotSpacingX = Mathf.Max(1, sceneSlotSpacingX);
+            sceneValidationTimeout = ClampFinite(sceneValidationTimeout, 0.1f, Default.sceneValidationTimeout);
+            endGameDelayMilliseconds = Mathf.Max(0, endGameDelayMilliseconds);
+            matchDurationSeconds = ClampFinite(matchDurationSeconds, 1f, Default.matchDurationSeconds);
+        }
+
+        public void CopyFrom(MatchSceneGlobalSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            sceneSlotSpacingX = source.sceneSlotSpacingX;
+            sceneValidationTimeout = source.sceneValidationTimeout;
+            endGameDelayMilliseconds = source.endGameDelayMilliseconds;
+            matchDurationSeconds = source.matchDurationSeconds;
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+    }
+
     public class ServerSettings : MonoBehaviour
     {
         public static ServerSettings In;
@@ -372,6 +494,10 @@ namespace Game.Scripts.Server
         [Min(0)] public int botsPerMatch = 6;
         [Tooltip("Код машини, яку отримують боти за замовчуванням.")]
         public string defaultBotVehicleCode = "ia_l1_starter";
+        [Tooltip("MMR, який отримують серверні боти під час створення матчу.")]
+        public int botMmr = 1000;
+        [Tooltip("Префікс імені для серверних ботів у матчі.")]
+        public string botNamePrefix = "Bot ";
         [Tooltip("Налаштування поведінки ботів під час руху по карті.")]
         public BotWanderSettings botWander = new BotWanderSettings();
         [Tooltip("Глобальні серверні налаштування руху машин.")]
@@ -380,6 +506,10 @@ namespace Game.Scripts.Server
         public GunDispersionGlobalSettings gunDispersion = new GunDispersionGlobalSettings();
         [Tooltip("Глобальні серверні налаштування балістики снарядів.")]
         public ProjectileBallisticsGlobalSettings projectileBallistics = new ProjectileBallisticsGlobalSettings();
+        [Tooltip("Глобальні налаштування частоти й порогів синхронізації інпуту техніки.")]
+        public VehicleInputSyncSettings vehicleInputSync = new VehicleInputSyncSettings();
+        [Tooltip("Глобальні налаштування завантаження бойових сцен і показу результатів матчу.")]
+        public MatchSceneGlobalSettings matchScene = new MatchSceneGlobalSettings();
         
         private void Awake()
         {
@@ -437,6 +567,26 @@ namespace Game.Scripts.Server
             return string.IsNullOrEmpty(In.defaultBotVehicleCode) ? string.Empty : In.defaultBotVehicleCode;
         }
 
+        public static int GetBotMmr()
+        {
+            if (In == null || In.botMmr < 0)
+            {
+                return 1000;
+            }
+
+            return In.botMmr;
+        }
+
+        public static string GetBotNamePrefix()
+        {
+            if (In == null || string.IsNullOrEmpty(In.botNamePrefix))
+            {
+                return "Bot ";
+            }
+
+            return In.botNamePrefix;
+        }
+
         public static BotWanderSettings GetBotWander()
         {
             if (In == null || In.botWander == null)
@@ -481,6 +631,28 @@ namespace Game.Scripts.Server
             return In.projectileBallistics;
         }
 
+        public static VehicleInputSyncSettings GetVehicleInputSync()
+        {
+            if (In == null || In.vehicleInputSync == null)
+            {
+                return VehicleInputSyncSettings.Default;
+            }
+
+            In.vehicleInputSync.Validate();
+            return In.vehicleInputSync;
+        }
+
+        public static MatchSceneGlobalSettings GetMatchScene()
+        {
+            if (In == null || In.matchScene == null)
+            {
+                return MatchSceneGlobalSettings.Default;
+            }
+
+            In.matchScene.Validate();
+            return In.matchScene;
+        }
+
         private void ValidateSettings()
         {
             if (maxPlayersForFindRoom < 1)
@@ -496,6 +668,16 @@ namespace Game.Scripts.Server
             if (botsPerMatch < 0)
             {
                 botsPerMatch = 0;
+            }
+
+            if (botMmr < 0)
+            {
+                botMmr = 0;
+            }
+
+            if (string.IsNullOrEmpty(botNamePrefix))
+            {
+                botNamePrefix = "Bot ";
             }
 
             if (botWander != null)
@@ -516,6 +698,16 @@ namespace Game.Scripts.Server
             if (projectileBallistics != null)
             {
                 projectileBallistics.Validate();
+            }
+
+            if (vehicleInputSync != null)
+            {
+                vehicleInputSync.Validate();
+            }
+
+            if (matchScene != null)
+            {
+                matchScene.Validate();
             }
         }
     }
