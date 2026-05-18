@@ -40,7 +40,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float cur01 = Mathf.Clamp01(vehicleRoot.health.Current / Mathf.Max(1f, vehicleRoot.health.maxHealth));
+            float cur01 = Mathf.Clamp01(vehicleRoot.health.Current / vehicleRoot.health.MaxHealth);
             _display01 = cur01;
             _healthBar.slider.value = _display01;
             CacheFillImage();
@@ -57,7 +57,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float target01 = Mathf.Clamp01(vehicleRoot.health.Current / Mathf.Max(1f, vehicleRoot.health.maxHealth));
+            float target01 = Mathf.Clamp01(vehicleRoot.health.Current / vehicleRoot.health.MaxHealth);
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
             float smoothSpeed = settings.ownerHealthBarSmoothSpeed;
 
@@ -79,7 +79,7 @@ namespace Game.Scripts.Gameplay.Robots
         private void RefreshLabel()
         {
             int cur = Mathf.RoundToInt(vehicleRoot.health.Current);
-            int max = Mathf.RoundToInt(vehicleRoot.health.maxHealth);
+            int max = Mathf.RoundToInt(vehicleRoot.health.MaxHealth);
             _healthBar.label.text = $"{cur} / {max}";
         }
 

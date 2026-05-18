@@ -13,6 +13,7 @@ namespace Game.Scripts.Gameplay.Robots
         [Min(1f)] public float maxHealth = 100f;
 
         public Action<float, float, float> OnDamaged;
+        public Action<float, float> OnHealthChanged;
         public Action<VehicleHealth> OnServerDeath;
         public UnityEvent onDeath;
 
@@ -20,6 +21,10 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly SyncVar<bool> _dead = new();
 
         public Collider[] colliders;
+        private bool _hasObservedHealth;
+        private float _observedHealth;
+        private bool _hasAppliedSyncHealth;
+        private float _appliedSyncHealth;
 
         [Button]
         private void FindArmorColliders()
@@ -39,7 +44,29 @@ namespace Game.Scripts.Gameplay.Robots
             colliders = list.ToArray();
         }
         
-        public float Current => _hp.Value;
+        public float Current
+        {
+            get
+            {
+                PullSyncHealthIfChanged();
+
+                float max = MaxHealth;
+
+                if (_dead.Value)
+                {
+                    return 0f;
+                }
+
+                if (_hasObservedHealth)
+                {
+                    return Mathf.Clamp(_observedHealth, 0f, max);
+                }
+
+                return max;
+            }
+        }
+
+        public float MaxHealth => Mathf.Max(1f, maxHealth);
         public bool IsDead => _dead.Value;
 
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
@@ -56,6 +83,17 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 float ratio = _hp.Value > 0f ? Mathf.Clamp01(_hp.Value / oldMax) : 1f;
                 _hp.Value = Mathf.Clamp(maxHealth * ratio, 1f, maxHealth);
+                SetObservedHealth(_hp.Value, maxHealth, true);
+            }
+            else if (!_dead.Value)
+            {
+                float sourceHealth = _hasObservedHealth
+                    ? _observedHealth
+                    : _hp.Value > 0f
+                        ? _hp.Value
+                        : oldMax;
+                float ratio = Mathf.Clamp01(sourceHealth / oldMax);
+                SetObservedHealth(maxHealth * ratio, maxHealth);
             }
         }
 
@@ -63,11 +101,34 @@ namespace Game.Scripts.Gameplay.Robots
         {
             _hp.Value = Mathf.Max(1f, maxHealth);
             _dead.Value = false;
+            SetObservedHealth(_hp.Value, maxHealth, true);
         }
 
         public override void OnStartClient()
         {
+            _hp.OnChange += OnHpSyncChanged;
+            _dead.OnChange += OnDeadSyncChanged;
+            if (_dead.Value)
+            {
+                SetObservedHealth(0f, maxHealth, true);
+            }
+            else if (_hp.Value > 0f)
+            {
+                SetObservedHealth(_hp.Value, maxHealth, true);
+            }
+            else if (!_hasObservedHealth)
+            {
+                SetObservedHealth(maxHealth, maxHealth);
+            }
+
             SetCollidersEnabled(!_dead.Value);
+        }
+
+        public override void OnStopClient()
+        {
+            _hp.OnChange -= OnHpSyncChanged;
+            _dead.OnChange -= OnDeadSyncChanged;
+            base.OnStopClient();
         }
 
         [Server]
@@ -81,6 +142,7 @@ namespace Game.Scripts.Gameplay.Robots
             float old = _hp.Value;
             float newHp = Mathf.Max(0f, old - dmg);
             _hp.Value = newHp;
+            SetObservedHealth(_hp.Value, maxHealth, true);
 
             DamagedObserversRpc(dmg, _hp.Value, maxHealth);
 
@@ -101,6 +163,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             float old = _hp.Value;
             _hp.Value = 0f;
+            SetObservedHealth(0f, maxHealth, true);
             DamagedObserversRpc(old, _hp.Value, maxHealth);
             _dead.Value = true;
             DeathServer();
@@ -133,13 +196,92 @@ namespace Game.Scripts.Gameplay.Robots
         [ObserversRpc(BufferLast = false)]
         private void DamagedObserversRpc(float dmg, float newHp, float maxHp)
         {
+            SetObservedHealth(newHp, maxHp);
             OnDamaged?.Invoke(dmg, newHp, maxHp);
         }
 
         [ObserversRpc(BufferLast = false)]
         private void DiedObserversRpc()
         {
+            SetObservedHealth(0f, maxHealth);
             onDeath?.Invoke();
+        }
+
+        private void OnHpSyncChanged(float previous, float next, bool asServer)
+        {
+            if (_dead.Value)
+            {
+                SetObservedHealth(0f, maxHealth, true);
+                return;
+            }
+
+            if (next > 0f)
+            {
+                SetObservedHealth(next, maxHealth, true);
+            }
+        }
+
+        private void OnDeadSyncChanged(bool previous, bool next, bool asServer)
+        {
+            if (next)
+            {
+                SetObservedHealth(0f, maxHealth, true);
+                SetCollidersEnabled(false);
+            }
+            else if (_hp.Value > 0f)
+            {
+                SetObservedHealth(_hp.Value, maxHealth, true);
+                SetCollidersEnabled(true);
+            }
+        }
+
+        private void SetObservedHealth(float currentHealth, float currentMaxHealth, bool fromSync = false)
+        {
+            maxHealth = Mathf.Max(1f, currentMaxHealth);
+            _observedHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+            _hasObservedHealth = true;
+
+            if (fromSync)
+            {
+                _appliedSyncHealth = _observedHealth;
+                _hasAppliedSyncHealth = true;
+            }
+
+            OnHealthChanged?.Invoke(_observedHealth, maxHealth);
+        }
+
+        private void PullSyncHealthIfChanged()
+        {
+            float max = MaxHealth;
+
+            if (_dead.Value)
+            {
+                if (!_hasAppliedSyncHealth || !Mathf.Approximately(_appliedSyncHealth, 0f))
+                {
+                    _observedHealth = 0f;
+                    _hasObservedHealth = true;
+                    _appliedSyncHealth = 0f;
+                    _hasAppliedSyncHealth = true;
+                }
+
+                return;
+            }
+
+            float syncHealth = _hp.Value;
+            if (syncHealth <= 0f)
+            {
+                return;
+            }
+
+            if (_hasAppliedSyncHealth && Mathf.Approximately(syncHealth, _appliedSyncHealth))
+            {
+                return;
+            }
+
+            _observedHealth = Mathf.Clamp(syncHealth, 0f, max);
+            _hasObservedHealth = true;
+            _appliedSyncHealth = _observedHealth;
+            _hasAppliedSyncHealth = true;
         }
     }
 }
