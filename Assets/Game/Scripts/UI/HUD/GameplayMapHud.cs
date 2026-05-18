@@ -11,19 +11,23 @@ namespace Game.Scripts.UI.HUD
         public RectTransform localPlayerIconMini;
         public RectTransform localPlayerIconFull;
         public GameObject fullMapRoot;
-        public Vector2 worldMin = new Vector2(-100f, -100f);
-        public Vector2 worldMax = new Vector2(100f, 100f);
+        public Vector2 worldMin = Vector2.zero;
+        public Vector2 worldMax = new Vector2(256f, 256f);
+        public bool useActiveTerrainBounds = true;
         public KeyCode fullMapKey = KeyCode.M;
         public bool rotateIcons = true;
 
         private VehicleRoot _localPlayer;
         private RectTransform _miniMapRect;
         private RectTransform _fullMapRect;
+        private Terrain _terrainBoundsSource;
+        private bool _terrainBoundsResolved;
         private bool _fullMapVisible;
 
         private void Awake()
         {
             CacheRects();
+            RefreshTerrainBounds();
             _fullMapVisible = true;
             SetFullMapVisible(false);
             SetIconVisible(localPlayerIconMini, false);
@@ -43,6 +47,11 @@ namespace Game.Scripts.UI.HUD
 
         private void Update()
         {
+            if (useActiveTerrainBounds && (!_terrainBoundsResolved || _terrainBoundsSource == null))
+            {
+                RefreshTerrainBounds();
+            }
+
             bool shouldShowFullMap = Input.GetKey(fullMapKey);
             SetFullMapVisible(shouldShowFullMap);
 
@@ -53,8 +62,9 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
-            Vector3 worldPosition = _localPlayer.transform.position;
-            float yaw = _localPlayer.transform.eulerAngles.y;
+            Transform trackedTransform = GetTrackedTransform(_localPlayer);
+            Vector3 worldPosition = trackedTransform.position;
+            float yaw = trackedTransform.eulerAngles.y;
 
             UpdateIcon(_miniMapRect, localPlayerIconMini, worldPosition, yaw, true);
             UpdateIcon(_fullMapRect, localPlayerIconFull, worldPosition, yaw, _fullMapVisible);
@@ -69,6 +79,16 @@ namespace Game.Scripts.UI.HUD
         {
             _miniMapRect = miniMapImage != null ? miniMapImage.rectTransform : null;
             _fullMapRect = fullMapImage != null ? fullMapImage.rectTransform : null;
+        }
+
+        private static Transform GetTrackedTransform(VehicleRoot vehicleRoot)
+        {
+            if (vehicleRoot.objectMover != null)
+            {
+                return vehicleRoot.objectMover.transform;
+            }
+
+            return vehicleRoot.transform;
         }
 
         private void UpdateIcon(
@@ -113,10 +133,38 @@ namespace Game.Scripts.UI.HUD
                 return false;
             }
 
+            float normalizedX = (worldPosition.x - worldMin.x) / width;
+            float normalizedY = (worldPosition.z - worldMin.y) / height;
             normalized = new Vector2(
-                (worldPosition.x - worldMin.x) / width,
-                (worldPosition.z - worldMin.y) / height);
+                Mathf.Clamp01(normalizedX),
+                Mathf.Clamp01(normalizedY));
             return true;
+        }
+
+        private void RefreshTerrainBounds()
+        {
+            if (!useActiveTerrainBounds)
+            {
+                return;
+            }
+
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain == null || terrain.terrainData == null)
+            {
+                return;
+            }
+
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrain.terrainData.size;
+            if (terrainSize.x <= 0.0001f || terrainSize.z <= 0.0001f)
+            {
+                return;
+            }
+
+            worldMin = new Vector2(terrainPosition.x, terrainPosition.z);
+            worldMax = new Vector2(terrainPosition.x + terrainSize.x, terrainPosition.z + terrainSize.z);
+            _terrainBoundsSource = terrain;
+            _terrainBoundsResolved = true;
         }
 
         private void SetFullMapVisible(bool visible)
