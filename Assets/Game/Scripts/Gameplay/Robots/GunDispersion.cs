@@ -7,12 +7,12 @@ namespace Game.Scripts.Gameplay.Robots
     [Serializable]
     public class GunDispersionSettings
     {
-        [Header("Aiming")]
+        [Header("Зведення")]
         public float minDispersionDeg = 0.35f;
         public float maxDispersionDeg = 6f;
         public float aimTime = 2f;
 
-        [Header("Bloom")]
+        [Header("Розширення розкиду")]
         public float movingDispersionDeg = 1.5f;
         public float hullTraverseDispersionDeg = 1.25f;
         public float turretTraverseDispersionDeg = 1.5f;
@@ -41,38 +41,56 @@ namespace Game.Scripts.Gameplay.Robots
     {
         private static readonly GunDispersionGlobalSettings DefaultSettings = new GunDispersionGlobalSettings();
 
+        [Tooltip("Увімкнути серверну систему розкиду, зведення та bloom для пострілів.")]
         public bool enabled = true;
+        [Tooltip("Час, за який коло зведення швидко розширюється після руху, повороту або пострілу. Менше значення = різкіше розширення.")]
         public float expandTime = 0.12f;
 
-        [Header("Reference Speeds")]
+        [Header("Еталонні швидкості")]
+        [Tooltip("Еталонна швидкість повороту корпусу в градусах за секунду, при якій додається повний штраф розкиду від повороту корпусу.")]
         public float referenceHullTraverseDegPerSec = 90f;
+        [Tooltip("Еталонна швидкість повороту башти в градусах за секунду, при якій додається повний штраф розкиду від повороту башти.")]
         public float referenceTurretTraverseDegPerSec = 45f;
+        [Tooltip("Еталонна швидкість вертикального руху гармати в градусах за секунду, при якій додається повний штраф розкиду від руху гармати.")]
         public float referenceGunTraverseDegPerSec = 35f;
+        [Tooltip("Еталонна швидкість руху камери/прицілу в градусах за секунду, при якій UI коло отримує штраф розкиду від різкого наведення.")]
         public float referenceCameraAimDegPerSec = 120f;
 
-        [Header("Database Accuracy")]
-        [Tooltip("Distance used by database accuracy. World of Tanks style accuracy is meters of maximum radial spread at 100 meters.")]
+        [Header("Точність із бази даних")]
+        [Tooltip("Дистанція, на якій інтерпретується точність з бази даних. Стиль World of Tanks: метри максимального радіального розкиду на 100 метрах.")]
         public float accuracyReferenceDistanceMeters = 100f;
 
-        [Header("UI")]
-        [Tooltip("Smallest possible ring diameter for a hypothetical zero-dispersion gun.")]
+        [Header("Інтерфейс")]
+        [Tooltip("Мінімальний діаметр UI-кола зведення в пікселях навіть при ідеально точній гарматі.")]
         public float uiMinDiameter = 55f;
+        [Tooltip("Максимальний діаметр UI-кола зведення в пікселях.")]
         public float uiMaxDiameter = 340f;
-        [Tooltip("How much fully aimed weapon accuracy contributes to the final ring size at maximum zoom/sniper mode.")]
+        [Tooltip("Скільки пікселів на градус точності додається до повністю зведеного кола в максимальному зумі/снайперському режимі.")]
         [FormerlySerializedAs("uiFullyAimedPixelsPerDegree")]
         public float uiFullyAimedPixelsPerDegreeAtMaxZoom = 85f;
-        [Tooltip("How much fully aimed weapon accuracy contributes to the final ring size at maximum third-person camera distance.")]
+        [Tooltip("Скільки пікселів на градус точності додається до повністю зведеного кола на максимальній дистанції камери від третьої особи.")]
         public float uiFullyAimedPixelsPerDegreeAtMaxDistance = 34f;
-        [Tooltip("How much movement/rotation/shot bloom expands the ring above fully aimed accuracy at maximum zoom/sniper mode.")]
+        [Tooltip("Скільки пікселів на градус bloom додається до кола від руху/повороту/пострілу в максимальному зумі/снайперському режимі.")]
         [FormerlySerializedAs("uiPixelsPerDegree")]
         public float uiBloomPixelsPerDegreeAtMaxZoom = 42f;
-        [Tooltip("How much movement/rotation/shot bloom expands the ring above fully aimed accuracy at maximum third-person camera distance.")]
+        [Tooltip("Скільки пікселів на градус bloom додається до кола від руху/повороту/пострілу на максимальній дистанції камери від третьої особи.")]
         public float uiBloomPixelsPerDegreeAtMaxDistance = 17f;
-        [Tooltip("Visual smoothing speed for the aiming ring diameter. 0 disables smoothing.")]
+        [Tooltip("Швидкість згладжування діаметра UI-кола зведення. 0 = діаметр змінюється миттєво.")]
         public float uiDiameterLerpSpeed = 18f;
+        [Tooltip("Швидкість, з якою UI-коло доганяє логічну точку прицілу по горизонталі. 0 = горизонталь миттєва.")]
+        public float uiReticleHorizontalLerpSpeed = 20f;
+        [Tooltip("Швидкість, з якою UI-коло доганяє логічну точку прицілу по вертикалі. 0 = вертикаль миттєва.")]
+        [FormerlySerializedAs("uiReticlePositionLerpSpeed")]
+        public float uiReticleVerticalLerpSpeed = 20f;
+        [Tooltip("Швидкість, з якою UI-коло в снайперському режимі доганяє логічну точку прицілу по горизонталі. Менше значення сильніше згладжує дрібне смикання, 0 = миттєво.")]
+        public float uiSniperReticleHorizontalLerpSpeed = 18f;
+        [Tooltip("Швидкість, з якою UI-коло в снайперському режимі доганяє логічну точку прицілу по вертикалі. Менше значення сильніше згладжує дрібне смикання, 0 = миттєво.")]
+        public float uiSniperReticleVerticalLerpSpeed = 18f;
 
-        [Header("Networking")]
+        [Header("Мережа")]
+        [Tooltip("Як часто сервер синхронізує значення розкиду з клієнтами. Менше значення = частіше оновлення, але більше мережевого трафіку.")]
         public float serverSyncInterval = 0.05f;
+        [Tooltip("Мінімальна зміна розкиду в градусах, після якої сервер відправляє оновлення клієнтам.")]
         public float serverSyncDeadZoneDeg = 0.03f;
 
         public static GunDispersionGlobalSettings Default
@@ -139,6 +157,10 @@ namespace Game.Scripts.Gameplay.Robots
             uiBloomPixelsPerDegreeAtMaxZoom = ClampFinite(uiBloomPixelsPerDegreeAtMaxZoom, 0f, Default.uiBloomPixelsPerDegreeAtMaxZoom);
             uiBloomPixelsPerDegreeAtMaxDistance = ClampFinite(uiBloomPixelsPerDegreeAtMaxDistance, 0f, Default.uiBloomPixelsPerDegreeAtMaxDistance);
             uiDiameterLerpSpeed = ClampFinite(uiDiameterLerpSpeed, 0f, Default.uiDiameterLerpSpeed);
+            uiReticleHorizontalLerpSpeed = ClampFinite(uiReticleHorizontalLerpSpeed, 0f, Default.uiReticleHorizontalLerpSpeed);
+            uiReticleVerticalLerpSpeed = ClampFinite(uiReticleVerticalLerpSpeed, 0f, Default.uiReticleVerticalLerpSpeed);
+            uiSniperReticleHorizontalLerpSpeed = ClampFinite(uiSniperReticleHorizontalLerpSpeed, 0f, Default.uiSniperReticleHorizontalLerpSpeed);
+            uiSniperReticleVerticalLerpSpeed = ClampFinite(uiSniperReticleVerticalLerpSpeed, 0f, Default.uiSniperReticleVerticalLerpSpeed);
             expandTime = ClampFinite(expandTime, 0.001f, Default.expandTime);
             referenceHullTraverseDegPerSec = ClampFinite(referenceHullTraverseDegPerSec, 0.001f, Default.referenceHullTraverseDegPerSec);
             referenceTurretTraverseDegPerSec = ClampFinite(referenceTurretTraverseDegPerSec, 0.001f, Default.referenceTurretTraverseDegPerSec);
@@ -169,6 +191,10 @@ namespace Game.Scripts.Gameplay.Robots
             uiBloomPixelsPerDegreeAtMaxZoom = source.uiBloomPixelsPerDegreeAtMaxZoom;
             uiBloomPixelsPerDegreeAtMaxDistance = source.uiBloomPixelsPerDegreeAtMaxDistance;
             uiDiameterLerpSpeed = source.uiDiameterLerpSpeed;
+            uiReticleHorizontalLerpSpeed = source.uiReticleHorizontalLerpSpeed;
+            uiReticleVerticalLerpSpeed = source.uiReticleVerticalLerpSpeed;
+            uiSniperReticleHorizontalLerpSpeed = source.uiSniperReticleHorizontalLerpSpeed;
+            uiSniperReticleVerticalLerpSpeed = source.uiSniperReticleVerticalLerpSpeed;
             serverSyncInterval = source.serverSyncInterval;
             serverSyncDeadZoneDeg = source.serverSyncDeadZoneDeg;
         }
@@ -383,7 +409,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (CameraSync.In != null)
             {
-                return CameraSync.In.transform.rotation;
+                return CameraSync.In.GetAimRotation();
             }
 
             return Quaternion.identity;

@@ -1,4 +1,5 @@
 using TMPro;
+using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
 using UnityEngine;
 using UnityEngine.UI;
@@ -383,12 +384,17 @@ namespace Game.Scripts.UI.HUD
                 return true;
             }
 
+            if (child.GetComponent<SniperScopeOverlay>() != null)
+            {
+                return true;
+            }
+
             if (GameplayGUI.In != null && IsSameOrParentOf(child, GameplayGUI.In.ShotResultTextTransform))
             {
                 return true;
             }
 
-            return child.name == "SniperScopeOverlay";
+            return child.name == "SniperScopeOverlay" || child.name == "SniperScopeOverlayController";
         }
 
         public Canvas ResolveCanvasReference(Canvas preferredCanvas = null)

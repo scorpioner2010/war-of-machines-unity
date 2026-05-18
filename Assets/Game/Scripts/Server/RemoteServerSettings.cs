@@ -46,6 +46,10 @@ namespace Game.Scripts.Server
             float gunDispersionUiBloomPixelsPerDegreeAtMaxZoom,
             float gunDispersionUiBloomPixelsPerDegreeAtMaxDistance,
             float gunDispersionUiDiameterLerpSpeed,
+            float gunDispersionUiReticleHorizontalLerpSpeed,
+            float gunDispersionUiReticleVerticalLerpSpeed,
+            float gunDispersionUiSniperReticleHorizontalLerpSpeed,
+            float gunDispersionUiSniperReticleVerticalLerpSpeed,
             float gunDispersionServerSyncInterval,
             float gunDispersionServerSyncDeadZoneDeg,
             float projectileGravity,
@@ -89,6 +93,10 @@ namespace Game.Scripts.Server
             GunDispersion.uiBloomPixelsPerDegreeAtMaxZoom = gunDispersionUiBloomPixelsPerDegreeAtMaxZoom >= 0f ? gunDispersionUiBloomPixelsPerDegreeAtMaxZoom : GunDispersionGlobalSettings.Default.uiBloomPixelsPerDegreeAtMaxZoom;
             GunDispersion.uiBloomPixelsPerDegreeAtMaxDistance = gunDispersionUiBloomPixelsPerDegreeAtMaxDistance >= 0f ? gunDispersionUiBloomPixelsPerDegreeAtMaxDistance : GunDispersionGlobalSettings.Default.uiBloomPixelsPerDegreeAtMaxDistance;
             GunDispersion.uiDiameterLerpSpeed = gunDispersionUiDiameterLerpSpeed >= 0f ? gunDispersionUiDiameterLerpSpeed : GunDispersionGlobalSettings.Default.uiDiameterLerpSpeed;
+            GunDispersion.uiReticleHorizontalLerpSpeed = gunDispersionUiReticleHorizontalLerpSpeed >= 0f ? gunDispersionUiReticleHorizontalLerpSpeed : GunDispersionGlobalSettings.Default.uiReticleHorizontalLerpSpeed;
+            GunDispersion.uiReticleVerticalLerpSpeed = gunDispersionUiReticleVerticalLerpSpeed >= 0f ? gunDispersionUiReticleVerticalLerpSpeed : GunDispersionGlobalSettings.Default.uiReticleVerticalLerpSpeed;
+            GunDispersion.uiSniperReticleHorizontalLerpSpeed = gunDispersionUiSniperReticleHorizontalLerpSpeed >= 0f ? gunDispersionUiSniperReticleHorizontalLerpSpeed : GunDispersionGlobalSettings.Default.uiSniperReticleHorizontalLerpSpeed;
+            GunDispersion.uiSniperReticleVerticalLerpSpeed = gunDispersionUiSniperReticleVerticalLerpSpeed >= 0f ? gunDispersionUiSniperReticleVerticalLerpSpeed : GunDispersionGlobalSettings.Default.uiSniperReticleVerticalLerpSpeed;
             GunDispersion.serverSyncInterval = gunDispersionServerSyncInterval > 0f ? gunDispersionServerSyncInterval : GunDispersionGlobalSettings.Default.serverSyncInterval;
             GunDispersion.serverSyncDeadZoneDeg = gunDispersionServerSyncDeadZoneDeg >= 0f ? gunDispersionServerSyncDeadZoneDeg : GunDispersionGlobalSettings.Default.serverSyncDeadZoneDeg;
             GunDispersion.Validate();

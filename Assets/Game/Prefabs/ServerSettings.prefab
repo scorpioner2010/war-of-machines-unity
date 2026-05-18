@@ -108,6 +108,10 @@ MonoBehaviour:
     uiBloomPixelsPerDegreeAtMaxZoom: 42
     uiBloomPixelsPerDegreeAtMaxDistance: 17
     uiDiameterLerpSpeed: 18
+    uiReticleHorizontalLerpSpeed: 10
+    uiReticleVerticalLerpSpeed: 10
+    uiSniperReticleHorizontalLerpSpeed: 18
+    uiSniperReticleVerticalLerpSpeed: 18
     serverSyncInterval: 0.05
     serverSyncDeadZoneDeg: 0.03
   projectileBallistics:

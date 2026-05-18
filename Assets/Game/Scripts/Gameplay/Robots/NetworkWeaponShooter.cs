@@ -267,13 +267,15 @@ namespace Game.Scripts.Gameplay.Robots
             WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
             if (weaponAim != null)
             {
-                Vector3 currentGunAimPoint = weaponAim.GetCurrentAimPointForOrigin(startPos);
+                Vector3 currentGunAimPoint = weaponAim.gun != null
+                    ? weaponAim.GetCurrentAimPointForOrigin(weaponAim.gun.position)
+                    : weaponAim.CurrentAimPoint;
                 if (IsFinite(currentGunAimPoint) && (currentGunAimPoint - startPos).sqrMagnitude > 0.01f)
                 {
                     return currentGunAimPoint;
                 }
 
-                Vector3 gunForward = GetGunShotForward(weaponAim);
+                Vector3 gunForward = weaponAim.GetLogicalAimForwardWorld();
                 if (IsFinite(gunForward) && gunForward.sqrMagnitude > 0.000001f)
                 {
                     gunForward.Normalize();
@@ -289,16 +291,6 @@ namespace Game.Scripts.Gameplay.Robots
 
             forward.Normalize();
             return startPos + forward * GetMaxShotDistance();
-        }
-
-        private Vector3 GetGunShotForward(WeaponAimController weaponAim)
-        {
-            if (weaponAim == null || weaponAim.gun == null)
-            {
-                return muzzleTransform != null ? muzzleTransform.forward : transform.forward;
-            }
-
-            return WeaponAimController.ToWorldAxis(weaponAim.gun, weaponAim.localForwardAxis);
         }
 
         private Projectile SpawnLocal(

@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
+    [DefaultExecutionOrder(-90)]
     public class CameraSync : MonoBehaviour
     {
         public static CameraSync In;
@@ -13,13 +14,38 @@ namespace Game.Scripts.Gameplay.Robots
             In = this;
         }
 
-        private void LateUpdate()
+        public Transform GetAimTransform()
         {
             if (target != null)
             {
-                transform.position = target.position;
-                transform.rotation = target.rotation;
+                return target;
             }
+
+            return transform;
+        }
+
+        public Quaternion GetAimRotation()
+        {
+            Transform aimTransform = GetAimTransform();
+            return aimTransform != null ? aimTransform.rotation : transform.rotation;
+        }
+
+        public Vector3 GetAimForward()
+        {
+            return GetAimRotation() * Vector3.forward;
+        }
+
+        public void SyncToTarget()
+        {
+            if (target != null)
+            {
+                transform.SetPositionAndRotation(target.position, target.rotation);
+            }
+        }
+
+        private void LateUpdate()
+        {
+            SyncToTarget();
         }
     }
 }

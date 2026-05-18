@@ -6,14 +6,19 @@ using Game.Scripts.UI.Settings;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class CameraController : MonoBehaviour, IVehicleInitializable
+    [DefaultExecutionOrder(-100)]
+    public class CameraController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         private const int NormalZoomStep = -1;
 
+        public VehicleRoot vehicleRoot;
         public Transform rig;
         public float distance = 10f;
         public float aimDistance = 6f;
         public float sniperDistance = 0.25f;
+        public bool sniperCameraFromMuzzle = true;
+        public float sniperForwardOffset = 0.15f;
+        public float sniperVerticalOffset = 0f;
         public float xSpeed = 120.0f;
         public float ySpeed = 120.0f;
         public float normalFov = 60f;
@@ -33,8 +38,16 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _sniperUiApplied;
         private bool _initialized;
 
+        public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
+
+        public void SetVehicleRoot(VehicleRoot root)
+        {
+            vehicleRoot = root;
+        }
+
         public void OnVehicleInitialized(VehicleInitializationContext context)
         {
+            vehicleRoot = context.Root;
             if (context.IsOwner && !context.IsMenu)
             {
                 Init();
@@ -43,6 +56,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void Init()
         {
+            if (vehicleRoot == null)
+            {
+                vehicleRoot = GetComponentInParent<VehicleRoot>();
+            }
+
             Vector3 angles = transform.eulerAngles;
             _X = angles.y;
             _Y = angles.x;
@@ -63,6 +81,18 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyZoomStep(NormalZoomStep, true);
             _initialized = true;
             ApplyCameraTransform(true);
+            SyncGameplayCameraTransform();
+        }
+
+        public void RefreshSniperCameraPose()
+        {
+            if (!_initialized || !IsSniperModeActive)
+            {
+                return;
+            }
+
+            ApplyCameraTransform(true);
+            SyncGameplayCameraTransform();
         }
 
         public float GetAimUiZoom01()
@@ -103,7 +133,16 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             ApplyCameraTransform(false);
+            SyncGameplayCameraTransform();
             UpdateFov();
+        }
+
+        private void SyncGameplayCameraTransform()
+        {
+            if (CameraSync.In != null && CameraSync.In.target == transform)
+            {
+                CameraSync.In.SyncToTarget();
+            }
         }
 
         private void ApplyCameraTransform(bool immediate)
@@ -114,6 +153,14 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             Quaternion rotation = Quaternion.Euler(_Y, _X, 0);
+            if (IsSniperModeActive && TryGetSniperCameraPosition(rotation, out Vector3 sniperPosition))
+            {
+                distance = _targetDistance;
+                transform.rotation = rotation;
+                transform.position = sniperPosition;
+                return;
+            }
+
             if (immediate)
             {
                 distance = _targetDistance;
@@ -128,6 +175,62 @@ namespace Game.Scripts.Gameplay.Robots
 
             transform.rotation = rotation;
             transform.position = position;
+        }
+
+        private bool TryGetSniperCameraPosition(Quaternion cameraRotation, out Vector3 position)
+        {
+            position = default;
+
+            Transform anchor = GetSniperCameraAnchor();
+            if (anchor == null)
+            {
+                return false;
+            }
+
+            Vector3 forward = cameraRotation * Vector3.forward;
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                return false;
+            }
+
+            forward.Normalize();
+
+            Vector3 up = cameraRotation * Vector3.up;
+            if (!IsFinite(up) || up.sqrMagnitude <= 0.000001f)
+            {
+                up = Vector3.up;
+            }
+            else
+            {
+                up.Normalize();
+            }
+
+            position = anchor.position
+                       + forward * Mathf.Max(0f, sniperForwardOffset)
+                       + up * sniperVerticalOffset;
+            return IsFinite(position);
+        }
+
+        private Transform GetSniperCameraAnchor()
+        {
+            if (vehicleRoot == null)
+            {
+                return rig;
+            }
+
+            if (sniperCameraFromMuzzle
+                && vehicleRoot.shooterNet != null
+                && vehicleRoot.shooterNet.muzzleTransform != null)
+            {
+                return vehicleRoot.shooterNet.muzzleTransform;
+            }
+
+            if (vehicleRoot.weaponAimAtCamera != null && vehicleRoot.weaponAimAtCamera.gun != null)
+            {
+                return vehicleRoot.weaponAimAtCamera.gun;
+            }
+
+            return rig;
         }
 
         private void UpdateAimInputs()
@@ -389,6 +492,16 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             SniperScopeOverlay.SetActiveScreen(enabled);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x)
+                   && !float.IsNaN(value.y)
+                   && !float.IsNaN(value.z)
+                   && !float.IsInfinity(value.x)
+                   && !float.IsInfinity(value.y)
+                   && !float.IsInfinity(value.z);
         }
     }
 }

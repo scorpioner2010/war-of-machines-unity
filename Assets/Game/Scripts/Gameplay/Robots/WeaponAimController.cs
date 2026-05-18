@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
+    [DefaultExecutionOrder(-10)]
     public class WeaponAimController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         private const int AimRaycastBufferSize = 64;
@@ -60,7 +61,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            Init(CameraSync.In.transform);
+            Init(CameraSync.In.GetAimTransform());
         }
 
         public void Init(Transform cam)
@@ -157,7 +158,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             EnsureDesiredAimPoint();
 
-            Vector3 gunFwdWorld = ToWorldAxis(gun, localForwardAxis);
+            Vector3 gunFwdWorld = GetLogicalAimForwardWorld();
             if (gunFwdWorld.sqrMagnitude <= 0.000001f)
             {
                 gunFwdWorld = transform.forward;
@@ -173,8 +174,28 @@ namespace Game.Scripts.Gameplay.Robots
                 return gunHit.point;
             }
 
-            float distance = GetProjectedAimDistance(origin, gunFwdWorld);
-            return origin + gunFwdWorld * distance;
+            float fallbackDistance = GetLogicalFallbackAimDistance(origin, castDistance);
+            return origin + gunFwdWorld * fallbackDistance;
+        }
+
+        public Vector3 GetLogicalAimForwardWorld()
+        {
+            if (gun == null)
+            {
+                return transform.forward;
+            }
+
+            Quaternion logicalLocalRotation = _initialLocalRotation
+                                              * Quaternion.AngleAxis(_targetPitchServer, AxisToVector(localPitchAxis));
+            Quaternion parentRotation = gun.parent != null ? gun.parent.rotation : transform.rotation;
+            Quaternion logicalWorldRotation = parentRotation * logicalLocalRotation;
+            Vector3 forward = logicalWorldRotation * AxisToVector(localForwardAxis);
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                forward = ToWorldAxis(gun, localForwardAxis);
+            }
+
+            return forward;
         }
 
         private void LateUpdate()
@@ -188,18 +209,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (ShouldDriveGunPitch())
             {
-                float step = smoothSpeed * Time.deltaTime;
-
-                float delta = Mathf.DeltaAngle(_localPitch, _targetPitchServer);
-                if (Mathf.Abs(delta) <= pitchDeadZoneDeg)
-                {
-                    _localPitch = _targetPitchServer;
-                }
-                else
-                {
-                    _localPitch = Mathf.MoveTowardsAngle(_localPitch, _targetPitchServer, step);
-                }
-
+                _localPitch = _targetPitchServer;
                 Quaternion localRot = _initialLocalRotation * Quaternion.AngleAxis(_localPitch, AxisToVector(localPitchAxis));
                 gun.localRotation = localRot;
             }
@@ -293,39 +303,20 @@ namespace Game.Scripts.Gameplay.Robots
             return aimPoint;
         }
 
-        private float GetProjectedAimDistance(Vector3 origin, Vector3 gunFwdWorld)
+        private float GetLogicalFallbackAimDistance(Vector3 origin, float maxDistance)
         {
-            float maxDistance = GetAimCastDistance(origin);
-            Vector3 toDesired = DesiredAimPoint - origin;
-
-            float distance = 0f;
-
-            Vector3 aimPlaneForward = GetAimPlaneForward();
-            if (aimPlaneForward.sqrMagnitude > 0.000001f)
+            if (_hasDesiredAimPoint && IsFinite(DesiredAimPoint))
             {
-                float numerator = Vector3.Dot(DesiredAimPoint - origin, aimPlaneForward);
-                float denominator = Vector3.Dot(gunFwdWorld, aimPlaneForward);
-                if (Mathf.Abs(denominator) > 0.01f)
+                float desiredDistance = (DesiredAimPoint - origin).magnitude;
+                if (!float.IsNaN(desiredDistance)
+                    && !float.IsInfinity(desiredDistance)
+                    && desiredDistance > MinAimDistance)
                 {
-                    distance = numerator / denominator;
+                    return Mathf.Clamp(desiredDistance, MinAimDistance, Mathf.Max(MinAimDistance, maxDistance));
                 }
             }
 
-            if (distance <= MinAimDistance || float.IsNaN(distance) || float.IsInfinity(distance))
-            {
-                distance = Vector3.Dot(toDesired, gunFwdWorld);
-                if (distance <= MinAimDistance || float.IsNaN(distance) || float.IsInfinity(distance))
-                {
-                    distance = toDesired.magnitude;
-                }
-            }
-
-            if (distance <= MinAimDistance || float.IsNaN(distance) || float.IsInfinity(distance))
-            {
-                distance = maxDistance;
-            }
-
-            return Mathf.Clamp(distance, MinAimDistance, maxDistance);
+            return Mathf.Max(MinAimDistance, maxDistance);
         }
 
         private float GetAimCastDistance(Vector3 origin)

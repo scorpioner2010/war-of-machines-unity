@@ -288,7 +288,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             if (aimForward == Vector3.zero && CameraSync.In != null)
             {
-                aimForward = CameraSync.In.transform.forward;
+                aimForward = CameraSync.In.GetAimForward();
                 _lastAimForwardLocal = aimForward;
             }
 
@@ -410,7 +410,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ComputeLocalYawPitch(out float yawDeg, out float pitchDeg, out Vector3 cameraAimPoint, out Vector3 cameraAimForward)
         {
-            Transform cameraTransform = CameraSync.In != null ? CameraSync.In.transform : null;
+            Transform cameraTransform = CameraSync.In != null ? CameraSync.In.GetAimTransform() : null;
             VehicleAimInputResult result = VehicleAimInputSolver.Solve(
                 vehicleRoot,
                 cameraTransform,
@@ -469,7 +469,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (!IsFinite(_lockedAimForwardLocal) || _lockedAimForwardLocal.sqrMagnitude <= 0.000001f)
             {
-                _lockedAimForwardLocal = CameraSync.In != null ? CameraSync.In.transform.forward : transform.forward;
+                _lockedAimForwardLocal = CameraSync.In != null ? CameraSync.In.GetAimForward() : transform.forward;
             }
 
             if (!IsFinite(_lockedAimPointLocal) || _lockedAimPointLocal == Vector3.zero)

@@ -8,30 +8,48 @@ namespace Game.Scripts.Server
     {
         private static readonly RobotMovementGlobalSettings DefaultSettings = new RobotMovementGlobalSettings();
 
-        [Header("Fallback Stats")]
+        [Header("Запасні характеристики")]
+        [Tooltip("Запасна максимальна швидкість машини, якщо runtime-статистика не передала коректне значення.")]
         public float fallbackMaxSpeed = 10f;
+        [Tooltip("Запасне прискорення машини, якщо runtime-статистика не передала коректне значення.")]
         public float fallbackAcceleration = 30f;
+        [Tooltip("Запасна швидкість повороту корпусу в градусах за секунду. 0 означає використовувати локальне значення компонента.")]
         public float fallbackTraverseSpeedDegPerSecond = 0f;
 
-        [Header("Inertia")]
+        [Header("Інерція")]
+        [Tooltip("Множник гальмування, коли машина має повністю зупинитися.")]
         public float stoppingAccelerationMultiplier = 3f;
+        [Tooltip("Множник прискорення для звичайних/гусеничних машин.")]
         public float standardAccelerationMultiplier = 1f;
+        [Tooltip("Множник гальмування для звичайних/гусеничних машин.")]
         public float standardBrakingMultiplier = 1f;
+        [Tooltip("Множник прискорення для крокуючих машин.")]
         public float leggedAccelerationMultiplier = 2.25f;
+        [Tooltip("Множник гальмування для крокуючих машин.")]
         public float leggedBrakingMultiplier = 2.75f;
 
-        [Header("Leg Animation")]
+        [Header("Анімація ніг")]
+        [Tooltip("Швидкість руху, відносно якої рахується базова швидкість анімації ніг.")]
         public float leggedAnimationReferenceSpeed = 10f;
+        [Tooltip("Мінімальний множник швидкості анімації ніг.")]
         public float leggedAnimationMinSpeedMultiplier = 0.45f;
+        [Tooltip("Максимальний множник швидкості анімації ніг.")]
         public float leggedAnimationMaxSpeedMultiplier = 2.2f;
+        [Tooltip("Крива реакції швидкості анімації ніг на швидкість руху. Більше значення робить зміну різкішою.")]
         public float leggedAnimationSpeedExponent = 0.8f;
+        [Tooltip("Множник довжини кроку для крокуючих машин.")]
         public float leggedStepDistanceMultiplier = 1f;
+        [Tooltip("Множник висоти кроку для крокуючих машин.")]
         public float leggedStepHeightMultiplier = 1f;
+        [Tooltip("Множник тривалості кроку під час повороту.")]
         public float leggedTurnStepDurationMultiplier = 1f;
+        [Tooltip("Множник швидкості переходів між фазами кроку.")]
         public float leggedTransitionSpeedMultiplier = 1f;
 
-        [Header("Grounding")]
+        [Header("Притискання до землі")]
+        [Tooltip("Сила гравітації для руху машин.")]
         public float gravity = 25f;
+        [Tooltip("Дистанція притискання до землі, щоб машина стабільно трималася поверхні.")]
         public float groundedSnap = 2f;
 
         public static RobotMovementGlobalSettings Default
@@ -129,36 +147,60 @@ namespace Game.Scripts.Server
     {
         private static readonly BotWanderSettings DefaultSettings = new BotWanderSettings();
 
-        [Header("Movement")]
+        [Header("Рух")]
+        [Tooltip("Як часто бот переоцінює свій рух і ціль.")]
         public float thinkInterval = 0.25f;
+        [Tooltip("Мінімальна тривалість одного рішення руху бота.")]
         public float minMoveDuration = 1.2f;
+        [Tooltip("Максимальна тривалість одного рішення руху бота.")]
         public float maxMoveDuration = 3.2f;
+        [Tooltip("Базовий ввід руху вперед для бота від -1 до 1.")]
         public float forwardInput = 1f;
+        [Tooltip("Максимальна сила м'якого повороту бота від 0 до 1.")]
         public float maxGentleTurnInput = 0.35f;
+        [Tooltip("Шанс, що бот вибере різкий поворот замість м'якого.")]
         public float strongTurnChance = 0.18f;
+        [Tooltip("Сила різкого повороту бота від 0 до 1.")]
         public float strongTurnInput = 0.85f;
+        [Tooltip("Шанс, що бот тимчасово стоятиме без руху.")]
         public float idleChance = 0f;
 
-        [Header("Waypoint Path")]
+        [Header("Маршрут по точках")]
+        [Tooltip("Дистанція, на якій waypoint вважається досягнутим.")]
         public float waypointReachDistance = 2.4f;
+        [Tooltip("Мінімальна дистанція до нової випадкової цілі маршруту.")]
         public float minDestinationDistance = 12f;
+        [Tooltip("Кількість спроб знайти підходящу ціль маршруту.")]
         public int destinationPickAttempts = 8;
+        [Tooltip("Мінімальний час між перерахунками маршруту.")]
         public float repathCooldown = 0.75f;
+        [Tooltip("Як далеко ціль має зміститися, щоб бот перерахував маршрут.")]
         public float targetRepathDistance = 5f;
+        [Tooltip("Кут до цілі, при якому бот дає повний ввід повороту.")]
         public float turnFullInputAngle = 90f;
+        [Tooltip("Кут до цілі, після якого бот починає зменшувати рух вперед під час повороту.")]
         public float slowTurnAngle = 55f;
+        [Tooltip("Кут до цілі, після якого бот майже зупиняється для розвороту.")]
         public float stopTurnAngle = 115f;
+        [Tooltip("Ввід руху вперед під час повільного повороту.")]
         public float slowForwardInput = 0.35f;
 
-        [Header("Stuck Recovery")]
+        [Header("Вихід із застрягання")]
+        [Tooltip("Як часто бот перевіряє, чи застряг.")]
         public float stuckCheckInterval = 1.25f;
+        [Tooltip("Мінімальна пройдена дистанція за інтервал перевірки. Якщо менше, бот вважається застряглим.")]
         public float stuckDistance = 0.45f;
+        [Tooltip("Скільки часу бот виконує маневр вибирання із застрягання.")]
         public float unstickDuration = 0.8f;
+        [Tooltip("Ввід назад під час вибирання із застрягання.")]
         public float unstickReverseInput = -0.55f;
+        [Tooltip("Сила повороту під час вибирання із застрягання.")]
         public float unstickTurnInput = 1f;
 
-        [Header("Dynamic Avoidance")]
+        [Header("Динамічний обхід")]
+        [Tooltip("Радіус, у якому бот враховує динамічні перешкоди й інших юнітів.")]
         public float dynamicAvoidanceRadius = 4f;
+        [Tooltip("Сила впливу динамічного обходу перешкод на напрямок руху бота.")]
         public float dynamicAvoidanceWeight = 0.65f;
 
         public static BotWanderSettings Default
@@ -261,12 +303,16 @@ namespace Game.Scripts.Server
     {
         private static readonly ProjectileBallisticsGlobalSettings DefaultSettings = new ProjectileBallisticsGlobalSettings();
 
-        [Header("Trajectory")]
+        [Header("Траєкторія")]
+        [Tooltip("Гравітація снаряда. 0 = снаряд летить по прямій без падіння.")]
         [Min(0f)] public float projectileGravity = 6f;
+        [Tooltip("Компенсувати падіння снаряда так, щоб траєкторія намагалася влучити в точку прицілу.")]
         public bool useBallisticCompensation = true;
+        [Tooltip("Якщо можливо, використовувати вищу дугу балістичної траєкторії.")]
         public bool preferHighArc;
 
-        [Header("Debug")]
+        [Header("Дебаг")]
+        [Tooltip("Показувати debug-візуалізацію балістичної траєкторії снаряда.")]
         public bool debugBallisticTrajectory;
 
         public static ProjectileBallisticsGlobalSettings Default
@@ -315,15 +361,24 @@ namespace Game.Scripts.Server
     {
         public static ServerSettings In;
         
+        [Tooltip("Максимальна кількість гравців у кімнаті пошуку матчу.")]
         public int maxPlayersForFindRoom = 1;
+        [Tooltip("Скільки секунд кімната чекає перед стартом матчу, якщо вона не заповнилася.")]
         public int findRoomSeconds = 60;
-        [Header("Bots")]
+        [Header("Боти")]
+        [Tooltip("Додавати ботів у матч.")]
         public bool botsEnabled = true;
+        [Tooltip("Кількість ботів, які додаються в матч.")]
         [Min(0)] public int botsPerMatch = 6;
+        [Tooltip("Код машини, яку отримують боти за замовчуванням.")]
         public string defaultBotVehicleCode = "ia_l1_starter";
+        [Tooltip("Налаштування поведінки ботів під час руху по карті.")]
         public BotWanderSettings botWander = new BotWanderSettings();
+        [Tooltip("Глобальні серверні налаштування руху машин.")]
         public RobotMovementGlobalSettings robotMovement = new RobotMovementGlobalSettings();
+        [Tooltip("Глобальні серверні налаштування розкиду, зведення і UI-кола прицілу.")]
         public GunDispersionGlobalSettings gunDispersion = new GunDispersionGlobalSettings();
+        [Tooltip("Глобальні серверні налаштування балістики снарядів.")]
         public ProjectileBallisticsGlobalSettings projectileBallistics = new ProjectileBallisticsGlobalSettings();
         
         private void Awake()

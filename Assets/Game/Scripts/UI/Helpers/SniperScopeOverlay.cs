@@ -34,7 +34,21 @@ namespace Game.Scripts.UI.Helpers
                 return;
             }
 
+            if (isActive && !_instance.gameObject.activeSelf)
+            {
+                _instance.gameObject.SetActive(true);
+            }
+
             _instance.SetShown(isActive);
+        }
+
+        private void OnDisable()
+        {
+            if (_fadeRoutine != null)
+            {
+                StopCoroutine(_fadeRoutine);
+                _fadeRoutine = null;
+            }
         }
 
         private void SetShown(bool shown)
@@ -59,6 +73,12 @@ namespace Game.Scripts.UI.Helpers
 
             float targetAlpha = shown ? 1f : 0f;
             if (fadeDuration <= 0f)
+            {
+                SetAlpha(targetAlpha);
+                return;
+            }
+
+            if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
             {
                 SetAlpha(targetAlpha);
                 return;
