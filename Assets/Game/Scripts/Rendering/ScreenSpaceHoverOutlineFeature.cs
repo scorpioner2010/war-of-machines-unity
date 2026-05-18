@@ -10,7 +10,6 @@ namespace Game.Scripts.Rendering
         private const string MaskShaderName = "Hidden/Game/HoverOutlineMask";
         private const string OutlineShaderName = "Hidden/Game/ScreenSpaceHoverOutline";
         private const string MaskTextureName = "_WOM_HoverOutlineMask";
-        private const string ColorCopyTextureName = "_WOM_HoverOutlineColorCopy";
         private const int MaxOutlineRadiusPixels = 8;
 
         private static readonly List<RendererEntry> ActiveRenderers = new List<RendererEntry>(64);
@@ -106,7 +105,7 @@ namespace Game.Scripts.Rendering
 
             _maskPass = new MaskPass(resolvedMaskMaterial)
             {
-                renderPassEvent = RenderPassEvent.AfterRenderingOpaques
+                renderPassEvent = RenderPassEvent.AfterRenderingSkybox
             };
 
             _compositePass = new CompositePass(resolvedOutlineMaterial, _maskPass)
@@ -132,6 +131,7 @@ namespace Game.Scripts.Rendering
                 return;
             }
 
+            _maskPass.ConfigureInput(ScriptableRenderPassInput.Depth);
             renderer.EnqueuePass(_maskPass);
             renderer.EnqueuePass(_compositePass);
         }
@@ -214,6 +214,46 @@ namespace Game.Scripts.Rendering
                 get { return _maskHeight; }
             }
 
+            public int MaskTextureWidth
+            {
+                get
+                {
+                    if (_maskHandle != null && _maskHandle.rt != null)
+                    {
+                        return _maskHandle.rt.width;
+                    }
+
+                    return _maskWidth;
+                }
+            }
+
+            public int MaskTextureHeight
+            {
+                get
+                {
+                    if (_maskHandle != null && _maskHandle.rt != null)
+                    {
+                        return _maskHandle.rt.height;
+                    }
+
+                    return _maskHeight;
+                }
+            }
+
+            public Vector2 MaskUvScale
+            {
+                get
+                {
+                    if (_maskHandle != null && _maskHandle.useScaling)
+                    {
+                        Vector4 scale = _maskHandle.rtHandleProperties.rtHandleScale;
+                        return new Vector2(scale.x, scale.y);
+                    }
+
+                    return Vector2.one;
+                }
+            }
+
             public MaskPass(Material material)
             {
                 _material = material;
@@ -250,8 +290,7 @@ namespace Game.Scripts.Rendering
                 CommandBuffer cmd = CommandBufferPool.Get();
                 using (new ProfilingScope(cmd, _profilingSampler))
                 {
-                    RTHandle depthTarget = renderingData.cameraData.renderer.cameraDepthTargetHandle;
-                    CoreUtils.SetRenderTarget(cmd, _maskHandle, depthTarget, ClearFlag.Color, Color.clear);
+                    CoreUtils.SetRenderTarget(cmd, _maskHandle, ClearFlag.Color, Color.clear);
 
                     List<RendererEntry> entries = GetActiveRenderers();
                     for (int i = 0; i < entries.Count; i++)
@@ -292,11 +331,11 @@ namespace Game.Scripts.Rendering
             private static readonly int OutlineColorId = Shader.PropertyToID("_OutlineColor");
             private static readonly int OutlineWidthPixelsId = Shader.PropertyToID("_OutlineWidthPixels");
             private static readonly int OutlineTexelSizeId = Shader.PropertyToID("_OutlineTexelSize");
+            private static readonly int OutlineMaskUvScaleId = Shader.PropertyToID("_OutlineMaskUvScale");
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("WOM Hover Outline Composite");
             private readonly Material _material;
             private readonly MaskPass _maskPass;
-            private RTHandle _colorCopyHandle;
 
             public bool HasMaterial
             {
@@ -311,24 +350,9 @@ namespace Game.Scripts.Rendering
 
 #if URP_COMPATIBILITY_MODE
 #pragma warning disable 618, 672
-            public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
-            {
-                RenderTextureDescriptor descriptor = cameraTextureDescriptor;
-                descriptor.depthBufferBits = 0;
-                descriptor.msaaSamples = 1;
-
-                RenderingUtils.ReAllocateIfNeeded(
-                    ref _colorCopyHandle,
-                    descriptor,
-                    FilterMode.Bilinear,
-                    TextureWrapMode.Clamp,
-                    name: ColorCopyTextureName
-                );
-            }
-
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
-                if (_material == null || _colorCopyHandle == null || _maskPass == null || _maskPass.MaskHandle == null)
+                if (_material == null || _maskPass == null || _maskPass.MaskHandle == null)
                 {
                     return;
                 }
@@ -343,8 +367,9 @@ namespace Game.Scripts.Rendering
                 using (new ProfilingScope(cmd, _profilingSampler))
                 {
                     float width = Mathf.Clamp(ActiveOutlineWidthPixels, 1f, MaxOutlineRadiusPixels);
-                    int maskWidth = Mathf.Max(1, _maskPass.MaskWidth);
-                    int maskHeight = Mathf.Max(1, _maskPass.MaskHeight);
+                    int maskWidth = Mathf.Max(1, _maskPass.MaskTextureWidth);
+                    int maskHeight = Mathf.Max(1, _maskPass.MaskTextureHeight);
+                    Vector2 maskUvScale = _maskPass.MaskUvScale;
 
                     _material.SetTexture(MaskTextureId, _maskPass.MaskHandle);
                     _material.SetColor(OutlineColorId, ActiveOutlineColor);
@@ -353,9 +378,17 @@ namespace Game.Scripts.Rendering
                         OutlineTexelSizeId,
                         new Vector4(1f / maskWidth, 1f / maskHeight, maskWidth, maskHeight)
                     );
+                    _material.SetVector(OutlineMaskUvScaleId, new Vector4(maskUvScale.x, maskUvScale.y, 0f, 0f));
 
-                    Blitter.BlitCameraTexture(cmd, colorTarget, _colorCopyHandle);
-                    Blitter.BlitCameraTexture(cmd, _colorCopyHandle, colorTarget, _material, 0);
+                    CoreUtils.SetRenderTarget(
+                        cmd,
+                        colorTarget,
+                        RenderBufferLoadAction.Load,
+                        RenderBufferStoreAction.Store,
+                        ClearFlag.None,
+                        Color.clear
+                    );
+                    Blitter.BlitTexture(cmd, new Vector4(1f, 1f, 0f, 0f), _material, 0);
                 }
 
                 context.ExecuteCommandBuffer(cmd);
@@ -366,8 +399,6 @@ namespace Game.Scripts.Rendering
 
             public void Dispose()
             {
-                _colorCopyHandle?.Release();
-                _colorCopyHandle = null;
             }
         }
     }

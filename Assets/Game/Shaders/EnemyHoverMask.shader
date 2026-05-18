@@ -15,7 +15,7 @@ Shader "Hidden/Game/HoverOutlineMask"
 
             Cull Back
             ZWrite Off
-            ZTest LEqual
+            ZTest Always
             ColorMask R
 
             HLSLPROGRAM
@@ -23,6 +23,9 @@ Shader "Hidden/Game/HoverOutlineMask"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+
+            #define MASK_DEPTH_BIAS 0.0001
 
             struct Attributes
             {
@@ -50,6 +53,23 @@ Shader "Hidden/Game/HoverOutlineMask"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+                float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
+                float sceneDepth = SampleSceneDepth(screenUV);
+                float objectDepth = input.positionCS.z;
+
+#if UNITY_REVERSED_Z
+                if (objectDepth < sceneDepth - MASK_DEPTH_BIAS)
+                {
+                    discard;
+                }
+#else
+                if (objectDepth > sceneDepth + MASK_DEPTH_BIAS)
+                {
+                    discard;
+                }
+#endif
+
                 return half4(1, 0, 0, 1);
             }
             ENDHLSL
