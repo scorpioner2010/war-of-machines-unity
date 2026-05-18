@@ -1007,8 +1007,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameplayRuntime:
-    alliedHpColor: {r: 1, g: 0.08, b: 0.04, a: 1}
-    enemyHpColor: {r: 0.1, g: 0.35, b: 1, a: 1}
+    alliedHpColor: {r: 0.1, g: 0.35, b: 1, a: 1}
+    enemyHpColor: {r: 1, g: 0.08, b: 0.04, a: 1}
     hpTeamColorRefreshInterval: 0.25
     ownerHealthBarSmoothSpeed: 10
     mapAllyIconColor: {r: 0.1, g: 0.35, b: 1, a: 1}

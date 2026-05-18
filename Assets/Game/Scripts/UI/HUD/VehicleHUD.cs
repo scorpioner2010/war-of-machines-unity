@@ -167,12 +167,9 @@ namespace Game.Scripts.UI.HUD
 
             MatchTeam localTeam = localPlayer.characterInit.Team.Value;
             MatchTeam targetTeam = vehicleRoot.characterInit.Team.Value;
-            if (localTeam == MatchTeam.None || targetTeam == MatchTeam.None)
-            {
-                return VehicleHudRelation.Enemy;
-            }
-
-            return localTeam == targetTeam ? VehicleHudRelation.Ally : VehicleHudRelation.Enemy;
+            return MatchTeamUtility.AreSameAssignedTeam(localTeam, targetTeam)
+                ? VehicleHudRelation.Ally
+                : VehicleHudRelation.Enemy;
         }
 
         private void SubscribeToLocalPlayerChange()

@@ -20,8 +20,8 @@ namespace Game.Scripts.Networking.Lobby
                 return state;
             }
 
-            int redAlive = 0;
-            int blueAlive = 0;
+            int teamAAlive = 0;
+            int teamBAlive = 0;
             int unassignedAlive = 0;
             int aliveRobots = 0;
 
@@ -33,13 +33,13 @@ namespace Game.Scripts.Networking.Lobby
                 }
 
                 aliveRobots++;
-                if (player.team == MatchTeam.Red)
+                if (player.team == MatchTeam.TeamA)
                 {
-                    redAlive++;
+                    teamAAlive++;
                 }
-                else if (player.team == MatchTeam.Blue)
+                else if (player.team == MatchTeam.TeamB)
                 {
-                    blueAlive++;
+                    teamBAlive++;
                 }
                 else
                 {
@@ -54,15 +54,15 @@ namespace Game.Scripts.Networking.Lobby
                 return state;
             }
 
-            if (unassignedAlive == 0 && redAlive > 0 && blueAlive == 0)
+            if (unassignedAlive == 0 && teamAAlive > 0 && teamBAlive == 0)
             {
                 state.ShouldFinish = true;
-                state.WinnerTeam = MatchTeam.Red;
+                state.WinnerTeam = MatchTeam.TeamA;
             }
-            else if (unassignedAlive == 0 && blueAlive > 0 && redAlive == 0)
+            else if (unassignedAlive == 0 && teamBAlive > 0 && teamAAlive == 0)
             {
                 state.ShouldFinish = true;
-                state.WinnerTeam = MatchTeam.Blue;
+                state.WinnerTeam = MatchTeam.TeamB;
             }
 
             return state;

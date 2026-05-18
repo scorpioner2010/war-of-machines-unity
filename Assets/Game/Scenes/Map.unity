@@ -101494,7 +101494,7 @@ GameObject:
   - component: {fileID: 1786657438}
   - component: {fileID: 1786657439}
   m_Layer: 0
-  m_Name: SpawnpointsRed
+  m_Name: SpawnpointsTeamA
   m_TagString: Untagged
   m_Icon: {fileID: 7148428337604731935, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
@@ -118052,7 +118052,7 @@ GameObject:
   - component: {fileID: 2079817575}
   - component: {fileID: 2079817574}
   m_Layer: 0
-  m_Name: SpawnpointsBlue
+  m_Name: SpawnpointsTeamB
   m_TagString: Untagged
   m_Icon: {fileID: 7148428337604731935, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0

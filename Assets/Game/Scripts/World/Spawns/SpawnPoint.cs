@@ -88,14 +88,14 @@ namespace Game.Scripts.World.Spawns
             Transform current = transform;
             while (current != null)
             {
-                if (current.name.IndexOf("Red", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                if (current.name.IndexOf("TeamA", System.StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    return MatchTeam.Red;
+                    return MatchTeam.TeamA;
                 }
 
-                if (current.name.IndexOf("Blue", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                if (current.name.IndexOf("TeamB", System.StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    return MatchTeam.Blue;
+                    return MatchTeam.TeamB;
                 }
 
                 current = current.parent;

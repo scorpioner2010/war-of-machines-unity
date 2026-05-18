@@ -9,9 +9,9 @@ namespace Game.Scripts.Client
 
         [Header("UI здоров'я")]
         [Tooltip("Колір смуги HP для свого робота та союзників у world-space UI техніки.")]
-        public Color alliedHpColor = new Color(1f, 0.08f, 0.04f, 1f);
+        public Color alliedHpColor = new Color(0.1f, 0.35f, 1f, 1f);
         [Tooltip("Колір смуги HP для противників у world-space UI техніки.")]
-        public Color enemyHpColor = new Color(0.1f, 0.35f, 1f, 1f);
+        public Color enemyHpColor = new Color(1f, 0.08f, 0.04f, 1f);
         [Tooltip("Як часто world-space UI техніки переоцінює команду цілі та оновлює колір HP.")]
         public float hpTeamColorRefreshInterval = 0.25f;
         [Tooltip("Швидкість згладження основної смуги HP локального гравця на GameplayHUD.")]

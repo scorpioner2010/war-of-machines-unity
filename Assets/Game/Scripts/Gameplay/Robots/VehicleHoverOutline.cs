@@ -285,12 +285,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             MatchTeam localTeam = vehicleRoot.characterInit.Team.Value;
             MatchTeam targetTeam = targetRoot.characterInit.Team.Value;
-            if (localTeam == MatchTeam.None || targetTeam == MatchTeam.None)
-            {
-                return true;
-            }
-
-            return localTeam != targetTeam;
+            return !MatchTeamUtility.AreSameAssignedTeam(localTeam, targetTeam);
         }
 
         private static VehicleRoot ResolveVehicleRoot(Collider hitCollider)

@@ -231,12 +231,12 @@ namespace Game.Scripts.UI.HUD
 
             MatchTeam localTeam = _localPlayer.characterInit.Team.Value;
             MatchTeam targetTeam = vehicleRoot.characterInit.Team.Value;
-            if (localTeam == MatchTeam.None || targetTeam == MatchTeam.None)
+            if (!MatchTeamUtility.IsAssigned(localTeam) || !MatchTeamUtility.IsAssigned(targetTeam))
             {
                 return MapVehicleRelation.Hidden;
             }
 
-            if (localTeam == targetTeam)
+            if (MatchTeamUtility.AreSameAssignedTeam(localTeam, targetTeam))
             {
                 return MapVehicleRelation.Ally;
             }

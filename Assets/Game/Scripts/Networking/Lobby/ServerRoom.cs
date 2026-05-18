@@ -301,26 +301,26 @@ namespace Game.Scripts.Networking.Lobby
                 }
             }
 
-            int redCount = 0;
-            int blueCount = 0;
-            int redMmr = 0;
-            int blueMmr = 0;
-            bool preferRed = true;
+            int teamACount = 0;
+            int teamBCount = 0;
+            int teamAMmr = 0;
+            int teamBMmr = 0;
+            bool preferTeamA = true;
 
             realPlayers.Sort(CompareForTeamBalance);
-            AssignPlayersToBalancedTeams(realPlayers, ref redCount, ref blueCount, ref redMmr, ref blueMmr, ref preferRed);
+            AssignPlayersToBalancedTeams(realPlayers, ref teamACount, ref teamBCount, ref teamAMmr, ref teamBMmr, ref preferTeamA);
 
             botPlayers.Sort(CompareForTeamBalance);
-            AssignPlayersToBalancedTeams(botPlayers, ref redCount, ref blueCount, ref redMmr, ref blueMmr, ref preferRed);
+            AssignPlayersToBalancedTeams(botPlayers, ref teamACount, ref teamBCount, ref teamAMmr, ref teamBMmr, ref preferTeamA);
         }
 
         private static void AssignPlayersToBalancedTeams(
             List<Player> playersForBalance,
-            ref int redCount,
-            ref int blueCount,
-            ref int redMmr,
-            ref int blueMmr,
-            ref bool preferRed)
+            ref int teamACount,
+            ref int teamBCount,
+            ref int teamAMmr,
+            ref int teamBMmr,
+            ref bool preferTeamA)
         {
             for (int i = 0; i < playersForBalance.Count; i++)
             {
@@ -330,47 +330,47 @@ namespace Game.Scripts.Networking.Lobby
                     continue;
                 }
 
-                MatchTeam team = ChooseTeam(redCount, blueCount, redMmr, blueMmr, preferRed);
+                MatchTeam team = ChooseTeam(teamACount, teamBCount, teamAMmr, teamBMmr, preferTeamA);
 
                 player.team = team;
-                if (team == MatchTeam.Red)
+                if (team == MatchTeam.TeamA)
                 {
-                    redCount++;
-                    redMmr += GetMmr(player);
+                    teamACount++;
+                    teamAMmr += GetMmr(player);
                 }
                 else
                 {
-                    blueCount++;
-                    blueMmr += GetMmr(player);
+                    teamBCount++;
+                    teamBMmr += GetMmr(player);
                 }
 
-                preferRed = !preferRed;
+                preferTeamA = !preferTeamA;
             }
         }
 
-        private static MatchTeam ChooseTeam(int redCount, int blueCount, int redMmr, int blueMmr, bool preferRed)
+        private static MatchTeam ChooseTeam(int teamACount, int teamBCount, int teamAMmr, int teamBMmr, bool preferTeamA)
         {
-            if (redCount < blueCount)
+            if (teamACount < teamBCount)
             {
-                return MatchTeam.Red;
+                return MatchTeam.TeamA;
             }
 
-            if (blueCount < redCount)
+            if (teamBCount < teamACount)
             {
-                return MatchTeam.Blue;
+                return MatchTeam.TeamB;
             }
 
-            if (redMmr < blueMmr)
+            if (teamAMmr < teamBMmr)
             {
-                return MatchTeam.Red;
+                return MatchTeam.TeamA;
             }
 
-            if (blueMmr < redMmr)
+            if (teamBMmr < teamAMmr)
             {
-                return MatchTeam.Blue;
+                return MatchTeam.TeamB;
             }
 
-            return preferRed ? MatchTeam.Red : MatchTeam.Blue;
+            return preferTeamA ? MatchTeam.TeamA : MatchTeam.TeamB;
         }
 
         private static int CompareForTeamBalance(Player left, Player right)
