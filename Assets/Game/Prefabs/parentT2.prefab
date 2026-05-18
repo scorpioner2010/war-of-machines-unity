@@ -61,6 +61,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -82,9 +87,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &9152046975144589221
 MeshCollider:
@@ -122,6 +129,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &7513945445161903994
@@ -380,6 +388,15 @@ MonoBehaviour:
   projectilePrefab: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
     type: 3}
   muzzleTransform: {fileID: 8952852033910042811}
+  dispersion:
+    minDispersionDeg: 0.35
+    maxDispersionDeg: 6
+    aimTime: 2
+    movingDispersionDeg: 1.5
+    hullTraverseDispersionDeg: 1.25
+    turretTraverseDispersionDeg: 1.5
+    gunTraverseDispersionDeg: 1
+    shotDispersionDeg: 2
   projectileSpeed: 70
   projectileLifeTime: 8
   maxShotDistance: 2000
@@ -448,7 +465,9 @@ MonoBehaviour:
   projectileMinSpeedMultiplier: 0.1
   hitMask:
     serializedVersion: 2
-    m_Bits: 73
+    m_Bits: 329
+  damageMin: 90
+  damageMax: 110
   shellPenetrationMm: 200
   normalizationDeg: 0
 --- !u!114 &3855264161025134098
@@ -573,6 +592,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
   vehicleRoot: {fileID: 2321927772602250882}
+  autoAimController: {fileID: 0}
 --- !u!114 &271880699550436314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -590,8 +610,6 @@ MonoBehaviour:
   rotateSpeed: 1.5
   acceleration: 5
   maxSpeed: 5
-  gravity: 5
-  groundedSnap: 2
 --- !u!114 &4526065669619433319
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -649,6 +667,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 2321927772602250882}
   isActive: 0
+  displaySpeedMultiplier: 10
+  speedSampleInterval: 0.12
+  speedSmoothRate: 8
+  stopSnapThreshold: 0.05
 --- !u!143 &1699867880869822920
 CharacterController:
   m_ObjectHideFlags: 0
@@ -664,7 +686,6 @@ CharacterController:
     serializedVersion: 2
     m_Bits: 64
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -865,10 +886,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d74e09d71de398042bb2b73b90ae2463, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  vehicleRoot: {fileID: 0}
   rig: {fileID: 6688549383904352704}
   distance: 7
+  aimDistance: 6
+  sniperDistance: 0.25
+  sniperCameraFromMuzzle: 1
+  sniperForwardOffset: 0.15
+  sniperVerticalOffset: 0
   xSpeed: 120
   ySpeed: 120
+  normalFov: 60
+  aimFov: 45
+  sniperFov: 24
+  fovLerpSpeed: 10
+  cameraLerpSpeed: 12
+  scrollDeadZone: 0.001
+  aimZoomDistances:
+  - 6
+  - 4
+  - 2.5
 --- !u!1 &2414172230721072739
 GameObject:
   m_ObjectHideFlags: 0
@@ -881,7 +918,7 @@ GameObject:
   - component: {fileID: 1656960205495312077}
   - component: {fileID: 3655962489009411274}
   - component: {fileID: 610723477013382111}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: MeshGun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -928,6 +965,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -949,9 +991,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &610723477013382111
 MeshCollider:
@@ -1136,6 +1180,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1157,9 +1206,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &2072330985774519493
 MeshCollider:
@@ -1197,6 +1248,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &6840360718182248203
@@ -1232,7 +1284,7 @@ GameObject:
   - component: {fileID: 3570523489219205914}
   - component: {fileID: 2441243145673459874}
   - component: {fileID: 6259965124179857752}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: ParentRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1268,12 +1320,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
-  maxPitchAngle: 300
-  accelerationMultiplier: 0.2
-  springConstant: 100
-  damping: 0.99
-  accelerationTrigger: 1
-  accelerationThreshold: 0.1
 --- !u!114 &6259965124179857752
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1378,6 +1424,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1399,9 +1450,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &5857380509063025
 MeshCollider:
@@ -1439,6 +1492,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &4095854428274272603
@@ -1550,7 +1604,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6688549383904352704}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: CameraRig
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1719,7 +1773,7 @@ GameObject:
   - component: {fileID: 691761467879034209}
   - component: {fileID: 7732302324856301273}
   - component: {fileID: 8983144263683686509}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: Mesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1766,6 +1820,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1787,9 +1846,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &8983144263683686509
 MeshCollider:
@@ -1929,7 +1990,7 @@ GameObject:
   - component: {fileID: 5956355965860058864}
   - component: {fileID: 7734310989905840844}
   - component: {fileID: 2111746909324580752}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: Mesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1976,6 +2037,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1997,9 +2063,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &2111746909324580752
 MeshCollider:
@@ -2039,6 +2107,7 @@ GameObject:
   - component: {fileID: 1658283125609888059}
   - component: {fileID: -5797703676881531830}
   - component: {fileID: 4814927226351074180}
+  - component: {fileID: -7510844428716302861}
   m_Layer: 0
   m_Name: parentT2
   m_TagString: Untagged
@@ -2091,6 +2160,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  NetworkObserver: {fileID: 0}
+  _enablePrediction: 0
+  _predictionType: 0
+  _graphicalObject: {fileID: 0}
+  _detachGraphicalObject: 0
+  _enableStateForwarding: 1
+  _networkTransform: {fileID: 0}
+  _ownerInterpolation: 1
+  _ownerSmoothedProperties: 255
+  _adaptiveInterpolation: 3
+  _spectatorSmoothedProperties: 255
+  _spectatorInterpolation: 2
+  _enableTeleport: 0
+  _teleportThreshold: 1
+  <PrefabId>k__BackingField: 0
+  <SpawnableCollectionId>k__BackingField: 0
+  <AssetPathHash>k__BackingField: 5458386010302515558
+  <SceneId>k__BackingField: 0
+  SerializedTransformProperties:
+    Position: {x: 0, y: 0, z: 0}
+    Rotation: {x: 0, y: 0, z: 0, w: 1}
+    Scale: {x: 1, y: 1, z: 1}
+    IsValid: 1
   <IsNested>k__BackingField: 0
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
@@ -2118,29 +2210,6 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  NetworkObserver: {fileID: 0}
-  _enablePrediction: 0
-  _predictionType: 0
-  _graphicalObject: {fileID: 0}
-  _detachGraphicalObject: 0
-  _enableStateForwarding: 1
-  _networkTransform: {fileID: 0}
-  _ownerInterpolation: 1
-  _ownerSmoothedProperties: 255
-  _adaptiveInterpolation: 3
-  _spectatorSmoothedProperties: 255
-  _spectatorInterpolation: 2
-  _enableTeleport: 0
-  _teleportThreshold: 1
-  <PrefabId>k__BackingField: 0
-  <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 5458386010302515558
-  <SceneId>k__BackingField: 0
-  SerializedTransformProperties:
-    Position: {x: 0, y: 0, z: 0}
-    Rotation: {x: 0, y: 0, z: 0, w: 1}
-    Scale: {x: 1, y: 1, z: 1}
-    IsValid: 1
 --- !u!114 &2321927772602250882
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2159,6 +2228,7 @@ MonoBehaviour:
   networkObject: {fileID: 5555427657669337170}
   characterInit: {fileID: -2008785619023378557}
   inputManager: {fileID: 583531272242224289}
+  autoAimController: {fileID: 0}
   health: {fileID: 1658283125609888059}
   objectMover: {fileID: 271880699550436314}
   uiSenerd: {fileID: 5421960799121922505}
@@ -2187,8 +2257,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
   playerRoot: {fileID: 2321927772602250882}
-  currentScene:
-    m_Handle: 0
+  currentScene: {}
 --- !u!114 &1658283125609888059
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2270,6 +2339,26 @@ MonoBehaviour:
   forTurnOff:
   - {fileID: 7005523347427859593}
   - {fileID: 7099114696963006069}
+--- !u!114 &-7510844428716302861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7389821364265542770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9d625ff77e94224b75fdb0872941ebe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  vehicleRoot: {fileID: 2321927772602250882}
+  hoverMask:
+    serializedVersion: 2
+    m_Bits: 64
+  maxHoverDistance: 2000
+  outlineWidth: 3
+  outlineColor: {r: 1, g: 0, b: 0, a: 1}
+  rejectSameTeam: 1
 --- !u!1 &7503567715314216954
 GameObject:
   m_ObjectHideFlags: 0
@@ -2331,6 +2420,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -2352,9 +2446,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &6359557323337602642
 MeshCollider:
@@ -2392,6 +2488,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &7419464297932952746
@@ -2480,7 +2577,7 @@ GameObject:
   - component: {fileID: 152462662010935668}
   - component: {fileID: 6912964702376936708}
   - component: {fileID: 7838465248962563390}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: MeshGun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2527,6 +2624,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -2548,9 +2650,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &7838465248962563390
 MeshCollider:
@@ -2583,7 +2687,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5542631702882726890}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: BodyPointSync
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2691,7 +2795,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2776,6 +2880,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &8194297457813125503
@@ -2886,7 +2991,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2971,6 +3076,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &7234726495519578863
@@ -3081,7 +3187,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3166,6 +3272,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &5743720100917391854
@@ -3276,7 +3383,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3355,6 +3462,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &8305173394046899317
@@ -3471,7 +3579,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3550,6 +3658,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &8360624742571251983
@@ -3666,7 +3775,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3745,6 +3854,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &9085115716384259601
@@ -3861,7 +3971,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3946,6 +4056,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &6603075169660441860
@@ -4056,7 +4167,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4141,6 +4252,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &5698515257061702386
@@ -4251,7 +4363,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4336,6 +4448,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &980925288584698060
@@ -4446,7 +4559,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4525,6 +4638,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &4532932391078641551
@@ -4641,7 +4755,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4720,6 +4834,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &4245066437657216718
@@ -4836,7 +4951,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4921,6 +5036,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &6264627073132632711
@@ -5031,7 +5147,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5116,6 +5232,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &794506024265617579
@@ -5383,7 +5500,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5462,6 +5579,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &6019392609054479280
@@ -5578,7 +5696,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5657,6 +5775,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &107326768660374187
@@ -5773,7 +5892,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5852,6 +5971,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &4244923633123718078
@@ -5968,7 +6088,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6053,6 +6173,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &6321933406348387978
@@ -6163,7 +6284,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6248,6 +6369,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &5424275322147991612
@@ -8492,7 +8614,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8577,6 +8699,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &4391912020080607893
@@ -8687,7 +8810,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8766,6 +8889,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &1095833752880260122
@@ -8882,7 +9006,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8961,6 +9085,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &2130927625185890227
@@ -9077,7 +9202,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9156,6 +9281,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 0}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
+  armorZone: 0
   minMm: 0
   maxMm: 500
 --- !u!64 &7227848908484048163

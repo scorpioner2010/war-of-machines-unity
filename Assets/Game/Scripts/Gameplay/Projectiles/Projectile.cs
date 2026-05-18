@@ -13,8 +13,15 @@ public class Projectile : MonoBehaviour
     private const int TravelDistanceSamples = 12;
     private const float CollisionCastPadding = 0.01f;
     private const float MinLifetime = 0.01f;
+    private const string ArmorLayerName = "Armor";
+    private const string GroundLayerName = "Ground";
+    private const string ObstacleLayerName = "Obstacle";
 
     private static readonly RaycastHit[] CollisionBuffer = new RaycastHit[CollisionBufferSize];
+    private static int _armorLayer = -1;
+    private static int _groundLayer = -1;
+    private static int _obstacleLayer = -1;
+    private static bool _layersInitialized;
 
     public LayerMask hitMask = ~0;
     public float hitRadius = 0.05f;
@@ -405,33 +412,21 @@ public class Projectile : MonoBehaviour
 
     private bool TryCastCollision(Vector3 origin, Vector3 direction, float distance, out RaycastHit bestHit)
     {
-        int count;
-        if (_collisionRadius > 0f)
-        {
-            count = Physics.SphereCastNonAlloc(
-                origin,
-                _collisionRadius,
-                direction,
-                CollisionBuffer,
-                distance,
-                hitMask,
-                QueryTriggerInteraction.Ignore
-            );
-        }
-        else
-        {
-            count = Physics.RaycastNonAlloc(
-                origin,
-                direction,
-                CollisionBuffer,
-                distance,
-                hitMask,
-                QueryTriggerInteraction.Ignore
-            );
-        }
+        EnsureCollisionLayers();
 
-        int bestIndex = -1;
-        float bestDistance = float.PositiveInfinity;
+        int count = Physics.RaycastNonAlloc(
+            origin,
+            direction,
+            CollisionBuffer,
+            distance,
+            hitMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        int bestArmorIndex = -1;
+        float bestArmorDistance = float.PositiveInfinity;
+        int bestBlockerIndex = -1;
+        float bestBlockerDistance = float.PositiveInfinity;
         for (int i = 0; i < count; i++)
         {
             Collider hitCollider = CollisionBuffer[i].collider;
@@ -441,21 +436,61 @@ public class Projectile : MonoBehaviour
             }
 
             float hitDistance = CollisionBuffer[i].distance;
-            if (hitDistance < bestDistance)
+            if (IsBlockingLayer(hitCollider.gameObject.layer))
             {
-                bestDistance = hitDistance;
-                bestIndex = i;
+                if (hitDistance < bestBlockerDistance)
+                {
+                    bestBlockerDistance = hitDistance;
+                    bestBlockerIndex = i;
+                }
+                continue;
+            }
+
+            if (IsArmorLayer(hitCollider.gameObject.layer) && hitDistance < bestArmorDistance)
+            {
+                bestArmorDistance = hitDistance;
+                bestArmorIndex = i;
             }
         }
 
-        if (bestIndex >= 0)
+        if (bestBlockerIndex >= 0 && (bestArmorIndex < 0 || bestBlockerDistance <= bestArmorDistance))
         {
-            bestHit = CollisionBuffer[bestIndex];
+            bestHit = CollisionBuffer[bestBlockerIndex];
+            return true;
+        }
+
+        if (bestArmorIndex >= 0)
+        {
+            bestHit = CollisionBuffer[bestArmorIndex];
             return true;
         }
 
         bestHit = default;
         return false;
+    }
+
+    private static bool IsArmorLayer(int layer)
+    {
+        return _armorLayer >= 0 && layer == _armorLayer;
+    }
+
+    private static bool IsBlockingLayer(int layer)
+    {
+        return (_groundLayer >= 0 && layer == _groundLayer)
+               || (_obstacleLayer >= 0 && layer == _obstacleLayer);
+    }
+
+    private static void EnsureCollisionLayers()
+    {
+        if (_layersInitialized)
+        {
+            return;
+        }
+
+        _armorLayer = LayerMask.NameToLayer(ArmorLayerName);
+        _groundLayer = LayerMask.NameToLayer(GroundLayerName);
+        _obstacleLayer = LayerMask.NameToLayer(ObstacleLayerName);
+        _layersInitialized = true;
     }
 
     private static bool IsUnderRoot(Transform transform, Transform root)
