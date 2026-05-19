@@ -10,6 +10,7 @@ namespace Game.Scripts.UI.HUD
     {
         public TMP_Text text;
         private Camera _camera;
+        private Sequence _sequence;
 
         public void SetText(string value)
         {
@@ -22,11 +23,14 @@ namespace Game.Scripts.UI.HUD
             transform.localScale = Vector3.one;
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
             float duration = settings.floatingDamageTextDuration;
-            Sequence sequence = DOTween.Sequence();
-            sequence.Join(transform.DOMoveY(transform.position.y + settings.floatingDamageTextMoveUp, duration));
-            sequence.Join(text.DOFade(0f, duration));
-            sequence.Join(transform.DOScale(settings.floatingDamageTextEndScale, duration));
-            sequence.SetEase(Ease.OutQuad).OnComplete(() => Destroy(gameObject));
+            KillSequence();
+
+            _sequence = DOTween.Sequence();
+            _sequence.SetLink(gameObject, LinkBehaviour.KillOnDestroy);
+            _sequence.Join(transform.DOMoveY(transform.position.y + settings.floatingDamageTextMoveUp, duration));
+            _sequence.Join(text.DOFade(0f, duration));
+            _sequence.Join(transform.DOScale(settings.floatingDamageTextEndScale, duration));
+            _sequence.SetEase(Ease.OutQuad).OnComplete(() => Destroy(gameObject));
         }
 
         private void LateUpdate()
@@ -35,6 +39,27 @@ namespace Game.Scripts.UI.HUD
             {
                 transform.forward = _camera.transform.forward;
             }
+        }
+
+        private void OnDisable()
+        {
+            KillSequence();
+        }
+
+        private void OnDestroy()
+        {
+            KillSequence();
+        }
+
+        private void KillSequence()
+        {
+            if (_sequence == null)
+            {
+                return;
+            }
+
+            _sequence.Kill();
+            _sequence = null;
         }
     }
 }
