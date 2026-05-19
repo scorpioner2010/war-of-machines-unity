@@ -453,6 +453,8 @@ namespace Game.Scripts.Server
         public float maxViewRange = 450f;
         [Tooltip("Enemies inside this range are detected even without line of sight.")]
         public float guaranteedDetectionRange = 35f;
+        [Tooltip("How long an enemy remains visible on the team map after the whole allied team loses direct spotting.")]
+        public float spottedMemorySeconds = 3f;
         [Tooltip("If enabled, terrain and static obstacles can block spotting rays.")]
         public bool requireLineOfSight = true;
         [Tooltip("Layers that can block spotting rays. Keep vehicle layers out of this mask.")]
@@ -480,6 +482,7 @@ namespace Game.Scripts.Server
             fallbackViewRange = ClampFinite(fallbackViewRange, 0f, Default.fallbackViewRange);
             maxViewRange = ClampFinite(maxViewRange, 0f, Default.maxViewRange);
             guaranteedDetectionRange = ClampFinite(guaranteedDetectionRange, 0f, Default.guaranteedDetectionRange);
+            spottedMemorySeconds = ClampFinite(spottedMemorySeconds, 0f, Default.spottedMemorySeconds);
             lineOfSightMask = NormalizeLineOfSightMask(lineOfSightMask);
             maxLineOfSightChecksPerTick = Mathf.Max(1, maxLineOfSightChecksPerTick);
             lineOfSightRecheckSeconds = ClampFinite(lineOfSightRecheckSeconds, 0.05f, Default.lineOfSightRecheckSeconds);
@@ -499,6 +502,7 @@ namespace Game.Scripts.Server
             fallbackViewRange = source.fallbackViewRange;
             maxViewRange = source.maxViewRange;
             guaranteedDetectionRange = source.guaranteedDetectionRange;
+            spottedMemorySeconds = source.spottedMemorySeconds;
             requireLineOfSight = source.requireLineOfSight;
             lineOfSightMask = source.lineOfSightMask;
             maxLineOfSightChecksPerTick = source.maxLineOfSightChecksPerTick;

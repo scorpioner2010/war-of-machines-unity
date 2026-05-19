@@ -125,6 +125,21 @@ MonoBehaviour:
     sendInterval: 0.05
     yawPitchSendDeadzoneDeg: 0.03
     aimPointSendDeadzoneMeters: 0.02
+  matchVisibility:
+    enabled: 1
+    tickInterval: 0.5
+    fallbackViewRange: 120
+    maxViewRange: 450
+    guaranteedDetectionRange: 35
+    spottedMemorySeconds: 3
+    requireLineOfSight: 1
+    lineOfSightMask:
+      serializedVersion: 2
+      m_Bits: 265
+    maxLineOfSightChecksPerTick: 24
+    lineOfSightRecheckSeconds: 0.5
+    spotterEyeHeight: 2
+    targetProbeHeight: 1.4
   matchScene:
     sceneSlotSpacingX: 500
     sceneValidationTimeout: 10
