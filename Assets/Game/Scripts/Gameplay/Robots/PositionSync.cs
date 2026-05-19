@@ -1,3 +1,4 @@
+using Game.Scripts.Diagnostics;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -8,7 +9,15 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            transform.position = target.position;
+            using (ProfileScope.Measure("Client.Interpolation.PositionSync.LateUpdate", DiagnosticsCategories.Client))
+            {
+                if (target == null)
+                {
+                    return;
+                }
+
+                transform.position = target.position;
+            }
         }
     }
 }

@@ -16,3 +16,40 @@
 - Avoid LINQ in gameplay/runtime hot paths when a simpler manual implementation is better.
 - Do not use reflection in gameplay/runtime code.
 - Reflection is allowed only for editor tooling when truly necessary.
+
+# Live Diagnostics Workflow
+
+When the user reports lag, freezes, stutter, desync, rubber-banding, high ping, bad FPS, or server performance issues, do not guess first.
+
+Always run diagnostics before editing gameplay code:
+
+1. Run:
+   game-diag health
+
+2. If diagnostics is available, run:
+   game-diag analyze --last 10
+   game-diag spikes --last 30
+   game-diag frame-spikes --last 60
+   game-diag top client --last 10
+   game-diag top server --last 10
+   game-diag network --last 10
+
+3. Classify the issue as one of:
+   - CLIENT_BOUND
+   - SERVER_BOUND
+   - NETWORK_BOUND
+   - MEMORY_GC_BOUND
+   - ENTITY_SCALE_BOUND
+   - RPC_STORM
+   - UNKNOWN
+
+4. Cite concrete metrics before proposing a code change.
+
+5. Only inspect code related to the top suspects first.
+
+6. After implementing a patch, ask the user to reproduce the issue and run:
+   game-diag analyze --last 30
+
+7. Do not remove diagnostics code unless explicitly asked.
+
+On Windows PowerShell, use `.\game-diag.cmd ...` from the repository root if `game-diag` is not on PATH.

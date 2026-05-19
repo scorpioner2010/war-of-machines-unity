@@ -1,3 +1,4 @@
+using Game.Scripts.Diagnostics;
 using UnityEngine;
 
 namespace Game.Scripts.Player.Camera
@@ -25,30 +26,35 @@ namespace Game.Scripts.Player.Camera
 
         private void LateUpdate()
         {
-            if (mainCamera == null)
+            using (ProfileScope.Measure("Camera.Collision.LateUpdate", DiagnosticsCategories.Render))
             {
-                return;
-            }
-            if (focusPoint == null)
-            {
-                return;
-            }
-            
-            Vector3 focusPos = focusPoint.transform.position;
-            Vector3 camPos = mainCamera.transform.position;
-            Vector3 direction = camPos - focusPos;
-            float distance = direction.magnitude;
-            if (distance > 0)
-                direction /= distance;
+                if (mainCamera == null)
+                {
+                    return;
+                }
+                if (focusPoint == null)
+                {
+                    return;
+                }
 
-            if (Physics.Raycast(focusPos, direction, out RaycastHit hit, distance + cushionOffset, maskedLayers))
-            {
-                float hitDistance = Vector3.Distance(hit.point, focusPos);
-                Vector3 newPos = (hitDistance < cushionOffset)
-                    ? focusPos
-                    : hit.point - direction * cushionOffset;
+                Vector3 focusPos = focusPoint.transform.position;
+                Vector3 camPos = mainCamera.transform.position;
+                Vector3 direction = camPos - focusPos;
+                float distance = direction.magnitude;
+                if (distance > 0)
+                {
+                    direction /= distance;
+                }
 
-                mainCamera.transform.position = newPos;
+                if (Physics.Raycast(focusPos, direction, out RaycastHit hit, distance + cushionOffset, maskedLayers))
+                {
+                    float hitDistance = Vector3.Distance(hit.point, focusPos);
+                    Vector3 newPos = (hitDistance < cushionOffset)
+                        ? focusPos
+                        : hit.point - direction * cushionOffset;
+
+                    mainCamera.transform.position = newPos;
+                }
             }
         }
     }

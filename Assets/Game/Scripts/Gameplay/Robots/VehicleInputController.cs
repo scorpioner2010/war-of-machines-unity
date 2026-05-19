@@ -2,6 +2,7 @@ using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Game.Scripts.AI.WaypointGraph;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.MenuController;
 using Game.Scripts.Server;
 using UnityEngine;
@@ -209,142 +210,147 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float x = 0f;
-            float y = 0f;
-            bool blocked = IsLocalInputBlocked;
-            if (!blocked)
+            using (ProfileScope.Measure("Client.VehicleInput.Update", DiagnosticsCategories.Client))
             {
-                if (Input.GetKey(KeyCode.A))
+                float x = 0f;
+                float y = 0f;
+                bool blocked = IsLocalInputBlocked;
+                if (!blocked)
                 {
-                    x = -1f;
+                    if (Input.GetKey(KeyCode.A))
+                    {
+                        x = -1f;
+                    }
+                    else if (Input.GetKey(KeyCode.D))
+                    {
+                        x = 1f;
+                    }
+
+                    if (Input.GetKey(KeyCode.W))
+                    {
+                        y = 1f;
+                    }
+                    else if (Input.GetKey(KeyCode.S))
+                    {
+                        y = -1f;
+                    }
                 }
-                else if (Input.GetKey(KeyCode.D))
+
+                bool newShoot = !blocked && Input.GetMouseButton(0);
+                bool newAction = !blocked && Input.GetKey(KeyCode.Space);
+                ResolveAutoAimController();
+                if (!blocked && Input.GetMouseButtonDown(1) && autoAimController != null)
                 {
-                    x = 1f;
+                    autoAimController.ToggleFromCurrentView();
                 }
 
-                if (Input.GetKey(KeyCode.W))
+                bool autoAimActive = false;
+                Vector3 autoAimPoint = Vector3.zero;
+                Vector3 autoAimForward = Vector3.zero;
+                if (!blocked && autoAimController != null)
                 {
-                    y = 1f;
+                    autoAimActive = autoAimController.TryGetAimTarget(out autoAimPoint, out autoAimForward);
                 }
-                else if (Input.GetKey(KeyCode.S))
+
+                _moveLocal = new Vector2(x, y);
+                _shootLocal = newShoot;
+                _actionLocal = newAction;
+
+                float yawDeg, pitchDeg;
+                Vector3 aimPoint;
+                Vector3 aimForward;
+
+                if (blocked)
                 {
-                    y = -1f;
+                    yawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
+                    pitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
+                    aimPoint = _lastAimPointLocal;
+                    aimForward = _lastAimForwardLocal;
                 }
-            }
+                else if (autoAimActive)
+                {
+                    ComputeAutoAimYawPitch(autoAimPoint, autoAimForward, out yawDeg, out pitchDeg, out aimPoint, out aimForward);
+                    _lastAimPointLocal = aimPoint;
+                    _lastAimForwardLocal = aimForward;
+                }
+                else
+                {
+                    ComputeLocalYawPitch(out yawDeg, out pitchDeg, out aimPoint, out aimForward);
+                    _lastAimPointLocal = aimPoint;
+                    _lastAimForwardLocal = aimForward;
+                }
 
-            bool newShoot = !blocked && Input.GetMouseButton(0);
-            bool newAction = !blocked && Input.GetKey(KeyCode.Space);
-            ResolveAutoAimController();
-            if (!blocked && Input.GetMouseButtonDown(1) && autoAimController != null)
-            {
-                autoAimController.ToggleFromCurrentView();
-            }
+                if (aimPoint == Vector3.zero && vehicleRoot.weaponAimAtCamera != null)
+                {
+                    aimPoint = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
+                    _lastAimPointLocal = aimPoint;
+                }
+                if (aimForward == Vector3.zero && CameraSync.In != null)
+                {
+                    aimForward = CameraSync.In.GetAimForward();
+                    _lastAimForwardLocal = aimForward;
+                }
 
-            bool autoAimActive = false;
-            Vector3 autoAimPoint = Vector3.zero;
-            Vector3 autoAimForward = Vector3.zero;
-            if (!blocked && autoAimController != null)
-            {
-                autoAimActive = autoAimController.TryGetAimTarget(out autoAimPoint, out autoAimForward);
-            }
+                if (vehicleRoot.weaponAimAtCamera != null)
+                {
+                    vehicleRoot.weaponAimAtCamera.SetDesiredAimPoint(aimPoint, aimForward);
+                }
+                ApplyLocalAimTargets(yawDeg, pitchDeg);
 
-            _moveLocal = new Vector2(x, y);
-            _shootLocal = newShoot;
-            _actionLocal = newAction;
+                short yawQ = AngleQuantization.QuantizeAngle01(yawDeg);
+                short pitchQ = AngleQuantization.QuantizeAngle01(pitchDeg);
 
-            float yawDeg, pitchDeg;
-            Vector3 aimPoint;
-            Vector3 aimForward;
+                float lastYawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
+                float lastPitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
+                VehicleInputSyncSettings inputSync = GetInputSyncSettings();
+                float yawPitchDeadzone = Mathf.Max(0f, inputSync.yawPitchSendDeadzoneDeg);
+                float aimPointDeadzoneSqr = inputSync.GetAimPointSendDeadzoneSqr();
 
-            if (blocked)
-            {
-                yawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
-                pitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
-                aimPoint = _lastAimPointLocal;
-                aimForward = _lastAimForwardLocal;
-            }
-            else if (autoAimActive)
-            {
-                ComputeAutoAimYawPitch(autoAimPoint, autoAimForward, out yawDeg, out pitchDeg, out aimPoint, out aimForward);
-                _lastAimPointLocal = aimPoint;
-                _lastAimForwardLocal = aimForward;
-            }
-            else
-            {
-                ComputeLocalYawPitch(out yawDeg, out pitchDeg, out aimPoint, out aimForward);
-                _lastAimPointLocal = aimPoint;
-                _lastAimForwardLocal = aimForward;
-            }
+                bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= yawPitchDeadzone;
+                bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= yawPitchDeadzone;
 
-            if (aimPoint == Vector3.zero && vehicleRoot.weaponAimAtCamera != null)
-            {
-                aimPoint = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
-                _lastAimPointLocal = aimPoint;
-            }
-            if (aimForward == Vector3.zero && CameraSync.In != null)
-            {
-                aimForward = CameraSync.In.GetAimForward();
-                _lastAimForwardLocal = aimForward;
-            }
+                if (!yawBeyond)
+                {
+                    yawQ = _lastSentYawQ;
+                }
+                if (!pitchBeyond)
+                {
+                    pitchQ = _lastSentPitchQ;
+                }
 
-            if (vehicleRoot.weaponAimAtCamera != null)
-            {
-                vehicleRoot.weaponAimAtCamera.SetDesiredAimPoint(aimPoint, aimForward);
-            }
-            ApplyLocalAimTargets(yawDeg, pitchDeg);
+                bool changed =
+                    (_lastSentMove - _moveLocal).sqrMagnitude > 0.0001f ||
+                    _lastSentShoot != newShoot ||
+                    _lastSentAction != newAction ||
+                    _lastSentYawQ != yawQ ||
+                    _lastSentPitchQ != pitchQ ||
+                    (_lastSentAimPoint - aimPoint).sqrMagnitude > aimPointDeadzoneSqr;
 
-            short yawQ = AngleQuantization.QuantizeAngle01(yawDeg);
-            short pitchQ = AngleQuantization.QuantizeAngle01(pitchDeg);
+                if (Time.unscaledTime >= _nextSendTime || changed)
+                {
+                    _seq++;
+                    ProfileScope.RecordEvent("RPC.SendControls", DiagnosticsCategories.Rpc);
+                    DiagnosticsManager.RecordOutgoing("RPC.SendControls", 96);
+                    SendControlsServerRpc(
+                        _seq,
+                        Mathf.Clamp(_moveLocal.x, -1f, 1f),
+                        Mathf.Clamp(_moveLocal.y, -1f, 1f),
+                        newShoot,
+                        newAction,
+                        yawQ,
+                        pitchQ,
+                        aimPoint,
+                        aimForward
+                    );
 
-            float lastYawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
-            float lastPitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
-            VehicleInputSyncSettings inputSync = GetInputSyncSettings();
-            float yawPitchDeadzone = Mathf.Max(0f, inputSync.yawPitchSendDeadzoneDeg);
-            float aimPointDeadzoneSqr = inputSync.GetAimPointSendDeadzoneSqr();
-
-            bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= yawPitchDeadzone;
-            bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= yawPitchDeadzone;
-
-            if (!yawBeyond)
-            {
-                yawQ = _lastSentYawQ;
-            }
-            if (!pitchBeyond)
-            {
-                pitchQ = _lastSentPitchQ;
-            }
-
-            bool changed =
-                (_lastSentMove - _moveLocal).sqrMagnitude > 0.0001f ||
-                _lastSentShoot != newShoot ||
-                _lastSentAction != newAction ||
-                _lastSentYawQ != yawQ ||
-                _lastSentPitchQ != pitchQ ||
-                (_lastSentAimPoint - aimPoint).sqrMagnitude > aimPointDeadzoneSqr;
-
-            if (Time.unscaledTime >= _nextSendTime || changed)
-            {
-                _seq++;
-                SendControlsServerRpc(
-                    _seq,
-                    Mathf.Clamp(_moveLocal.x, -1f, 1f),
-                    Mathf.Clamp(_moveLocal.y, -1f, 1f),
-                    newShoot,
-                    newAction,
-                    yawQ,
-                    pitchQ,
-                    aimPoint,
-                    aimForward
-                );
-
-                _lastSentMove = _moveLocal;
-                _lastSentShoot = newShoot;
-                _lastSentAction = newAction;
-                _lastSentYawQ = yawQ;
-                _lastSentPitchQ = pitchQ;
-                _lastSentAimPoint = aimPoint;
-                _nextSendTime = Time.unscaledTime + Mathf.Max(0.001f, inputSync.sendInterval);
+                    _lastSentMove = _moveLocal;
+                    _lastSentShoot = newShoot;
+                    _lastSentAction = newAction;
+                    _lastSentYawQ = yawQ;
+                    _lastSentPitchQ = pitchQ;
+                    _lastSentAimPoint = aimPoint;
+                    _nextSendTime = Time.unscaledTime + Mathf.Max(0.001f, inputSync.sendInterval);
+                }
             }
         }
 
@@ -365,32 +371,35 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 aimForward,
             NetworkConnection sender = null)
         {
-            if (sender == null)
+            using (ProfileScope.Measure("RPC.SendControls", DiagnosticsCategories.Rpc))
             {
-                return;
+                if (sender == null)
+                {
+                    return;
+                }
+                if (sender != base.Owner)
+                {
+                    return;
+                }
+                if (seq <= _lastInputSeqServer)
+                {
+                    return;
+                }
+
+                _lastInputSeqServer = seq;
+
+                moveX = Mathf.Clamp(moveX, -1f, 1f);
+                moveY = Mathf.Clamp(moveY, -1f, 1f);
+
+                ApplyServerInput(new Vector2(moveX, moveY), shoot, action, true);
+
+                float yawDeg = AngleQuantization.DequantizeAngle01(yawQ);
+                float pitchDeg = AngleQuantization.DequantizeAngle01(pitchQ);
+
+                vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(aimPoint, aimForward);
+                vehicleRoot.robotHullRotation.SetTargetYawServer(yawDeg);
+                vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(pitchDeg);
             }
-            if (sender != base.Owner)
-            {
-                return;
-            }
-            if (seq <= _lastInputSeqServer)
-            {
-                return;
-            }
-
-            _lastInputSeqServer = seq;
-
-            moveX = Mathf.Clamp(moveX, -1f, 1f);
-            moveY = Mathf.Clamp(moveY, -1f, 1f);
-
-            ApplyServerInput(new Vector2(moveX, moveY), shoot, action, true);
-
-            float yawDeg = AngleQuantization.DequantizeAngle01(yawQ);
-            float pitchDeg = AngleQuantization.DequantizeAngle01(pitchQ);
-
-            vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(aimPoint, aimForward);
-            vehicleRoot.robotHullRotation.SetTargetYawServer(yawDeg);
-            vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(pitchDeg);
         }
 
         private void ApplyServerInput(Vector2 move, bool shoot, bool action, bool syncAnimation)

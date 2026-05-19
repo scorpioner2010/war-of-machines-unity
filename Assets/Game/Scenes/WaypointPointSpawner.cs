@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Scripts.Diagnostics;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -519,12 +520,17 @@ public class WaypointPointSpawner : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (!drawGizmos)
-            return;
+        using (ProfileScope.Measure("Gizmos.WaypointPointSpawner.OnDrawGizmos", DiagnosticsCategories.Editor))
+        {
+            if (!drawGizmos)
+            {
+                return;
+            }
 
-        DrawContourGizmos();
-        DrawGeneratedPointGizmos();
-        DrawConnectionGizmos();
+            DrawContourGizmos();
+            DrawGeneratedPointGizmos();
+            DrawConnectionGizmos();
+        }
     }
 
     private void DrawContourGizmos()

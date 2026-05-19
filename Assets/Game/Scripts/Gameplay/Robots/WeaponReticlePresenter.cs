@@ -1,5 +1,6 @@
 using Game.Scripts.Core.Services;
 using Game.Scripts.Client;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Settings;
@@ -94,61 +95,63 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            if (!_controlsLocalReticle)
+            using (ProfileScope.Measure("Client.UI.WeaponReticle.LateUpdate", DiagnosticsCategories.Ui))
             {
-                return;
-            }
-
-            if (_canvas == null || _canvasRect == null || _reticleRect == null)
-            {
-                if (!TryResolveHudReferences(false))
+                if (!_controlsLocalReticle)
                 {
                     return;
                 }
-            }
 
-            if (vehicleRoot == null || vehicleRoot.weaponAimAtCamera == null)
-            {
-                SetVisible(false);
-                SetVisibleServer(false);
-                ResetVisualAimPoints();
-                return;
-            }
+                if (_canvas == null || _canvasRect == null || _reticleRect == null)
+                {
+                    if (!TryResolveHudReferences(false))
+                    {
+                        return;
+                    }
+                }
 
-            bool sniperMode = IsSniperModeActive();
-            if (sniperMode)
-            {
-                vehicleRoot.cameraController.RefreshSniperCameraPose();
-            }
+                if (vehicleRoot == null || vehicleRoot.weaponAimAtCamera == null)
+                {
+                    SetVisible(false);
+                    SetVisibleServer(false);
+                    ResetVisualAimPoints();
+                    return;
+                }
 
-            if (_wasSniperMode != sniperMode)
-            {
-                _wasSniperMode = sniperMode;
-                ResetVisualAimPoints();
-            }
+                bool sniperMode = IsSniperModeActive();
+                if (sniperMode)
+                {
+                    vehicleRoot.cameraController.RefreshSniperCameraPose();
+                }
 
-            Camera cam = GetGameplayCamera();
-            if (cam == null)
-            {
-                return;
-            }
+                if (_wasSniperMode != sniperMode)
+                {
+                    _wasSniperMode = sniperMode;
+                    ResetVisualAimPoints();
+                }
 
-            GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            Vector3 gunFwd = vehicleRoot.weaponAimAtCamera.GetLogicalAimForwardWorld().normalized;
-            float angle = Vector3.Angle(gunFwd, cam.transform.forward);
-            if (angle > runtimeSettings.reticleHideWhenAngleGreaterThan)
-            {
-                SetVisible(false);
-                SetVisibleServer(false);
-                ResetVisualAimPoints();
-                return;
-            }
+                Camera cam = GetGameplayCamera();
+                if (cam == null)
+                {
+                    return;
+                }
 
-            Vector3 worldAim = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
-            if (worldAim == Vector3.zero)
-            {
-                worldAim = vehicleRoot.weaponAimAtCamera.DesiredAimPoint;
-            }
+                GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+                Vector3 gunFwd = vehicleRoot.weaponAimAtCamera.GetLogicalAimForwardWorld().normalized;
+                float angle = Vector3.Angle(gunFwd, cam.transform.forward);
+                if (angle > runtimeSettings.reticleHideWhenAngleGreaterThan)
+                {
+                    SetVisible(false);
+                    SetVisibleServer(false);
+                    ResetVisualAimPoints();
+                    return;
+                }
+
+                Vector3 worldAim = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
+                if (worldAim == Vector3.zero)
+                {
+                    worldAim = vehicleRoot.weaponAimAtCamera.DesiredAimPoint;
+                }
 
             GetReticleLerpSpeeds(sniperMode, out float horizontalLerpSpeed, out float verticalLerpSpeed);
 
@@ -218,6 +221,7 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 SetVisibleServer(false);
                 _hasVisualAimPointServer = false;
+            }
             }
         }
 

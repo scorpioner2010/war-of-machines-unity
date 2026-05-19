@@ -1,3 +1,4 @@
+using Game.Scripts.Diagnostics;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -45,7 +46,10 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            SyncToTarget();
+            using (ProfileScope.Measure("Camera.Sync.LateUpdate", DiagnosticsCategories.Render))
+            {
+                SyncToTarget();
+            }
         }
     }
 }

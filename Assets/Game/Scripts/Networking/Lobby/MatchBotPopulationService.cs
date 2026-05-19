@@ -56,7 +56,11 @@ namespace Game.Scripts.Networking.Lobby
                 room.AddPlayer(bot);
             }
 
-            room.maxPlayers = room.PlayersCount();
+            int playerCount = room.PlayersCount();
+            if (room.maxPlayers < playerCount)
+            {
+                room.maxPlayers = playerCount;
+            }
         }
 
         private static int CountBots(ServerRoom room)

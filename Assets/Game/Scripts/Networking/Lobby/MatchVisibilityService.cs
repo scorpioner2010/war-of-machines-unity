@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FishNet.Connection;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Server;
 using UnityEngine;
@@ -95,11 +96,26 @@ namespace Game.Scripts.Networking.Lobby
             _nextTickTime = now + Mathf.Max(0.05f, settings.tickInterval);
             _version++;
 
-            RebuildParticipants(settings);
-            UpdateTeamSpotting(now, settings);
-            BuildSnapshotForTeam(_teamA, now);
-            BuildSnapshotForTeam(_teamB, now);
-            SendSnapshots(updateSink);
+            using (ProfileScope.Measure("Server.Visibility.RebuildParticipants", DiagnosticsCategories.Server))
+            {
+                RebuildParticipants(settings);
+            }
+
+            using (ProfileScope.Measure("Server.Visibility.UpdateTeamSpotting", DiagnosticsCategories.Server))
+            {
+                UpdateTeamSpotting(now, settings);
+            }
+
+            using (ProfileScope.Measure("Server.Visibility.BuildSnapshots", DiagnosticsCategories.Server))
+            {
+                BuildSnapshotForTeam(_teamA, now);
+                BuildSnapshotForTeam(_teamB, now);
+            }
+
+            using (ProfileScope.Measure("Server.Visibility.SendSnapshots", DiagnosticsCategories.Network))
+            {
+                SendSnapshots(updateSink);
+            }
         }
 
         public bool IsVisibleForTeam(MatchTeam viewerTeam, VehicleRoot targetRoot)

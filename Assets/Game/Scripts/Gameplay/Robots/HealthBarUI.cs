@@ -13,6 +13,8 @@ namespace Game.Scripts.Gameplay.Robots
         private HealthBar _healthBar;
         private Image _fillImage;
         private bool _active;
+        private int _lastLabelCurrent = int.MinValue;
+        private int _lastLabelMax = int.MinValue;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -80,6 +82,13 @@ namespace Game.Scripts.Gameplay.Robots
         {
             int cur = Mathf.RoundToInt(vehicleRoot.health.Current);
             int max = Mathf.RoundToInt(vehicleRoot.health.MaxHealth);
+            if (_lastLabelCurrent == cur && _lastLabelMax == max)
+            {
+                return;
+            }
+
+            _lastLabelCurrent = cur;
+            _lastLabelMax = max;
             _healthBar.label.text = $"{cur} / {max}";
         }
 

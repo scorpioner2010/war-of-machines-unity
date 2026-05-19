@@ -1,4 +1,5 @@
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Client;
 using TMPro;
@@ -162,15 +163,18 @@ namespace Game.Scripts.UI.HUD
         
         private void LateUpdate()
         {
-            RefreshHpColorIfNeeded();
-
-            Camera camera = ResolveCamera();
-            if (camera != null)
+            using (ProfileScope.Measure("Client.UI.VehicleHUD.LateUpdate", DiagnosticsCategories.Ui))
             {
-                transform.forward = camera.transform.forward;
-            }
+                RefreshHpColorIfNeeded();
 
-            ApplyDistanceScale(camera);
+                Camera camera = ResolveCamera();
+                if (camera != null)
+                {
+                    transform.forward = camera.transform.forward;
+                }
+
+                ApplyDistanceScale(camera);
+            }
         }
 
         private void ApplyDistanceScale(Camera camera)

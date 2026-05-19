@@ -38,7 +38,11 @@ namespace Game.Scripts.AI.WaypointGraph
             int sceneHandle = scene.handle;
             if (GraphBySceneHandle.TryGetValue(sceneHandle, out WaypointGraphRuntime cachedGraph) && cachedGraph != null)
             {
-                cachedGraph.Build();
+                if (!cachedGraph.IsBuilt)
+                {
+                    cachedGraph.Build();
+                }
+
                 return cachedGraph;
             }
 
@@ -48,7 +52,11 @@ namespace Game.Scripts.AI.WaypointGraph
                 WaypointGraphRuntime graph = roots[i].GetComponentInChildren<WaypointGraphRuntime>(true);
                 if (graph != null)
                 {
-                    graph.Build();
+                    if (!graph.IsBuilt)
+                    {
+                        graph.Build();
+                    }
+
                     GraphBySceneHandle[sceneHandle] = graph;
                     return graph;
                 }
@@ -69,7 +77,11 @@ namespace Game.Scripts.AI.WaypointGraph
                 }
 
                 graph.source = spawner;
-                graph.Build();
+                if (!graph.IsBuilt)
+                {
+                    graph.Build();
+                }
+
                 GraphBySceneHandle[sceneHandle] = graph;
                 return graph;
             }

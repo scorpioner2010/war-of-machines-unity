@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Server;
@@ -9,6 +10,8 @@ namespace Game.Scripts.AI.WaypointGraph
 {
     public sealed class BotNavigator : MonoBehaviour
     {
+        private const float FailedRepathBackoffSeconds = 2f;
+
         [SerializeField] private Transform target;
         [SerializeField] private bool drawDebugGizmos = true;
 
@@ -84,60 +87,66 @@ namespace Game.Scripts.AI.WaypointGraph
                 return;
             }
 
-            if (_vehicleRoot.health != null && _vehicleRoot.health.IsDead)
+            using (ProfileScope.Measure("Server.BotNavigator.FixedUpdate", DiagnosticsCategories.Ai))
             {
-                Stop();
-                return;
-            }
+                if (_vehicleRoot.health != null && _vehicleRoot.health.IsDead)
+                {
+                    Stop();
+                    return;
+                }
 
-            float now = Time.time;
-            if (now < _nextTickTime)
-            {
-                return;
-            }
-
-            BotWanderSettings settings = ServerSettings.GetBotWander();
-            _nextTickTime = now + settings.thinkInterval;
-
-            if (_graph == null || !_graph.IsBuilt || _pathfinder == null)
-            {
-                TickFallbackWander(settings, now);
-                return;
-            }
-
-            if (_isUnsticking)
-            {
-                if (now < _unstickUntilTime)
+                float now = Time.time;
+                if (now < _nextTickTime)
                 {
                     return;
                 }
 
-                _isUnsticking = false;
-                ClearPath();
-            }
+                BotWanderSettings settings = ServerSettings.GetBotWander();
+                _nextTickTime = now + settings.thinkInterval;
 
-            if (_path.Count > 0 && now >= _nextStuckCheckTime && TryStartUnstick(settings, now))
-            {
-                return;
-            }
+                if (_graph == null || !_graph.IsBuilt || _pathfinder == null)
+                {
+                    TickFallbackWander(settings, now);
+                    return;
+                }
 
-            if (target != null)
-            {
-                _targetPosition = target.position;
-                _hasExplicitTarget = true;
-            }
+                if (_isUnsticking)
+                {
+                    if (now < _unstickUntilTime)
+                    {
+                        return;
+                    }
 
-            if (_hasExplicitTarget && _path.Count > 0 && HasTargetMovedEnough(settings))
-            {
-                ClearPath();
-            }
+                    _isUnsticking = false;
+                    ClearPath();
+                }
 
-            if (_path.Count == 0 || _pathIndex >= _path.Count)
-            {
-                Repath(settings, now);
-            }
+                if (_path.Count > 0 && now >= _nextStuckCheckTime && TryStartUnstick(settings, now))
+                {
+                    return;
+                }
 
-            FollowPath(settings, now);
+                if (target != null)
+                {
+                    _targetPosition = target.position;
+                    _hasExplicitTarget = true;
+                }
+
+                if (_hasExplicitTarget && _path.Count > 0 && HasTargetMovedEnough(settings))
+                {
+                    ClearPath();
+                }
+
+                if (_path.Count == 0 || _pathIndex >= _path.Count)
+                {
+                    using (ProfileScope.Measure("Server.BotNavigator.Repath", DiagnosticsCategories.Ai))
+                    {
+                        Repath(settings, now);
+                    }
+                }
+
+                FollowPath(settings, now);
+            }
         }
 
         private bool IsServerReady()
@@ -165,12 +174,14 @@ namespace Game.Scripts.AI.WaypointGraph
             if (startNodeId < 0 || goalNodeId < 0)
             {
                 ClearPath();
+                _nextRepathTime = now + Mathf.Max(settings.repathCooldown, FailedRepathBackoffSeconds);
                 return;
             }
 
             if (!_pathfinder.FindPath(startNodeId, goalNodeId, _path))
             {
                 ClearPath();
+                _nextRepathTime = now + Mathf.Max(settings.repathCooldown, FailedRepathBackoffSeconds);
                 return;
             }
 
@@ -462,27 +473,30 @@ namespace Game.Scripts.AI.WaypointGraph
 
         private void OnDrawGizmosSelected()
         {
-            if (!drawDebugGizmos || _graph == null || _path.Count == 0)
+            using (ProfileScope.Measure("Gizmos.BotNavigator.OnDrawGizmosSelected", DiagnosticsCategories.Editor))
             {
-                return;
-            }
+                if (!drawDebugGizmos || _graph == null || _path.Count == 0)
+                {
+                    return;
+                }
 
-            Gizmos.color = Color.blue;
-            for (int i = 0; i < _path.Count - 1; i++)
-            {
-                Gizmos.DrawLine(_graph.GetNodePosition(_path[i]), _graph.GetNodePosition(_path[i + 1]));
-            }
+                Gizmos.color = Color.blue;
+                for (int i = 0; i < _path.Count - 1; i++)
+                {
+                    Gizmos.DrawLine(_graph.GetNodePosition(_path[i]), _graph.GetNodePosition(_path[i + 1]));
+                }
 
-            if (_pathIndex >= 0 && _pathIndex < _path.Count)
-            {
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawSphere(_graph.GetNodePosition(_path[_pathIndex]), 0.6f);
-            }
+                if (_pathIndex >= 0 && _pathIndex < _path.Count)
+                {
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawSphere(_graph.GetNodePosition(_path[_pathIndex]), 0.6f);
+                }
 
-            if (_destinationNodeId >= 0)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawSphere(_graph.GetNodePosition(_destinationNodeId), 0.75f);
+                if (_destinationNodeId >= 0)
+                {
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawSphere(_graph.GetNodePosition(_destinationNodeId), 0.75f);
+                }
             }
         }
     }

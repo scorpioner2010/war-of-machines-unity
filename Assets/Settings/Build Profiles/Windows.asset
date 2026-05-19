@@ -970,7 +970,7 @@ MonoBehaviour:
     - line: '|   useDeterministicCompilation: 1'
     - line: '|   additionalIl2CppArgs: '
     - line: '|   scriptingRuntimeVersion: 1'
-    - line: '|   gcIncremental: 0'
+    - line: '|   gcIncremental: 1'
     - line: '|   gcWBarrierValidation: 0'
     - line: '|   apiCompatibilityLevelPerPlatform: {}'
     - line: '|   editorAssembliesCompatibilityLevel: 1'

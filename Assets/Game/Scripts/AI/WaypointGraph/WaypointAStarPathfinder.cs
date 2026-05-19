@@ -11,6 +11,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private float[] _gScore = new float[0];
         private float[] _fScore = new float[0];
         private bool[] _closed = new bool[0];
+        private bool[] _openSet = new bool[0];
 
         public WaypointAStarPathfinder(WaypointGraphRuntime graph)
         {
@@ -58,6 +59,7 @@ namespace Game.Scripts.AI.WaypointGraph
 
             _open.Clear();
             _open.Add(startNodeId);
+            _openSet[startNodeId] = true;
             _gScore[startNodeId] = 0f;
             _fScore[startNodeId] = Heuristic(startNodeId, goalNodeId);
 
@@ -96,9 +98,10 @@ namespace Game.Scripts.AI.WaypointGraph
                     _gScore[neighbor] = tentativeG;
                     _fScore[neighbor] = tentativeG + Heuristic(neighbor, goalNodeId);
 
-                    if (!ContainsOpenNode(neighbor))
+                    if (!_openSet[neighbor])
                     {
                         _open.Add(neighbor);
+                        _openSet[neighbor] = true;
                     }
                 }
             }
@@ -117,6 +120,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _gScore = new float[nodeCount];
             _fScore = new float[nodeCount];
             _closed = new bool[nodeCount];
+            _openSet = new bool[nodeCount];
         }
 
         private void ResetState(int nodeCount)
@@ -127,6 +131,7 @@ namespace Game.Scripts.AI.WaypointGraph
                 _gScore[i] = float.PositiveInfinity;
                 _fScore[i] = float.PositiveInfinity;
                 _closed[i] = false;
+                _openSet[i] = false;
             }
         }
 
@@ -151,20 +156,8 @@ namespace Game.Scripts.AI.WaypointGraph
             int lastIndex = _open.Count - 1;
             _open[bestOpenIndex] = _open[lastIndex];
             _open.RemoveAt(lastIndex);
+            _openSet[bestNode] = false;
             return bestNode;
-        }
-
-        private bool ContainsOpenNode(int node)
-        {
-            for (int i = 0; i < _open.Count; i++)
-            {
-                if (_open[i] == node)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private float Heuristic(int nodeId, int goalNodeId)

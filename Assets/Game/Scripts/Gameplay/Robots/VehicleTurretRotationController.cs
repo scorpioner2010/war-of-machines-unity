@@ -1,4 +1,5 @@
 using FishNet.Object;
+using Game.Scripts.Diagnostics;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -94,14 +95,17 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            if (!ShouldDriveRotation() || _chassisTransform == null)
+            using (ProfileScope.Measure(IsServerInitialized ? "Server.VehicleTurret.LateUpdate" : "Client.VehicleTurret.LateUpdate", IsServerInitialized ? DiagnosticsCategories.Server : DiagnosticsCategories.Client))
             {
-                return;
-            }
+                if (!ShouldDriveRotation() || _chassisTransform == null)
+                {
+                    return;
+                }
 
-            float step = rotationSpeed * Time.deltaTime;
-            _localYaw = Mathf.MoveTowardsAngle(_localYaw, _targetYawServer, step);
-            transform.rotation = _chassisTransform.rotation * Quaternion.Euler(0f, _localYaw, 0f);
+                float step = rotationSpeed * Time.deltaTime;
+                _localYaw = Mathf.MoveTowardsAngle(_localYaw, _targetYawServer, step);
+                transform.rotation = _chassisTransform.rotation * Quaternion.Euler(0f, _localYaw, 0f);
+            }
         }
 
         private bool ShouldDriveRotation()

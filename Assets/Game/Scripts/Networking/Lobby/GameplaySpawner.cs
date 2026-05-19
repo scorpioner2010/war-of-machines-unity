@@ -6,6 +6,7 @@ using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
@@ -78,15 +79,21 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            float now = Time.time;
-            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            using (ProfileScope.Measure("Server.GameplaySpawner.Update", DiagnosticsCategories.Server))
             {
-                if (room == null || !room.IsActiveMatch || !room.spawnStarted || room.isGameFinished)
+                float now = Time.time;
+                foreach (ServerRoom room in LobbyRooms.Rooms.Values)
                 {
-                    continue;
-                }
+                    if (room == null || !room.IsActiveMatch || !room.spawnStarted || room.isGameFinished)
+                    {
+                        continue;
+                    }
 
-                room.Visibility.Tick(now, this);
+                    using (ProfileScope.Measure("Server.Visibility.Tick", DiagnosticsCategories.Server))
+                    {
+                        room.Visibility.Tick(now, this);
+                    }
+                }
             }
         }
 
@@ -328,7 +335,13 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
-            TargetMapVisibilityRpc(target, version, count, objectIds, relations, positions, yaws, NetworkChannel.Unreliable);
+            int estimatedBytes = 32 + Mathf.Max(0, count) * 21;
+            DiagnosticsManager.RecordOutgoing("Network.SendMapVisibility", estimatedBytes, target.ClientId);
+            ProfileScope.RecordEvent("RPC.TargetMapVisibility", DiagnosticsCategories.Rpc);
+            using (ProfileScope.Measure("Network.SendMapVisibility", DiagnosticsCategories.Network))
+            {
+                TargetMapVisibilityRpc(target, version, count, objectIds, relations, positions, yaws, NetworkChannel.Unreliable);
+            }
         }
 
         [TargetRpc(DataLength = 512)]
@@ -342,7 +355,13 @@ namespace Game.Scripts.Networking.Lobby
             float[] yaws,
             NetworkChannel channel = NetworkChannel.Unreliable)
         {
-            GameplayMapVisibilityState.Apply(version, count, objectIds, relations, positions, yaws);
+            using (ProfileScope.Measure("Client.NetworkSnapshot.Receive", DiagnosticsCategories.Network))
+            {
+                using (ProfileScope.Measure("Client.NetworkSnapshot.Apply", DiagnosticsCategories.Client))
+                {
+                    GameplayMapVisibilityState.Apply(version, count, objectIds, relations, positions, yaws);
+                }
+            }
         }
 
         private async UniTask EnsureMainMenuAfterDisconnect()
@@ -358,33 +377,36 @@ namespace Game.Scripts.Networking.Lobby
         [ServerRpc(RequireOwnership = false)]
         public void RequestPlayerDisconnectServerRpc(int clientId)
         {
-            if (ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn) == false)
+            using (ProfileScope.Measure("RPC.RequestPlayerDisconnect", DiagnosticsCategories.Rpc))
             {
-                return;
-            }
-            
+                if (ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn) == false)
+                {
+                    return;
+                }
+
             ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(conn);
 
-            if (serverRoom != null)
-            {
-                Player player = serverRoom.GetPlayerByConnection(conn);
-            
-                if (player != null)
+                if (serverRoom != null)
                 {
-                    if (serverRoom.IsActiveMatch)
+                    Player player = serverRoom.GetPlayerByConnection(conn);
+
+                    if (player != null)
                     {
-                        AbandonPlayer(serverRoom, player);
+                        if (serverRoom.IsActiveMatch)
+                        {
+                            AbandonPlayer(serverRoom, player);
+                            UnloadRoomSceneForConnection(conn, serverRoom);
+                            return;
+                        }
+
                         UnloadRoomSceneForConnection(conn, serverRoom);
-                        return;
-                    }
 
-                    UnloadRoomSceneForConnection(conn, serverRoom);
+                        LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
 
-                    LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
-
-                    if (player.playerRoot != null && player.playerRoot.networkObject != null)
-                    {
-                        Despawn(player.playerRoot.networkObject);
+                        if (player.playerRoot != null && player.playerRoot.networkObject != null)
+                        {
+                            Despawn(player.playerRoot.networkObject);
+                        }
                     }
                 }
             }
@@ -473,29 +495,32 @@ namespace Game.Scripts.Networking.Lobby
         [ServerRpc(RequireOwnership = false)]
         private void NotifyServerSceneLoaded(int clientId)
         {
-            if (!ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn))
+            using (ProfileScope.Measure("RPC.NotifyServerSceneLoaded", DiagnosticsCategories.Rpc))
             {
-                return;
-            }
+                if (!ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn))
+                {
+                    return;
+                }
             
-            ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(conn);
-            if (serverRoom == null)
-            {
-                return;
-            }
+                ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(conn);
+                if (serverRoom == null)
+                {
+                    return;
+                }
 
-            Player playerByConnection = serverRoom.GetPlayerByConnection(conn);
-            if (playerByConnection == null)
-            {
-                return;
-            }
+                Player playerByConnection = serverRoom.GetPlayerByConnection(conn);
+                if (playerByConnection == null)
+                {
+                    return;
+                }
 
-            playerByConnection.randomPlayerConnected = true;
-            bool allLoaded = serverRoom.AreAllRealPlayersLoaded();
+                playerByConnection.randomPlayerConnected = true;
+                bool allLoaded = serverRoom.AreAllRealPlayersLoaded();
             
-            if (allLoaded)
-            {
-                SpawnBattleVehiclesAsync(serverRoom).Forget();
+                if (allLoaded)
+                {
+                    SpawnBattleVehiclesAsync(serverRoom).Forget();
+                }
             }
         }
 
@@ -676,45 +701,51 @@ namespace Game.Scripts.Networking.Lobby
         [ServerRpc(RequireOwnership = false)]
         public void ConfirmGameResultReceivedServerRpc(string roomId, NetworkConnection sender = null)
         {
-            if (sender == null)
+            using (ProfileScope.Measure("RPC.ConfirmGameResultReceived", DiagnosticsCategories.Rpc))
             {
-                return;
-            }
+                if (sender == null)
+                {
+                    return;
+                }
 
-            ServerRoom serverRoom = LobbyRooms.GetRoomById(roomId);
-            if (serverRoom == null || !serverRoom.matchRewardsSent)
-            {
-                return;
-            }
+                ServerRoom serverRoom = LobbyRooms.GetRoomById(roomId);
+                if (serverRoom == null || !serverRoom.matchRewardsSent)
+                {
+                    return;
+                }
 
-            int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
-            Player player = serverRoom.GetPlayerByUserId(userId);
-            if (player == null)
-            {
-                return;
-            }
+                int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
+                Player player = serverRoom.GetPlayerByUserId(userId);
+                if (player == null)
+                {
+                    return;
+                }
 
-            LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
+                LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
+            }
         }
 
         [ServerRpc(RequireOwnership = false)]
         public void RequestPendingGameResultsServerRpc(NetworkConnection sender = null)
         {
-            if (sender == null)
+            using (ProfileScope.Measure("RPC.RequestPendingGameResults", DiagnosticsCategories.Rpc))
             {
-                return;
-            }
+                if (sender == null)
+                {
+                    return;
+                }
 
-            int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
-            List<PlayerBattleResult> pendingResults = new List<PlayerBattleResult>();
-            if (!PendingBattleResults.TryTakeAll(userId, pendingResults))
-            {
-                return;
-            }
+                int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
+                List<PlayerBattleResult> pendingResults = new List<PlayerBattleResult>();
+                if (!PendingBattleResults.TryTakeAll(userId, pendingResults))
+                {
+                    return;
+                }
 
-            for (int i = 0; i < pendingResults.Count; i++)
-            {
-                SendGameResult(sender, pendingResults[i]);
+                for (int i = 0; i < pendingResults.Count; i++)
+                {
+                    SendGameResult(sender, pendingResults[i]);
+                }
             }
         }
 

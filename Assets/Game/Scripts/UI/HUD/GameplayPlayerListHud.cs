@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Scripts.Client;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private RectTransform enemiesContainer;
         [SerializeField] private bool autoTrackSpawnedVehicles = true;
         [SerializeField] private float vehicleScanInterval = 0.5f;
+        [SerializeField] private float rowRefreshInterval = 0.25f;
         [SerializeField] private float rowHeight = 24f;
         [SerializeField] private float rowSpacing = 2f;
         [SerializeField] private bool hideEmptyLists;
@@ -25,6 +27,7 @@ namespace Game.Scripts.UI.HUD
 
         private readonly List<PlayerListRow> _rows = new List<PlayerListRow>(32);
         private float _nextVehicleScanTime;
+        private float _nextRowRefreshTime;
 
         public bool AutoTrackSpawnedVehicles
         {
@@ -84,12 +87,20 @@ namespace Game.Scripts.UI.HUD
 
         private void Update()
         {
-            if (autoTrackSpawnedVehicles && Time.unscaledTime >= _nextVehicleScanTime)
+            using (ProfileScope.Measure("Client.UI.GameplayPlayerListHud.Update", DiagnosticsCategories.Ui))
             {
-                RefreshFromSpawnedVehicles();
-            }
+                float now = Time.unscaledTime;
+                if (autoTrackSpawnedVehicles && now >= _nextVehicleScanTime)
+                {
+                    RefreshFromSpawnedVehicles();
+                }
 
-            RefreshVisibleRows();
+                if (now >= _nextRowRefreshTime)
+                {
+                    _nextRowRefreshTime = now + Mathf.Max(0.05f, rowRefreshInterval);
+                    RefreshVisibleRows();
+                }
+            }
         }
 
         public void Initialize(PlayerListEntryData[] allies, PlayerListEntryData[] enemies)
@@ -163,6 +174,14 @@ namespace Game.Scripts.UI.HUD
 
         public void RefreshFromSpawnedVehicles()
         {
+            using (ProfileScope.Measure("Client.UI.GameplayPlayerListHud.RefreshFromSpawnedVehicles", DiagnosticsCategories.Ui))
+            {
+                RefreshFromSpawnedVehiclesInternal();
+            }
+        }
+
+        private void RefreshFromSpawnedVehiclesInternal()
+        {
             float interval = Mathf.Max(0.1f, vehicleScanInterval);
             _nextVehicleScanTime = Time.unscaledTime + interval;
 
@@ -171,10 +190,10 @@ namespace Game.Scripts.UI.HUD
                 _rows[i].Seen = false;
             }
 
-            VehicleRoot[] vehicles = FindObjectsByType<VehicleRoot>(FindObjectsSortMode.None);
-            for (int i = 0; i < vehicles.Length; i++)
+            int vehicleCount = VehicleRoot.ActiveVehicleCount;
+            for (int i = 0; i < vehicleCount; i++)
             {
-                VehicleRoot vehicleRoot = vehicles[i];
+                VehicleRoot vehicleRoot = VehicleRoot.GetActiveVehicle(i);
                 if (!ShouldTrackVehicle(vehicleRoot))
                 {
                     continue;
@@ -297,20 +316,23 @@ namespace Game.Scripts.UI.HUD
 
         private void RefreshVisibleRows()
         {
-            for (int i = 0; i < _rows.Count; i++)
+            using (ProfileScope.Measure("Client.UI.GameplayPlayerListHud.RefreshVisibleRows", DiagnosticsCategories.Ui))
             {
-                PlayerListRow row = _rows[i];
-                if (row == null)
+                for (int i = 0; i < _rows.Count; i++)
                 {
-                    continue;
-                }
+                    PlayerListRow row = _rows[i];
+                    if (row == null)
+                    {
+                        continue;
+                    }
 
-                if (row.VehicleRoot != null)
-                {
-                    ReadVehicleRowData(row);
-                }
+                    if (row.VehicleRoot != null)
+                    {
+                        ReadVehicleRowData(row);
+                    }
 
-                ApplyRow(row);
+                    ApplyRow(row);
+                }
             }
         }
 

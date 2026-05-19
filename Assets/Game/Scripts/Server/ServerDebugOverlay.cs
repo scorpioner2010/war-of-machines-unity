@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FishNet;
 using FishNet.Managing;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.UI.Helpers;
 using UnityEngine;
@@ -65,19 +66,22 @@ namespace Game.Scripts.Server
                 return;
             }
 
-            EnsureStyles();
+            using (ProfileScope.Measure("OnGUI.ServerDebugOverlay", DiagnosticsCategories.Editor))
+            {
+                EnsureStyles();
 
-            GUILayout.BeginArea(new Rect(10f, 10f, 430f, 360f), GUI.skin.box);
-            GUILayout.Label("Server Debug", _titleStyle);
-            GUILayout.Space(4f);
+                GUILayout.BeginArea(new Rect(10f, 10f, 430f, 360f), GUI.skin.box);
+                GUILayout.Label("Server Debug", _titleStyle);
+                GUILayout.Space(4f);
 
-            DrawNetworkStatus();
-            GUILayout.Space(6f);
-            DrawRoomsStatus();
-            GUILayout.Space(6f);
-            GUILayout.Label("F10 - hide/show overlay", _labelStyle);
+                DrawNetworkStatus();
+                GUILayout.Space(6f);
+                DrawRoomsStatus();
+                GUILayout.Space(6f);
+                GUILayout.Label("F10 - hide/show overlay", _labelStyle);
 
-            GUILayout.EndArea();
+                GUILayout.EndArea();
+            }
         }
 
         private void DrawNetworkStatus()

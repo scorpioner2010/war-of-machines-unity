@@ -1,6 +1,7 @@
 using UnityEngine;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Client;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
@@ -109,27 +110,30 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Update()
         {
-            if (!_initialized || rig == null)
+            using (ProfileScope.Measure("Camera.Controller.Update", DiagnosticsCategories.Render))
             {
-                return;
+                if (!_initialized || rig == null)
+                {
+                    return;
+                }
+
+                bool inputBlocked = VehicleInputController.IsGameplayInputBlockedByUi;
+                if (!inputBlocked)
+                {
+                    UpdateAimInputs();
+
+                    float mouseSensitivity = GetMouseSensitivity();
+                    _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+                    _X += Input.GetAxis("Mouse X") * _runtimeSettings.cameraHorizontalSpeed * mouseSensitivity * 0.02f;
+                    _Y -= Input.GetAxis("Mouse Y") * _runtimeSettings.cameraVerticalSpeed * mouseSensitivity * 0.02f;
+
+                    _Y = Mathf.Clamp(_Y, _runtimeSettings.cameraMinPitch, _runtimeSettings.cameraMaxPitch);
+                }
+
+                ApplyCameraTransform(false);
+                SyncGameplayCameraTransform();
+                UpdateFov();
             }
-
-            bool inputBlocked = VehicleInputController.IsGameplayInputBlockedByUi;
-            if (!inputBlocked)
-            {
-                UpdateAimInputs();
-
-                float mouseSensitivity = GetMouseSensitivity();
-                _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-                _X += Input.GetAxis("Mouse X") * _runtimeSettings.cameraHorizontalSpeed * mouseSensitivity * 0.02f;
-                _Y -= Input.GetAxis("Mouse Y") * _runtimeSettings.cameraVerticalSpeed * mouseSensitivity * 0.02f;
-
-                _Y = Mathf.Clamp(_Y, _runtimeSettings.cameraMinPitch, _runtimeSettings.cameraMaxPitch);
-            }
-
-            ApplyCameraTransform(false);
-            SyncGameplayCameraTransform();
-            UpdateFov();
         }
 
         private void SyncGameplayCameraTransform()

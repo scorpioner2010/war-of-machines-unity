@@ -9,6 +9,8 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class VehicleRoot : NetworkBehaviour
     {
+        private static readonly List<VehicleRoot> ActiveVehicles = new List<VehicleRoot>(64);
+
         public static event System.Action<VehicleRoot> LocalPlayerVehicleChanged;
         public static VehicleRoot LocalPlayerVehicle { get; private set; }
 
@@ -32,15 +34,37 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly List<IVehicleInitializable> _initializables = new List<IVehicleInitializable>(16);
         private readonly List<IVehicleStatsConsumer> _statsConsumers = new List<IVehicleStatsConsumer>(16);
         private bool _componentsCached;
+        private bool _registeredActiveVehicle;
         private VehicleRuntimeStats _runtimeStats;
 
         public bool IsMenu { get; set; }
         public VehicleRuntimeStats RuntimeStats => _runtimeStats;
         public bool HasRuntimeStats => _runtimeStats != null && _runtimeStats.IsValid;
+        public static int ActiveVehicleCount => ActiveVehicles.Count;
+
+        public static VehicleRoot GetActiveVehicle(int index)
+        {
+            if (index < 0 || index >= ActiveVehicles.Count)
+            {
+                return null;
+            }
+
+            return ActiveVehicles[index];
+        }
 
         private void Awake()
         {
             CacheComponents();
+        }
+
+        private void OnEnable()
+        {
+            RegisterActiveVehicle();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterActiveVehicle();
         }
 
         public override void OnStartServer()
@@ -77,9 +101,37 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void OnDestroy()
         {
+            UnregisterActiveVehicle();
+
             if (LocalPlayerVehicle == this)
             {
                 SetLocalPlayerVehicle(null);
+            }
+        }
+
+        private void RegisterActiveVehicle()
+        {
+            if (_registeredActiveVehicle)
+            {
+                return;
+            }
+
+            _registeredActiveVehicle = true;
+            ActiveVehicles.Add(this);
+        }
+
+        private void UnregisterActiveVehicle()
+        {
+            if (!_registeredActiveVehicle)
+            {
+                return;
+            }
+
+            _registeredActiveVehicle = false;
+            int index = ActiveVehicles.IndexOf(this);
+            if (index >= 0)
+            {
+                ActiveVehicles.RemoveAt(index);
             }
         }
 

@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Transporting;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Server;
@@ -117,45 +118,48 @@ namespace Game.Scripts.Testing
 
         private void OnGUI()
         {
-            _testGuiArea = new Rect(12f, 12f, 390f, Screen.height - 24f);
-            GUILayout.BeginArea(_testGuiArea, GUI.skin.box);
-
-            GUILayout.Label("Vehicle Parameter Test");
-            GUILayout.Label(_status);
-
-            GUI.enabled = !_loading;
-            if (GUILayout.Button("Reload API vehicles", GUILayout.Height(30f)))
+            using (ProfileScope.Measure("OnGUI.VehicleTestSceneController", DiagnosticsCategories.Editor))
             {
-                LoadVehiclesAsync().Forget();
+                _testGuiArea = new Rect(12f, 12f, 390f, Screen.height - 24f);
+                GUILayout.BeginArea(_testGuiArea, GUI.skin.box);
+
+                GUILayout.Label("Vehicle Parameter Test");
+                GUILayout.Label(_status);
+
+                GUI.enabled = !_loading;
+                if (GUILayout.Button("Reload API vehicles", GUILayout.Height(30f)))
+                {
+                    LoadVehiclesAsync().Forget();
+                }
+
+                GUILayout.Space(8f);
+                DrawVehicleList();
+                GUILayout.Space(8f);
+                DrawSelectedStats();
+                GUILayout.Space(8f);
+                DrawTestSettingsSummary();
+                GUILayout.Space(8f);
+
+                VehicleRuntimeStats selected = GetSelected();
+                VehicleRoot prefab = GetSelectedPrefab(selected);
+                GUI.enabled = !_loading && IsNetworkReady() && selected != null && prefab != null;
+                if (GUILayout.Button("Spawn selected robot", GUILayout.Height(34f)))
+                {
+                    SpawnSelected();
+                }
+
+                GUI.enabled = _spawnedVehicle != null;
+                if (GUILayout.Button("Despawn robot", GUILayout.Height(28f)))
+                {
+                    DespawnCurrent();
+                }
+
+                GUI.enabled = true;
+                GUILayout.Space(8f);
+                GUILayout.Label("Controls: WASD move, mouse aim, LMB fire, Space action.");
+
+                GUILayout.EndArea();
             }
-
-            GUILayout.Space(8f);
-            DrawVehicleList();
-            GUILayout.Space(8f);
-            DrawSelectedStats();
-            GUILayout.Space(8f);
-            DrawTestSettingsSummary();
-            GUILayout.Space(8f);
-
-            VehicleRuntimeStats selected = GetSelected();
-            VehicleRoot prefab = GetSelectedPrefab(selected);
-            GUI.enabled = !_loading && IsNetworkReady() && selected != null && prefab != null;
-            if (GUILayout.Button("Spawn selected robot", GUILayout.Height(34f)))
-            {
-                SpawnSelected();
-            }
-
-            GUI.enabled = _spawnedVehicle != null;
-            if (GUILayout.Button("Despawn robot", GUILayout.Height(28f)))
-            {
-                DespawnCurrent();
-            }
-
-            GUI.enabled = true;
-            GUILayout.Space(8f);
-            GUILayout.Label("Controls: WASD move, mouse aim, LMB fire, Space action.");
-
-            GUILayout.EndArea();
         }
 
         private bool IsMouseOverTestGui()

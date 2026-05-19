@@ -1,4 +1,5 @@
 using UnityEngine;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Server;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -53,38 +54,41 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            Vector2 mi = vehicleRoot.inputManager.Move;
-            RobotMovementGlobalSettings settings = ServerSettings.GetRobotMovement();
-            Rotate(mi, settings);
-
-            bool isLegged = vehicleRoot.footAnimator != null;
-            float speedLimit = GetMaxSpeed(settings);
-            float baseAcceleration = GetAcceleration(settings) * settings.GetAccelerationMultiplier(isLegged);
-
-            Vector3 desired = transform.forward * (mi.y * speedLimit);
-
-            float dt = Time.fixedDeltaTime;
-            Vector3 delta = desired - _hVel;
-            float accelerationRate = baseAcceleration;
-            if (IsStoppingOrBraking(desired))
+            using (ProfileScope.Measure("Server.VehicleMovement.FixedUpdate", DiagnosticsCategories.Physics))
             {
-                accelerationRate *= Mathf.Max(1f, settings.stoppingAccelerationMultiplier);
-                accelerationRate *= settings.GetBrakingMultiplier(isLegged);
+                Vector2 mi = vehicleRoot.inputManager.Move;
+                RobotMovementGlobalSettings settings = ServerSettings.GetRobotMovement();
+                Rotate(mi, settings);
+
+                bool isLegged = vehicleRoot.footAnimator != null;
+                float speedLimit = GetMaxSpeed(settings);
+                float baseAcceleration = GetAcceleration(settings) * settings.GetAccelerationMultiplier(isLegged);
+
+                Vector3 desired = transform.forward * (mi.y * speedLimit);
+
+                float dt = Time.fixedDeltaTime;
+                Vector3 delta = desired - _hVel;
+                float accelerationRate = baseAcceleration;
+                if (IsStoppingOrBraking(desired))
+                {
+                    accelerationRate *= Mathf.Max(1f, settings.stoppingAccelerationMultiplier);
+                    accelerationRate *= settings.GetBrakingMultiplier(isLegged);
+                }
+
+                Vector3 step = Vector3.ClampMagnitude(delta, accelerationRate * dt);
+                _hVel += step;
+
+                if (_hVel.magnitude > speedLimit)
+                {
+                    _hVel = _hVel.normalized * speedLimit;
+                }
+
+                bool grounded = controller.isGrounded;
+                _vVel = grounded ? -GetGroundedSnap(settings) : _vVel - GetGravity(settings) * dt;
+
+                Vector3 move = new Vector3(_hVel.x, _vVel, _hVel.z) * dt;
+                controller.Move(move);
             }
-
-            Vector3 step = Vector3.ClampMagnitude(delta, accelerationRate * dt);
-            _hVel += step;
-
-            if (_hVel.magnitude > speedLimit)
-            {
-                _hVel = _hVel.normalized * speedLimit;
-            }
-
-            bool grounded = controller.isGrounded;
-            _vVel = grounded ? -GetGroundedSnap(settings) : _vVel - GetGravity(settings) * dt;
-
-            Vector3 move = new Vector3(_hVel.x, _vVel, _hVel.z) * dt;
-            controller.Move(move);
         }
 
         private void Rotate(Vector2 mi, RobotMovementGlobalSettings settings)

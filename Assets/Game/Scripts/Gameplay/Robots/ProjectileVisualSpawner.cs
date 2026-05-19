@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Diagnostics;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -31,75 +32,78 @@ namespace Game.Scripts.Gameplay.Robots
     {
         public static Projectile Spawn(ProjectileVisualSpawnParams spawnParams)
         {
-            Projectile projectile = UnityEngine.Object.Instantiate(
-                spawnParams.ProjectilePrefab,
-                spawnParams.StartPosition,
-                Quaternion.identity);
-
-            projectile.hitMask = spawnParams.HitMask;
-            projectile.damage = spawnParams.Damage;
-
-            Vector3 initialVelocity = BuildInitialVelocity(
-                spawnParams,
-                out bool usedBallisticCompensation,
-                out bool ballisticSolutionFound);
-
-            projectile.Init(
-                origin: spawnParams.StartPosition,
-                initialVelocity: initialVelocity,
-                gravity: spawnParams.Gravity,
-                maxLifetime: spawnParams.LifeTime,
-                maxDistance: spawnParams.MaxShotDistance,
-                collisionRadius: spawnParams.CollisionRadius,
-                passedTime: spawnParams.PassedTime,
-                authoritative: spawnParams.Authoritative
-            );
-            projectile.ConfigureBallisticDebug(
-                spawnParams.AimPoint,
-                initialVelocity,
-                spawnParams.Gravity,
-                BallisticProjectileMath.EstimateDirectDrop(
+            using (ProfileScope.Measure(spawnParams.Authoritative ? "Server.Projectile.Spawn" : "Client.Projectile.Spawn", DiagnosticsCategories.Physics))
+            {
+                Projectile projectile = UnityEngine.Object.Instantiate(
+                    spawnParams.ProjectilePrefab,
                     spawnParams.StartPosition,
+                    Quaternion.identity);
+
+                projectile.hitMask = spawnParams.HitMask;
+                projectile.damage = spawnParams.Damage;
+
+                Vector3 initialVelocity = BuildInitialVelocity(
+                    spawnParams,
+                    out bool usedBallisticCompensation,
+                    out bool ballisticSolutionFound);
+
+                projectile.Init(
+                    origin: spawnParams.StartPosition,
+                    initialVelocity: initialVelocity,
+                    gravity: spawnParams.Gravity,
+                    maxLifetime: spawnParams.LifeTime,
+                    maxDistance: spawnParams.MaxShotDistance,
+                    collisionRadius: spawnParams.CollisionRadius,
+                    passedTime: spawnParams.PassedTime,
+                    authoritative: spawnParams.Authoritative
+                );
+                projectile.ConfigureBallisticDebug(
                     spawnParams.AimPoint,
-                    spawnParams.InitialSpeed,
-                    spawnParams.Gravity),
-                usedBallisticCompensation,
-                ballisticSolutionFound,
-                spawnParams.DebugBallisticTrajectory);
-
-            if (spawnParams.DebugBallisticTrajectory)
-            {
-                string mode = usedBallisticCompensation
-                    ? (spawnParams.PreferHighArc ? "ballistic compensated high arc" : "ballistic compensated low arc")
-                    : "direct";
-                Debug.Log(
-                    $"Projectile ballistic debug: mode={mode}, gravity={spawnParams.Gravity.magnitude:0.###}, speed={spawnParams.InitialSpeed:0.###}, estimatedDirectDrop={BallisticProjectileMath.EstimateDirectDrop(spawnParams.StartPosition, spawnParams.AimPoint, spawnParams.InitialSpeed, spawnParams.Gravity):0.###}, solutionFound={ballisticSolutionFound}");
-            }
-
-            if (spawnParams.ConfigureResolvedTarget)
-            {
-                if (spawnParams.ExplodeOnArrival)
-                {
-                    projectile.ConfigureResolvedImpact(
+                    initialVelocity,
+                    spawnParams.Gravity,
+                    BallisticProjectileMath.EstimateDirectDrop(
+                        spawnParams.StartPosition,
                         spawnParams.AimPoint,
-                        spawnParams.ImpactNormal,
-                        spawnParams.OnAuthoritativeImpact);
-                }
-                else
+                        spawnParams.InitialSpeed,
+                        spawnParams.Gravity),
+                    usedBallisticCompensation,
+                    ballisticSolutionFound,
+                    spawnParams.DebugBallisticTrajectory);
+
+                if (spawnParams.DebugBallisticTrajectory)
                 {
-                    projectile.ConfigureResolvedMiss(
-                        spawnParams.AimPoint,
-                        spawnParams.MaxShotDistance,
-                        spawnParams.OnAuthoritativeImpact);
+                    string mode = usedBallisticCompensation
+                        ? (spawnParams.PreferHighArc ? "ballistic compensated high arc" : "ballistic compensated low arc")
+                        : "direct";
+                    Debug.Log(
+                        $"Projectile ballistic debug: mode={mode}, gravity={spawnParams.Gravity.magnitude:0.###}, speed={spawnParams.InitialSpeed:0.###}, estimatedDirectDrop={BallisticProjectileMath.EstimateDirectDrop(spawnParams.StartPosition, spawnParams.AimPoint, spawnParams.InitialSpeed, spawnParams.Gravity):0.###}, solutionFound={ballisticSolutionFound}");
                 }
-            }
 
-            if (!spawnParams.Visible)
-            {
-                projectile.SetVisualsEnabled(false);
-            }
+                if (spawnParams.ConfigureResolvedTarget)
+                {
+                    if (spawnParams.ExplodeOnArrival)
+                    {
+                        projectile.ConfigureResolvedImpact(
+                            spawnParams.AimPoint,
+                            spawnParams.ImpactNormal,
+                            spawnParams.OnAuthoritativeImpact);
+                    }
+                    else
+                    {
+                        projectile.ConfigureResolvedMiss(
+                            spawnParams.AimPoint,
+                            spawnParams.MaxShotDistance,
+                            spawnParams.OnAuthoritativeImpact);
+                    }
+                }
 
-            return projectile;
+                if (!spawnParams.Visible)
+                {
+                    projectile.SetVisualsEnabled(false);
+                }
+
+                return projectile;
+            }
         }
 
         public static Vector3 BuildInitialVelocity(
@@ -141,13 +145,16 @@ namespace Game.Scripts.Gameplay.Robots
 
         public static void SpawnImpactFx(Projectile projectilePrefab, Vector3 impactPoint, Vector3 impactNormal)
         {
-            if (projectilePrefab == null || projectilePrefab.explosionFX == null)
+            using (ProfileScope.Measure("Projectile.ImpactFx.Spawn", DiagnosticsCategories.Physics))
             {
-                return;
-            }
+                if (projectilePrefab == null || projectilePrefab.explosionFX == null)
+                {
+                    return;
+                }
 
-            Vector3 normal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal : Vector3.up;
-            UnityEngine.Object.Instantiate(projectilePrefab.explosionFX, impactPoint, Quaternion.LookRotation(normal));
+                Vector3 normal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal : Vector3.up;
+                UnityEngine.Object.Instantiate(projectilePrefab.explosionFX, impactPoint, Quaternion.LookRotation(normal));
+            }
         }
     }
 }

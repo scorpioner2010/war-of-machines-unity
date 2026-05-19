@@ -1,5 +1,6 @@
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Game.Scripts.Diagnostics;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -202,25 +203,28 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void LateUpdate()
         {
-            if (gun == null)
+            using (ProfileScope.Measure(IsServerInitialized ? "Server.WeaponAim.LateUpdate" : "Client.WeaponAim.LateUpdate", IsServerInitialized ? DiagnosticsCategories.Server : DiagnosticsCategories.Client))
             {
-                return;
-            }
+                if (gun == null)
+                {
+                    return;
+                }
 
-            RefreshDesiredAimPointFromCamera();
+                RefreshDesiredAimPointFromCamera();
 
-            if (ShouldDriveGunPitch())
-            {
-                _localPitch = _targetPitchServer;
-                Quaternion localRot = _initialLocalRotation * Quaternion.AngleAxis(_localPitch, AxisToVector(localPitchAxis));
-                gun.localRotation = localRot;
-            }
+                if (ShouldDriveGunPitch())
+                {
+                    _localPitch = _targetPitchServer;
+                    Quaternion localRot = _initialLocalRotation * Quaternion.AngleAxis(_localPitch, AxisToVector(localPitchAxis));
+                    gun.localRotation = localRot;
+                }
 
-            UpdateCurrentAimPoint();
+                UpdateCurrentAimPoint();
 
-            if (IsServerInitialized)
-            {
-                _serverAimPoint.Value = CurrentAimPoint;
+                if (IsServerInitialized)
+                {
+                    _serverAimPoint.Value = CurrentAimPoint;
+                }
             }
         }
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Scripts.Diagnostics;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -78,54 +79,57 @@ namespace Game.Scripts.Editor
 
         private static void OnSceneGUI(SceneView sceneView)
         {
-            if (!_enabled || Event.current == null || Event.current.type != EventType.Repaint)
+            using (ProfileScope.Measure("Editor.ArmorPrefabHighlighter.OnSceneGUI", DiagnosticsCategories.Editor))
             {
-                return;
-            }
-
-            if (!TryGetPrefabRoot(out GameObject root))
-            {
-                return;
-            }
-
-            Material material = GetHighlightMaterial();
-            if (material == null || !material.SetPass(0))
-            {
-                return;
-            }
-
-            int drawnCount = 0;
-            RendererBuffer.Clear();
-            root.GetComponentsInChildren(true, RendererBuffer);
-            for (int i = 0; i < RendererBuffer.Count; i++)
-            {
-                Renderer renderer = RendererBuffer[i];
-                if (renderer == null || !IsArmorGameObject(renderer.gameObject))
+                if (!_enabled || Event.current == null || Event.current.type != EventType.Repaint)
                 {
-                    continue;
+                    return;
                 }
 
-                drawnCount += DrawRenderer(renderer);
-            }
-
-            MeshColliderBuffer.Clear();
-            root.GetComponentsInChildren(true, MeshColliderBuffer);
-            for (int i = 0; i < MeshColliderBuffer.Count; i++)
-            {
-                MeshCollider meshCollider = MeshColliderBuffer[i];
-                if (meshCollider == null
-                    || meshCollider.sharedMesh == null
-                    || meshCollider.GetComponent<Renderer>() != null
-                    || !IsArmorGameObject(meshCollider.gameObject))
+                if (!TryGetPrefabRoot(out GameObject root))
                 {
-                    continue;
+                    return;
                 }
 
-                DrawMesh(meshCollider.sharedMesh, meshCollider.transform.localToWorldMatrix);
-                drawnCount++;
-            }
+                Material material = GetHighlightMaterial();
+                if (material == null || !material.SetPass(0))
+                {
+                    return;
+                }
 
-            DrawSceneViewBadge(drawnCount);
+                int drawnCount = 0;
+                RendererBuffer.Clear();
+                root.GetComponentsInChildren(true, RendererBuffer);
+                for (int i = 0; i < RendererBuffer.Count; i++)
+                {
+                    Renderer renderer = RendererBuffer[i];
+                    if (renderer == null || !IsArmorGameObject(renderer.gameObject))
+                    {
+                        continue;
+                    }
+
+                    drawnCount += DrawRenderer(renderer);
+                }
+
+                MeshColliderBuffer.Clear();
+                root.GetComponentsInChildren(true, MeshColliderBuffer);
+                for (int i = 0; i < MeshColliderBuffer.Count; i++)
+                {
+                    MeshCollider meshCollider = MeshColliderBuffer[i];
+                    if (meshCollider == null
+                        || meshCollider.sharedMesh == null
+                        || meshCollider.GetComponent<Renderer>() != null
+                        || !IsArmorGameObject(meshCollider.gameObject))
+                    {
+                        continue;
+                    }
+
+                    DrawMesh(meshCollider.sharedMesh, meshCollider.transform.localToWorldMatrix);
+                    drawnCount++;
+                }
+
+                DrawSceneViewBadge(drawnCount);
+            }
         }
 
         private static int DrawRenderer(Renderer renderer)

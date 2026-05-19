@@ -1,6 +1,7 @@
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Client;
+using Game.Scripts.Diagnostics;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -59,35 +60,38 @@ namespace Game.Scripts.UI.HUD
 
         private void Update()
         {
-            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-
-            if (useActiveTerrainBounds && (!_terrainBoundsResolved || _terrainBoundsSource == null))
+            using (ProfileScope.Measure("Client.UI.GameplayMapHud.Update", DiagnosticsCategories.Ui))
             {
-                RefreshTerrainBounds();
+                _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+
+                if (useActiveTerrainBounds && (!_terrainBoundsResolved || _terrainBoundsSource == null))
+                {
+                    RefreshTerrainBounds();
+                }
+
+                bool shouldShowFullMap = Input.GetKey(_runtimeSettings.mapFullMapKey);
+                SetFullMapVisible(shouldShowFullMap);
+
+                if (_localPlayer == null)
+                {
+                    SetIconVisible(localPlayerIconMini, false);
+                    SetIconVisible(localPlayerIconFull, false);
+                    ClearTrackedVehicleIcons();
+                    return;
+                }
+
+                RefreshTrackedVehiclesIfNeeded();
+
+                Transform trackedTransform = GetTrackedTransform(_localPlayer);
+                Vector3 worldPosition = trackedTransform.position;
+                float yaw = trackedTransform.eulerAngles.y;
+
+                UpdateIcon(_miniMapRect, localPlayerIconMini, worldPosition, yaw, true);
+                UpdateIcon(_fullMapRect, localPlayerIconFull, worldPosition, yaw, _fullMapVisible);
+                ApplyLocalPlayerIconColor();
+                UpdateTrackedVehicleIcons();
+                BringLocalPlayerIconsToFront();
             }
-
-            bool shouldShowFullMap = Input.GetKey(_runtimeSettings.mapFullMapKey);
-            SetFullMapVisible(shouldShowFullMap);
-
-            if (_localPlayer == null)
-            {
-                SetIconVisible(localPlayerIconMini, false);
-                SetIconVisible(localPlayerIconFull, false);
-                ClearTrackedVehicleIcons();
-                return;
-            }
-
-            RefreshTrackedVehiclesIfNeeded();
-
-            Transform trackedTransform = GetTrackedTransform(_localPlayer);
-            Vector3 worldPosition = trackedTransform.position;
-            float yaw = trackedTransform.eulerAngles.y;
-
-            UpdateIcon(_miniMapRect, localPlayerIconMini, worldPosition, yaw, true);
-            UpdateIcon(_fullMapRect, localPlayerIconFull, worldPosition, yaw, _fullMapVisible);
-            ApplyLocalPlayerIconColor();
-            UpdateTrackedVehicleIcons();
-            BringLocalPlayerIconsToFront();
         }
 
         public void SetLocalPlayer(VehicleRoot vehicleRoot)

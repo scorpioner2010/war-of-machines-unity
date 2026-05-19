@@ -27,6 +27,8 @@ namespace Game.Scripts.UI.HUD
         private bool _isDead;
         private Color _aliveHealthColor = Color.white;
         private RectTransform _healthFillRect;
+        private int _appliedHpCurrentRounded = int.MinValue;
+        private int _appliedHpMaxRounded = int.MinValue;
 
         private void Awake()
         {
@@ -41,19 +43,45 @@ namespace Game.Scripts.UI.HUD
 
         public void SetData(string nickname, string vehicleType, float currentHealth, float maxHealth, bool isDead, Color healthColor)
         {
-            _nickname = string.IsNullOrEmpty(nickname) ? "-" : nickname;
-            _vehicleType = string.IsNullOrEmpty(vehicleType) ? "-" : vehicleType;
-            _currentHealth = Mathf.Max(0f, currentHealth);
-            _maxHealth = Mathf.Max(1f, maxHealth);
-            _isDead = isDead || _currentHealth <= 0f;
+            string nextNickname = string.IsNullOrEmpty(nickname) ? "-" : nickname;
+            string nextVehicleType = string.IsNullOrEmpty(vehicleType) ? "-" : vehicleType;
+            float nextCurrentHealth = Mathf.Max(0f, currentHealth);
+            float nextMaxHealth = Mathf.Max(1f, maxHealth);
+            bool nextIsDead = isDead || nextCurrentHealth <= 0f;
+            if (_nickname == nextNickname
+                && _vehicleType == nextVehicleType
+                && Mathf.Approximately(_currentHealth, nextCurrentHealth)
+                && Mathf.Approximately(_maxHealth, nextMaxHealth)
+                && _isDead == nextIsDead
+                && _aliveHealthColor == healthColor)
+            {
+                return;
+            }
+
+            _nickname = nextNickname;
+            _vehicleType = nextVehicleType;
+            _currentHealth = nextCurrentHealth;
+            _maxHealth = nextMaxHealth;
+            _isDead = nextIsDead;
             _aliveHealthColor = healthColor;
             Apply();
         }
 
         public void SetHealth(float currentHealth, float maxHealth, Color healthColor)
         {
-            _currentHealth = Mathf.Max(0f, currentHealth);
-            _maxHealth = Mathf.Max(1f, maxHealth);
+            float nextCurrentHealth = Mathf.Max(0f, currentHealth);
+            float nextMaxHealth = Mathf.Max(1f, maxHealth);
+            bool nextIsDead = _isDead || nextCurrentHealth <= 0f;
+            if (Mathf.Approximately(_currentHealth, nextCurrentHealth)
+                && Mathf.Approximately(_maxHealth, nextMaxHealth)
+                && _aliveHealthColor == healthColor
+                && _isDead == nextIsDead)
+            {
+                return;
+            }
+
+            _currentHealth = nextCurrentHealth;
+            _maxHealth = nextMaxHealth;
             _aliveHealthColor = healthColor;
 
             if (_currentHealth <= 0f)
@@ -66,6 +94,11 @@ namespace Game.Scripts.UI.HUD
 
         public void SetDead(bool isDead)
         {
+            if (_isDead == isDead)
+            {
+                return;
+            }
+
             _isDead = isDead;
             ApplyVisualState();
             ApplyHealth();
@@ -173,6 +206,13 @@ namespace Game.Scripts.UI.HUD
             float current = _isDead ? 0f : Mathf.Clamp(_currentHealth, 0f, _maxHealth);
             int currentRounded = Mathf.RoundToInt(current);
             int maxRounded = Mathf.RoundToInt(Mathf.Max(1f, _maxHealth));
+            if (_appliedHpCurrentRounded == currentRounded && _appliedHpMaxRounded == maxRounded)
+            {
+                return;
+            }
+
+            _appliedHpCurrentRounded = currentRounded;
+            _appliedHpMaxRounded = maxRounded;
             hpText.text = currentRounded + "/" + maxRounded;
         }
     }

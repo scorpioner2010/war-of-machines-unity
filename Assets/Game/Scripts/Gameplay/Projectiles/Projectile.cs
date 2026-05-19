@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using UnityEngine;
 
@@ -78,6 +79,16 @@ public class Projectile : MonoBehaviour
     public Vector3 Gravity => _gravity;
     public float ElapsedTime => _elapsedTime;
     public float TravelledDistance => _travelledDistance;
+
+    private void OnEnable()
+    {
+        DiagnosticsRuntimeCounters.RegisterProjectile();
+    }
+
+    private void OnDisable()
+    {
+        DiagnosticsRuntimeCounters.UnregisterProjectile();
+    }
     public bool IsAuthoritative => _authoritative;
 
     public void SetVisualsEnabled(bool enabled)
@@ -275,63 +286,66 @@ public class Projectile : MonoBehaviour
 
     private void Update()
     {
-        if (!_initialized)
+        using (ProfileScope.Measure(_authoritative ? "Server.Projectile.Update" : "Client.Projectile.Update", _authoritative ? DiagnosticsCategories.Physics : DiagnosticsCategories.Client))
         {
-            return;
-        }
-
-        float dt = Time.deltaTime + _pendingAuthoritativeCatchupTime;
-        _pendingAuthoritativeCatchupTime = 0f;
-        if (dt <= 0f)
-        {
-            return;
-        }
-
-        Vector3 previousPosition = _previousPosition;
-        float previousTime = _elapsedTime;
-        _elapsedTime += dt;
-
-        BallisticProjectileMath.TravelSegment segment = BallisticProjectileMath.GetTravelSegment(
-            _origin,
-            _initialVelocity,
-            _gravity,
-            previousTime,
-            _elapsedTime);
-
-        Vector3 newPosition = segment.CurrentPosition;
-        _currentVelocity = segment.CurrentVelocity;
-
-        Vector3 travel = newPosition - previousPosition;
-        float segmentDistance = travel.magnitude;
-        Vector3 travelDirection = segmentDistance > 0.000001f
-            ? travel / segmentDistance
-            : GetSafeVelocityDirection();
-
-        if (segmentDistance > 0f)
-        {
-            _travelledDistance += segmentDistance;
-        }
-
-        DrawDebugStep(previousPosition, newPosition, _currentVelocity);
-
-        if (_liveCollisionEnabled && segmentDistance > 0.000001f)
-        {
-            float castDistance = segmentDistance + GetCollisionCastPadding();
-            if (TryCastCollision(previousPosition, travelDirection, castDistance, out RaycastHit hit))
+            if (!_initialized)
             {
-                HandleLiveHit(hit, travelDirection);
                 return;
             }
-        }
 
-        transform.position = newPosition;
-        _previousPosition = newPosition;
-        ApplyRotation(_currentVelocity);
+            float dt = Time.deltaTime + _pendingAuthoritativeCatchupTime;
+            _pendingAuthoritativeCatchupTime = 0f;
+            if (dt <= 0f)
+            {
+                return;
+            }
 
-        if (HasExceededLimits())
-        {
-            CompleteLiveMiss();
-            DestroyWithoutExplosion();
+            Vector3 previousPosition = _previousPosition;
+            float previousTime = _elapsedTime;
+            _elapsedTime += dt;
+
+            BallisticProjectileMath.TravelSegment segment = BallisticProjectileMath.GetTravelSegment(
+                _origin,
+                _initialVelocity,
+                _gravity,
+                previousTime,
+                _elapsedTime);
+
+            Vector3 newPosition = segment.CurrentPosition;
+            _currentVelocity = segment.CurrentVelocity;
+
+            Vector3 travel = newPosition - previousPosition;
+            float segmentDistance = travel.magnitude;
+            Vector3 travelDirection = segmentDistance > 0.000001f
+                ? travel / segmentDistance
+                : GetSafeVelocityDirection();
+
+            if (segmentDistance > 0f)
+            {
+                _travelledDistance += segmentDistance;
+            }
+
+            DrawDebugStep(previousPosition, newPosition, _currentVelocity);
+
+            if (_liveCollisionEnabled && segmentDistance > 0.000001f)
+            {
+                float castDistance = segmentDistance + GetCollisionCastPadding();
+                if (TryCastCollision(previousPosition, travelDirection, castDistance, out RaycastHit hit))
+                {
+                    HandleLiveHit(hit, travelDirection);
+                    return;
+                }
+            }
+
+            transform.position = newPosition;
+            _previousPosition = newPosition;
+            ApplyRotation(_currentVelocity);
+
+            if (HasExceededLimits())
+            {
+                CompleteLiveMiss();
+                DestroyWithoutExplosion();
+            }
         }
     }
 
@@ -603,64 +617,67 @@ public class Projectile : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (!_initialized)
+        using (ProfileScope.Measure("Gizmos.Projectile.OnDrawGizmosSelected", DiagnosticsCategories.Editor))
         {
-            return;
-        }
-
-        if (debugDrawTrajectory || debugBallisticTrajectory)
-        {
-            Gizmos.color = Color.cyan;
-            int safeSteps = Mathf.Clamp(debugTrajectorySteps, 4, 96);
-            float safeSeconds = Mathf.Max(0.1f, debugTrajectorySeconds);
-            Vector3 previous = transform.position;
-            for (int i = 1; i <= safeSteps; i++)
+            if (!_initialized)
             {
-                float t = _elapsedTime + safeSeconds * (i / (float)safeSteps);
-                Vector3 current = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, t);
-                Gizmos.DrawLine(previous, current);
-                previous = current;
+                return;
             }
-        }
 
-        if (debugBallisticTrajectory && _hasDebugAimPoint)
-        {
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawWireSphere(_debugAimPoint, 0.25f);
-            Gizmos.DrawLine(_origin, _origin + _debugInitialDirection * 4f);
+            if (debugDrawTrajectory || debugBallisticTrajectory)
+            {
+                Gizmos.color = Color.cyan;
+                int safeSteps = Mathf.Clamp(debugTrajectorySteps, 4, 96);
+                float safeSeconds = Mathf.Max(0.1f, debugTrajectorySeconds);
+                Vector3 previous = transform.position;
+                for (int i = 1; i <= safeSteps; i++)
+                {
+                    float t = _elapsedTime + safeSeconds * (i / (float)safeSteps);
+                    Vector3 current = BallisticProjectileMath.GetPosition(_origin, _initialVelocity, _gravity, t);
+                    Gizmos.DrawLine(previous, current);
+                    previous = current;
+                }
+            }
 
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(_debugAimPoint, _debugAimPoint + Vector3.down * Mathf.Max(0.25f, _debugEstimatedDrop));
+            if (debugBallisticTrajectory && _hasDebugAimPoint)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawWireSphere(_debugAimPoint, 0.25f);
+                Gizmos.DrawLine(_origin, _origin + _debugInitialDirection * 4f);
 
-            Gizmos.color = _debugUsedBallisticCompensation && _debugBallisticSolutionFound
-                ? Color.green
-                : Color.white;
-            Gizmos.DrawLine(_origin, _origin + _gravity.normalized * Mathf.Clamp(_debugGravityValue, 0.25f, 4f));
-        }
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(_debugAimPoint, _debugAimPoint + Vector3.down * Mathf.Max(0.25f, _debugEstimatedDrop));
 
-        if (debugDrawSweepSegment)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawLine(_previousPosition, transform.position);
-        }
+                Gizmos.color = _debugUsedBallisticCompensation && _debugBallisticSolutionFound
+                    ? Color.green
+                    : Color.white;
+                Gizmos.DrawLine(_origin, _origin + _gravity.normalized * Mathf.Clamp(_debugGravityValue, 0.25f, 4f));
+            }
 
-        if (debugDrawCollisionRadius && _collisionRadius > 0f)
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(transform.position, _collisionRadius);
-        }
+            if (debugDrawSweepSegment)
+            {
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawLine(_previousPosition, transform.position);
+            }
 
-        if (debugDrawVelocityDirection && _currentVelocity.sqrMagnitude > 0.000001f)
-        {
-            Gizmos.color = Color.blue;
-            Gizmos.DrawLine(transform.position, transform.position + _currentVelocity.normalized * 2f);
-        }
+            if (debugDrawCollisionRadius && _collisionRadius > 0f)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(transform.position, _collisionRadius);
+            }
 
-        if (debugDrawHitPoint && _hasLastHitPoint)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(_lastHitPoint, Mathf.Max(0.05f, _collisionRadius));
-            Gizmos.DrawLine(_lastHitPoint, _lastHitPoint + _lastHitNormal.normalized * 1.5f);
+            if (debugDrawVelocityDirection && _currentVelocity.sqrMagnitude > 0.000001f)
+            {
+                Gizmos.color = Color.blue;
+                Gizmos.DrawLine(transform.position, transform.position + _currentVelocity.normalized * 2f);
+            }
+
+            if (debugDrawHitPoint && _hasLastHitPoint)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(_lastHitPoint, Mathf.Max(0.05f, _collisionRadius));
+                Gizmos.DrawLine(_lastHitPoint, _lastHitPoint + _lastHitNormal.normalized * 1.5f);
+            }
         }
     }
 }

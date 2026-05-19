@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using Game.Scripts.Diagnostics;
 using UnityEngine;
 
 namespace Game.Scripts.Core.Utils
@@ -20,8 +21,11 @@ namespace Game.Scripts.Core.Utils
 
         private void OnGUI()
         {
-            GUI.Label(new Rect(10, 250, 100, 25), _fps.ToString("0", CultureInfo.InvariantCulture) + " FPS", _textStyle);
-            GUI.Label(new Rect(10, 200, 100, 25), middleFps.ToString("0", CultureInfo.InvariantCulture) + " FPS meddle(10s)", _textStyle);
+            using (ProfileScope.Measure("OnGUI.FPSCounter", DiagnosticsCategories.Editor))
+            {
+                GUI.Label(new Rect(10, 250, 100, 25), _fps.ToString("0", CultureInfo.InvariantCulture) + " FPS", _textStyle);
+                GUI.Label(new Rect(10, 200, 100, 25), middleFps.ToString("0", CultureInfo.InvariantCulture) + " FPS meddle(10s)", _textStyle);
+            }
         }
 
         private void Start()
