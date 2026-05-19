@@ -87,11 +87,21 @@ namespace Game.Scripts.Gameplay.Robots
             }
             else if (!_dead.Value)
             {
+                if (_hasAppliedSyncHealth)
+                {
+                    SetObservedHealth(_appliedSyncHealth, maxHealth, true);
+                    return;
+                }
+
+                if (_hp.Value > 0f)
+                {
+                    SetObservedHealth(_hp.Value, maxHealth, true);
+                    return;
+                }
+
                 float sourceHealth = _hasObservedHealth
                     ? _observedHealth
-                    : _hp.Value > 0f
-                        ? _hp.Value
-                        : oldMax;
+                    : oldMax;
                 float ratio = Mathf.Clamp01(sourceHealth / oldMax);
                 SetObservedHealth(maxHealth * ratio, maxHealth);
             }
@@ -196,14 +206,14 @@ namespace Game.Scripts.Gameplay.Robots
         [ObserversRpc(BufferLast = false)]
         private void DamagedObserversRpc(float dmg, float newHp, float maxHp)
         {
-            SetObservedHealth(newHp, maxHp);
+            SetObservedHealth(newHp, maxHp, true);
             OnDamaged?.Invoke(dmg, newHp, maxHp);
         }
 
         [ObserversRpc(BufferLast = false)]
         private void DiedObserversRpc()
         {
-            SetObservedHealth(0f, maxHealth);
+            SetObservedHealth(0f, maxHealth, true);
             onDeath?.Invoke();
         }
 
@@ -243,7 +253,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (fromSync)
             {
-                _appliedSyncHealth = _observedHealth;
+                _appliedSyncHealth = Mathf.Max(0f, currentHealth);
                 _hasAppliedSyncHealth = true;
             }
 
@@ -280,7 +290,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             _observedHealth = Mathf.Clamp(syncHealth, 0f, max);
             _hasObservedHealth = true;
-            _appliedSyncHealth = _observedHealth;
+            _appliedSyncHealth = Mathf.Max(0f, syncHealth);
             _hasAppliedSyncHealth = true;
         }
     }
