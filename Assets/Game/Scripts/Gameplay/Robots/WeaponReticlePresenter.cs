@@ -12,6 +12,7 @@ namespace Game.Scripts.Gameplay.Robots
     public class WeaponReticlePresenter : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
+        private static Camera _fallbackCamera;
 
         private RectTransform _serverCrosshair;
         private RectTransform _reticleRect;
@@ -456,7 +457,13 @@ namespace Game.Scripts.Gameplay.Robots
                 return CameraSync.In.gameplayCamera;
             }
 
-            return Camera.main;
+            if (_fallbackCamera != null)
+            {
+                return _fallbackCamera;
+            }
+
+            _fallbackCamera = Camera.main;
+            return _fallbackCamera;
         }
 
         private void SetVisible(bool v)

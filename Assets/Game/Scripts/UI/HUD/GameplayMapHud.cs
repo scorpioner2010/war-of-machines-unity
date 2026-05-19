@@ -28,6 +28,8 @@ namespace Game.Scripts.UI.HUD
         private int _appliedVisibilityVersion = -1;
         private Color _localPlayerMiniIconColor;
         private Color _localPlayerFullIconColor;
+        private Graphic _localPlayerMiniIconGraphic;
+        private Graphic _localPlayerFullIconGraphic;
         private bool _hasLocalPlayerMiniIconColor;
         private bool _hasLocalPlayerFullIconColor;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
@@ -133,8 +135,8 @@ namespace Game.Scripts.UI.HUD
 
         private void CacheLocalPlayerIconColors()
         {
-            _hasLocalPlayerMiniIconColor = TryGetIconColor(localPlayerIconMini, out _localPlayerMiniIconColor);
-            _hasLocalPlayerFullIconColor = TryGetIconColor(localPlayerIconFull, out _localPlayerFullIconColor);
+            _hasLocalPlayerMiniIconColor = TryGetIconGraphicAndColor(localPlayerIconMini, out _localPlayerMiniIconGraphic, out _localPlayerMiniIconColor);
+            _hasLocalPlayerFullIconColor = TryGetIconGraphicAndColor(localPlayerIconFull, out _localPlayerFullIconGraphic, out _localPlayerFullIconColor);
         }
 
         private void ApplyLocalPlayerIconColor()
@@ -143,12 +145,12 @@ namespace Game.Scripts.UI.HUD
 
             if (_hasLocalPlayerMiniIconColor)
             {
-                ApplyIconColor(localPlayerIconMini, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerMiniIconColor);
+                ApplyIconColor(_localPlayerMiniIconGraphic, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerMiniIconColor);
             }
 
             if (_hasLocalPlayerFullIconColor)
             {
-                ApplyIconColor(localPlayerIconFull, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerFullIconColor);
+                ApplyIconColor(_localPlayerFullIconGraphic, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerFullIconColor);
             }
         }
 
@@ -247,6 +249,8 @@ namespace Game.Scripts.UI.HUD
                 ObjectId = entry.ObjectId,
                 MiniIcon = miniIcon,
                 FullIcon = fullIcon,
+                MiniGraphic = GetIconGraphic(miniIcon),
+                FullGraphic = GetIconGraphic(fullIcon),
                 Relation = MapVehicleVisibilityRelation.Hidden,
                 WorldPosition = entry.Position,
                 Yaw = entry.Yaw,
@@ -287,34 +291,35 @@ namespace Game.Scripts.UI.HUD
                 : relation == MapVehicleVisibilityRelation.Enemy
                     ? _runtimeSettings.mapEnemyIconColor
                     : _runtimeSettings.mapAllyIconColor;
-            ApplyIconColor(icon.MiniIcon, color);
-            ApplyIconColor(icon.FullIcon, color);
+            ApplyIconColor(icon.MiniGraphic, color);
+            ApplyIconColor(icon.FullGraphic, color);
         }
 
-        private static bool TryGetIconColor(RectTransform iconRect, out Color color)
+        private static bool TryGetIconGraphicAndColor(RectTransform iconRect, out Graphic graphic, out Color color)
         {
-            if (iconRect != null)
+            graphic = GetIconGraphic(iconRect);
+            if (graphic != null)
             {
-                Graphic graphic = iconRect.GetComponent<Graphic>();
-                if (graphic != null)
-                {
-                    color = graphic.color;
-                    return true;
-                }
+                color = graphic.color;
+                return true;
             }
 
             color = Color.white;
             return false;
         }
 
-        private static void ApplyIconColor(RectTransform iconRect, Color color)
+        private static Graphic GetIconGraphic(RectTransform iconRect)
         {
-            if (iconRect == null)
+            if (iconRect != null)
             {
-                return;
+                return iconRect.GetComponent<Graphic>();
             }
 
-            Graphic graphic = iconRect.GetComponent<Graphic>();
+            return null;
+        }
+
+        private static void ApplyIconColor(Graphic graphic, Color color)
+        {
             if (graphic != null)
             {
                 graphic.color = color;
@@ -472,6 +477,8 @@ namespace Game.Scripts.UI.HUD
             public int ObjectId;
             public RectTransform MiniIcon;
             public RectTransform FullIcon;
+            public Graphic MiniGraphic;
+            public Graphic FullGraphic;
             public MapVehicleVisibilityRelation Relation;
             public Vector3 WorldPosition;
             public float Yaw;

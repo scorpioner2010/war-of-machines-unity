@@ -21,6 +21,7 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly SyncVar<bool> _dead = new();
 
         public Collider[] colliders;
+        private Collider[] _runtimeColliders;
         private bool _hasObservedHealth;
         private float _observedHealth;
         private bool _hasAppliedSyncHealth;
@@ -189,18 +190,36 @@ namespace Game.Scripts.Gameplay.Robots
         
         private void SetCollidersEnabled(bool v)
         {
-            if (colliders == null)
+            EnsureRuntimeColliders();
+            if (_runtimeColliders == null)
             {
                 return;
             }
 
-            for (int i = 0; i < colliders.Length; i++)
+            for (int i = 0; i < _runtimeColliders.Length; i++)
             {
-                if (colliders[i] != null)
+                Collider targetCollider = _runtimeColliders[i];
+                if (targetCollider != null)
                 {
-                    colliders[i].enabled = v;
+                    targetCollider.enabled = v;
                 }
             }
+        }
+
+        private void EnsureRuntimeColliders()
+        {
+            if (_runtimeColliders != null)
+            {
+                return;
+            }
+
+            if (colliders != null && colliders.Length > 0)
+            {
+                _runtimeColliders = colliders;
+                return;
+            }
+
+            _runtimeColliders = GetComponentsInChildren<Collider>(true);
         }
 
         [ObserversRpc(BufferLast = false)]

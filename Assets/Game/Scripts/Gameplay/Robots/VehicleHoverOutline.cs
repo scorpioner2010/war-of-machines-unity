@@ -12,6 +12,8 @@ namespace Game.Scripts.Gameplay.Robots
         private const int RaycastBufferSize = 128;
 
         private static readonly RaycastHit[] RaycastBuffer = new RaycastHit[RaycastBufferSize];
+        private static readonly Dictionary<Collider, VehicleRoot> RootByCollider = new Dictionary<Collider, VehicleRoot>(256);
+        private static Camera _fallbackCamera;
 
         public VehicleRoot vehicleRoot;
         public LayerMask hoverMask = ~0;
@@ -290,6 +292,16 @@ namespace Game.Scripts.Gameplay.Robots
 
         private static VehicleRoot ResolveVehicleRoot(Collider hitCollider)
         {
+            if (hitCollider == null)
+            {
+                return null;
+            }
+
+            if (RootByCollider.TryGetValue(hitCollider, out VehicleRoot cachedRoot))
+            {
+                return cachedRoot;
+            }
+
             ArmorMap armorMap = hitCollider.GetComponent<ArmorMap>();
             if (armorMap == null)
             {
@@ -300,13 +312,18 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 if (armorMap.vehicleRoot != null)
                 {
+                    RootByCollider[hitCollider] = armorMap.vehicleRoot;
                     return armorMap.vehicleRoot;
                 }
 
-                return armorMap.GetComponentInParent<VehicleRoot>();
+                VehicleRoot armorRoot = armorMap.GetComponentInParent<VehicleRoot>();
+                RootByCollider[hitCollider] = armorRoot;
+                return armorRoot;
             }
 
-            return hitCollider.GetComponentInParent<VehicleRoot>();
+            VehicleRoot root = hitCollider.GetComponentInParent<VehicleRoot>();
+            RootByCollider[hitCollider] = root;
+            return root;
         }
 
         private static Camera GetGameplayCamera()
@@ -316,7 +333,13 @@ namespace Game.Scripts.Gameplay.Robots
                 return CameraSync.In.gameplayCamera;
             }
 
-            return Camera.main;
+            if (_fallbackCamera != null)
+            {
+                return _fallbackCamera;
+            }
+
+            _fallbackCamera = Camera.main;
+            return _fallbackCamera;
         }
     }
 }

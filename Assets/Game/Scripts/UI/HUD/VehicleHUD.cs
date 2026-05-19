@@ -10,6 +10,8 @@ namespace Game.Scripts.UI.HUD
 {
     public class VehicleHUD : MonoBehaviour, IVehicleRootAware
     {
+        private static Camera _fallbackCamera;
+
         public VehicleRoot vehicleRoot;
         private Camera _mainCamera;
         [SerializeField] private TMP_Text nickName;
@@ -229,10 +231,14 @@ namespace Game.Scripts.UI.HUD
                 return _mainCamera;
             }
 
-            Camera mainCamera = Camera.main;
-            if (mainCamera != null)
+            if (_fallbackCamera == null)
             {
-                _mainCamera = mainCamera;
+                _fallbackCamera = Camera.main;
+            }
+
+            if (_fallbackCamera != null)
+            {
+                _mainCamera = _fallbackCamera;
             }
 
             return _mainCamera;

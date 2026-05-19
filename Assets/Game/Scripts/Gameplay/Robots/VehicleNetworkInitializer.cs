@@ -2,10 +2,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Game.Scripts.UI.HUD;
-using Game.Scripts.Core.Services;
 using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Player.Data;
 using UnityEngine;
 using UEScene = UnityEngine.SceneManagement.Scene;
 
@@ -66,12 +63,12 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 await UniTask.Delay(500);
 
-                VehicleRoot[] players = FindObjectsByType<VehicleRoot>(FindObjectsSortMode.None);
-                
                 bool allNicksSet = true;
-                foreach (VehicleRoot root in players)
+                int vehicleCount = VehicleRoot.ActiveVehicleCount;
+                for (int i = 0; i < vehicleCount; i++)
                 {
-                    if (string.IsNullOrEmpty(root.characterInit.LoginName.Value))
+                    VehicleRoot root = VehicleRoot.GetActiveVehicle(i);
+                    if (root == null || root.characterInit == null || string.IsNullOrEmpty(root.characterInit.LoginName.Value))
                     {
                         allNicksSet = false;
                         break;
@@ -87,9 +84,10 @@ namespace Game.Scripts.Gameplay.Robots
 
                     Camera cam = CameraSync.In.gameplayCamera;
 
-                    foreach (VehicleRoot root in players)
+                    for (int i = 0; i < vehicleCount; i++)
                     {
-                        if (OwnerId != root.OwnerId)
+                        VehicleRoot root = VehicleRoot.GetActiveVehicle(i);
+                        if (root != null && OwnerId != root.OwnerId && root.vehicleHUD != null && root.characterInit != null)
                         {
                             root.vehicleHUD.SetCamera(cam);
                             root.vehicleHUD.SetNick(root.characterInit.LoginName.Value);

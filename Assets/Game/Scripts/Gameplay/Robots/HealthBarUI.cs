@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class HealthBarUI : MonoBehaviour, IVehicleRootAware
+    public class HealthBarUI : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
 
@@ -21,24 +21,60 @@ namespace Game.Scripts.Gameplay.Robots
             vehicleRoot = root;
         }
 
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (!context.IsOwner || context.IsMenu)
+            {
+                return;
+            }
+
+            vehicleRoot = context.Root;
+            TryActivate();
+        }
+
         private void Start()
+        {
+            TryActivate();
+        }
+
+        private void OnEnable()
+        {
+            if (vehicleRoot != null && vehicleRoot.health != null)
+            {
+                vehicleRoot.health.OnHealthChanged += OnHealthChanged;
+                vehicleRoot.health.OnDamaged += OnDamaged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (vehicleRoot != null && vehicleRoot.health != null)
+            {
+                vehicleRoot.health.OnHealthChanged -= OnHealthChanged;
+                vehicleRoot.health.OnDamaged -= OnDamaged;
+            }
+        }
+
+        private void TryActivate()
         {
             if (vehicleRoot == null)
             {
-                enabled = false;
                 return;
             }
 
             if (!vehicleRoot.IsOwner)
             {
-                enabled = false;
                 return;
             }
 
             _healthBar = Singleton<HealthBar>.CurrentOrNull;
             if (_healthBar == null)
             {
-                enabled = false;
+                return;
+            }
+
+            if (vehicleRoot.health == null)
+            {
                 return;
             }
 
@@ -50,10 +86,19 @@ namespace Game.Scripts.Gameplay.Robots
             RefreshLabel();
 
             _active = true;
+            vehicleRoot.health.OnHealthChanged -= OnHealthChanged;
+            vehicleRoot.health.OnDamaged -= OnDamaged;
+            vehicleRoot.health.OnHealthChanged += OnHealthChanged;
+            vehicleRoot.health.OnDamaged += OnDamaged;
         }
 
         private void Update()
         {
+            if (!_active)
+            {
+                TryActivate();
+            }
+
             if (!_active)
             {
                 return;
@@ -78,8 +123,30 @@ namespace Game.Scripts.Gameplay.Robots
             RefreshLabel();
         }
 
+        private void OnHealthChanged(float currentHealth, float maxHealth)
+        {
+            if (!_active || _healthBar == null || _healthBar.slider == null)
+            {
+                return;
+            }
+
+            _display01 = Mathf.Clamp01(currentHealth / Mathf.Max(1f, maxHealth));
+            _healthBar.slider.value = _display01;
+            RefreshLabel();
+        }
+
+        private void OnDamaged(float damageAmount, float currentHealth, float maxHealth)
+        {
+            OnHealthChanged(currentHealth, maxHealth);
+        }
+
         private void RefreshLabel()
         {
+            if (_healthBar == null || _healthBar.label == null || vehicleRoot == null || vehicleRoot.health == null)
+            {
+                return;
+            }
+
             int cur = Mathf.RoundToInt(vehicleRoot.health.Current);
             int max = Mathf.RoundToInt(vehicleRoot.health.MaxHealth);
             if (_lastLabelCurrent == cur && _lastLabelMax == max)

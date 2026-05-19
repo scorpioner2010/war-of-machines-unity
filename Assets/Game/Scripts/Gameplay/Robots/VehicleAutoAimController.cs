@@ -8,6 +8,7 @@ namespace Game.Scripts.Gameplay.Robots
     {
         private const int RaycastBufferSize = 256;
         private static readonly RaycastHit[] RaycastBuffer = new RaycastHit[RaycastBufferSize];
+        private static Camera _fallbackCamera;
 
         public VehicleRoot vehicleRoot;
         public LayerMask acquireMask = ~0;
@@ -16,6 +17,7 @@ namespace Game.Scripts.Gameplay.Robots
         private Collider[] _targetArmorColliders;
         private Collider[] _targetTurretColliders;
         private ArmorMap[] _targetArmorMaps;
+        private Collider[] _targetArmorMapColliders;
         private Transform _targetTurretTransform;
         private Vector3 _lastTargetPoint;
         private bool _controlsLocalAutoAim;
@@ -59,6 +61,7 @@ namespace Game.Scripts.Gameplay.Robots
             _targetArmorColliders = null;
             _targetTurretColliders = null;
             _targetArmorMaps = null;
+            _targetArmorMapColliders = null;
             _targetTurretTransform = null;
             _lastTargetPoint = Vector3.zero;
         }
@@ -186,7 +189,24 @@ namespace Game.Scripts.Gameplay.Robots
                 ? _targetTurretTransform.GetComponentsInChildren<Collider>(true)
                 : null;
             _targetArmorMaps = targetRoot.GetComponentsInChildren<ArmorMap>(true);
+            CacheArmorMapColliders();
             _lastTargetPoint = IsFinite(hitPoint) ? hitPoint : targetRoot.transform.position;
+        }
+
+        private void CacheArmorMapColliders()
+        {
+            if (_targetArmorMaps == null)
+            {
+                _targetArmorMapColliders = null;
+                return;
+            }
+
+            _targetArmorMapColliders = new Collider[_targetArmorMaps.Length];
+            for (int i = 0; i < _targetArmorMaps.Length; i++)
+            {
+                ArmorMap armorMap = _targetArmorMaps[i];
+                _targetArmorMapColliders[i] = armorMap != null ? armorMap.GetComponent<Collider>() : null;
+            }
         }
 
         private bool TryGetTargetPoint(out Vector3 point)
@@ -285,7 +305,9 @@ namespace Game.Scripts.Gameplay.Robots
                     continue;
                 }
 
-                Collider targetCollider = armorMap.GetComponent<Collider>();
+                Collider targetCollider = _targetArmorMapColliders != null && i < _targetArmorMapColliders.Length
+                    ? _targetArmorMapColliders[i]
+                    : null;
                 if (!IsUsableCollider(targetCollider))
                 {
                     continue;
@@ -363,7 +385,13 @@ namespace Game.Scripts.Gameplay.Robots
                 return CameraSync.In.gameplayCamera;
             }
 
-            return Camera.main;
+            if (_fallbackCamera != null)
+            {
+                return _fallbackCamera;
+            }
+
+            _fallbackCamera = Camera.main;
+            return _fallbackCamera;
         }
 
         private static bool IsFinite(Vector3 value)

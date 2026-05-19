@@ -3342,6 +3342,7 @@ GameObject:
   - component: {fileID: 1968510407}
   - component: {fileID: 9300000500}
   - component: {fileID: 9400000040}
+  - component: {fileID: 9500000600}
   m_Layer: 0
   m_Name: GameplayHUD
   m_TagString: Untagged
@@ -3434,6 +3435,23 @@ MonoBehaviour:
   hideEmptyLists: 0
   fallbackAlliedHpColor: {r: 0.1, g: 0.35, b: 1, a: 1}
   fallbackEnemyHpColor: {r: 1, g: 0.08, b: 0.04, a: 1}
+--- !u!114 &9500000600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1968510405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa96b98401cf4ed3b849e1c8fd0f22fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statsText: {fileID: 0}
+  anchoredPosition: {x: 14, y: -14}
+  sizeDelta: {x: 180, y: 44}
+  fontSize: 15
+  updateInterval: 0.25
 --- !u!1 &2019792786
 GameObject:
   m_ObjectHideFlags: 0
