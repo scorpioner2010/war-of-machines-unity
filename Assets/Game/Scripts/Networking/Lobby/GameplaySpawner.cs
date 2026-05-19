@@ -9,10 +9,12 @@ using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
+using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Lobby;
 using Game.Scripts.UI.MainMenu;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using NetworkChannel = FishNet.Transporting.Channel;
 using UEScene = UnityEngine.SceneManagement.Scene;
 using UESceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -23,7 +25,7 @@ namespace Game.Scripts.Networking.Lobby
         Map = 0,
     }
     
-    public class GameplaySpawner : NetworkBehaviour
+    public class GameplaySpawner : NetworkBehaviour, IMatchVisibilityUpdateSink
     {
         public static GameplaySpawner In;
         public GameMaps[] scenes;
@@ -55,10 +57,37 @@ namespace Game.Scripts.Networking.Lobby
             SceneManager.OnLoadEnd -= HandleServerLoadEnd;
             SceneManager.OnUnloadEnd -= SceneManagerOnUnloadEnd;
             ServerManager.OnRemoteConnectionState -= OnRemoteConnectionState;
+            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            {
+                if (room != null)
+                {
+                    room.Visibility.Stop();
+                }
+            }
+
             _sceneSlotsByHandle.Clear();
             _roomsBySceneHandle.Clear();
             _sceneSlotAllocator.Clear();
             PendingBattleResults.Clear();
+        }
+
+        private void Update()
+        {
+            if (!IsServerInitialized)
+            {
+                return;
+            }
+
+            float now = Time.time;
+            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            {
+                if (room == null || !room.IsActiveMatch || !room.spawnStarted || room.isGameFinished)
+                {
+                    continue;
+                }
+
+                room.Visibility.Tick(now, this);
+            }
         }
 
         private void OnRemoteConnectionState(NetworkConnection conn, RemoteConnectionStateArgs args)
@@ -219,6 +248,7 @@ namespace Game.Scripts.Networking.Lobby
             base.OnStopClient();
             UESceneManager.sceneLoaded -= HandleClientSceneLoaded;
             SceneManager.OnLoadEnd -= HandleClientLoadEnd;
+            GameplayMapVisibilityState.Clear();
         }
 
         private void HandleClientSceneLoaded(UEScene scene, LoadSceneMode mode)
@@ -237,6 +267,8 @@ namespace Game.Scripts.Networking.Lobby
             {
                 return;
             }
+
+            GameplayMapVisibilityState.Clear();
 
             byte[] cp = args.QueueData.SceneLoadData.Params.ClientParams;
             int offset = (cp != null && cp.Length >= 4) ? BitConverter.ToInt32(cp, 0) : 0;
@@ -267,6 +299,7 @@ namespace Game.Scripts.Networking.Lobby
         
         public void ReturnToMainMenu()
         {
+            GameplayMapVisibilityState.Clear();
             RobotView.GenerateIcons();
 
             if (MainMenu.In != null)
@@ -279,6 +312,37 @@ namespace Game.Scripts.Networking.Lobby
             
             RequestPlayerDisconnectServerRpc(ClientManager.Connection.ClientId);
             EnsureMainMenuAfterDisconnect().Forget();
+        }
+
+        public void SendMapVisibility(
+            NetworkConnection target,
+            int version,
+            int count,
+            int[] objectIds,
+            byte[] relations,
+            Vector3[] positions,
+            float[] yaws)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            TargetMapVisibilityRpc(target, version, count, objectIds, relations, positions, yaws, NetworkChannel.Unreliable);
+        }
+
+        [TargetRpc(DataLength = 512)]
+        private void TargetMapVisibilityRpc(
+            NetworkConnection target,
+            int version,
+            int count,
+            int[] objectIds,
+            byte[] relations,
+            Vector3[] positions,
+            float[] yaws,
+            NetworkChannel channel = NetworkChannel.Unreliable)
+        {
+            GameplayMapVisibilityState.Apply(version, count, objectIds, relations, positions, yaws);
         }
 
         private async UniTask EnsureMainMenuAfterDisconnect()
@@ -462,6 +526,7 @@ namespace Game.Scripts.Networking.Lobby
                 }
             }
                 
+            serverRoom.Visibility.Start(serverRoom);
             LobbyRooms.UpdateRoomStatusInGame(serverRoom.roomId);
             SpawnTimer(serverRoom);
         }
@@ -564,6 +629,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             serverRoom.isGameFinished = true;
+            serverRoom.Visibility.Stop();
 
             foreach (Player player in serverRoom.GetPlayers())
             {

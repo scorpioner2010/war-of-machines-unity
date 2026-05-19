@@ -34,13 +34,32 @@ namespace Game.Scripts.Networking.Lobby
         public bool matchRewardsSent;
         public int matchId;
 
+        private MatchVisibilityService _visibility;
+
         public bool IsEmpty => players.Count == 0;
         public bool IsActiveMatch => isInGame && !matchRewardsSent;
         public bool HasSceneSlot => sceneSlotIndex != NoSceneSlot;
         public bool HasLoadedScene => handle != 0;
+        public MatchVisibilityService Visibility
+        {
+            get
+            {
+                if (_visibility == null)
+                {
+                    _visibility = new MatchVisibilityService();
+                }
+
+                return _visibility;
+            }
+        }
 
         private void OnDestroy()
         {
+            if (_visibility != null)
+            {
+                _visibility.Stop();
+            }
+
             if (gameplayTimer != null)
             {
                 Destroy(gameplayTimer.gameObject);

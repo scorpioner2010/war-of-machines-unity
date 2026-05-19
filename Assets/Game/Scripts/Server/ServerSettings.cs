@@ -420,6 +420,123 @@ namespace Game.Scripts.Server
     }
 
     [System.Serializable]
+    public class MatchVisibilityGlobalSettings
+    {
+        private const int DefaultLayer = 0;
+        private const int TransparentFxLayer = 1;
+        private const int IgnoreRaycastLayer = 2;
+        private const int GroundLayer = 3;
+        private const int WaterLayer = 4;
+        private const int UiLayer = 5;
+        private const int ArmorLayer = 6;
+        private const int ChassisLayer = 7;
+        private const int ObstacleLayer = 8;
+        private const int DefaultLineOfSightMaskBits = (1 << DefaultLayer) | (1 << GroundLayer) | (1 << ObstacleLayer);
+        private const int ExcludedLineOfSightMaskBits =
+            (1 << TransparentFxLayer)
+            | (1 << IgnoreRaycastLayer)
+            | (1 << WaterLayer)
+            | (1 << UiLayer)
+            | (1 << ArmorLayer)
+            | (1 << ChassisLayer);
+
+        private static readonly MatchVisibilityGlobalSettings DefaultSettings = new MatchVisibilityGlobalSettings();
+
+        [Header("Match visibility")]
+        [Tooltip("Enables server-authoritative team spotting and map visibility snapshots.")]
+        public bool enabled = true;
+        [Tooltip("How often the server recalculates spotting and sends map snapshots.")]
+        public float tickInterval = 0.5f;
+        [Tooltip("Fallback view range for vehicles without runtime stats.")]
+        public float fallbackViewRange = 120f;
+        [Tooltip("Maximum effective view range. Set 0 to disable the cap.")]
+        public float maxViewRange = 450f;
+        [Tooltip("Enemies inside this range are detected even without line of sight.")]
+        public float guaranteedDetectionRange = 35f;
+        [Tooltip("If enabled, terrain and static obstacles can block spotting rays.")]
+        public bool requireLineOfSight = true;
+        [Tooltip("Layers that can block spotting rays. Keep vehicle layers out of this mask.")]
+        public LayerMask lineOfSightMask = DefaultLineOfSightMaskBits;
+        [Tooltip("Maximum line-of-sight raycasts per visibility tick for one match room.")]
+        public int maxLineOfSightChecksPerTick = 24;
+        [Tooltip("How long one spotter-target line-of-sight result may be reused before another raycast.")]
+        public float lineOfSightRecheckSeconds = 0.5f;
+        [Tooltip("Vertical offset from the spotter ground position used as the ray origin.")]
+        public float spotterEyeHeight = 2f;
+        [Tooltip("Vertical offset from the target ground position used as the ray target.")]
+        public float targetProbeHeight = 1.4f;
+
+        public static MatchVisibilityGlobalSettings Default
+        {
+            get
+            {
+                return DefaultSettings;
+            }
+        }
+
+        public void Validate()
+        {
+            tickInterval = ClampFinite(tickInterval, 0.05f, Default.tickInterval);
+            fallbackViewRange = ClampFinite(fallbackViewRange, 0f, Default.fallbackViewRange);
+            maxViewRange = ClampFinite(maxViewRange, 0f, Default.maxViewRange);
+            guaranteedDetectionRange = ClampFinite(guaranteedDetectionRange, 0f, Default.guaranteedDetectionRange);
+            lineOfSightMask = NormalizeLineOfSightMask(lineOfSightMask);
+            maxLineOfSightChecksPerTick = Mathf.Max(1, maxLineOfSightChecksPerTick);
+            lineOfSightRecheckSeconds = ClampFinite(lineOfSightRecheckSeconds, 0.05f, Default.lineOfSightRecheckSeconds);
+            spotterEyeHeight = ClampFinite(spotterEyeHeight, 0f, Default.spotterEyeHeight);
+            targetProbeHeight = ClampFinite(targetProbeHeight, 0f, Default.targetProbeHeight);
+        }
+
+        public void CopyFrom(MatchVisibilityGlobalSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            enabled = source.enabled;
+            tickInterval = source.tickInterval;
+            fallbackViewRange = source.fallbackViewRange;
+            maxViewRange = source.maxViewRange;
+            guaranteedDetectionRange = source.guaranteedDetectionRange;
+            requireLineOfSight = source.requireLineOfSight;
+            lineOfSightMask = source.lineOfSightMask;
+            maxLineOfSightChecksPerTick = source.maxLineOfSightChecksPerTick;
+            lineOfSightRecheckSeconds = source.lineOfSightRecheckSeconds;
+            spotterEyeHeight = source.spotterEyeHeight;
+            targetProbeHeight = source.targetProbeHeight;
+        }
+
+        private static LayerMask NormalizeLineOfSightMask(LayerMask source)
+        {
+            int mask = source.value;
+            if (mask == 0 || mask == ~0)
+            {
+                mask = DefaultLineOfSightMaskBits;
+            }
+
+            mask &= ~ExcludedLineOfSightMaskBits;
+
+            return mask;
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+    }
+
+    [System.Serializable]
     public class MatchSceneGlobalSettings
     {
         private static readonly MatchSceneGlobalSettings DefaultSettings = new MatchSceneGlobalSettings();
@@ -508,6 +625,8 @@ namespace Game.Scripts.Server
         public ProjectileBallisticsGlobalSettings projectileBallistics = new ProjectileBallisticsGlobalSettings();
         [Tooltip("Глобальні налаштування частоти й порогів синхронізації інпуту техніки.")]
         public VehicleInputSyncSettings vehicleInputSync = new VehicleInputSyncSettings();
+        [Tooltip("Server-authoritative spotting and shared team map snapshots.")]
+        public MatchVisibilityGlobalSettings matchVisibility = new MatchVisibilityGlobalSettings();
         [Tooltip("Глобальні налаштування завантаження бойових сцен і показу результатів матчу.")]
         public MatchSceneGlobalSettings matchScene = new MatchSceneGlobalSettings();
         
@@ -642,6 +761,17 @@ namespace Game.Scripts.Server
             return In.vehicleInputSync;
         }
 
+        public static MatchVisibilityGlobalSettings GetMatchVisibility()
+        {
+            if (In == null || In.matchVisibility == null)
+            {
+                return MatchVisibilityGlobalSettings.Default;
+            }
+
+            In.matchVisibility.Validate();
+            return In.matchVisibility;
+        }
+
         public static MatchSceneGlobalSettings GetMatchScene()
         {
             if (In == null || In.matchScene == null)
@@ -703,6 +833,11 @@ namespace Game.Scripts.Server
             if (vehicleInputSync != null)
             {
                 vehicleInputSync.Validate();
+            }
+
+            if (matchVisibility != null)
+            {
+                matchVisibility.Validate();
             }
 
             if (matchScene != null)

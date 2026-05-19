@@ -24,7 +24,7 @@ namespace Game.Scripts.UI.HUD
         private Terrain _terrainBoundsSource;
         private bool _terrainBoundsResolved;
         private bool _fullMapVisible;
-        private float _nextTrackedVehicleRefreshTime;
+        private int _appliedVisibilityVersion = -1;
         private Color _localPlayerMiniIconColor;
         private Color _localPlayerFullIconColor;
         private bool _hasLocalPlayerMiniIconColor;
@@ -46,12 +46,14 @@ namespace Game.Scripts.UI.HUD
         private void OnEnable()
         {
             VehicleRoot.LocalPlayerVehicleChanged += SetLocalPlayer;
+            GameplayMapVisibilityState.Changed += HandleVisibilitySnapshotChanged;
             SetLocalPlayer(VehicleRoot.LocalPlayerVehicle);
         }
 
         private void OnDisable()
         {
             VehicleRoot.LocalPlayerVehicleChanged -= SetLocalPlayer;
+            GameplayMapVisibilityState.Changed -= HandleVisibilitySnapshotChanged;
             ClearTrackedVehicleIcons();
         }
 
@@ -91,7 +93,12 @@ namespace Game.Scripts.UI.HUD
         public void SetLocalPlayer(VehicleRoot vehicleRoot)
         {
             _localPlayer = vehicleRoot;
-            _nextTrackedVehicleRefreshTime = 0f;
+            _appliedVisibilityVersion = -1;
+        }
+
+        private void HandleVisibilitySnapshotChanged()
+        {
+            _appliedVisibilityVersion = -1;
         }
 
         private void CacheRects()
@@ -108,6 +115,16 @@ namespace Game.Scripts.UI.HUD
             }
 
             return vehicleRoot.transform;
+        }
+
+        private static int GetObjectId(VehicleRoot vehicleRoot)
+        {
+            if (vehicleRoot == null || vehicleRoot.networkObject == null)
+            {
+                return -1;
+            }
+
+            return vehicleRoot.networkObject.ObjectId;
         }
 
         private void CacheLocalPlayerIconColors()
@@ -133,13 +150,12 @@ namespace Game.Scripts.UI.HUD
 
         private void RefreshTrackedVehiclesIfNeeded()
         {
-            if (Time.unscaledTime < _nextTrackedVehicleRefreshTime)
+            if (_appliedVisibilityVersion == GameplayMapVisibilityState.Version)
             {
                 return;
             }
 
-            float interval = Mathf.Max(0.1f, _runtimeSettings.mapTrackedVehicleRefreshInterval);
-            _nextTrackedVehicleRefreshTime = Time.unscaledTime + interval;
+            _appliedVisibilityVersion = GameplayMapVisibilityState.Version;
             RefreshTrackedVehicles();
         }
 
@@ -150,20 +166,20 @@ namespace Game.Scripts.UI.HUD
                 _trackedVehicleIcons[i].Seen = false;
             }
 
-            VehicleRoot[] vehicles = FindObjectsByType<VehicleRoot>(FindObjectsSortMode.None);
-            for (int i = 0; i < vehicles.Length; i++)
+            int localObjectId = GetObjectId(_localPlayer);
+            int count = GameplayMapVisibilityState.Count;
+            for (int i = 0; i < count; i++)
             {
-                VehicleRoot vehicleRoot = vehicles[i];
-                MapVehicleRelation relation = GetVehicleRelation(vehicleRoot);
-                if (relation == MapVehicleRelation.Hidden)
+                GameplayMapVisibilityEntry entry = GameplayMapVisibilityState.GetEntry(i);
+                if (entry.ObjectId < 0 || entry.ObjectId == localObjectId)
                 {
                     continue;
                 }
 
-                TrackedVehicleIcon icon = FindTrackedVehicleIcon(vehicleRoot);
+                TrackedVehicleIcon icon = FindTrackedVehicleIcon(entry.ObjectId);
                 if (icon == null)
                 {
-                    icon = CreateTrackedVehicleIcon(vehicleRoot, relation);
+                    icon = CreateTrackedVehicleIcon(entry);
                     if (icon == null)
                     {
                         continue;
@@ -173,13 +189,15 @@ namespace Game.Scripts.UI.HUD
                 }
 
                 icon.Seen = true;
-                ApplyTrackedVehicleRelation(icon, relation);
+                icon.WorldPosition = entry.Position;
+                icon.Yaw = entry.Yaw;
+                ApplyTrackedVehicleRelation(icon, entry.Relation);
             }
 
             for (int i = _trackedVehicleIcons.Count - 1; i >= 0; i--)
             {
                 TrackedVehicleIcon icon = _trackedVehicleIcons[i];
-                if (!icon.Seen || icon.VehicleRoot == null)
+                if (!icon.Seen)
                 {
                     DestroyTrackedVehicleIcon(icon);
                     _trackedVehicleIcons.RemoveAt(i);
@@ -192,64 +210,17 @@ namespace Game.Scripts.UI.HUD
             for (int i = _trackedVehicleIcons.Count - 1; i >= 0; i--)
             {
                 TrackedVehicleIcon icon = _trackedVehicleIcons[i];
-                if (icon.VehicleRoot == null)
-                {
-                    DestroyTrackedVehicleIcon(icon);
-                    _trackedVehicleIcons.RemoveAt(i);
-                    continue;
-                }
-
-                Transform trackedTransform = GetTrackedTransform(icon.VehicleRoot);
-                Vector3 worldPosition = trackedTransform.position;
-                float yaw = trackedTransform.eulerAngles.y;
-                UpdateIcon(_miniMapRect, icon.MiniIcon, worldPosition, yaw, true);
-                UpdateIcon(_fullMapRect, icon.FullIcon, worldPosition, yaw, _fullMapVisible);
+                UpdateIcon(_miniMapRect, icon.MiniIcon, icon.WorldPosition, icon.Yaw, true);
+                UpdateIcon(_fullMapRect, icon.FullIcon, icon.WorldPosition, icon.Yaw, _fullMapVisible);
             }
         }
 
-        private MapVehicleRelation GetVehicleRelation(VehicleRoot vehicleRoot)
-        {
-            if (_localPlayer == null || vehicleRoot == null || vehicleRoot == _localPlayer)
-            {
-                return MapVehicleRelation.Hidden;
-            }
-
-            if (_localPlayer.IsMenu || vehicleRoot.IsMenu)
-            {
-                return MapVehicleRelation.Hidden;
-            }
-
-            if (vehicleRoot.health != null && vehicleRoot.health.IsDead)
-            {
-                return MapVehicleRelation.Destroyed;
-            }
-
-            if (_localPlayer.characterInit == null || vehicleRoot.characterInit == null)
-            {
-                return MapVehicleRelation.Hidden;
-            }
-
-            MatchTeam localTeam = _localPlayer.characterInit.Team.Value;
-            MatchTeam targetTeam = vehicleRoot.characterInit.Team.Value;
-            if (!MatchTeamUtility.IsAssigned(localTeam) || !MatchTeamUtility.IsAssigned(targetTeam))
-            {
-                return MapVehicleRelation.Hidden;
-            }
-
-            if (MatchTeamUtility.AreSameAssignedTeam(localTeam, targetTeam))
-            {
-                return MapVehicleRelation.Ally;
-            }
-
-            return MapVehicleRelation.Enemy;
-        }
-
-        private TrackedVehicleIcon FindTrackedVehicleIcon(VehicleRoot vehicleRoot)
+        private TrackedVehicleIcon FindTrackedVehicleIcon(int objectId)
         {
             for (int i = 0; i < _trackedVehicleIcons.Count; i++)
             {
                 TrackedVehicleIcon icon = _trackedVehicleIcons[i];
-                if (icon.VehicleRoot == vehicleRoot)
+                if (icon.ObjectId == objectId)
                 {
                     return icon;
                 }
@@ -258,7 +229,7 @@ namespace Game.Scripts.UI.HUD
             return null;
         }
 
-        private TrackedVehicleIcon CreateTrackedVehicleIcon(VehicleRoot vehicleRoot, MapVehicleRelation relation)
+        private TrackedVehicleIcon CreateTrackedVehicleIcon(GameplayMapVisibilityEntry entry)
         {
             RectTransform miniIcon = CreateIconInstance(localPlayerIconMini, "TrackedVehicleIconMini");
             RectTransform fullIcon = CreateIconInstance(localPlayerIconFull, "TrackedVehicleIconFull");
@@ -269,14 +240,16 @@ namespace Game.Scripts.UI.HUD
 
             TrackedVehicleIcon icon = new TrackedVehicleIcon
             {
-                VehicleRoot = vehicleRoot,
+                ObjectId = entry.ObjectId,
                 MiniIcon = miniIcon,
                 FullIcon = fullIcon,
-                Relation = MapVehicleRelation.Hidden,
+                Relation = MapVehicleVisibilityRelation.Hidden,
+                WorldPosition = entry.Position,
+                Yaw = entry.Yaw,
                 Seen = true
             };
 
-            ApplyTrackedVehicleRelation(icon, relation);
+            ApplyTrackedVehicleRelation(icon, entry.Relation);
             return icon;
         }
 
@@ -302,12 +275,12 @@ namespace Game.Scripts.UI.HUD
             return icon;
         }
 
-        private void ApplyTrackedVehicleRelation(TrackedVehicleIcon icon, MapVehicleRelation relation)
+        private void ApplyTrackedVehicleRelation(TrackedVehicleIcon icon, MapVehicleVisibilityRelation relation)
         {
             icon.Relation = relation;
-            Color color = relation == MapVehicleRelation.Destroyed
+            Color color = relation == MapVehicleVisibilityRelation.Destroyed
                 ? _runtimeSettings.mapDestroyedIconColor
-                : relation == MapVehicleRelation.Enemy
+                : relation == MapVehicleVisibilityRelation.Enemy
                     ? _runtimeSettings.mapEnemyIconColor
                     : _runtimeSettings.mapAllyIconColor;
             ApplyIconColor(icon.MiniIcon, color);
@@ -490,20 +463,14 @@ namespace Game.Scripts.UI.HUD
             }
         }
 
-        private enum MapVehicleRelation
-        {
-            Hidden,
-            Ally,
-            Enemy,
-            Destroyed
-        }
-
         private sealed class TrackedVehicleIcon
         {
-            public VehicleRoot VehicleRoot;
+            public int ObjectId;
             public RectTransform MiniIcon;
             public RectTransform FullIcon;
-            public MapVehicleRelation Relation;
+            public MapVehicleVisibilityRelation Relation;
+            public Vector3 WorldPosition;
+            public float Yaw;
             public bool Seen;
         }
     }
