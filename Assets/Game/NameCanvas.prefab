@@ -267,9 +267,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f117a6f87a7b7934c8bd7a3cda064e2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tankRoot: {fileID: 0}
+  vehicleRoot: {fileID: 0}
   nickName: {fileID: 1708463725538953413}
   hpView: {fileID: 6888389142017244291}
+  floatingTextPrefab: {fileID: 0}
 --- !u!1 &8062004295221571761
 GameObject:
   m_ObjectHideFlags: 0

@@ -17,16 +17,30 @@ namespace Game.Scripts.UI.HUD
 
         private float _nextTeamColorRefreshTime;
         private bool _subscribedToLocalPlayer;
+        private bool _subscribedToHealth;
+        private Vector3 _baseLocalScale;
+        private bool _hasBaseLocalScale;
+        private GameplayRuntimeSettings _runtimeSettings;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
             _nextTeamColorRefreshTime = 0f;
+            TrySubscribeHealth();
             ApplyHpColor();
+        }
+
+        private void Awake()
+        {
+            CaptureBaseLocalScale();
+            TryResolveVehicleRoot();
         }
 
         private void OnEnable()
         {
+            CaptureBaseLocalScale();
+            TryResolveVehicleRoot();
+            TrySubscribeHealth();
             SubscribeToLocalPlayerChange();
             _nextTeamColorRefreshTime = 0f;
             ApplyHpColor();
@@ -35,30 +49,63 @@ namespace Game.Scripts.UI.HUD
         private void OnDisable()
         {
             UnsubscribeFromLocalPlayerChange();
+            ResetDistanceScale();
         }
         
         private void Start()
         {
-            if (vehicleRoot == null || vehicleRoot.health == null)
-            {
-                enabled = false;
-                return;
-            }
-
-            vehicleRoot.health.OnDamaged += OnDamaged;
-            vehicleRoot.health.onDeath.AddListener(OnDeath);
+            TryResolveVehicleRoot();
+            TrySubscribeHealth();
             ApplyHpColor();
         }
 
         private void OnDestroy()
         {
             UnsubscribeFromLocalPlayerChange();
+            UnsubscribeFromHealth();
+        }
+
+        private void TryResolveVehicleRoot()
+        {
+            if (vehicleRoot != null)
+            {
+                return;
+            }
+
+            vehicleRoot = GetComponentInParent<VehicleRoot>();
+        }
+
+        private void TrySubscribeHealth()
+        {
+            if (_subscribedToHealth)
+            {
+                return;
+            }
+
+            if (vehicleRoot == null || vehicleRoot.health == null)
+            {
+                return;
+            }
+
+            vehicleRoot.health.OnDamaged += OnDamaged;
+            vehicleRoot.health.onDeath.AddListener(OnDeath);
+            _subscribedToHealth = true;
+        }
+
+        private void UnsubscribeFromHealth()
+        {
+            if (!_subscribedToHealth)
+            {
+                return;
+            }
 
             if (vehicleRoot != null && vehicleRoot.health != null)
             {
                 vehicleRoot.health.OnDamaged -= OnDamaged;
                 vehicleRoot.health.onDeath.RemoveListener(OnDeath);
             }
+
+            _subscribedToHealth = false;
         }
 
         private void OnDamaged(float damageAmount, float currentHealth, float maxHealth)
@@ -117,10 +164,95 @@ namespace Game.Scripts.UI.HUD
         {
             RefreshHpColorIfNeeded();
 
+            Camera camera = ResolveCamera();
+            if (camera != null)
+            {
+                transform.forward = camera.transform.forward;
+            }
+
+            ApplyDistanceScale(camera);
+        }
+
+        private void ApplyDistanceScale(Camera camera)
+        {
+            CaptureBaseLocalScale();
+
+            if (camera == null)
+            {
+                ResetDistanceScale();
+                return;
+            }
+
+            GameplayRuntimeSettings settings = GetRuntimeSettings();
+            if (!settings.worldHpBarDistanceScaleEnabled)
+            {
+                ResetDistanceScale();
+                return;
+            }
+
+            Transform cameraTransform = camera.transform;
+            Vector3 offset = transform.position - cameraTransform.position;
+            float distance = Mathf.Sqrt(offset.sqrMagnitude);
+            float minDistance = settings.worldHpBarScaleMinDistance;
+            float maxDistance = settings.worldHpBarScaleMaxDistance;
+            if (maxDistance <= minDistance)
+            {
+                maxDistance = minDistance + 0.01f;
+            }
+
+            float minScale = settings.worldHpBarMinDistanceScale;
+            float maxScale = settings.worldHpBarMaxDistanceScale;
+            if (maxScale < minScale)
+            {
+                maxScale = minScale;
+            }
+
+            float distance01 = Mathf.InverseLerp(minDistance, maxDistance, distance);
+            float scale = Mathf.Lerp(minScale, maxScale, distance01);
+            transform.localScale = _baseLocalScale * scale;
+        }
+
+        private Camera ResolveCamera()
+        {
             if (_mainCamera != null)
             {
-                transform.forward = _mainCamera.transform.forward;
+                return _mainCamera;
             }
+
+            if (CameraSync.In != null && CameraSync.In.gameplayCamera != null)
+            {
+                _mainCamera = CameraSync.In.gameplayCamera;
+                return _mainCamera;
+            }
+
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                _mainCamera = mainCamera;
+            }
+
+            return _mainCamera;
+        }
+
+        private void CaptureBaseLocalScale()
+        {
+            if (_hasBaseLocalScale)
+            {
+                return;
+            }
+
+            _baseLocalScale = transform.localScale;
+            _hasBaseLocalScale = true;
+        }
+
+        private void ResetDistanceScale()
+        {
+            if (!_hasBaseLocalScale)
+            {
+                return;
+            }
+
+            transform.localScale = _baseLocalScale;
         }
 
         private void RefreshHpColorIfNeeded()
@@ -130,7 +262,7 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
-            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            GameplayRuntimeSettings settings = RefreshRuntimeSettings();
             _nextTeamColorRefreshTime = Time.unscaledTime + Mathf.Max(0.1f, settings.hpTeamColorRefreshInterval);
             ApplyHpColor();
         }
@@ -143,8 +275,24 @@ namespace Game.Scripts.UI.HUD
             }
 
             VehicleHudRelation relation = GetRelationToLocalPlayer();
-            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            GameplayRuntimeSettings settings = GetRuntimeSettings();
             hpView.color = relation == VehicleHudRelation.Ally ? settings.alliedHpColor : settings.enemyHpColor;
+        }
+
+        private GameplayRuntimeSettings GetRuntimeSettings()
+        {
+            if (_runtimeSettings == null)
+            {
+                return RefreshRuntimeSettings();
+            }
+
+            return _runtimeSettings;
+        }
+
+        private GameplayRuntimeSettings RefreshRuntimeSettings()
+        {
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            return _runtimeSettings;
         }
 
         private VehicleHudRelation GetRelationToLocalPlayer()

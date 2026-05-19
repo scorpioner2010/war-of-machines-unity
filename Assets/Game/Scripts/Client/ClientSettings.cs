@@ -16,6 +16,17 @@ namespace Game.Scripts.Client
         public float hpTeamColorRefreshInterval = 0.25f;
         [Tooltip("Швидкість згладження основної смуги HP локального гравця на GameplayHUD.")]
         public float ownerHealthBarSmoothSpeed = 10f;
+        [Header("World-space HP scale")]
+        [Tooltip("Enable distance based scaling for robot HP bars in world-space UI.")]
+        public bool worldHpBarDistanceScaleEnabled = true;
+        [Tooltip("Distance where robot HP bars use the near scale.")]
+        public float worldHpBarScaleMinDistance = 5f;
+        [Tooltip("Distance where robot HP bars reach the far scale.")]
+        public float worldHpBarScaleMaxDistance = 90f;
+        [Tooltip("HP bar scale multiplier near the camera.")]
+        public float worldHpBarMinDistanceScale = 1f;
+        [Tooltip("HP bar scale multiplier far from the camera.")]
+        public float worldHpBarMaxDistanceScale = 5f;
 
         [Header("Карта")]
         [Tooltip("Колір іконок союзників на мінікарті та повній карті.")]
@@ -141,6 +152,20 @@ namespace Game.Scripts.Client
             enemyHpColor = ClampColor(enemyHpColor, Default.enemyHpColor);
             hpTeamColorRefreshInterval = ClampFinite(hpTeamColorRefreshInterval, 0.1f, Default.hpTeamColorRefreshInterval);
             ownerHealthBarSmoothSpeed = ClampFinite(ownerHealthBarSmoothSpeed, 0f, Default.ownerHealthBarSmoothSpeed);
+            worldHpBarScaleMinDistance = ClampFinite(worldHpBarScaleMinDistance, 0.01f, Default.worldHpBarScaleMinDistance);
+            worldHpBarScaleMaxDistance = ClampFinite(worldHpBarScaleMaxDistance, 0.01f, Default.worldHpBarScaleMaxDistance);
+            if (worldHpBarScaleMaxDistance <= worldHpBarScaleMinDistance)
+            {
+                worldHpBarScaleMaxDistance = worldHpBarScaleMinDistance + 0.01f;
+            }
+
+            worldHpBarMinDistanceScale = ClampFinite(worldHpBarMinDistanceScale, 0.01f, Default.worldHpBarMinDistanceScale);
+            worldHpBarMaxDistanceScale = ClampFinite(worldHpBarMaxDistanceScale, 0.01f, Default.worldHpBarMaxDistanceScale);
+            if (worldHpBarMaxDistanceScale < worldHpBarMinDistanceScale)
+            {
+                worldHpBarMaxDistanceScale = worldHpBarMinDistanceScale;
+            }
+
             mapAllyIconColor = ClampColor(mapAllyIconColor, Default.mapAllyIconColor);
             mapEnemyIconColor = ClampColor(mapEnemyIconColor, Default.mapEnemyIconColor);
             mapDestroyedIconColor = ClampColor(mapDestroyedIconColor, Default.mapDestroyedIconColor);
@@ -207,6 +232,11 @@ namespace Game.Scripts.Client
             enemyHpColor = source.enemyHpColor;
             hpTeamColorRefreshInterval = source.hpTeamColorRefreshInterval;
             ownerHealthBarSmoothSpeed = source.ownerHealthBarSmoothSpeed;
+            worldHpBarDistanceScaleEnabled = source.worldHpBarDistanceScaleEnabled;
+            worldHpBarScaleMinDistance = source.worldHpBarScaleMinDistance;
+            worldHpBarScaleMaxDistance = source.worldHpBarScaleMaxDistance;
+            worldHpBarMinDistanceScale = source.worldHpBarMinDistanceScale;
+            worldHpBarMaxDistanceScale = source.worldHpBarMaxDistanceScale;
             mapAllyIconColor = source.mapAllyIconColor;
             mapEnemyIconColor = source.mapEnemyIconColor;
             mapDestroyedIconColor = source.mapDestroyedIconColor;
