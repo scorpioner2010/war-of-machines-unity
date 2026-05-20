@@ -102,9 +102,42 @@ namespace Game.Scripts.Diagnostics
         public bool? EditorApplicationIsPlaying;
         public bool? EditorPaused;
         public bool? IsEditor;
+        public DiagnosticsTerrainMetrics Terrain = new DiagnosticsTerrainMetrics();
         public List<DiagnosticsScopeSummary> TopSlowScopes1s = new List<DiagnosticsScopeSummary>();
         public List<DiagnosticsScopeSummary> TopSlowScopes5s = new List<DiagnosticsScopeSummary>();
         public List<DiagnosticsScopeSummary> TopSlowScopes10s = new List<DiagnosticsScopeSummary>();
+    }
+
+    public sealed class DiagnosticsTerrainMetrics
+    {
+        public bool? ActiveTerrainPresent;
+        public int? ActiveTerrainCount;
+        public string ActiveTerrainName;
+        public int? TerrainLayer;
+        public bool? TerrainComponentEnabled;
+        public bool? TerrainGameObjectActive;
+        public bool? TerrainColliderEnabled;
+        public bool? TerrainTreeCollidersEnabled;
+        public bool? DrawHeightmap;
+        public bool? DrawInstanced;
+        public bool? DrawTreesAndFoliage;
+        public double? HeightmapPixelError;
+        public double? BasemapDistance;
+        public double? DetailObjectDistance;
+        public double? DetailObjectDensity;
+        public double? TreeDistance;
+        public double? TreeBillboardDistance;
+        public int? TreeMaximumFullLodCount;
+        public int? HeightmapResolution;
+        public int? AlphamapResolution;
+        public int? BaseMapResolution;
+        public int? DetailResolution;
+        public int? DetailPrototypeCount;
+        public int? TreePrototypeCount;
+        public int? TreeInstanceCount;
+        public double? SizeX;
+        public double? SizeY;
+        public double? SizeZ;
     }
 
     public sealed class DiagnosticsServerMetrics
@@ -215,6 +248,7 @@ namespace Game.Scripts.Diagnostics
         public double? FixedUpdateMs;
         public double? CameraRenderMs;
         public double? UiRenderMs;
+        public DiagnosticsTerrainMetrics Terrain = new DiagnosticsTerrainMetrics();
         public List<DiagnosticsScopeSummary> TopSuspects = new List<DiagnosticsScopeSummary>();
     }
 

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using FishNet.Managing;
 using FishNet.Managing.Timing;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -41,6 +42,7 @@ namespace Game.Scripts.Diagnostics
         private double _lastEditorBackgroundPlayerLoopRequestTime;
         private int _previousTargetFrameRate;
         private int _previousVSyncCount;
+        private int _previousRenderFrameInterval;
         private bool _previousRunInBackground;
 #endif
 
@@ -551,13 +553,15 @@ namespace Game.Scripts.Diagnostics
             {
                 _previousTargetFrameRate = Application.targetFrameRate;
                 _previousVSyncCount = QualitySettings.vSyncCount;
+                _previousRenderFrameInterval = OnDemandRendering.renderFrameInterval;
                 _previousRunInBackground = Application.runInBackground;
                 _savedEditorClientFramePacing = true;
             }
 
-            int targetFrameRate = IsStandaloneClientEditor()
+            int configuredTargetFrameRate = IsStandaloneClientEditor()
                 ? Mathf.Clamp(_config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate)
                 : Mathf.Clamp(_config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+            int targetFrameRate = ResolveEffectiveEditorTargetFrameRate(configuredTargetFrameRate);
             if (!Application.runInBackground)
             {
                 Application.runInBackground = true;
@@ -573,10 +577,20 @@ namespace Game.Scripts.Diagnostics
                 Application.targetFrameRate = targetFrameRate;
             }
 
+            int renderFrameInterval = ResolveEffectiveEditorRenderFrameInterval();
+            if (OnDemandRendering.renderFrameInterval != renderFrameInterval)
+            {
+                OnDemandRendering.renderFrameInterval = renderFrameInterval;
+            }
+
             if (!_loggedEditorClientFramePacing)
             {
                 UnityEngine.Debug.Log("[Diagnostics] Editor frame pacing guard (" + GetMode(_networkManager) + "): targetFrameRate="
                                       + Application.targetFrameRate
+                                      + ", configuredTargetFrameRate="
+                                      + configuredTargetFrameRate
+                                      + ", renderFrameInterval="
+                                      + OnDemandRendering.renderFrameInterval
                                       + ", vSyncCount="
                                       + QualitySettings.vSyncCount
                                       + ", runInBackground="
@@ -594,6 +608,82 @@ namespace Game.Scripts.Diagnostics
                    && !_networkManager.IsServerStarted;
 #else
             return false;
+#endif
+        }
+
+        private int ResolveEffectiveEditorTargetFrameRate(int configuredTargetFrameRate)
+        {
+#if UNITY_EDITOR
+            int targetFrameRate = configuredTargetFrameRate;
+            if (_config != null
+                && _config.ApplyEditorFocusedClientRefreshCap
+                && IsStandaloneClientEditor()
+                && Application.isFocused
+                && IsHighResolutionGameView())
+            {
+                int refreshRateCap = GetCurrentRefreshRateFrameCap();
+                if (refreshRateCap > 0 && targetFrameRate > refreshRateCap)
+                {
+                    targetFrameRate = refreshRateCap;
+                }
+            }
+
+            return Mathf.Clamp(targetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+#else
+            return configuredTargetFrameRate;
+#endif
+        }
+
+        private int ResolveEffectiveEditorRenderFrameInterval()
+        {
+#if UNITY_EDITOR
+            if (_config != null && IsStandaloneServerEditor())
+            {
+                return Mathf.Clamp(_config.EditorServerRenderFrameInterval, 1, 120);
+            }
+
+            return 1;
+#else
+            return 1;
+#endif
+        }
+
+        private bool IsStandaloneServerEditor()
+        {
+#if UNITY_EDITOR
+            return _networkManager != null
+                   && _networkManager.IsServerStarted
+                   && !_networkManager.IsClientStarted;
+#else
+            return false;
+#endif
+        }
+
+        private static bool IsHighResolutionGameView()
+        {
+#if UNITY_EDITOR
+            return Screen.width >= 1920 && Screen.height >= 1080;
+#else
+            return false;
+#endif
+        }
+
+        private static int GetCurrentRefreshRateFrameCap()
+        {
+#if UNITY_EDITOR
+#if UNITY_2022_2_OR_NEWER
+            double refreshRate = Screen.currentResolution.refreshRateRatio.value;
+#else
+            double refreshRate = Screen.currentResolution.refreshRate;
+#endif
+            if (double.IsNaN(refreshRate) || double.IsInfinity(refreshRate) || refreshRate < 30d)
+            {
+                return 0;
+            }
+
+            return Mathf.Clamp(Mathf.CeilToInt((float)refreshRate), DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+#else
+            return 0;
 #endif
         }
 
@@ -617,6 +707,7 @@ namespace Game.Scripts.Diagnostics
 
             Application.targetFrameRate = _previousTargetFrameRate;
             QualitySettings.vSyncCount = _previousVSyncCount;
+            OnDemandRendering.renderFrameInterval = _previousRenderFrameInterval;
             Application.runInBackground = _previousRunInBackground;
             _savedEditorClientFramePacing = false;
             _loggedEditorClientFramePacing = false;
@@ -675,7 +766,7 @@ namespace Game.Scripts.Diagnostics
             int configuredFrameRate = IsStandaloneClientEditor()
                 ? Mathf.Clamp(_config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate)
                 : Mathf.Clamp(_config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
-            int keepAliveFrameRate = Mathf.Clamp(configuredFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, 120);
+            int keepAliveFrameRate = Mathf.Clamp(configuredFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
             double now = EditorApplication.timeSinceStartup;
             double minInterval = 1d / keepAliveFrameRate;
             if (now - _lastEditorBackgroundPlayerLoopRequestTime < minInterval)

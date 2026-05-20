@@ -184,10 +184,12 @@ namespace Game.Scripts.Editor
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             _config.ApplyEditorClientFramePacingGuard = EditorGUILayout.Toggle("FPS guard", _config.ApplyEditorClientFramePacingGuard);
+            _config.ApplyEditorFocusedClientRefreshCap = EditorGUILayout.Toggle("Focused refresh cap", _config.ApplyEditorFocusedClientRefreshCap);
             _config.ApplyEditorBackgroundPlayerLoopKeepAlive = EditorGUILayout.Toggle("Background keepalive", _config.ApplyEditorBackgroundPlayerLoopKeepAlive);
             _config.EditorClientDisableVSync = EditorGUILayout.Toggle("Disable VSync", _config.EditorClientDisableVSync);
             _config.EditorClientTargetFrameRate = EditorGUILayout.IntSlider("Client target FPS", _config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
             _config.EditorServerTargetFrameRate = EditorGUILayout.IntSlider("Server target FPS", _config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+            _config.EditorServerRenderFrameInterval = EditorGUILayout.IntSlider("Server render interval", _config.EditorServerRenderFrameInterval, 1, 120);
             _config.ApplyEditorGcSmoothing = EditorGUILayout.Toggle("GC smoothing", _config.ApplyEditorGcSmoothing);
             int gcBudgetUs = Mathf.Clamp(_config.EditorGcIncrementalBudgetNanoseconds / 1000, 100, 5000);
             gcBudgetUs = EditorGUILayout.IntSlider("GC budget us", gcBudgetUs, 100, 5000);

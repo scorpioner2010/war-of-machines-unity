@@ -75,6 +75,7 @@ namespace Game.Scripts.Diagnostics
                 FixedUpdateMs = profilerMetrics.FixedUpdateMs,
                 CameraRenderMs = profilerMetrics.CameraRenderMs,
                 UiRenderMs = profilerMetrics.UiRenderMs,
+                Terrain = CollectTerrainMetrics(),
                 TopSuspects = buffer != null ? buffer.GetTopAllocatingScopes(DiagnosticsCategories.Client, 5, 5) : new System.Collections.Generic.List<DiagnosticsScopeSummary>()
             };
         }
@@ -113,6 +114,7 @@ namespace Game.Scripts.Diagnostics
             metrics.ActiveVisibleEntities = GameplayMapVisibilityState.Count;
             metrics.ActiveGameObjects = null;
             metrics.ActiveEntities = GetClientNetworkEntityCount(networkManager);
+            metrics.Terrain = CollectTerrainMetrics();
             metrics.UiUpdateMs = buffer.SumScopeMs(DiagnosticsCategories.Ui, 1);
             metrics.RenderMs = buffer.SumScopeMs(DiagnosticsCategories.Render, 1);
             metrics.PhysicsMs = buffer.SumScopeMs(DiagnosticsCategories.Physics, 1);
@@ -178,6 +180,66 @@ namespace Game.Scripts.Diagnostics
             metrics.EditorPaused = null;
             metrics.IsEditor = false;
 #endif
+        }
+
+        private static DiagnosticsTerrainMetrics CollectTerrainMetrics()
+        {
+            DiagnosticsTerrainMetrics metrics = new DiagnosticsTerrainMetrics();
+            Terrain[] terrains = Terrain.activeTerrains;
+            metrics.ActiveTerrainCount = terrains != null ? terrains.Length : 0;
+
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain == null && terrains != null && terrains.Length > 0)
+            {
+                terrain = terrains[0];
+            }
+
+            metrics.ActiveTerrainPresent = terrain != null;
+            if (terrain == null)
+            {
+                return metrics;
+            }
+
+            metrics.ActiveTerrainName = terrain.name;
+            metrics.TerrainLayer = terrain.gameObject.layer;
+            metrics.TerrainComponentEnabled = terrain.enabled;
+            metrics.TerrainGameObjectActive = terrain.gameObject.activeInHierarchy;
+            metrics.DrawHeightmap = terrain.drawHeightmap;
+            metrics.DrawInstanced = terrain.drawInstanced;
+            metrics.DrawTreesAndFoliage = terrain.drawTreesAndFoliage;
+            metrics.HeightmapPixelError = terrain.heightmapPixelError;
+            metrics.BasemapDistance = terrain.basemapDistance;
+            metrics.DetailObjectDistance = terrain.detailObjectDistance;
+            metrics.DetailObjectDensity = terrain.detailObjectDensity;
+            metrics.TreeDistance = terrain.treeDistance;
+            metrics.TreeBillboardDistance = terrain.treeBillboardDistance;
+            metrics.TreeMaximumFullLodCount = terrain.treeMaximumFullLODCount;
+
+            TerrainCollider terrainCollider;
+            if (terrain.TryGetComponent(out terrainCollider))
+            {
+                metrics.TerrainColliderEnabled = terrainCollider.enabled;
+                // Unity 6 serializes tree collider state, but does not expose it through TerrainCollider runtime API here.
+                metrics.TerrainTreeCollidersEnabled = null;
+            }
+
+            TerrainData data = terrain.terrainData;
+            if (data == null)
+            {
+                return metrics;
+            }
+
+            metrics.HeightmapResolution = data.heightmapResolution;
+            metrics.AlphamapResolution = data.alphamapResolution;
+            metrics.BaseMapResolution = data.baseMapResolution;
+            metrics.DetailResolution = data.detailResolution;
+            metrics.DetailPrototypeCount = data.detailPrototypes != null ? data.detailPrototypes.Length : 0;
+            metrics.TreePrototypeCount = data.treePrototypes != null ? data.treePrototypes.Length : 0;
+            metrics.TreeInstanceCount = data.treeInstanceCount;
+            metrics.SizeX = data.size.x;
+            metrics.SizeY = data.size.y;
+            metrics.SizeZ = data.size.z;
+            return metrics;
         }
 
         private int? GetClientNetworkEntityCount(NetworkManager networkManager)

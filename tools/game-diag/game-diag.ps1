@@ -384,6 +384,10 @@ function Update-AnalysisForEditorFrameSpike {
         if ($null -ne $client.applicationFocused) {
             $focused = $client.applicationFocused -eq $true
         }
+        $terrainActive = $false
+        if ($client.terrain -and $client.terrain.activeTerrainPresent -eq $true) {
+            $terrainActive = $true
+        }
 
         $serverBad = $false
         $serverTickP95 = $null
@@ -406,6 +410,21 @@ function Update-AnalysisForEditorFrameSpike {
         $evidence.Add("application focused is $focused")
         $evidence.Add("screen is $($client.screenWidth)x$($client.screenHeight)")
         $evidence.Add("isEditor is $isEditor")
+        if ($client.terrain) {
+            $evidence.Add("active Terrain present is $($client.terrain.activeTerrainPresent)")
+            if ($client.terrain.activeTerrainName) {
+                $evidence.Add("active Terrain is $($client.terrain.activeTerrainName)")
+            }
+            if ($client.terrain.detailObjectDistance -ne $null) {
+                $evidence.Add("terrain detail distance is $($client.terrain.detailObjectDistance)")
+            }
+            if ($client.terrain.treeDistance -ne $null) {
+                $evidence.Add("terrain tree distance is $($client.terrain.treeDistance)")
+            }
+            if ($client.terrain.heightmapPixelError -ne $null) {
+                $evidence.Add("terrain heightmap pixel error is $($client.terrain.heightmapPixelError)")
+            }
+        }
         if ($serverTickP95 -ne $null) {
             $evidence.Add("server tick p95 is $serverTickP95 ms")
         }
@@ -415,19 +434,33 @@ function Update-AnalysisForEditorFrameSpike {
             $evidence.Add("packet loss is $($current.network.packetLossPercent)%")
         }
 
+        $classification = "CLIENT_EDITOR_BOUND"
+        $summary = "Focused high-resolution Unity Editor client has severe frame spikes while server tick is not the primary signal. This points to client Editor/render/frame pacing/debug UI/focus-dependent work."
+        $nextSteps = @(
+            "Repeat the A/B/C focus test and export diagnostics during the visible stutter.",
+            "Disable Game View Gizmos/Stats/debug overlays/HUD, then re-run game-diag analyze --last 30.",
+            "Check frame pacing settings: vSyncCount, targetFrameRate, Game View scale, Maximize On Play, and runInBackground.",
+            "Do not patch server simulation first; current evidence points at the focused client Editor path."
+        )
+        if ($terrainActive) {
+            $classification = "CLIENT_TERRAIN_EDITOR_RENDER_BOUND"
+            $summary = "Focused high-resolution Unity Editor client has severe frame spikes while Terrain is active and server tick is not the primary signal. This points to Terrain/Game View rendering or Terrain editor overhead, not multiplayer sync."
+            $nextSteps = @(
+                "Toggle only the Terrain object and compare frame-spikes with the same focused 4K client.",
+                "Test Terrain drawTreesAndFoliage, detailObjectDistance, treeDistance, heightmapPixelError, shadows, and Game View Gizmos/Stats before editing network code.",
+                "If Development Build is smooth while Editor is bad, keep the fix in Editor/quality/Terrain settings instead of gameplay sync.",
+                "Do not patch server simulation first; current evidence points at the focused client Terrain render path."
+            )
+        }
+
         return [pscustomobject]@{
-            classification = "CLIENT_EDITOR_BOUND"
+            classification = $classification
             confidence = 0.82
             severity = "high"
-            summary = "Focused high-resolution Unity Editor client has severe frame spikes while server tick is not the primary signal. This points to client Editor/render/frame pacing/debug UI/focus-dependent work."
+            summary = $summary
             evidence = @($evidence)
             topSuspects = $Analysis.topSuspects
-            recommendedNextSteps = @(
-                "Repeat the A/B/C focus test and export diagnostics during the visible stutter.",
-                "Disable Game View Gizmos/Stats/debug overlays/HUD, then re-run game-diag analyze --last 30.",
-                "Check frame pacing settings: vSyncCount, targetFrameRate, Game View scale, Maximize On Play, and runInBackground.",
-                "Do not patch server simulation first; current evidence points at the focused client Editor path."
-            )
+            recommendedNextSteps = $nextSteps
             filesToInspect = $Analysis.filesToInspect
         }
     }

@@ -13,9 +13,11 @@ namespace Game.Scripts.Diagnostics
         public const string PortEnvironmentVariable = "DIAGNOSTICS_PORT";
         public const string TokenEnvironmentVariable = "DIAGNOSTICS_TOKEN";
         public const string DisableEditorClientFramePacingEnvironmentVariable = "DISABLE_EDITOR_CLIENT_FRAME_PACING";
+        public const string DisableEditorFocusedClientRefreshCapEnvironmentVariable = "DISABLE_EDITOR_FOCUSED_CLIENT_REFRESH_CAP";
         public const string DisableEditorBackgroundPlayerLoopKeepAliveEnvironmentVariable = "DISABLE_EDITOR_BACKGROUND_PLAYER_LOOP_KEEPALIVE";
         public const string EditorClientTargetFpsEnvironmentVariable = "EDITOR_CLIENT_TARGET_FPS";
         public const string EditorServerTargetFpsEnvironmentVariable = "EDITOR_SERVER_TARGET_FPS";
+        public const string EditorServerRenderFrameIntervalEnvironmentVariable = "EDITOR_SERVER_RENDER_FRAME_INTERVAL";
         public const string DisableEditorGcSmoothingEnvironmentVariable = "DISABLE_EDITOR_GC_SMOOTHING";
         public const string EditorGcBudgetUsEnvironmentVariable = "EDITOR_GC_BUDGET_US";
         public const string EnableUnityProfilerRecordersEnvironmentVariable = "ENABLE_UNITY_PROFILER_RECORDERS";
@@ -23,8 +25,8 @@ namespace Game.Scripts.Diagnostics
         public const string EditorPrefsEnabledKey = "WarOfMachines.Diagnostics.Enabled";
         public const string EditorPrefsDisabledKey = "WarOfMachines.Diagnostics.Disabled";
         public const int MinEditorTargetFrameRate = 30;
-        public const int MaxEditorTargetFrameRate = 120;
-        public const int DefaultEditorTargetFrameRate = 120;
+        public const int MaxEditorTargetFrameRate = 500;
+        public const int DefaultEditorTargetFrameRate = 500;
 #if UNITY_EDITOR
         public const string EditorPrefsPrefix = "WarOfMachines.Diagnostics.";
 #endif
@@ -37,16 +39,18 @@ namespace Game.Scripts.Diagnostics
         public bool EnableJsonl = true;
         public bool EnableOverlay = true;
         public bool ApplyEditorClientFramePacingGuard = true;
+        public bool ApplyEditorFocusedClientRefreshCap = true;
         public bool ApplyEditorBackgroundPlayerLoopKeepAlive = true;
         public bool ApplyEditorGcSmoothing = true;
         public bool EditorClientDisableVSync = true;
-        public bool EnableUnityProfilerRecorders = false;
+        public bool EnableUnityProfilerRecorders = true;
         public bool EnableUnityGcAllocRecorder = false;
         public bool AllowPortFallback = true;
         public string BindAddress = "127.0.0.1";
         public int HttpPort = 8765;
         public int EditorClientTargetFrameRate = DefaultEditorTargetFrameRate;
         public int EditorServerTargetFrameRate = DefaultEditorTargetFrameRate;
+        public int EditorServerRenderFrameInterval = 20;
         public int EditorGcIncrementalBudgetNanoseconds = 500000;
         public int MaxPortFallbackAttempts = 10;
         public string Token = string.Empty;
@@ -88,9 +92,11 @@ namespace Game.Scripts.Diagnostics
             config.HttpPort = ReadInt(PortEnvironmentVariable, ReadCommandLineInt("-diagnosticsPort", config.HttpPort));
             config.Token = ReadString(TokenEnvironmentVariable, ReadCommandLineString("-diagnosticsToken", config.Token));
             config.ApplyEditorClientFramePacingGuard = !ReadBool(DisableEditorClientFramePacingEnvironmentVariable, !config.ApplyEditorClientFramePacingGuard);
+            config.ApplyEditorFocusedClientRefreshCap = !ReadBool(DisableEditorFocusedClientRefreshCapEnvironmentVariable, !config.ApplyEditorFocusedClientRefreshCap);
             config.ApplyEditorBackgroundPlayerLoopKeepAlive = !ReadBool(DisableEditorBackgroundPlayerLoopKeepAliveEnvironmentVariable, !config.ApplyEditorBackgroundPlayerLoopKeepAlive);
             config.EditorClientTargetFrameRate = Mathf.Clamp(ReadInt(EditorClientTargetFpsEnvironmentVariable, ReadCommandLineInt("-editorClientTargetFps", config.EditorClientTargetFrameRate)), MinEditorTargetFrameRate, MaxEditorTargetFrameRate);
             config.EditorServerTargetFrameRate = Mathf.Clamp(ReadInt(EditorServerTargetFpsEnvironmentVariable, ReadCommandLineInt("-editorServerTargetFps", config.EditorServerTargetFrameRate)), MinEditorTargetFrameRate, MaxEditorTargetFrameRate);
+            config.EditorServerRenderFrameInterval = Mathf.Clamp(ReadInt(EditorServerRenderFrameIntervalEnvironmentVariable, ReadCommandLineInt("-editorServerRenderFrameInterval", config.EditorServerRenderFrameInterval)), 1, 120);
             config.ApplyEditorGcSmoothing = !ReadBool(DisableEditorGcSmoothingEnvironmentVariable, !config.ApplyEditorGcSmoothing);
             int gcBudgetUs = Mathf.Clamp(ReadInt(EditorGcBudgetUsEnvironmentVariable, ReadCommandLineInt("-editorGcBudgetUs", config.EditorGcIncrementalBudgetNanoseconds / 1000)), 100, 5000);
             config.EditorGcIncrementalBudgetNanoseconds = gcBudgetUs * 1000;
@@ -175,6 +181,7 @@ namespace Game.Scripts.Diagnostics
             WriteBool(nameof(EnableJsonl), config.EnableJsonl);
             WriteBool(nameof(EnableOverlay), config.EnableOverlay);
             WriteBool(nameof(ApplyEditorClientFramePacingGuard), config.ApplyEditorClientFramePacingGuard);
+            WriteBool(nameof(ApplyEditorFocusedClientRefreshCap), config.ApplyEditorFocusedClientRefreshCap);
             WriteBool(nameof(ApplyEditorBackgroundPlayerLoopKeepAlive), config.ApplyEditorBackgroundPlayerLoopKeepAlive);
             WriteBool(nameof(ApplyEditorGcSmoothing), config.ApplyEditorGcSmoothing);
             WriteBool(nameof(EditorClientDisableVSync), config.EditorClientDisableVSync);
@@ -185,6 +192,7 @@ namespace Game.Scripts.Diagnostics
             WriteInt(nameof(HttpPort), config.HttpPort);
             WriteInt(nameof(EditorClientTargetFrameRate), config.EditorClientTargetFrameRate);
             WriteInt(nameof(EditorServerTargetFrameRate), config.EditorServerTargetFrameRate);
+            WriteInt(nameof(EditorServerRenderFrameInterval), config.EditorServerRenderFrameInterval);
             WriteInt(nameof(EditorGcIncrementalBudgetNanoseconds), config.EditorGcIncrementalBudgetNanoseconds);
             WriteInt(nameof(MaxPortFallbackAttempts), config.MaxPortFallbackAttempts);
             WriteString(nameof(Token), config.Token);
@@ -222,6 +230,7 @@ namespace Game.Scripts.Diagnostics
             DeleteKey(nameof(EnableJsonl));
             DeleteKey(nameof(EnableOverlay));
             DeleteKey(nameof(ApplyEditorClientFramePacingGuard));
+            DeleteKey(nameof(ApplyEditorFocusedClientRefreshCap));
             DeleteKey(nameof(ApplyEditorBackgroundPlayerLoopKeepAlive));
             DeleteKey(nameof(ApplyEditorGcSmoothing));
             DeleteKey(nameof(EditorClientDisableVSync));
@@ -232,6 +241,7 @@ namespace Game.Scripts.Diagnostics
             DeleteKey(nameof(HttpPort));
             DeleteKey(nameof(EditorClientTargetFrameRate));
             DeleteKey(nameof(EditorServerTargetFrameRate));
+            DeleteKey(nameof(EditorServerRenderFrameInterval));
             DeleteKey(nameof(EditorGcIncrementalBudgetNanoseconds));
             DeleteKey(nameof(MaxPortFallbackAttempts));
             DeleteKey(nameof(Token));
@@ -266,6 +276,7 @@ namespace Game.Scripts.Diagnostics
             config.EnableJsonl = ReadEditorBool(nameof(EnableJsonl), config.EnableJsonl);
             config.EnableOverlay = ReadEditorBool(nameof(EnableOverlay), config.EnableOverlay);
             config.ApplyEditorClientFramePacingGuard = ReadEditorBool(nameof(ApplyEditorClientFramePacingGuard), config.ApplyEditorClientFramePacingGuard);
+            config.ApplyEditorFocusedClientRefreshCap = ReadEditorBool(nameof(ApplyEditorFocusedClientRefreshCap), config.ApplyEditorFocusedClientRefreshCap);
             config.ApplyEditorBackgroundPlayerLoopKeepAlive = ReadEditorBool(nameof(ApplyEditorBackgroundPlayerLoopKeepAlive), config.ApplyEditorBackgroundPlayerLoopKeepAlive);
             config.ApplyEditorGcSmoothing = ReadEditorBool(nameof(ApplyEditorGcSmoothing), config.ApplyEditorGcSmoothing);
             config.EditorClientDisableVSync = ReadEditorBool(nameof(EditorClientDisableVSync), config.EditorClientDisableVSync);
@@ -274,8 +285,9 @@ namespace Game.Scripts.Diagnostics
             config.AllowPortFallback = ReadEditorBool(nameof(AllowPortFallback), config.AllowPortFallback);
             config.BindAddress = ReadEditorString(nameof(BindAddress), config.BindAddress);
             config.HttpPort = ReadEditorInt(nameof(HttpPort), config.HttpPort);
-            config.EditorClientTargetFrameRate = ReadEditorInt(nameof(EditorClientTargetFrameRate), config.EditorClientTargetFrameRate);
-            config.EditorServerTargetFrameRate = ReadEditorInt(nameof(EditorServerTargetFrameRate), config.EditorServerTargetFrameRate);
+            config.EditorClientTargetFrameRate = ReadEditorTargetFrameRate(nameof(EditorClientTargetFrameRate), config.EditorClientTargetFrameRate);
+            config.EditorServerTargetFrameRate = ReadEditorTargetFrameRate(nameof(EditorServerTargetFrameRate), config.EditorServerTargetFrameRate);
+            config.EditorServerRenderFrameInterval = Mathf.Clamp(ReadEditorInt(nameof(EditorServerRenderFrameInterval), config.EditorServerRenderFrameInterval), 1, 120);
             config.EditorGcIncrementalBudgetNanoseconds = ReadEditorInt(nameof(EditorGcIncrementalBudgetNanoseconds), config.EditorGcIncrementalBudgetNanoseconds);
             config.MaxPortFallbackAttempts = ReadEditorInt(nameof(MaxPortFallbackAttempts), config.MaxPortFallbackAttempts);
             config.Token = ReadEditorString(nameof(Token), config.Token);
@@ -322,6 +334,23 @@ namespace Game.Scripts.Diagnostics
         private static int ReadEditorInt(string name, int fallback)
         {
             return EditorPrefs.GetInt(BuildEditorKey(name), fallback);
+        }
+
+        private static int ReadEditorTargetFrameRate(string name, int fallback)
+        {
+            string key = BuildEditorKey(name);
+            if (!EditorPrefs.HasKey(key))
+            {
+                return fallback;
+            }
+
+            int value = EditorPrefs.GetInt(key, fallback);
+            if (value == 120 && fallback == DefaultEditorTargetFrameRate)
+            {
+                return DefaultEditorTargetFrameRate;
+            }
+
+            return value;
         }
 
         private static long ReadEditorLong(string name, long fallback)

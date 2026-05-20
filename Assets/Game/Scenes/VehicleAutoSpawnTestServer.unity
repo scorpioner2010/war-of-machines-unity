@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 100001}
   - component: {fileID: 100002}
   m_Layer: 0
-  m_Name: VehicleAutoSpawnTestScene
+  m_Name: VehicleAutoSpawnTestServerScene
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7ebfdd8872d4ea1bba1c1c6e019e98d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  role: 1
+  role: 0
   registry: {fileID: 11400000, guid: e789c05f8eea53d409cd152d7bda366e, type: 2}
   spawnPosition: {x: 0, y: 1.2, z: 0}
   spawnRotationEuler: {x: 0, y: 0, z: 0}

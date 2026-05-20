@@ -304,7 +304,6 @@ namespace Game.Scripts.Gameplay.Robots
                 float lastPitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
                 VehicleInputSyncSettings inputSync = GetInputSyncSettings();
                 float yawPitchDeadzone = Mathf.Max(0f, inputSync.yawPitchSendDeadzoneDeg);
-                float aimPointDeadzoneSqr = inputSync.GetAimPointSendDeadzoneSqr();
 
                 bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= yawPitchDeadzone;
                 bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= yawPitchDeadzone;
@@ -318,15 +317,13 @@ namespace Game.Scripts.Gameplay.Robots
                     pitchQ = _lastSentPitchQ;
                 }
 
-                bool changed =
-                    (_lastSentMove - _moveLocal).sqrMagnitude > 0.0001f ||
-                    _lastSentShoot != newShoot ||
-                    _lastSentAction != newAction ||
-                    _lastSentYawQ != yawQ ||
-                    _lastSentPitchQ != pitchQ ||
-                    (_lastSentAimPoint - aimPoint).sqrMagnitude > aimPointDeadzoneSqr;
+                bool moveChanged = (_lastSentMove - _moveLocal).sqrMagnitude > 0.0001f;
+                bool shootChanged = _lastSentShoot != newShoot;
+                bool actionChanged = _lastSentAction != newAction;
+                bool immediateChanged = moveChanged || shootChanged || actionChanged;
+                bool sendDue = Time.unscaledTime >= _nextSendTime;
 
-                if (Time.unscaledTime >= _nextSendTime || changed)
+                if (sendDue || immediateChanged)
                 {
                     _seq++;
                     ProfileScope.RecordEvent("RPC.SendControls", DiagnosticsCategories.Rpc);
