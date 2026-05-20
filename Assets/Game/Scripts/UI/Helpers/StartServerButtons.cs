@@ -27,6 +27,11 @@ namespace Game.Scripts.UI.Helpers
     public class StartServerButtons : MonoBehaviour
     {
         private const string UnityServerStatusEndpoint = "/unity-server/status";
+        private const string ServerAddressArgument = "-serverAddress";
+        private const string AdvertiseAddressArgument = "-advertiseAddress";
+        private const string ServerPortArgument = "-serverPort";
+        private const string GamePortArgument = "-gamePort";
+        private const string PortArgument = "-port";
 
         public static string LastServerStatus { get; private set; } = "Server start not requested.";
 
@@ -43,6 +48,7 @@ namespace Game.Scripts.UI.Helpers
         [SerializeField] private bool requestClientServerAddressFromApi = true;
         [SerializeField] private int serverLookupTimeoutSeconds = 5;
         [SerializeField] private string advertisedServerAddress;
+        [SerializeField] private bool applyRuntimeServerConfig = true;
 
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
         private LocalConnectionState _serverState = LocalConnectionState.Stopped;
@@ -54,6 +60,8 @@ namespace Game.Scripts.UI.Helpers
 
         private void Awake()
         {
+            ApplyRuntimeServerOverrides();
+
             if (connect != null && connect.transform.parent != null)
             {
                 connect.transform.parent.gameObject.SetActive(true);
@@ -328,7 +336,7 @@ namespace Game.Scripts.UI.Helpers
                 return false;
             }
 
-            if (response.isOnline == false)
+            if (IsServerOnline(response) == false)
             {
                 error = "Battle server is offline";
                 return false;
@@ -360,6 +368,23 @@ namespace Game.Scripts.UI.Helpers
             };
 
             return true;
+        }
+
+        private static bool IsServerOnline(UnityServerStatusResponse response)
+        {
+            if (response.isOnline)
+            {
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(response.status))
+            {
+                return false;
+            }
+
+            return string.Equals(response.status, "ready", System.StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(response.status, "online", System.StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(response.status, "running", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetResponseAddress(UnityServerStatusResponse response)
@@ -461,6 +486,8 @@ namespace Game.Scripts.UI.Helpers
                 LastServerStatus = "Cannot start server: NetworkManager is not assigned.";
                 return;
             }
+
+            ApplyRuntimeServerOverrides();
 
             if (_serverState != LocalConnectionState.Stopped)
             {
@@ -599,14 +626,21 @@ namespace Game.Scripts.UI.Helpers
 
         private IEnumerator SendServerHeartbeat()
         {
+            string address = GetAdvertisedServerAddress();
+            ushort port = GetServerPort();
             UnityServerStatusPayload payload = new UnityServerStatusPayload
             {
+                isOnline = true,
                 status = "ready",
                 playersOnline = GetPlayersOnline(),
                 maxPlayers = GetMaxPlayers(),
                 activeMatches = GetActiveMatches(),
-                address = GetAdvertisedServerAddress(),
-                port = GetServerPort(),
+                address = address,
+                publicIp = address,
+                ipAddress = address,
+                port = port,
+                gamePort = port,
+                serverPort = port,
                 message = "Unity server running"
             };
 
@@ -764,17 +798,204 @@ namespace Game.Scripts.UI.Helpers
 
         private string GetAdvertisedServerAddress()
         {
-            if (string.IsNullOrWhiteSpace(advertisedServerAddress))
+            string runtimeAddress = GetRuntimeServerAddress();
+            if (string.IsNullOrWhiteSpace(runtimeAddress) == false)
             {
-                if (HttpLink.IsLocal)
-                {
-                    return "127.0.0.1";
-                }
+                return NormalizeConnectionAddress(runtimeAddress);
+            }
 
+            if (string.IsNullOrWhiteSpace(advertisedServerAddress) == false)
+            {
+                return NormalizeConnectionAddress(advertisedServerAddress);
+            }
+
+            if (HttpLink.IsLocal)
+            {
+                return "127.0.0.1";
+            }
+
+            return string.Empty;
+        }
+
+        private void ApplyRuntimeServerOverrides()
+        {
+            if (applyRuntimeServerConfig == false)
+            {
+                return;
+            }
+
+            if (autoStartMode != NetworkAutoStartMode.Server && server == null)
+            {
+                return;
+            }
+
+            if (networkManager == null || networkManager.TransportManager == null || networkManager.TransportManager.Transport == null)
+            {
+                return;
+            }
+
+            ushort port = GetRuntimeServerPort();
+            if (port == 0)
+            {
+                return;
+            }
+
+            networkManager.TransportManager.Transport.SetPort(port);
+        }
+
+        private static string GetRuntimeServerAddress()
+        {
+            string value = GetCommandLineValue(ServerAddressArgument);
+            if (string.IsNullOrWhiteSpace(value) == false)
+            {
+                return value;
+            }
+
+            value = GetCommandLineValue(AdvertiseAddressArgument);
+            if (string.IsNullOrWhiteSpace(value) == false)
+            {
+                return value;
+            }
+
+            value = GetEnvironmentValue("WOM_SERVER_ADDRESS");
+            if (string.IsNullOrWhiteSpace(value) == false)
+            {
+                return value;
+            }
+
+            value = GetEnvironmentValue("SERVER_ADDRESS");
+            if (string.IsNullOrWhiteSpace(value) == false)
+            {
+                return value;
+            }
+
+            value = GetEnvironmentValue("PUBLIC_IP");
+            if (string.IsNullOrWhiteSpace(value) == false)
+            {
+                return value;
+            }
+
+            return GetEnvironmentValue("HOST_IP");
+        }
+
+        private static ushort GetRuntimeServerPort()
+        {
+            string value = GetCommandLineValue(ServerPortArgument);
+            if (TryParsePort(value, out ushort port))
+            {
+                return port;
+            }
+
+            value = GetCommandLineValue(GamePortArgument);
+            if (TryParsePort(value, out port))
+            {
+                return port;
+            }
+
+            value = GetCommandLineValue(PortArgument);
+            if (TryParsePort(value, out port))
+            {
+                return port;
+            }
+
+            value = GetEnvironmentValue("WOM_SERVER_PORT");
+            if (TryParsePort(value, out port))
+            {
+                return port;
+            }
+
+            value = GetEnvironmentValue("GAME_PORT");
+            if (TryParsePort(value, out port))
+            {
+                return port;
+            }
+
+            value = GetEnvironmentValue("SERVER_PORT");
+            if (TryParsePort(value, out port))
+            {
+                return port;
+            }
+
+#if !UNITY_EDITOR
+            value = GetEnvironmentValue("PORT");
+            if (TryParsePort(value, out port))
+            {
+                return port;
+            }
+#endif
+
+            return 0;
+        }
+
+        private static string GetEnvironmentValue(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
                 return string.Empty;
             }
 
-            return NormalizeConnectionAddress(advertisedServerAddress);
+            return System.Environment.GetEnvironmentVariable(name);
+        }
+
+        private static string GetCommandLineValue(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return string.Empty;
+            }
+
+            string[] args = System.Environment.GetCommandLineArgs();
+            string prefix = key + "=";
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (string.IsNullOrWhiteSpace(arg))
+                {
+                    continue;
+                }
+
+                if (string.Equals(arg, key, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 < args.Length)
+                    {
+                        return args[i + 1];
+                    }
+
+                    return string.Empty;
+                }
+
+                if (arg.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return arg.Substring(prefix.Length);
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static bool TryParsePort(string value, out ushort port)
+        {
+            port = 0;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            if (ushort.TryParse(value.Trim(), out port) == false)
+            {
+                Debug.LogWarning("Ignored invalid server port value: " + value);
+                port = 0;
+                return false;
+            }
+
+            if (port == 0)
+            {
+                Debug.LogWarning("Ignored invalid server port value: " + value);
+                return false;
+            }
+
+            return true;
         }
 
         private void StopNetworkConnections(string reason)
@@ -802,12 +1023,17 @@ namespace Game.Scripts.UI.Helpers
         [System.Serializable]
         private class UnityServerStatusPayload
         {
+            public bool isOnline;
             public string status;
             public int playersOnline;
             public int maxPlayers;
             public int activeMatches;
             public string address;
+            public string publicIp;
+            public string ipAddress;
             public int port;
+            public int gamePort;
+            public int serverPort;
             public string message;
         }
 

@@ -13653,6 +13653,7 @@ MonoBehaviour:
   requestClientServerAddressFromApi: 1
   serverLookupTimeoutSeconds: 5
   advertisedServerAddress: 
+  applyRuntimeServerConfig: 1
 --- !u!4 &1731322153
 Transform:
   m_ObjectHideFlags: 0

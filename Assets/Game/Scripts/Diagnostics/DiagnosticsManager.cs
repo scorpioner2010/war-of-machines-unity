@@ -5,6 +5,9 @@ using FishNet.Managing;
 using FishNet.Managing.Timing;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Game.Scripts.Diagnostics
 {
@@ -33,6 +36,9 @@ namespace Game.Scripts.Diagnostics
         private bool _savedEditorClientFramePacing;
         private bool _loggedEditorClientFramePacing;
         private bool _loggedEditorGcSmoothing;
+        private bool _editorBackgroundPlayerLoopSubscribed;
+        private bool _loggedEditorBackgroundPlayerLoopKeepAlive;
+        private double _lastEditorBackgroundPlayerLoopRequestTime;
         private int _previousTargetFrameRate;
         private int _previousVSyncCount;
         private bool _previousRunInBackground;
@@ -170,6 +176,7 @@ namespace Game.Scripts.Diagnostics
 
             ResolveNetworkManager();
             MaintainEditorClientFramePacingGuard(now);
+            MaintainEditorBackgroundPlayerLoopKeepAlive();
             MaintainEditorGcSmoothing();
 
             if (now < _nextSampleTime)
@@ -212,6 +219,7 @@ namespace Game.Scripts.Diagnostics
             }
 
             RestoreEditorClientFramePacingGuard();
+            SetEditorBackgroundPlayerLoopKeepAlive(false);
 
             if (_instance == this)
             {
@@ -548,8 +556,8 @@ namespace Game.Scripts.Diagnostics
             }
 
             int targetFrameRate = IsStandaloneClientEditor()
-                ? Mathf.Clamp(_config.EditorClientTargetFrameRate, 30, 240)
-                : Mathf.Clamp(_config.EditorServerTargetFrameRate, 30, 240);
+                ? Mathf.Clamp(_config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate)
+                : Mathf.Clamp(_config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
             if (!Application.runInBackground)
             {
                 Application.runInBackground = true;
@@ -614,6 +622,80 @@ namespace Game.Scripts.Diagnostics
             _loggedEditorClientFramePacing = false;
 #endif
         }
+
+        private void MaintainEditorBackgroundPlayerLoopKeepAlive()
+        {
+#if UNITY_EDITOR
+            if (_config == null || !_config.ApplyEditorBackgroundPlayerLoopKeepAlive || !IsEditorNetworkPlayMode())
+            {
+                SetEditorBackgroundPlayerLoopKeepAlive(false);
+                return;
+            }
+
+            SetEditorBackgroundPlayerLoopKeepAlive(true);
+#endif
+        }
+
+        private void SetEditorBackgroundPlayerLoopKeepAlive(bool enabled)
+        {
+#if UNITY_EDITOR
+            if (_editorBackgroundPlayerLoopSubscribed == enabled)
+            {
+                return;
+            }
+
+            if (enabled)
+            {
+                EditorApplication.update += OnEditorBackgroundPlayerLoopUpdate;
+            }
+            else
+            {
+                EditorApplication.update -= OnEditorBackgroundPlayerLoopUpdate;
+                _loggedEditorBackgroundPlayerLoopKeepAlive = false;
+            }
+
+            _editorBackgroundPlayerLoopSubscribed = enabled;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void OnEditorBackgroundPlayerLoopUpdate()
+        {
+            if (_config == null || !_config.ApplyEditorBackgroundPlayerLoopKeepAlive || !IsEditorNetworkPlayMode())
+            {
+                SetEditorBackgroundPlayerLoopKeepAlive(false);
+                return;
+            }
+
+            if (Application.isFocused)
+            {
+                return;
+            }
+
+            int configuredFrameRate = IsStandaloneClientEditor()
+                ? Mathf.Clamp(_config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate)
+                : Mathf.Clamp(_config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+            int keepAliveFrameRate = Mathf.Clamp(configuredFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, 120);
+            double now = EditorApplication.timeSinceStartup;
+            double minInterval = 1d / keepAliveFrameRate;
+            if (now - _lastEditorBackgroundPlayerLoopRequestTime < minInterval)
+            {
+                return;
+            }
+
+            _lastEditorBackgroundPlayerLoopRequestTime = now;
+            EditorApplication.QueuePlayerLoopUpdate();
+
+            if (!_loggedEditorBackgroundPlayerLoopKeepAlive)
+            {
+                UnityEngine.Debug.Log("[Diagnostics] Editor background PlayerLoop keepalive (" + GetMode(_networkManager) + "): keepAliveFrameRate="
+                                      + keepAliveFrameRate
+                                      + ", configuredTargetFrameRate="
+                                      + configuredFrameRate);
+                _loggedEditorBackgroundPlayerLoopKeepAlive = true;
+            }
+        }
+#endif
 
         private void MaintainEditorGcSmoothing()
         {

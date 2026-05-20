@@ -47,7 +47,7 @@ MonoBehaviour:
   maxPlayersForFindRoom: 20
   findRoomSeconds: 1
   botsEnabled: 1
-  botsPerMatch: 20
+  botsPerMatch: 3
   defaultBotVehicleCode: ia_l1_starter
   botMmr: 1000
   botNamePrefix: 'Bot '

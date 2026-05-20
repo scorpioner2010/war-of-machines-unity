@@ -9,137 +9,166 @@ namespace Game.Scripts.API
     public abstract class VehiclesManager
     {
         private const float DefaultViewRange = 100f;
+        private const int LocalRequestTimeoutSeconds = 2;
+        private const int RemoteRequestTimeoutSeconds = 10;
 
         public static async UniTask<(bool isSuccess, string message, VehicleLite[] items)> GetAll(string faction = null, string branch = null)
         {
-            string url = HttpLink.APIBase + "/vehicles";
+            string endpoint = "/vehicles";
 
             bool hasQuery = false;
             if (!string.IsNullOrEmpty(faction))
             {
-                url += hasQuery ? "&" : "?";
-                url += "faction=" + UnityWebRequest.EscapeURL(faction);
+                endpoint += hasQuery ? "&" : "?";
+                endpoint += "faction=" + UnityWebRequest.EscapeURL(faction);
                 hasQuery = true;
             }
+
             if (!string.IsNullOrEmpty(branch))
             {
-                url += hasQuery ? "&" : "?";
-                url += "branch=" + UnityWebRequest.EscapeURL(branch);
+                endpoint += hasQuery ? "&" : "?";
+                endpoint += "branch=" + UnityWebRequest.EscapeURL(branch);
             }
 
-            var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
+            (bool isSuccess, string response) result = await SendGetRequest(endpoint);
+            if (result.isSuccess)
             {
-                downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
-            };
-
-            try { await request.SendWebRequest(); } catch (UnityWebRequestException) { }
-
-            string resp = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                VehicleLite[] arr = JsonHelper.FromJson<VehicleLite>(resp);
+                VehicleLite[] arr = JsonHelper.FromJson<VehicleLite>(result.response);
                 NormalizeVehicleLites(arr);
-                return (true, resp, arr);
+                return (true, result.response, arr);
             }
 
-            return (false, resp, Array.Empty<VehicleLite>());
+            return (false, result.response, Array.Empty<VehicleLite>());
         }
 
         public static async UniTask<(bool isSuccess, string message, VehicleLite item)> GetById(int id)
         {
-            string url = HttpLink.APIBase + "/vehicles/" + id;
-
-            var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
+            (bool isSuccess, string response) result = await SendGetRequest("/vehicles/" + id);
+            if (result.isSuccess)
             {
-                downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
-            };
-
-            try { await request.SendWebRequest(); } catch (UnityWebRequestException) { }
-
-            string resp = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                VehicleLite item = JsonUtility.FromJson<VehicleLite>(resp);
+                VehicleLite item = JsonUtility.FromJson<VehicleLite>(result.response);
                 NormalizeVehicleLite(item);
-                return (true, resp, item);
+                return (true, result.response, item);
             }
 
-            return (false, resp, default(VehicleLite));
+            return (false, result.response, default(VehicleLite));
         }
 
         public static async UniTask<(bool isSuccess, string message, VehicleLite item)> GetByCode(string code)
         {
-            string url = HttpLink.APIBase + "/vehicles/by-code/" + UnityWebRequest.EscapeURL(code);
-
-            var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
+            (bool isSuccess, string response) result = await SendGetRequest("/vehicles/by-code/" + UnityWebRequest.EscapeURL(code));
+            if (result.isSuccess)
             {
-                downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
-            };
-
-            try { await request.SendWebRequest(); } catch (UnityWebRequestException) { }
-
-            string resp = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                VehicleLite item = JsonUtility.FromJson<VehicleLite>(resp);
+                VehicleLite item = JsonUtility.FromJson<VehicleLite>(result.response);
                 NormalizeVehicleLite(item);
-                return (true, resp, item);
+                return (true, result.response, item);
             }
 
-            return (false, resp, default(VehicleLite));
+            return (false, result.response, default(VehicleLite));
         }
 
         public static async UniTask<(bool isSuccess, string message, ResearchFromLink[] items)> GetResearchFrom(int vehicleId)
         {
-            string url = HttpLink.APIBase + "/vehicles/" + vehicleId + "/research-from";
-
-            var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
+            (bool isSuccess, string response) result = await SendGetRequest("/vehicles/" + vehicleId + "/research-from");
+            if (result.isSuccess)
             {
-                downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
-            };
-
-            try { await request.SendWebRequest(); } catch (UnityWebRequestException) { }
-
-            string resp = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                var arr = JsonHelper.FromJson<ResearchFromLink>(resp);
-                return (true, resp, arr);
+                ResearchFromLink[] arr = JsonHelper.FromJson<ResearchFromLink>(result.response);
+                return (true, result.response, arr);
             }
 
-            return (false, resp, Array.Empty<ResearchFromLink>());
+            return (false, result.response, Array.Empty<ResearchFromLink>());
         }
 
         public static async UniTask<(bool ok, string msg, VehicleGraph graph)>
             GetGraph(string faction = null)
         {
-            string url = HttpLink.APIBase + "/vehicles/graph";
+            string endpoint = "/vehicles/graph";
             if (!string.IsNullOrEmpty(faction))
-                url += "?faction=" + UnityWebRequest.EscapeURL(faction);
-
-            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
-                downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
-            };
+                endpoint += "?faction=" + UnityWebRequest.EscapeURL(faction);
+            }
 
-            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+            (bool isSuccess, string response) result = await SendGetRequest(endpoint);
+            if (!result.isSuccess)
+            {
+                return (false, result.response, default);
+            }
 
-            string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
-            if (req.result != UnityWebRequest.Result.Success)
-                return (false, resp, default);
-
-            var graph = JsonUtility.FromJson<VehicleGraph>(resp);
+            VehicleGraph graph = JsonUtility.FromJson<VehicleGraph>(result.response);
             NormalizeVehicleGraph(graph);
-            return (true, resp, graph);
+            return (true, result.response, graph);
+        }
+
+        private static async UniTask<(bool isSuccess, string response)> SendGetRequest(string endpoint)
+        {
+            string[] apiBases = HttpLink.GetBaseCandidates();
+            string lastResponse = string.Empty;
+
+            for (int i = 0; i < apiBases.Length; i++)
+            {
+                string apiBase = apiBases[i];
+                string url = apiBase + endpoint;
+
+                using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET))
+                {
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.certificateHandler = new AcceptAllCertificates();
+                    request.timeout = GetRequestTimeoutSeconds(apiBase);
+
+                    try
+                    {
+                        await request.SendWebRequest();
+                    }
+                    catch (UnityWebRequestException) { }
+
+                    string response = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
+
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        HttpLink.SetResolvedBase(apiBase);
+                        return (true, response);
+                    }
+
+                    lastResponse = string.IsNullOrWhiteSpace(response) == false
+                        ? response
+                        : FormatRequestError(apiBase, request);
+
+                    if (ShouldTryNextBase(request, response))
+                    {
+                        continue;
+                    }
+
+                    HttpLink.SetResolvedBase(apiBase);
+                    return (false, lastResponse);
+                }
+            }
+
+            return (false, lastResponse);
+        }
+
+        private static int GetRequestTimeoutSeconds(string apiBase)
+        {
+            if (HttpLink.IsLocalBase(apiBase))
+            {
+                return LocalRequestTimeoutSeconds;
+            }
+
+            return RemoteRequestTimeoutSeconds;
+        }
+
+        private static string FormatRequestError(string apiBase, UnityWebRequest request)
+        {
+            return "Vehicles API is not available at " + apiBase + ": " + request.responseCode + " " + request.error;
+        }
+
+        private static bool ShouldTryNextBase(UnityWebRequest request, string response)
+        {
+            if (request.result == UnityWebRequest.Result.ConnectionError)
+            {
+                return true;
+            }
+
+            return request.responseCode == 0 && string.IsNullOrWhiteSpace(response);
         }
 
         private static void NormalizeVehicleLites(VehicleLite[] vehicles)
