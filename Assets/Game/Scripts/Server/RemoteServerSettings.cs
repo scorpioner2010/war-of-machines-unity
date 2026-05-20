@@ -34,6 +34,21 @@ namespace Game.Scripts.Server
             float robotLeggedTransitionSpeedMultiplier,
             float robotGravity,
             float robotGroundedSnap,
+            float robotMaxFallSpeed,
+            float robotGroundCheckDistance,
+            float robotGroundSnapDistance,
+            float robotGroundHeightLerpSpeed,
+            float robotSmallPitBridgeMaxDrop,
+            float robotMaxSlopeAngle,
+            bool robotSlideOnSteepSlopes,
+            float robotSteepSlopeSlideAcceleration,
+            float robotSteepSlopeMaxSlideSpeed,
+            float robotSteepSlopeSlideDamping,
+            float robotSteepSlopeUphillControl,
+            float robotSlopeAlignmentStrength,
+            float robotSlopeAlignmentSpeed,
+            float robotMaxSlopeAlignmentAngle,
+            bool robotWallSlideEnabled,
             bool gunDispersionEnabled,
             float gunDispersionExpandTime,
             float gunDispersionReferenceHullTraverse,
@@ -87,6 +102,22 @@ namespace Game.Scripts.Server
             RobotMovement.leggedTransitionSpeedMultiplier = robotLeggedTransitionSpeedMultiplier > 0f ? robotLeggedTransitionSpeedMultiplier : RobotMovementGlobalSettings.Default.leggedTransitionSpeedMultiplier;
             RobotMovement.gravity = robotGravity > 0f ? robotGravity : RobotMovementGlobalSettings.Default.gravity;
             RobotMovement.groundedSnap = robotGroundedSnap > 0f ? robotGroundedSnap : RobotMovementGlobalSettings.Default.groundedSnap;
+            RobotMovement.maxFallSpeed = robotMaxFallSpeed > 0f ? robotMaxFallSpeed : RobotMovementGlobalSettings.Default.maxFallSpeed;
+            RobotMovement.groundCheckDistance = robotGroundCheckDistance > 0f ? robotGroundCheckDistance : RobotMovementGlobalSettings.Default.groundCheckDistance;
+            RobotMovement.groundSnapDistance = robotGroundSnapDistance > 0f ? robotGroundSnapDistance : RobotMovementGlobalSettings.Default.groundSnapDistance;
+            RobotMovement.groundHeightLerpSpeed = robotGroundHeightLerpSpeed >= 0f ? robotGroundHeightLerpSpeed : RobotMovementGlobalSettings.Default.groundHeightLerpSpeed;
+            RobotMovement.smallPitBridgeMaxDrop = robotSmallPitBridgeMaxDrop >= 0f ? robotSmallPitBridgeMaxDrop : RobotMovementGlobalSettings.Default.smallPitBridgeMaxDrop;
+            RobotMovement.maxSlopeAngle = robotMaxSlopeAngle > 0f ? robotMaxSlopeAngle : RobotMovementGlobalSettings.Default.maxSlopeAngle;
+            RobotMovement.slideOnSteepSlopes = robotSlideOnSteepSlopes;
+            RobotMovement.steepSlopeSlideAcceleration = robotSteepSlopeSlideAcceleration >= 0f ? robotSteepSlopeSlideAcceleration : RobotMovementGlobalSettings.Default.steepSlopeSlideAcceleration;
+            RobotMovement.steepSlopeMaxSlideSpeed = robotSteepSlopeMaxSlideSpeed >= 0f ? robotSteepSlopeMaxSlideSpeed : RobotMovementGlobalSettings.Default.steepSlopeMaxSlideSpeed;
+            RobotMovement.steepSlopeSlideDamping = robotSteepSlopeSlideDamping >= 0f ? robotSteepSlopeSlideDamping : RobotMovementGlobalSettings.Default.steepSlopeSlideDamping;
+            RobotMovement.steepSlopeUphillControl = robotSteepSlopeUphillControl >= 0f ? robotSteepSlopeUphillControl : RobotMovementGlobalSettings.Default.steepSlopeUphillControl;
+            RobotMovement.slopeAlignmentStrength = robotSlopeAlignmentStrength >= 0f ? robotSlopeAlignmentStrength : RobotMovementGlobalSettings.Default.slopeAlignmentStrength;
+            RobotMovement.slopeAlignmentSpeed = robotSlopeAlignmentSpeed >= 0f ? robotSlopeAlignmentSpeed : RobotMovementGlobalSettings.Default.slopeAlignmentSpeed;
+            RobotMovement.maxSlopeAlignmentAngle = robotMaxSlopeAlignmentAngle >= 0f ? robotMaxSlopeAlignmentAngle : RobotMovementGlobalSettings.Default.maxSlopeAlignmentAngle;
+            RobotMovement.wallSlideEnabled = robotWallSlideEnabled;
+            RobotMovement.Validate();
 
             GunDispersion.enabled = gunDispersionEnabled;
             GunDispersion.expandTime = gunDispersionExpandTime > 0f ? gunDispersionExpandTime : GunDispersionGlobalSettings.Default.expandTime;

@@ -1271,7 +1271,6 @@ GameObject:
   - component: {fileID: 6204458581192626764}
   - component: {fileID: 3255222161953777300}
   - component: {fileID: 2411425367087528452}
-  - component: {fileID: 7605531651926363149}
   m_Layer: 0
   m_Name: Chassis
   m_TagString: Untagged
@@ -1371,10 +1370,49 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 5798367828239414435}
-  controller: {fileID: 7605531651926363149}
+  maxForwardSpeed: 3
+  maxReverseSpeed: 1.5
+  turnSpeed: 100
   rotateSpeed: 2
   acceleration: 30
-  maxSpeed: 3
+  brakeDeceleration: 90
+  naturalDeceleration: 30
+  turnAcceleration: 400
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 8
+  gravity: 25
+  maxFallSpeed: 50
+  groundProbeRadius: 0.45
+  groundCheckDistance: 0.2
+  groundSnapDistance: 0.65
+  groundHeightLerpSpeed: 35
+  useAlignedGroundProbeDirection: 1
+  groundProbeAlignmentBlend: 1
+  groundProbeFootprintRadius: 0.5
+  groundProbeForwardOffset: 0.95
+  groundProbeSideOffset: 0.6
+  smallPitBridgeMaxDrop: 0.35
+  bodyHeightOffset: 0.85
+  maxSlopeAngle: 45
+  debugGrounding: 0
+  slideOnSteepSlopes: 1
+  steepSlopeSlideAcceleration: 12
+  steepSlopeMaxSlideSpeed: 7
+  steepSlopeSlideDamping: 5
+  steepSlopeUphillControl: 0.15
+  slopeAlignmentRoot: {fileID: 0}
+  alignToGround: 1
+  slopeAlignmentStrength: 1.15
+  slopeAlignmentSpeed: 14
+  maxSlopeAlignmentAngle: 55
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 256
+  collisionCapsuleRadius: 0.55
+  collisionCapsuleHeight: 1.3
+  collisionSkinWidth: 0.05
+  allowCollisionSlide: 1
 --- !u!114 &3255222161953777300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1413,31 +1451,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 5798367828239414435}
   isActive: 0
---- !u!143 &7605531651926363149
-CharacterController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1476538492309367418}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 64
-  m_LayerOverridePriority: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Height: 1.3
-  m_Radius: 0.6
-  m_SlopeLimit: 35
-  m_StepOffset: 0.05
-  m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: -0.2, z: 0}
 --- !u!1 &1717965098956383009
 GameObject:
   m_ObjectHideFlags: 0
@@ -1695,6 +1708,9 @@ MonoBehaviour:
   vehicleRoot: {fileID: 0}
   rig: {fileID: 8086914337191537714}
   distance: 10
+  anchorToVehicleCenter: 1
+  rotateAnchorOffsetByYaw: 1
+  anchorFollowSpeed: 30
 --- !u!1 &2218403415302206512
 GameObject:
   m_ObjectHideFlags: 0

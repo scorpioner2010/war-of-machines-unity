@@ -16,6 +16,9 @@ namespace Game.Scripts.Gameplay.Robots
         public VehicleRoot vehicleRoot;
         public Transform rig;
         public float distance = 10f;
+        public bool anchorToVehicleCenter = true;
+        public bool rotateAnchorOffsetByYaw = true;
+        public float anchorFollowSpeed = 30f;
 
         private float _X;
         private float _Y;
@@ -27,6 +30,9 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _sniperUiApplied;
         private bool _initialized;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
+        private Vector3 _rigLocalOffset;
+        private Vector3 _smoothedAnchorPosition;
+        private bool _hasSmoothedAnchorPosition;
 
         public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
 
@@ -67,6 +73,8 @@ namespace Game.Scripts.Gameplay.Robots
                 }
             }
 
+            _rigLocalOffset = rig != null ? rig.localPosition : Vector3.zero;
+            _hasSmoothedAnchorPosition = false;
             _normalDistance = Mathf.Max(0.1f, distance);
             _currentDistance = _normalDistance;
             _currentZoomStep = NormalZoomStep;
@@ -171,7 +179,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _currentDistance = Mathf.Lerp(_currentDistance, _targetDistance, cameraT);
             }
 
-            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -_currentDistance) + rig.position;
+            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -_currentDistance) + GetCameraAnchorPosition(immediate);
 
             transform.rotation = rotation;
             transform.position = position;
@@ -206,10 +214,42 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            position = anchor.position
+            Vector3 anchorPosition = anchor == rig ? GetCameraAnchorPosition(true) : anchor.position;
+            position = anchorPosition
                        + forward * Mathf.Max(0f, _runtimeSettings.cameraSniperForwardOffset)
                        + up * _runtimeSettings.cameraSniperVerticalOffset;
             return IsFinite(position);
+        }
+
+        private Vector3 GetCameraAnchorPosition(bool immediate)
+        {
+            Vector3 targetPosition = GetRawCameraAnchorPosition();
+            if (immediate || anchorFollowSpeed <= 0f || !_hasSmoothedAnchorPosition)
+            {
+                _smoothedAnchorPosition = targetPosition;
+                _hasSmoothedAnchorPosition = true;
+                return _smoothedAnchorPosition;
+            }
+
+            float t = 1f - Mathf.Exp(-Mathf.Max(0.01f, anchorFollowSpeed) * Time.deltaTime);
+            _smoothedAnchorPosition = Vector3.Lerp(_smoothedAnchorPosition, targetPosition, t);
+            return _smoothedAnchorPosition;
+        }
+
+        private Vector3 GetRawCameraAnchorPosition()
+        {
+            if (!anchorToVehicleCenter || vehicleRoot == null || vehicleRoot.objectMover == null)
+            {
+                return rig != null ? rig.position : transform.position;
+            }
+
+            Vector3 offset = _rigLocalOffset;
+            if (rotateAnchorOffsetByYaw)
+            {
+                offset = Quaternion.Euler(0f, vehicleRoot.objectMover.MotorYaw, 0f) * offset;
+            }
+
+            return vehicleRoot.objectMover.transform.position + offset;
         }
 
         private Transform GetSniperCameraAnchor()

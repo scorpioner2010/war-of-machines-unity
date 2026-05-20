@@ -51,6 +51,28 @@ namespace Game.Scripts.Server
         public float gravity = 25f;
         [Tooltip("Дистанція притискання до землі, щоб машина стабільно трималася поверхні.")]
         public float groundedSnap = 2f;
+        [Header("Custom Motor Grounding")]
+        public float maxFallSpeed = 50f;
+        public float groundCheckDistance = 0.2f;
+        public float groundSnapDistance = 0.65f;
+        public float groundHeightLerpSpeed = 35f;
+        public float smallPitBridgeMaxDrop = 0.35f;
+        public float maxSlopeAngle = 45f;
+
+        [Header("Custom Motor Steep Slopes")]
+        public bool slideOnSteepSlopes = true;
+        public float steepSlopeSlideAcceleration = 12f;
+        public float steepSlopeMaxSlideSpeed = 7f;
+        public float steepSlopeSlideDamping = 5f;
+        public float steepSlopeUphillControl = 0.15f;
+
+        [Header("Custom Motor Alignment")]
+        public float slopeAlignmentStrength = 1f;
+        public float slopeAlignmentSpeed = 12f;
+        public float maxSlopeAlignmentAngle = 55f;
+
+        [Header("Custom Motor Collision")]
+        public bool wallSlideEnabled = true;
 
         public static RobotMovementGlobalSettings Default
         {
@@ -97,6 +119,28 @@ namespace Game.Scripts.Server
             leggedTransitionSpeedMultiplier = ClampFinite(leggedTransitionSpeedMultiplier, 0.01f, Default.leggedTransitionSpeedMultiplier);
             gravity = ClampFinite(gravity, 0.01f, Default.gravity);
             groundedSnap = ClampFinite(groundedSnap, 0.01f, Default.groundedSnap);
+            maxFallSpeed = ClampFinite(maxFallSpeed, 0.01f, Default.maxFallSpeed);
+            groundCheckDistance = ClampFinite(groundCheckDistance, 0.01f, Default.groundCheckDistance);
+            groundSnapDistance = ClampFinite(groundSnapDistance, 0.01f, Default.groundSnapDistance);
+            groundHeightLerpSpeed = ClampFinite(groundHeightLerpSpeed, 0f, Default.groundHeightLerpSpeed);
+            smallPitBridgeMaxDrop = ClampFinite(smallPitBridgeMaxDrop, 0f, Default.smallPitBridgeMaxDrop);
+            maxSlopeAngle = ClampFinite(maxSlopeAngle, 0.01f, Default.maxSlopeAngle);
+            if (maxSlopeAngle > 89f)
+            {
+                maxSlopeAngle = 89f;
+            }
+
+            steepSlopeSlideAcceleration = ClampFinite(steepSlopeSlideAcceleration, 0f, Default.steepSlopeSlideAcceleration);
+            steepSlopeMaxSlideSpeed = ClampFinite(steepSlopeMaxSlideSpeed, 0f, Default.steepSlopeMaxSlideSpeed);
+            steepSlopeSlideDamping = ClampFinite(steepSlopeSlideDamping, 0f, Default.steepSlopeSlideDamping);
+            steepSlopeUphillControl = Mathf.Clamp01(ClampFinite(steepSlopeUphillControl, 0f, Default.steepSlopeUphillControl));
+            slopeAlignmentStrength = ClampFinite(slopeAlignmentStrength, 0f, Default.slopeAlignmentStrength);
+            slopeAlignmentSpeed = ClampFinite(slopeAlignmentSpeed, 0f, Default.slopeAlignmentSpeed);
+            maxSlopeAlignmentAngle = ClampFinite(maxSlopeAlignmentAngle, 0f, Default.maxSlopeAlignmentAngle);
+            if (maxSlopeAlignmentAngle > 85f)
+            {
+                maxSlopeAlignmentAngle = 85f;
+            }
         }
 
         private static float ClampFinite(float value, float minValue, float fallback)
@@ -139,6 +183,21 @@ namespace Game.Scripts.Server
             leggedTransitionSpeedMultiplier = source.leggedTransitionSpeedMultiplier;
             gravity = source.gravity;
             groundedSnap = source.groundedSnap;
+            maxFallSpeed = source.maxFallSpeed;
+            groundCheckDistance = source.groundCheckDistance;
+            groundSnapDistance = source.groundSnapDistance;
+            groundHeightLerpSpeed = source.groundHeightLerpSpeed;
+            smallPitBridgeMaxDrop = source.smallPitBridgeMaxDrop;
+            maxSlopeAngle = source.maxSlopeAngle;
+            slideOnSteepSlopes = source.slideOnSteepSlopes;
+            steepSlopeSlideAcceleration = source.steepSlopeSlideAcceleration;
+            steepSlopeMaxSlideSpeed = source.steepSlopeMaxSlideSpeed;
+            steepSlopeSlideDamping = source.steepSlopeSlideDamping;
+            steepSlopeUphillControl = source.steepSlopeUphillControl;
+            slopeAlignmentStrength = source.slopeAlignmentStrength;
+            slopeAlignmentSpeed = source.slopeAlignmentSpeed;
+            maxSlopeAlignmentAngle = source.maxSlopeAlignmentAngle;
+            wallSlideEnabled = source.wallSlideEnabled;
         }
     }
 

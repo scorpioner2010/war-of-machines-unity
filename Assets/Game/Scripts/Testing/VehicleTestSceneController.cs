@@ -913,19 +913,6 @@ namespace Game.Scripts.Testing
             float targetMinY = groundY + Mathf.Max(0f, groundClearance);
             float deltaY = targetMinY - bounds.min.y;
 
-            CharacterController controller = vehicle.objectMover != null ? vehicle.objectMover.controller : null;
-            if (controller != null)
-            {
-                Vector3 controllerCenter = controller.transform.TransformPoint(controller.center);
-                float halfHeight = controller.height * Mathf.Abs(controller.transform.lossyScale.y) * 0.5f;
-                float controllerBottomY = controllerCenter.y - halfHeight;
-                float controllerDeltaY = targetMinY - controllerBottomY;
-                if (controllerDeltaY > deltaY)
-                {
-                    deltaY = controllerDeltaY;
-                }
-            }
-
             if (Mathf.Abs(deltaY) <= 0.001f)
             {
                 return;
