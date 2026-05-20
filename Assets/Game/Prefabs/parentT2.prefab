@@ -497,12 +497,14 @@ GameObject:
   - component: {fileID: 5629243360322721699}
   - component: {fileID: 8600414046191083880}
   - component: {fileID: 583531272242224289}
+  - component: {fileID: 771880699550436315}
+  - component: {fileID: 771880699550436314}
   - component: {fileID: 271880699550436314}
   - component: {fileID: 4526065669619433319}
   - component: {fileID: 5421960799121922505}
   m_Layer: 7
   m_Name: ChassisT2
-  m_TagString: Untagged
+  m_TagString: MovementBody
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -600,6 +602,46 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 2321927772602250882}
+  motor: {fileID: 771880699550436314}
+--- !u!114 &771880699550436315
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007538495778513688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f52b0a19e5d4a238f9c1b2d3e4a5068, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bodyHeightOffset: 0.95
+  groundProbeRadius: 0.45
+  groundProbeForwardOffset: 1.1
+  groundProbeSideOffset: 0.65
+  collisionCapsuleRadius: 0.5
+  collisionCapsuleHeight: 1.2
+  collisionSkinWidth: 0.05
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 8
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 256
+  bodyColor: {r: 0.05, g: 0.35, b: 1, a: 0.35}
+--- !u!114 &771880699550436314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007538495778513688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e3b7a9f0d4c4e9aa0b1c2d3e4f50617, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementBody: {fileID: 771880699550436315}
   maxForwardSpeed: 5
   maxReverseSpeed: 2.5
   turnSpeed: 75
@@ -608,24 +650,20 @@ MonoBehaviour:
   brakeDeceleration: 15
   naturalDeceleration: 5
   turnAcceleration: 300
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 8
   gravity: 25
   maxFallSpeed: 50
-  groundProbeRadius: 0.45
   groundCheckDistance: 0.2
   groundSnapDistance: 0.65
-  groundHeightLerpSpeed: 35
+  groundHeightLerpSpeed: 17.5
   useAlignedGroundProbeDirection: 1
   groundProbeAlignmentBlend: 1
-  groundProbeFootprintRadius: 0.5
-  groundProbeForwardOffset: 1.1
-  groundProbeSideOffset: 0.65
   smallPitBridgeMaxDrop: 0.35
-  bodyHeightOffset: 0.95
   maxSlopeAngle: 45
   debugGrounding: 0
+  useDirectionalEdgeGroundProbe: 1
+  useEdgeProbeOnlyWhenMoving: 1
+  minEdgeProbeMotion: 0.02
+  minCollisionCastDistance: 0.01
   slideOnSteepSlopes: 1
   steepSlopeSlideAcceleration: 12
   steepSlopeMaxSlideSpeed: 7
@@ -634,14 +672,8 @@ MonoBehaviour:
   slopeAlignmentRoot: {fileID: 0}
   alignToGround: 1
   slopeAlignmentStrength: 1.1
-  slopeAlignmentSpeed: 12
+  slopeAlignmentSpeed: 6
   maxSlopeAlignmentAngle: 55
-  collisionMask:
-    serializedVersion: 2
-    m_Bits: 256
-  collisionCapsuleRadius: 0.5
-  collisionCapsuleHeight: 1.2
-  collisionSkinWidth: 0.05
   allowCollisionSlide: 1
 --- !u!114 &4526065669619433319
 MonoBehaviour:

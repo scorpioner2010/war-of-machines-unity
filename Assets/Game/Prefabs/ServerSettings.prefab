@@ -98,7 +98,7 @@ MonoBehaviour:
     maxFallSpeed: 50
     groundCheckDistance: 0.2
     groundSnapDistance: 0.65
-    groundHeightLerpSpeed: 35
+    groundHeightLerpSpeed: 17.5
     smallPitBridgeMaxDrop: 0.35
     maxSlopeAngle: 45
     slideOnSteepSlopes: 1
@@ -107,7 +107,7 @@ MonoBehaviour:
     steepSlopeSlideDamping: 5
     steepSlopeUphillControl: 0.15
     slopeAlignmentStrength: 1
-    slopeAlignmentSpeed: 12
+    slopeAlignmentSpeed: 6
     maxSlopeAlignmentAngle: 55
     wallSlideEnabled: 1
   gunDispersion:

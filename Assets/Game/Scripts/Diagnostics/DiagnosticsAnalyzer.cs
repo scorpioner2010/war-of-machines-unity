@@ -589,7 +589,7 @@ namespace Game.Scripts.Diagnostics
             }
             if (scopeName.Contains("Movement"))
             {
-                return "Assets/Game/Scripts/Gameplay/Robots/VehicleMovementController.cs";
+                return "Assets/Game/Scripts/Gameplay/Robots/RobotMovementMotor.cs";
             }
             if (scopeName.Contains("VehicleTurret"))
             {

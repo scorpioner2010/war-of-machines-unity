@@ -55,7 +55,7 @@ namespace Game.Scripts.Server
         public float maxFallSpeed = 50f;
         public float groundCheckDistance = 0.2f;
         public float groundSnapDistance = 0.65f;
-        public float groundHeightLerpSpeed = 35f;
+        public float groundHeightLerpSpeed = 17.5f;
         public float smallPitBridgeMaxDrop = 0.35f;
         public float maxSlopeAngle = 45f;
 
@@ -68,7 +68,7 @@ namespace Game.Scripts.Server
 
         [Header("Custom Motor Alignment")]
         public float slopeAlignmentStrength = 1f;
-        public float slopeAlignmentSpeed = 12f;
+        public float slopeAlignmentSpeed = 6f;
         public float maxSlopeAlignmentAngle = 55f;
 
         [Header("Custom Motor Collision")]
