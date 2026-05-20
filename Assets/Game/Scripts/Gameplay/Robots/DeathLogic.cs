@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class DeathLogic : MonoBehaviour, IVehicleRootAware
 {
+    private const string DeathDebrisLayerName = "Chassis";
+
     public Collider[] colliders;
     public VehicleRoot vehicleRoot;
     public GameObject[] forTurnOff;
@@ -87,7 +89,8 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         {
             vehicleRoot.inputManager.SetControlsBlocked(true);
         }
-        
+
+        int debrisLayer = ResolveDeathDebrisLayer();
         foreach (Collider coll in colliders)
         {
             if (coll == null)
@@ -96,6 +99,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             }
 
             coll.transform.parent = null;
+            SetLayerRecursively(coll.transform, debrisLayer);
             PrepareColliderForDynamicRigidbody(coll);
 
             if (!coll.TryGetComponent(out Rigidbody rigidbody))
@@ -103,6 +107,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                 rigidbody = coll.gameObject.AddComponent<Rigidbody>();
             }
 
+            rigidbody.isKinematic = false;
             coll.enabled = true;
 
             if (coll.TryGetComponent(out MeshRenderer obj))
@@ -113,7 +118,35 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
 
         foreach (GameObject obj in forTurnOff)
         {
-            obj.SetActive(false);
+            if (obj != null)
+            {
+                obj.SetActive(false);
+            }
+        }
+    }
+
+    private static int ResolveDeathDebrisLayer()
+    {
+        int layer = LayerMask.NameToLayer(DeathDebrisLayerName);
+        if (layer >= 0)
+        {
+            return layer;
+        }
+
+        return LayerMask.NameToLayer("Ignore Raycast");
+    }
+
+    private static void SetLayerRecursively(Transform root, int layer)
+    {
+        if (root == null || layer < 0)
+        {
+            return;
+        }
+
+        root.gameObject.layer = layer;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            SetLayerRecursively(root.GetChild(i), layer);
         }
     }
 

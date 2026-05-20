@@ -10,6 +10,9 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class VehicleHealth : NetworkBehaviour, IVehicleStatsConsumer
     {
+        private const string DeathDebrisLayerName = "Chassis";
+        private static int _deathDebrisLayer = int.MinValue;
+
         [Min(1f)] public float maxHealth = 100f;
 
         public Action<float, float, float> OnDamaged;
@@ -201,6 +204,11 @@ namespace Game.Scripts.Gameplay.Robots
                 Collider targetCollider = _runtimeColliders[i];
                 if (targetCollider != null)
                 {
+                    if (!v && IsDeathDebrisCollider(targetCollider))
+                    {
+                        continue;
+                    }
+
                     targetCollider.enabled = v;
                 }
             }
@@ -220,6 +228,24 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _runtimeColliders = GetComponentsInChildren<Collider>(true);
+        }
+
+        private static bool IsDeathDebrisCollider(Collider targetCollider)
+        {
+            if (targetCollider == null)
+            {
+                return false;
+            }
+
+            if (_deathDebrisLayer == int.MinValue)
+            {
+                _deathDebrisLayer = LayerMask.NameToLayer(DeathDebrisLayerName);
+            }
+
+            return _deathDebrisLayer >= 0
+                   && targetCollider.gameObject.layer == _deathDebrisLayer
+                   && targetCollider.attachedRigidbody != null
+                   && targetCollider.transform.parent == null;
         }
 
         [ObserversRpc(BufferLast = false)]
