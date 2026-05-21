@@ -344,7 +344,7 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
-            row.Nickname = ResolveNickname(vehicleRoot);
+            row.Nickname = ResolveNickname(vehicleRoot, row);
             row.VehicleType = ResolveVehicleType(vehicleRoot);
 
             if (vehicleRoot.health != null)
@@ -609,7 +609,7 @@ namespace Game.Scripts.UI.HUD
             return vehicleRoot.GetInstanceID().ToString();
         }
 
-        private static string ResolveNickname(VehicleRoot vehicleRoot)
+        private static string ResolveNickname(VehicleRoot vehicleRoot, PlayerListRow row)
         {
             if (vehicleRoot != null && vehicleRoot.characterInit != null && !string.IsNullOrEmpty(vehicleRoot.characterInit.LoginName.Value))
             {
@@ -618,7 +618,19 @@ namespace Game.Scripts.UI.HUD
 
             if (vehicleRoot != null && vehicleRoot.OwnerId >= 0)
             {
-                return "Player " + vehicleRoot.OwnerId;
+                if (row != null && row.FallbackOwnerId == vehicleRoot.OwnerId && !string.IsNullOrEmpty(row.FallbackNickname))
+                {
+                    return row.FallbackNickname;
+                }
+
+                string fallback = "Player " + vehicleRoot.OwnerId;
+                if (row != null)
+                {
+                    row.FallbackOwnerId = vehicleRoot.OwnerId;
+                    row.FallbackNickname = fallback;
+                }
+
+                return fallback;
             }
 
             return "-";
@@ -699,6 +711,8 @@ namespace Game.Scripts.UI.HUD
             public Action<float, float> HealthChangedHandler;
             public Action<float, float, float> DamagedHandler;
             public UnityAction DeathHandler;
+            public int FallbackOwnerId = int.MinValue;
+            public string FallbackNickname;
         }
     }
 }

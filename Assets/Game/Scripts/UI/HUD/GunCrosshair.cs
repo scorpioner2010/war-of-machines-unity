@@ -33,6 +33,12 @@ namespace Game.Scripts.UI.HUD
         private Transform _sniperHiddenRoot;
         private int _sniperHiddenRootChildCount = -1;
         private bool _sniperModeApplied;
+        private readonly char[] _aimStatusBuffer = new char[48];
+        private int _lastAimStatusPercent = int.MinValue;
+        private bool _lastAimStatusReady;
+        private bool _hasAimStatus;
+        private string _lastAimStatusPrefix;
+        private string _lastAimReadyText;
 
         private void Awake()
         {
@@ -158,13 +164,99 @@ namespace Game.Scripts.UI.HUD
 
             if (percent >= 99)
             {
-                aimStatusText.text = settings.aimReadyText;
-                aimStatusText.color = settings.aimReadyColor;
+                if (!_hasAimStatus || !_lastAimStatusReady || _lastAimReadyText != settings.aimReadyText)
+                {
+                    aimStatusText.text = settings.aimReadyText;
+                    _hasAimStatus = true;
+                    _lastAimStatusReady = true;
+                    _lastAimStatusPercent = percent;
+                    _lastAimReadyText = settings.aimReadyText;
+                }
+
+                if (aimStatusText.color != settings.aimReadyColor)
+                {
+                    aimStatusText.color = settings.aimReadyColor;
+                }
                 return;
             }
 
-            aimStatusText.text = settings.aimProgressTextPrefix + percent + "%";
-            aimStatusText.color = settings.aimProgressColor;
+            string prefix = settings.aimProgressTextPrefix;
+            if (!_hasAimStatus || _lastAimStatusReady || _lastAimStatusPercent != percent || _lastAimStatusPrefix != prefix)
+            {
+                SetAimProgressText(prefix, percent);
+                _hasAimStatus = true;
+                _lastAimStatusReady = false;
+                _lastAimStatusPercent = percent;
+                _lastAimStatusPrefix = prefix;
+            }
+
+            if (aimStatusText.color != settings.aimProgressColor)
+            {
+                aimStatusText.color = settings.aimProgressColor;
+            }
+        }
+
+        private void SetAimProgressText(string prefix, int percent)
+        {
+            if (aimStatusText == null)
+            {
+                return;
+            }
+
+            int length = 0;
+            if (!string.IsNullOrEmpty(prefix))
+            {
+                int prefixLimit = Mathf.Min(prefix.Length, _aimStatusBuffer.Length - 5);
+                for (int i = 0; i < prefixLimit; i++)
+                {
+                    _aimStatusBuffer[length] = prefix[i];
+                    length++;
+                }
+            }
+
+            AppendPositiveInt(_aimStatusBuffer, ref length, Mathf.Clamp(percent, 0, 100));
+            if (length < _aimStatusBuffer.Length)
+            {
+                _aimStatusBuffer[length] = '%';
+                length++;
+            }
+
+            aimStatusText.SetCharArray(_aimStatusBuffer, 0, length);
+        }
+
+        private static void AppendPositiveInt(char[] buffer, ref int length, int value)
+        {
+            if (buffer == null || length >= buffer.Length)
+            {
+                return;
+            }
+
+            if (value >= 100 && length + 3 <= buffer.Length)
+            {
+                buffer[length] = (char)('0' + value / 100);
+                length++;
+                value %= 100;
+                buffer[length] = (char)('0' + value / 10);
+                length++;
+                buffer[length] = (char)('0' + value % 10);
+                length++;
+                return;
+            }
+
+            if (value >= 10 && length + 2 <= buffer.Length)
+            {
+                buffer[length] = (char)('0' + value / 10);
+                length++;
+                buffer[length] = (char)('0' + value % 10);
+                length++;
+                return;
+            }
+
+            if (length < buffer.Length)
+            {
+                buffer[length] = (char)('0' + value);
+                length++;
+            }
         }
 
         public void SetSniperMode(bool enabled)

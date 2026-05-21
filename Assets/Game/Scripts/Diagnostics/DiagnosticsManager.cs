@@ -6,6 +6,9 @@ using FishNet.Managing.Timing;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Unity.Profiling;
+#endif
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -15,6 +18,13 @@ namespace Game.Scripts.Diagnostics
     public sealed class DiagnosticsManager : MonoBehaviour
     {
         private static DiagnosticsManager _instance;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly ProfilerMarker JsonlFrameSpikeMarker = new ProfilerMarker("Diagnostics.Jsonl.FrameSpike");
+        private static readonly ProfilerMarker JsonlScopeMarker = new ProfilerMarker("Diagnostics.Jsonl.Scope");
+        private static readonly ProfilerMarker JsonlMetricMarker = new ProfilerMarker("Diagnostics.Jsonl.Metric");
+        private static readonly ProfilerMarker JsonlSpikeMarker = new ProfilerMarker("Diagnostics.Jsonl.Spike");
+#endif
 
         private DiagnosticsConfig _config;
         private RollingMetricsBuffer _buffer;
@@ -170,10 +180,7 @@ namespace Game.Scripts.Diagnostics
             if (frameSpike != null)
             {
                 _buffer.AddFrameSpike(frameSpike);
-                if (_jsonlWriter != null)
-                {
-                    _jsonlWriter.Enqueue(DiagnosticsJson.JsonlFrameSpikeEvent(frameSpike));
-                }
+                EnqueueJsonlFrameSpike(frameSpike);
             }
 
             ResolveNetworkManager();
@@ -270,7 +277,7 @@ namespace Game.Scripts.Diagnostics
             if (_jsonlWriter != null && durationMs >= _config.SlowScopeLogThresholdMs)
             {
                 sample.Timestamp = UtcNowIso();
-                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlScopeEvent(sample));
+                EnqueueJsonlScope(sample);
             }
         }
 
@@ -476,7 +483,7 @@ namespace Game.Scripts.Diagnostics
             if (_jsonlWriter != null && now >= _nextJsonlMetricTime)
             {
                 _nextJsonlMetricTime = now + Mathf.Max(0.5f, _config.JsonlMetricIntervalSeconds);
-                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlMetricEvent(sample));
+                EnqueueJsonlMetric(sample);
             }
 
             List<DiagnosticsSpike> spikes = _spikeDetector.Detect(sample, _buffer);
@@ -489,10 +496,67 @@ namespace Game.Scripts.Diagnostics
                 }
 
                 _buffer.AddSpike(spike);
-                if (_jsonlWriter != null)
-                {
-                    _jsonlWriter.Enqueue(DiagnosticsJson.JsonlSpikeEvent(spike, _buffer.GetCurrentSnapshot(10)));
-                }
+                EnqueueJsonlSpike(spike);
+            }
+        }
+
+        private void EnqueueJsonlFrameSpike(DiagnosticsFrameSpike frameSpike)
+        {
+            if (_jsonlWriter == null || frameSpike == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlFrameSpikeMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlFrameSpikeEvent(frameSpike));
+            }
+        }
+
+        private void EnqueueJsonlScope(DiagnosticsScopeSample sample)
+        {
+            if (_jsonlWriter == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlScopeMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlScopeEvent(sample));
+            }
+        }
+
+        private void EnqueueJsonlMetric(DiagnosticsMetricSample sample)
+        {
+            if (_jsonlWriter == null || sample == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlMetricMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlMetricEvent(sample));
+            }
+        }
+
+        private void EnqueueJsonlSpike(DiagnosticsSpike spike)
+        {
+            if (_jsonlWriter == null || spike == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlSpikeMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlSpikeEvent(spike, _buffer.GetCurrentSnapshot(10)));
             }
         }
 

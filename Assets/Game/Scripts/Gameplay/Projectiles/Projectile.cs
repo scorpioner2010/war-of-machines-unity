@@ -2,6 +2,9 @@ using System;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using UnityEngine;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Unity.Profiling;
+#endif
 
 public interface IDamageable
 {
@@ -23,6 +26,11 @@ public class Projectile : MonoBehaviour
     private static int _groundLayer = -1;
     private static int _obstacleLayer = -1;
     private static bool _layersInitialized;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private static readonly ProfilerMarker UpdateMarker = new ProfilerMarker("Projectile.Update");
+    private static readonly ProfilerMarker ReleaseMarker = new ProfilerMarker("Projectile.Release");
+#endif
 
     public LayerMask hitMask = ~0;
     public float hitRadius = 0.05f;
@@ -73,12 +81,22 @@ public class Projectile : MonoBehaviour
     private Transform _ignoredRoot;
     private Action<RaycastHit, Vector3> _onAuthoritativeLiveHit;
     private Action _onAuthoritativeLiveMiss;
+    private Rigidbody _cachedRigidbody;
+    private Renderer[] _cachedRenderers;
+    private ParticleSystem[] _cachedParticles;
+    private Collider[] _cachedColliders;
+    private bool _componentCacheBuilt;
 
     public Vector3 Origin => _origin;
     public Vector3 InitialVelocity => _initialVelocity;
     public Vector3 Gravity => _gravity;
     public float ElapsedTime => _elapsedTime;
     public float TravelledDistance => _travelledDistance;
+
+    private void Awake()
+    {
+        EnsureComponentCache();
+    }
 
     private void OnEnable()
     {
@@ -95,19 +113,18 @@ public class Projectile : MonoBehaviour
     {
         _visualsEnabled = enabled;
 
-        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-        for (int i = 0; i < renderers.Length; i++)
+        EnsureComponentCache();
+        for (int i = 0; i < _cachedRenderers.Length; i++)
         {
-            if (renderers[i] != null)
+            if (_cachedRenderers[i] != null)
             {
-                renderers[i].enabled = enabled;
+                _cachedRenderers[i].enabled = enabled;
             }
         }
 
-        ParticleSystem[] particles = GetComponentsInChildren<ParticleSystem>(true);
-        for (int i = 0; i < particles.Length; i++)
+        for (int i = 0; i < _cachedParticles.Length; i++)
         {
-            ParticleSystem particle = particles[i];
+            ParticleSystem particle = _cachedParticles[i];
             if (particle == null)
             {
                 continue;
@@ -206,22 +223,21 @@ public class Projectile : MonoBehaviour
 
     private void ConfigureScriptedPhysics()
     {
-        Rigidbody rigidbody = GetComponent<Rigidbody>();
-        if (rigidbody != null)
+        EnsureComponentCache();
+        if (_cachedRigidbody != null)
         {
-            rigidbody.linearVelocity = Vector3.zero;
-            rigidbody.angularVelocity = Vector3.zero;
-            rigidbody.useGravity = false;
-            rigidbody.isKinematic = true;
-            rigidbody.detectCollisions = false;
+            _cachedRigidbody.linearVelocity = Vector3.zero;
+            _cachedRigidbody.angularVelocity = Vector3.zero;
+            _cachedRigidbody.useGravity = false;
+            _cachedRigidbody.isKinematic = true;
+            _cachedRigidbody.detectCollisions = false;
         }
 
-        Collider[] colliders = GetComponentsInChildren<Collider>();
-        for (int i = 0; i < colliders.Length; i++)
+        for (int i = 0; i < _cachedColliders.Length; i++)
         {
-            if (colliders[i] != null)
+            if (_cachedColliders[i] != null)
             {
-                colliders[i].enabled = false;
+                _cachedColliders[i].enabled = false;
             }
         }
     }
@@ -239,7 +255,7 @@ public class Projectile : MonoBehaviour
         transform.position = impactPoint;
         DrawDebugHit(impactPoint, _lastHitNormal);
         Explode(impactPoint, _lastHitNormal);
-        Destroy(gameObject);
+        ReleaseOrDestroy();
     }
 
     public void ConfigureResolvedMiss(Vector3 targetPoint, Action onAuthoritativeMiss = null)
@@ -286,6 +302,9 @@ public class Projectile : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        using (UpdateMarker.Auto())
+#endif
         using (ProfileScope.Measure(_authoritative ? "Server.Projectile.Update" : "Client.Projectile.Update", _authoritative ? DiagnosticsCategories.Physics : DiagnosticsCategories.Client))
         {
             if (!_initialized)
@@ -365,7 +384,7 @@ public class Projectile : MonoBehaviour
 
         DrawDebugHit(hit.point, _lastHitNormal);
         Explode(hit.point, _lastHitNormal);
-        Destroy(gameObject);
+        ReleaseOrDestroy();
     }
 
     private bool HasExceededLimits()
@@ -541,13 +560,75 @@ public class Projectile : MonoBehaviour
         if (_visualsEnabled && explosionFX != null)
         {
             Vector3 safeNormal = normal.sqrMagnitude > 0.000001f ? normal.normalized : Vector3.up;
-            Instantiate(explosionFX, position, Quaternion.LookRotation(safeNormal));
+            ProjectileRuntimePool.SpawnImpactFx(explosionFX, position, Quaternion.LookRotation(safeNormal));
         }
     }
 
     private void DestroyWithoutExplosion()
     {
-        Destroy(gameObject);
+        ReleaseOrDestroy();
+    }
+
+    internal void PrepareForPoolRelease()
+    {
+        _initialized = false;
+        _authoritative = false;
+        _visualsEnabled = true;
+        _liveCollisionEnabled = false;
+        _resolvedTargetHandled = false;
+        _hasLastHitPoint = false;
+        _pendingAuthoritativeCatchupTime = 0f;
+        _ignoredRoot = null;
+        _onAuthoritativeLiveHit = null;
+        _onAuthoritativeLiveMiss = null;
+
+        StopCachedParticles();
+        ConfigureScriptedPhysics();
+
+        if (gameObject.activeSelf)
+        {
+            gameObject.SetActive(false);
+        }
+    }
+
+    private void ReleaseOrDestroy()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        using (ReleaseMarker.Auto())
+#endif
+        {
+            if (!ProjectileRuntimePool.Release(this))
+            {
+                Destroy(gameObject);
+            }
+        }
+    }
+
+    private void EnsureComponentCache()
+    {
+        if (_componentCacheBuilt)
+        {
+            return;
+        }
+
+        _cachedRigidbody = GetComponent<Rigidbody>();
+        _cachedRenderers = GetComponentsInChildren<Renderer>(true);
+        _cachedParticles = GetComponentsInChildren<ParticleSystem>(true);
+        _cachedColliders = GetComponentsInChildren<Collider>(true);
+        _componentCacheBuilt = true;
+    }
+
+    private void StopCachedParticles()
+    {
+        EnsureComponentCache();
+        for (int i = 0; i < _cachedParticles.Length; i++)
+        {
+            ParticleSystem particle = _cachedParticles[i];
+            if (particle != null)
+            {
+                particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
     }
 
     private void CompleteLiveMiss()

@@ -347,9 +347,111 @@ namespace Game.Scripts.Client
         }
     }
 
+    [System.Serializable]
+    public class ClientFramePacingSettings
+    {
+        public const int MinTargetFrameRate = 60;
+        public const int MaxTargetFrameRate = 240;
+        public const int DefaultTargetFrameRate = 144;
+        public const bool DefaultVerticalSyncEnabled = false;
+        private static readonly int[] SupportedTargetFrameRates =
+        {
+            60,
+            144,
+            240
+        };
+
+        [Tooltip("Enable vertical synchronization. When enabled, Unity controls pacing from the display refresh rate.")]
+        public bool verticalSyncEnabled = DefaultVerticalSyncEnabled;
+
+        [Tooltip("Client target frame rate used when vertical synchronization is disabled.")]
+        [Range(MinTargetFrameRate, MaxTargetFrameRate)]
+        public int targetFrameRate = DefaultTargetFrameRate;
+
+        public void Validate()
+        {
+            targetFrameRate = ClampTargetFrameRate(targetFrameRate);
+        }
+
+        public void Apply()
+        {
+            Apply(targetFrameRate, verticalSyncEnabled);
+        }
+
+        public void CopyFrom(ClientFramePacingSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            verticalSyncEnabled = source.verticalSyncEnabled;
+            targetFrameRate = ClampTargetFrameRate(source.targetFrameRate);
+        }
+
+        public static int ClampTargetFrameRate(int value)
+        {
+            int bestValue = SupportedTargetFrameRates[0];
+            int bestDistance = Mathf.Abs(value - bestValue);
+            for (int i = 1; i < SupportedTargetFrameRates.Length; i++)
+            {
+                int candidate = SupportedTargetFrameRates[i];
+                int distance = Mathf.Abs(value - candidate);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestValue = candidate;
+                }
+            }
+
+            return bestValue;
+        }
+
+        public static int SupportedTargetFrameRateCount
+        {
+            get
+            {
+                return SupportedTargetFrameRates.Length;
+            }
+        }
+
+        public static int GetSupportedTargetFrameRate(int index)
+        {
+            if (index < 0 || index >= SupportedTargetFrameRates.Length)
+            {
+                return DefaultTargetFrameRate;
+            }
+
+            return SupportedTargetFrameRates[index];
+        }
+
+        public static bool IsSupportedTargetFrameRate(int value)
+        {
+            for (int i = 0; i < SupportedTargetFrameRates.Length; i++)
+            {
+                if (SupportedTargetFrameRates[i] == value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static void Apply(int targetFrameRate, bool verticalSyncEnabled)
+        {
+            int safeTargetFrameRate = ClampTargetFrameRate(targetFrameRate);
+            QualitySettings.vSyncCount = verticalSyncEnabled ? 1 : 0;
+            Application.targetFrameRate = verticalSyncEnabled ? -1 : safeTargetFrameRate;
+        }
+    }
+
     public class ClientSettings : MonoBehaviour
     {
         public static ClientSettings In;
+
+        [Tooltip("Client frame pacing settings for production client builds.")]
+        public ClientFramePacingSettings framePacing = new ClientFramePacingSettings();
 
         [Tooltip("Локальні клієнтські runtime-налаштування HUD, карти та автоприцілу. Сервер їх не читає і не синхронізує.")]
         public GameplayRuntimeSettings gameplayRuntime = new GameplayRuntimeSettings();
@@ -358,6 +460,7 @@ namespace Game.Scripts.Client
         {
             ValidateSettings();
             In = this;
+            ApplyFramePacing();
         }
 
         private void OnValidate()
@@ -384,8 +487,51 @@ namespace Game.Scripts.Client
             return In.gameplayRuntime;
         }
 
+        public static ClientFramePacingSettings GetFramePacing()
+        {
+            if (In == null || In.framePacing == null)
+            {
+                return null;
+            }
+
+            In.framePacing.Validate();
+            return In.framePacing;
+        }
+
+        public static void ApplyFramePacing(int targetFrameRate, bool verticalSyncEnabled)
+        {
+            if (In != null)
+            {
+                if (In.framePacing == null)
+                {
+                    In.framePacing = new ClientFramePacingSettings();
+                }
+
+                In.framePacing.targetFrameRate = ClientFramePacingSettings.ClampTargetFrameRate(targetFrameRate);
+                In.framePacing.verticalSyncEnabled = verticalSyncEnabled;
+            }
+
+            ClientFramePacingSettings.Apply(targetFrameRate, verticalSyncEnabled);
+        }
+
+        private void ApplyFramePacing()
+        {
+            if (framePacing == null)
+            {
+                framePacing = new ClientFramePacingSettings();
+            }
+
+            framePacing.Validate();
+            framePacing.Apply();
+        }
+
         private void ValidateSettings()
         {
+            if (framePacing != null)
+            {
+                framePacing.Validate();
+            }
+
             if (gameplayRuntime != null)
             {
                 gameplayRuntime.Validate();

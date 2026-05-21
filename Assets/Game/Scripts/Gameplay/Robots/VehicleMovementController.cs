@@ -18,6 +18,14 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _useRuntimeTraverseSpeed;
         private float _runtimeTraverseSpeedDegPerSecond;
 
+        private void Awake()
+        {
+            if (controller == null)
+            {
+                controller = GetComponent<CharacterController>();
+            }
+        }
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
@@ -49,8 +57,9 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void FixedUpdate()
         {
-            if (vehicleRoot == null || !vehicleRoot.IsServerInitialized)
+            if (vehicleRoot == null || !vehicleRoot.IsServerInitialized || !CanMoveController())
             {
+                ResetMotionState();
                 return;
             }
 
@@ -89,6 +98,17 @@ namespace Game.Scripts.Gameplay.Robots
                 Vector3 move = new Vector3(_hVel.x, _vVel, _hVel.z) * dt;
                 controller.Move(move);
             }
+        }
+
+        private bool CanMoveController()
+        {
+            return controller != null && controller.enabled && controller.gameObject.activeInHierarchy;
+        }
+
+        private void ResetMotionState()
+        {
+            _hVel = Vector3.zero;
+            _vVel = 0f;
         }
 
         private void Rotate(Vector2 mi, RobotMovementGlobalSettings settings)

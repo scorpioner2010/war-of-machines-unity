@@ -52,7 +52,7 @@ namespace Game.Scripts.UI.HUD
             _lastPing = ping;
             if (statsText != null)
             {
-                statsText.text = "FPS " + fps + "\nPING " + ping + " ms";
+                statsText.SetText("FPS {0}\nPING {1} ms", fps, ping);
             }
         }
 

@@ -65,7 +65,7 @@ namespace Game.Scripts.UI.HUD
 
             if (pingText != null)
             {
-                pingText.text = "Ping: " + ping;
+                pingText.SetText("Ping: {0}", ping);
                 if (state == PingState.Warning)
                 {
                     pingText.color = Color.yellow;

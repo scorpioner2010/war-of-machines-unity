@@ -213,7 +213,7 @@ namespace Game.Scripts.UI.HUD
 
             _appliedHpCurrentRounded = currentRounded;
             _appliedHpMaxRounded = maxRounded;
-            hpText.text = currentRounded + "/" + maxRounded;
+            hpText.SetText("{0}/{1}", currentRounded, maxRounded);
         }
     }
 }

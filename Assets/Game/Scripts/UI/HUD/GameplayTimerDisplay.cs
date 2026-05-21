@@ -7,6 +7,7 @@ namespace Game.Scripts.UI.HUD
     {
         public TMP_Text timerText;
         private static GameplayTimerDisplay _instance;
+        private int _lastShownTime = int.MinValue;
 
         private void Awake()
         {
@@ -20,7 +21,14 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
-            _instance.timerText.text = time.ToString();
+            int shownTime = Mathf.CeilToInt(Mathf.Max(0f, time));
+            if (_instance._lastShownTime == shownTime)
+            {
+                return;
+            }
+
+            _instance._lastShownTime = shownTime;
+            _instance.timerText.SetText("{0}", shownTime);
         }
     }
 }

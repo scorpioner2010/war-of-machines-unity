@@ -3083,6 +3083,8 @@ MonoBehaviour:
   FullScreenDropdown: {fileID: 1171361195}
   ResolutionDropdown: {fileID: 1122818144}
   QualityDropdown: {fileID: 814964840}
+  FrameRateDropdown: {fileID: 0}
+  VerticalSyncToggle: {fileID: 0}
   GammaSlider: {fileID: 1849691351}
 --- !u!1001 &425672388
 PrefabInstance:
@@ -8160,6 +8162,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pingText: {fileID: 685678700}
   criticalPing: {fileID: 535960718}
+  updateInterval: 0.25
 --- !u!1 &1090972559
 GameObject:
   m_ObjectHideFlags: 0
@@ -18887,6 +18890,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9a8d3fce3e54a85a599665c3f5874e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  framePacing:
+    verticalSyncEnabled: 0
+    targetFrameRate: 144
   gameplayRuntime:
     alliedHpColor: {r: 0.1, g: 0.35, b: 1, a: 1}
     enemyHpColor: {r: 1, g: 0.08, b: 0.04, a: 1}

@@ -28,6 +28,19 @@ namespace Game.Scripts.UI.Robots
             }
         }
 
+        public static void SetText(int value)
+        {
+            if (_in == null)
+            {
+                return;
+            }
+
+            if (_in.textObject != null)
+            {
+                _in.textObject.SetText("{0}", value);
+            }
+        }
+
         public static void SetImage(Sprite sprite)
         {
             if (_in == null)

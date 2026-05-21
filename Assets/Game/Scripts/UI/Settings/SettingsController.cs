@@ -1,5 +1,6 @@
 using System;
 using Game.Scripts.Audio;
+using Game.Scripts.Client;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -21,6 +22,7 @@ namespace Game.Scripts.UI.Settings
                 _model.GameplayMouseSensitivity,
                 _model.SniperMouseSensitivity,
                 true);
+            ApplyFramePacing();
         }
         
         public void SetPostProcessingVolume(Volume volume)
@@ -52,6 +54,16 @@ namespace Game.Scripts.UI.Settings
         public void HandleGammaChanged(float value)
         {
             _model.Gamma = value;
+        }
+
+        public void HandleTargetFrameRateChanged(int value)
+        {
+            _model.TargetFrameRate = ClientFramePacingSettings.ClampTargetFrameRate(value);
+        }
+
+        public void HandleVerticalSyncChanged(bool isOn)
+        {
+            _model.VerticalSyncEnabled = isOn;
         }
 
         public void HandleUiVolumeChanged(float value)
@@ -127,12 +139,14 @@ namespace Game.Scripts.UI.Settings
                     _model.SaveVideo();
                     var fullScreenMode = (FullScreenMode)_model.FullScreenIndex;
 
-                    Resolution[] resolutions = Screen.resolutions;
-                    int chosenIndex = Mathf.Clamp(_model.ResolutionIndex, 0, resolutions.Length - 1);
-                    Resolution chosenResolution = resolutions[chosenIndex];
-                    Screen.SetResolution(chosenResolution.width, chosenResolution.height, fullScreenMode);
+                    VideoResolutionOptions.Refresh();
+                    int chosenIndex = VideoResolutionOptions.ClampIndex(_model.ResolutionIndex);
+                    _model.ResolutionIndex = chosenIndex;
+                    Resolution chosenResolution = VideoResolutionOptions.GetResolution(chosenIndex);
+                    Screen.SetResolution(chosenResolution.width, chosenResolution.height, fullScreenMode, chosenResolution.refreshRateRatio);
 
                     QualitySettings.SetQualityLevel(_model.QualityIndex);
+                    ApplyFramePacing();
 
                     if (_postProcessingVolume != null &&
                         _postProcessingVolume.profile.TryGet(out ColorAdjustments colorAdjustments))
@@ -160,6 +174,11 @@ namespace Game.Scripts.UI.Settings
         private string GetLanguageByIndex(int index)
         {
             return "English";
+        }
+
+        private void ApplyFramePacing()
+        {
+            ClientSettings.ApplyFramePacing(_model.TargetFrameRate, _model.VerticalSyncEnabled);
         }
     }
 }

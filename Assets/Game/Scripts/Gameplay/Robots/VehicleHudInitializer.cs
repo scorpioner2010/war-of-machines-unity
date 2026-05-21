@@ -43,7 +43,7 @@ namespace Game.Scripts.Gameplay.Robots
             _targetDisplaySpeed = 0f;
             _smoothedDisplaySpeed = 0f;
             _lastShownSpeed = int.MinValue;
-            SpeedHud.SetText("0");
+            SpeedHud.SetText(0);
         }
 
         private void Update()
@@ -90,7 +90,7 @@ namespace Game.Scripts.Gameplay.Robots
             if (shownSpeed != _lastShownSpeed)
             {
                 _lastShownSpeed = shownSpeed;
-                SpeedHud.SetText(shownSpeed.ToString());
+                SpeedHud.SetText(shownSpeed);
             }
         }
     }

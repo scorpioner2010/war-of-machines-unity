@@ -27,6 +27,17 @@ namespace Game.Scripts.Gameplay.Robots
 
         private float _clientReloadRemain;
         private float _nextHudResolveTime;
+        private int _lastHudAmmo = int.MinValue;
+        private ReloadHudState _lastHudState = ReloadHudState.Unknown;
+        private int _lastReloadTenths = int.MinValue;
+
+        private enum ReloadHudState : byte
+        {
+            Unknown = 0,
+            Ready = 1,
+            Reloading = 2,
+            Empty = 3
+        }
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -187,9 +198,11 @@ namespace Game.Scripts.Gameplay.Robots
             bool isReloading = _isReloading.Value;
             float reloadRemain = _reloadRemain.Value;
 
-            if (_crosshair.ammoLeftText != null)
+            int safeAmmoLeft = Mathf.Max(0, ammoLeft);
+            if (_crosshair.ammoLeftText != null && _lastHudAmmo != safeAmmoLeft)
             {
-                _crosshair.ammoLeftText.text = Mathf.Max(0, ammoLeft).ToString();
+                _lastHudAmmo = safeAmmoLeft;
+                _crosshair.ammoLeftText.SetText("{0}", safeAmmoLeft);
             }
 
             if (ammoLeft <= 0 && !isReloading)
@@ -200,7 +213,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (_crosshair.reloadText != null)
                 {
-                    _crosshair.reloadText.text = "EMPTY";
+                    ApplyReloadText(ReloadHudState.Empty, 0);
                 }
                 return;
             }
@@ -217,7 +230,8 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (_crosshair.reloadText != null)
                 {
-                    _crosshair.reloadText.text = $"{Mathf.Max(0f, reloadRemain):0.0}s";
+                    int reloadTenths = Mathf.CeilToInt(Mathf.Max(0f, reloadRemain) * 10f);
+                    ApplyReloadText(ReloadHudState.Reloading, reloadTenths);
                 }
                 return;
             }
@@ -228,8 +242,38 @@ namespace Game.Scripts.Gameplay.Robots
             }
             if (_crosshair.reloadText != null)
             {
-                _crosshair.reloadText.text = "READY";
+                ApplyReloadText(ReloadHudState.Ready, 0);
             }
+        }
+
+        private void ApplyReloadText(ReloadHudState state, int reloadTenths)
+        {
+            if (_crosshair == null || _crosshair.reloadText == null)
+            {
+                return;
+            }
+
+            if (_lastHudState == state && _lastReloadTenths == reloadTenths)
+            {
+                return;
+            }
+
+            _lastHudState = state;
+            _lastReloadTenths = reloadTenths;
+
+            if (state == ReloadHudState.Empty)
+            {
+                _crosshair.reloadText.text = "EMPTY";
+                return;
+            }
+
+            if (state == ReloadHudState.Ready)
+            {
+                _crosshair.reloadText.text = "READY";
+                return;
+            }
+
+            _crosshair.reloadText.SetText("{0:0.0}s", reloadTenths * 0.1f);
         }
 
         private bool TryResolveCrosshair(bool force)
