@@ -177,13 +177,14 @@ MonoBehaviour:
   localTestPort: 7780
   autoSelectAvailablePort: 1
   maxPortSearchAttempts: 20
-  alignVisualBoundsToGround: 1
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 8
-  groundRayStartHeight: 25
-  groundRayDistance: 80
-  groundClearance: 0.02
+  showTestGui: 1
+  loadVehiclesFromApi: 1
+  autoSpawnFirstVehicle: 0
+  useDirectLocalSpawn: 0
+  autoSpawnTimeout: 10
+  loadGameplaySceneForSpawns: 1
+  gameplaySceneName: Map
+  gameplaySceneLoadTimeout: 10
 --- !u!1 &200000
 GameObject:
   m_ObjectHideFlags: 0

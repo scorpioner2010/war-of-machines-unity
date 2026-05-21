@@ -4,13 +4,27 @@ using System.Diagnostics;
 using FishNet.Managing;
 using FishNet.Managing.Timing;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Unity.Profiling;
+#endif
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Game.Scripts.Diagnostics
 {
     public sealed class DiagnosticsManager : MonoBehaviour
     {
         private static DiagnosticsManager _instance;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly ProfilerMarker JsonlFrameSpikeMarker = new ProfilerMarker("Diagnostics.Jsonl.FrameSpike");
+        private static readonly ProfilerMarker JsonlScopeMarker = new ProfilerMarker("Diagnostics.Jsonl.Scope");
+        private static readonly ProfilerMarker JsonlMetricMarker = new ProfilerMarker("Diagnostics.Jsonl.Metric");
+        private static readonly ProfilerMarker JsonlSpikeMarker = new ProfilerMarker("Diagnostics.Jsonl.Spike");
+#endif
 
         private DiagnosticsConfig _config;
         private RollingMetricsBuffer _buffer;
@@ -33,8 +47,12 @@ namespace Game.Scripts.Diagnostics
         private bool _savedEditorClientFramePacing;
         private bool _loggedEditorClientFramePacing;
         private bool _loggedEditorGcSmoothing;
+        private bool _editorBackgroundPlayerLoopSubscribed;
+        private bool _loggedEditorBackgroundPlayerLoopKeepAlive;
+        private double _lastEditorBackgroundPlayerLoopRequestTime;
         private int _previousTargetFrameRate;
         private int _previousVSyncCount;
+        private int _previousRenderFrameInterval;
         private bool _previousRunInBackground;
 #endif
 
@@ -162,14 +180,12 @@ namespace Game.Scripts.Diagnostics
             if (frameSpike != null)
             {
                 _buffer.AddFrameSpike(frameSpike);
-                if (_jsonlWriter != null)
-                {
-                    _jsonlWriter.Enqueue(DiagnosticsJson.JsonlFrameSpikeEvent(frameSpike));
-                }
+                EnqueueJsonlFrameSpike(frameSpike);
             }
 
             ResolveNetworkManager();
             MaintainEditorClientFramePacingGuard(now);
+            MaintainEditorBackgroundPlayerLoopKeepAlive();
             MaintainEditorGcSmoothing();
 
             if (now < _nextSampleTime)
@@ -212,6 +228,7 @@ namespace Game.Scripts.Diagnostics
             }
 
             RestoreEditorClientFramePacingGuard();
+            SetEditorBackgroundPlayerLoopKeepAlive(false);
 
             if (_instance == this)
             {
@@ -260,7 +277,7 @@ namespace Game.Scripts.Diagnostics
             if (_jsonlWriter != null && durationMs >= _config.SlowScopeLogThresholdMs)
             {
                 sample.Timestamp = UtcNowIso();
-                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlScopeEvent(sample));
+                EnqueueJsonlScope(sample);
             }
         }
 
@@ -466,7 +483,7 @@ namespace Game.Scripts.Diagnostics
             if (_jsonlWriter != null && now >= _nextJsonlMetricTime)
             {
                 _nextJsonlMetricTime = now + Mathf.Max(0.5f, _config.JsonlMetricIntervalSeconds);
-                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlMetricEvent(sample));
+                EnqueueJsonlMetric(sample);
             }
 
             List<DiagnosticsSpike> spikes = _spikeDetector.Detect(sample, _buffer);
@@ -479,10 +496,67 @@ namespace Game.Scripts.Diagnostics
                 }
 
                 _buffer.AddSpike(spike);
-                if (_jsonlWriter != null)
-                {
-                    _jsonlWriter.Enqueue(DiagnosticsJson.JsonlSpikeEvent(spike, _buffer.GetCurrentSnapshot(10)));
-                }
+                EnqueueJsonlSpike(spike);
+            }
+        }
+
+        private void EnqueueJsonlFrameSpike(DiagnosticsFrameSpike frameSpike)
+        {
+            if (_jsonlWriter == null || frameSpike == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlFrameSpikeMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlFrameSpikeEvent(frameSpike));
+            }
+        }
+
+        private void EnqueueJsonlScope(DiagnosticsScopeSample sample)
+        {
+            if (_jsonlWriter == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlScopeMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlScopeEvent(sample));
+            }
+        }
+
+        private void EnqueueJsonlMetric(DiagnosticsMetricSample sample)
+        {
+            if (_jsonlWriter == null || sample == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlMetricMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlMetricEvent(sample));
+            }
+        }
+
+        private void EnqueueJsonlSpike(DiagnosticsSpike spike)
+        {
+            if (_jsonlWriter == null || spike == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (JsonlSpikeMarker.Auto())
+#endif
+            {
+                _jsonlWriter.Enqueue(DiagnosticsJson.JsonlSpikeEvent(spike, _buffer.GetCurrentSnapshot(10)));
             }
         }
 
@@ -543,13 +617,15 @@ namespace Game.Scripts.Diagnostics
             {
                 _previousTargetFrameRate = Application.targetFrameRate;
                 _previousVSyncCount = QualitySettings.vSyncCount;
+                _previousRenderFrameInterval = OnDemandRendering.renderFrameInterval;
                 _previousRunInBackground = Application.runInBackground;
                 _savedEditorClientFramePacing = true;
             }
 
-            int targetFrameRate = IsStandaloneClientEditor()
-                ? Mathf.Clamp(_config.EditorClientTargetFrameRate, 30, 240)
-                : Mathf.Clamp(_config.EditorServerTargetFrameRate, 30, 240);
+            int configuredTargetFrameRate = IsStandaloneClientEditor()
+                ? Mathf.Clamp(_config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate)
+                : Mathf.Clamp(_config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+            int targetFrameRate = ResolveEffectiveEditorTargetFrameRate(configuredTargetFrameRate);
             if (!Application.runInBackground)
             {
                 Application.runInBackground = true;
@@ -565,10 +641,20 @@ namespace Game.Scripts.Diagnostics
                 Application.targetFrameRate = targetFrameRate;
             }
 
+            int renderFrameInterval = ResolveEffectiveEditorRenderFrameInterval();
+            if (OnDemandRendering.renderFrameInterval != renderFrameInterval)
+            {
+                OnDemandRendering.renderFrameInterval = renderFrameInterval;
+            }
+
             if (!_loggedEditorClientFramePacing)
             {
                 UnityEngine.Debug.Log("[Diagnostics] Editor frame pacing guard (" + GetMode(_networkManager) + "): targetFrameRate="
                                       + Application.targetFrameRate
+                                      + ", configuredTargetFrameRate="
+                                      + configuredTargetFrameRate
+                                      + ", renderFrameInterval="
+                                      + OnDemandRendering.renderFrameInterval
                                       + ", vSyncCount="
                                       + QualitySettings.vSyncCount
                                       + ", runInBackground="
@@ -586,6 +672,82 @@ namespace Game.Scripts.Diagnostics
                    && !_networkManager.IsServerStarted;
 #else
             return false;
+#endif
+        }
+
+        private int ResolveEffectiveEditorTargetFrameRate(int configuredTargetFrameRate)
+        {
+#if UNITY_EDITOR
+            int targetFrameRate = configuredTargetFrameRate;
+            if (_config != null
+                && _config.ApplyEditorFocusedClientRefreshCap
+                && IsStandaloneClientEditor()
+                && Application.isFocused
+                && IsHighResolutionGameView())
+            {
+                int refreshRateCap = GetCurrentRefreshRateFrameCap();
+                if (refreshRateCap > 0 && targetFrameRate > refreshRateCap)
+                {
+                    targetFrameRate = refreshRateCap;
+                }
+            }
+
+            return Mathf.Clamp(targetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+#else
+            return configuredTargetFrameRate;
+#endif
+        }
+
+        private int ResolveEffectiveEditorRenderFrameInterval()
+        {
+#if UNITY_EDITOR
+            if (_config != null && IsStandaloneServerEditor())
+            {
+                return Mathf.Clamp(_config.EditorServerRenderFrameInterval, 1, 120);
+            }
+
+            return 1;
+#else
+            return 1;
+#endif
+        }
+
+        private bool IsStandaloneServerEditor()
+        {
+#if UNITY_EDITOR
+            return _networkManager != null
+                   && _networkManager.IsServerStarted
+                   && !_networkManager.IsClientStarted;
+#else
+            return false;
+#endif
+        }
+
+        private static bool IsHighResolutionGameView()
+        {
+#if UNITY_EDITOR
+            return Screen.width >= 1920 && Screen.height >= 1080;
+#else
+            return false;
+#endif
+        }
+
+        private static int GetCurrentRefreshRateFrameCap()
+        {
+#if UNITY_EDITOR
+#if UNITY_2022_2_OR_NEWER
+            double refreshRate = Screen.currentResolution.refreshRateRatio.value;
+#else
+            double refreshRate = Screen.currentResolution.refreshRate;
+#endif
+            if (double.IsNaN(refreshRate) || double.IsInfinity(refreshRate) || refreshRate < 30d)
+            {
+                return 0;
+            }
+
+            return Mathf.Clamp(Mathf.CeilToInt((float)refreshRate), DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+#else
+            return 0;
 #endif
         }
 
@@ -609,11 +771,86 @@ namespace Game.Scripts.Diagnostics
 
             Application.targetFrameRate = _previousTargetFrameRate;
             QualitySettings.vSyncCount = _previousVSyncCount;
+            OnDemandRendering.renderFrameInterval = _previousRenderFrameInterval;
             Application.runInBackground = _previousRunInBackground;
             _savedEditorClientFramePacing = false;
             _loggedEditorClientFramePacing = false;
 #endif
         }
+
+        private void MaintainEditorBackgroundPlayerLoopKeepAlive()
+        {
+#if UNITY_EDITOR
+            if (_config == null || !_config.ApplyEditorBackgroundPlayerLoopKeepAlive || !IsEditorNetworkPlayMode())
+            {
+                SetEditorBackgroundPlayerLoopKeepAlive(false);
+                return;
+            }
+
+            SetEditorBackgroundPlayerLoopKeepAlive(true);
+#endif
+        }
+
+        private void SetEditorBackgroundPlayerLoopKeepAlive(bool enabled)
+        {
+#if UNITY_EDITOR
+            if (_editorBackgroundPlayerLoopSubscribed == enabled)
+            {
+                return;
+            }
+
+            if (enabled)
+            {
+                EditorApplication.update += OnEditorBackgroundPlayerLoopUpdate;
+            }
+            else
+            {
+                EditorApplication.update -= OnEditorBackgroundPlayerLoopUpdate;
+                _loggedEditorBackgroundPlayerLoopKeepAlive = false;
+            }
+
+            _editorBackgroundPlayerLoopSubscribed = enabled;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void OnEditorBackgroundPlayerLoopUpdate()
+        {
+            if (_config == null || !_config.ApplyEditorBackgroundPlayerLoopKeepAlive || !IsEditorNetworkPlayMode())
+            {
+                SetEditorBackgroundPlayerLoopKeepAlive(false);
+                return;
+            }
+
+            if (Application.isFocused)
+            {
+                return;
+            }
+
+            int configuredFrameRate = IsStandaloneClientEditor()
+                ? Mathf.Clamp(_config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate)
+                : Mathf.Clamp(_config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+            int keepAliveFrameRate = Mathf.Clamp(configuredFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
+            double now = EditorApplication.timeSinceStartup;
+            double minInterval = 1d / keepAliveFrameRate;
+            if (now - _lastEditorBackgroundPlayerLoopRequestTime < minInterval)
+            {
+                return;
+            }
+
+            _lastEditorBackgroundPlayerLoopRequestTime = now;
+            EditorApplication.QueuePlayerLoopUpdate();
+
+            if (!_loggedEditorBackgroundPlayerLoopKeepAlive)
+            {
+                UnityEngine.Debug.Log("[Diagnostics] Editor background PlayerLoop keepalive (" + GetMode(_networkManager) + "): keepAliveFrameRate="
+                                      + keepAliveFrameRate
+                                      + ", configuredTargetFrameRate="
+                                      + configuredFrameRate);
+                _loggedEditorBackgroundPlayerLoopKeepAlive = true;
+            }
+        }
+#endif
 
         private void MaintainEditorGcSmoothing()
         {

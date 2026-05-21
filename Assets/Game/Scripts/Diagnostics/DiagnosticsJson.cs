@@ -328,6 +328,8 @@ namespace Game.Scripts.Diagnostics
             AppendField(sb, "qualityName", metrics != null ? metrics.QualityName : null, false);
             AppendField(sb, "vSyncCount", metrics != null ? metrics.VSyncCount : null, false);
             AppendField(sb, "targetFrameRate", metrics != null ? metrics.TargetFrameRate : null, false);
+            AppendField(sb, "renderFrameInterval", metrics != null ? metrics.RenderFrameInterval : null, false);
+            AppendField(sb, "effectiveRenderFrameRate", metrics != null ? metrics.EffectiveRenderFrameRate : null, false);
             AppendField(sb, "refreshRate", metrics != null ? metrics.RefreshRate : null, false);
             AppendField(sb, "fixedDeltaTime", metrics != null ? metrics.FixedDeltaTime : null, false);
             AppendField(sb, "maximumDeltaTime", metrics != null ? metrics.MaximumDeltaTime : null, false);
@@ -336,6 +338,8 @@ namespace Game.Scripts.Diagnostics
             AppendField(sb, "editorApplicationIsPlaying", metrics != null ? metrics.EditorApplicationIsPlaying : null, false);
             AppendField(sb, "editorPaused", metrics != null ? metrics.EditorPaused : null, false);
             AppendField(sb, "isEditor", metrics != null ? metrics.IsEditor : null, false);
+            sb.Append(",\"terrain\":");
+            AppendTerrainMetrics(sb, metrics != null ? metrics.Terrain : null);
             sb.Append('}');
         }
 
@@ -408,6 +412,8 @@ namespace Game.Scripts.Diagnostics
             AppendField(sb, "qualityName", metrics != null ? metrics.QualityName : null, false);
             AppendField(sb, "vSyncCount", metrics != null ? metrics.VSyncCount : null, false);
             AppendField(sb, "targetFrameRate", metrics != null ? metrics.TargetFrameRate : null, false);
+            AppendField(sb, "renderFrameInterval", metrics != null ? metrics.RenderFrameInterval : null, false);
+            AppendField(sb, "effectiveRenderFrameRate", metrics != null ? metrics.EffectiveRenderFrameRate : null, false);
             AppendField(sb, "refreshRate", metrics != null ? metrics.RefreshRate : null, false);
             AppendField(sb, "fixedDeltaTime", metrics != null ? metrics.FixedDeltaTime : null, false);
             AppendField(sb, "maximumDeltaTime", metrics != null ? metrics.MaximumDeltaTime : null, false);
@@ -416,6 +422,8 @@ namespace Game.Scripts.Diagnostics
             AppendField(sb, "editorApplicationIsPlaying", metrics != null ? metrics.EditorApplicationIsPlaying : null, false);
             AppendField(sb, "editorPaused", metrics != null ? metrics.EditorPaused : null, false);
             AppendField(sb, "isEditor", metrics != null ? metrics.IsEditor : null, false);
+            sb.Append(",\"terrain\":");
+            AppendTerrainMetrics(sb, metrics != null ? metrics.Terrain : null);
             sb.Append(",\"topSlowScopes_1s\":");
             AppendScopeSummaries(sb, metrics != null ? metrics.TopSlowScopes1s : null);
             sb.Append(",\"topSlowScopes_5s\":");
@@ -472,8 +480,44 @@ namespace Game.Scripts.Diagnostics
             AppendField(sb, "fixedUpdateMs", spike.FixedUpdateMs, false);
             AppendField(sb, "cameraRenderMs", spike.CameraRenderMs, false);
             AppendField(sb, "uiRenderMs", spike.UiRenderMs, false);
+            sb.Append(",\"terrain\":");
+            AppendTerrainMetrics(sb, spike.Terrain);
             sb.Append(",\"topSuspects\":");
             AppendScopeSummaries(sb, spike.TopSuspects);
+            sb.Append('}');
+        }
+
+        private static void AppendTerrainMetrics(StringBuilder sb, DiagnosticsTerrainMetrics metrics)
+        {
+            sb.Append('{');
+            AppendField(sb, "activeTerrainPresent", metrics != null ? metrics.ActiveTerrainPresent : null, true);
+            AppendField(sb, "activeTerrainCount", metrics != null ? metrics.ActiveTerrainCount : null, false);
+            AppendField(sb, "activeTerrainName", metrics != null ? metrics.ActiveTerrainName : null, false);
+            AppendField(sb, "terrainLayer", metrics != null ? metrics.TerrainLayer : null, false);
+            AppendField(sb, "terrainComponentEnabled", metrics != null ? metrics.TerrainComponentEnabled : null, false);
+            AppendField(sb, "terrainGameObjectActive", metrics != null ? metrics.TerrainGameObjectActive : null, false);
+            AppendField(sb, "terrainColliderEnabled", metrics != null ? metrics.TerrainColliderEnabled : null, false);
+            AppendField(sb, "terrainTreeCollidersEnabled", metrics != null ? metrics.TerrainTreeCollidersEnabled : null, false);
+            AppendField(sb, "drawHeightmap", metrics != null ? metrics.DrawHeightmap : null, false);
+            AppendField(sb, "drawInstanced", metrics != null ? metrics.DrawInstanced : null, false);
+            AppendField(sb, "drawTreesAndFoliage", metrics != null ? metrics.DrawTreesAndFoliage : null, false);
+            AppendField(sb, "heightmapPixelError", metrics != null ? metrics.HeightmapPixelError : null, false);
+            AppendField(sb, "basemapDistance", metrics != null ? metrics.BasemapDistance : null, false);
+            AppendField(sb, "detailObjectDistance", metrics != null ? metrics.DetailObjectDistance : null, false);
+            AppendField(sb, "detailObjectDensity", metrics != null ? metrics.DetailObjectDensity : null, false);
+            AppendField(sb, "treeDistance", metrics != null ? metrics.TreeDistance : null, false);
+            AppendField(sb, "treeBillboardDistance", metrics != null ? metrics.TreeBillboardDistance : null, false);
+            AppendField(sb, "treeMaximumFullLodCount", metrics != null ? metrics.TreeMaximumFullLodCount : null, false);
+            AppendField(sb, "heightmapResolution", metrics != null ? metrics.HeightmapResolution : null, false);
+            AppendField(sb, "alphamapResolution", metrics != null ? metrics.AlphamapResolution : null, false);
+            AppendField(sb, "baseMapResolution", metrics != null ? metrics.BaseMapResolution : null, false);
+            AppendField(sb, "detailResolution", metrics != null ? metrics.DetailResolution : null, false);
+            AppendField(sb, "detailPrototypeCount", metrics != null ? metrics.DetailPrototypeCount : null, false);
+            AppendField(sb, "treePrototypeCount", metrics != null ? metrics.TreePrototypeCount : null, false);
+            AppendField(sb, "treeInstanceCount", metrics != null ? metrics.TreeInstanceCount : null, false);
+            AppendField(sb, "sizeX", metrics != null ? metrics.SizeX : null, false);
+            AppendField(sb, "sizeY", metrics != null ? metrics.SizeY : null, false);
+            AppendField(sb, "sizeZ", metrics != null ? metrics.SizeZ : null, false);
             sb.Append('}');
         }
 

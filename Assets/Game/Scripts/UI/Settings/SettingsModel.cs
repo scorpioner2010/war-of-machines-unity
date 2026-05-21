@@ -1,4 +1,5 @@
 using System.IO;
+using Game.Scripts.Client;
 using UnityEngine;
 
 namespace Game.Scripts.UI.Settings
@@ -12,6 +13,9 @@ namespace Game.Scripts.UI.Settings
         public int ResolutionIndex = 0;
         public int QualityIndex = 2;
         public float Gamma = 1.0f;
+        public int TargetFrameRate = ClientFramePacingSettings.DefaultTargetFrameRate;
+        public bool VerticalSyncEnabled = ClientFramePacingSettings.DefaultVerticalSyncEnabled;
+        public bool FramePacingOverrideSaved = false;
 
         public float UiVolume = 1.0f;
         public float MusicVolume = 1.0f;
@@ -39,6 +43,8 @@ namespace Game.Scripts.UI.Settings
         
         public void Load()
         {
+            ApplyFramePacingDefaultsFromClientSettings();
+
             if (File.Exists(ConfigFilePath))
             {
                 string json = File.ReadAllText(ConfigFilePath);
@@ -48,6 +54,13 @@ namespace Game.Scripts.UI.Settings
             {
             }
 
+            if (!FramePacingOverrideSaved || !ClientFramePacingSettings.IsSupportedTargetFrameRate(TargetFrameRate))
+            {
+                FramePacingOverrideSaved = false;
+                ApplyFramePacingDefaultsFromClientSettings();
+            }
+
+            ValidateVideo();
             ValidateControls();
         }
         
@@ -64,6 +77,8 @@ namespace Game.Scripts.UI.Settings
 
         public void SaveVideo()
         {
+            FramePacingOverrideSaved = true;
+            ValidateVideo();
             Save();
         }
 
@@ -86,6 +101,27 @@ namespace Game.Scripts.UI.Settings
             SniperMouseSensitivity = ClientGameplaySettings.ClampMouseSensitivity(
                 SniperMouseSensitivity,
                 ClientGameplaySettings.DefaultSniperMouseSensitivity);
+        }
+
+        private void ValidateVideo()
+        {
+            TargetFrameRate = ClientFramePacingSettings.ClampTargetFrameRate(TargetFrameRate);
+            VideoResolutionOptions.Refresh();
+            ResolutionIndex = VideoResolutionOptions.ClampIndex(ResolutionIndex);
+        }
+
+        private void ApplyFramePacingDefaultsFromClientSettings()
+        {
+            ClientFramePacingSettings framePacing = ClientSettings.GetFramePacing();
+            if (framePacing == null)
+            {
+                TargetFrameRate = ClientFramePacingSettings.DefaultTargetFrameRate;
+                VerticalSyncEnabled = ClientFramePacingSettings.DefaultVerticalSyncEnabled;
+                return;
+            }
+
+            TargetFrameRate = framePacing.targetFrameRate;
+            VerticalSyncEnabled = framePacing.verticalSyncEnabled;
         }
     }
 }

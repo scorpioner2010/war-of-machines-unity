@@ -8,6 +8,7 @@ namespace Game.Scripts.UI.HUD
     {
         public Image img;
         [SerializeField] private TMP_Text bullets;
+        private int _lastBulletAmount = int.MinValue;
 
         public void SetBullet(int amount)
         {
@@ -16,8 +17,12 @@ namespace Game.Scripts.UI.HUD
                 SetActiveBulletsView(false);
                 return;
             }
-            
-            bullets.text = amount.ToString();
+
+            if (bullets != null && _lastBulletAmount != amount)
+            {
+                _lastBulletAmount = amount;
+                bullets.SetText("{0}", amount);
+            }
         }
         
         public void SetActiveBulletsView(bool isActive)

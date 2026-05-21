@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using FishNet;
 using FishNet.Managing;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Networking.Lobby;
@@ -12,12 +11,26 @@ namespace Game.Scripts.Server
     public class ServerDebugOverlay : MonoBehaviour
     {
         private const int MaxRoomsShown = 8;
+        private const int MaxStatusLines = 20;
+        private const float StatusRefreshIntervalSeconds = 0.5f;
+        private const float OverlayX = 10f;
+        private const float OverlayY = 10f;
+        private const float OverlayWidth = 430f;
+        private const float TitleHeight = 24f;
+        private const float LineHeight = 18f;
+        private const float Padding = 8f;
+
         private static ServerDebugOverlay _instance;
 
+        private readonly string[] _statusLines = new string[MaxStatusLines];
+        private readonly bool[] _statusWarn = new bool[MaxStatusLines];
+
         private bool _visible = true;
+        private bool _lastServerEditorContext;
+        private int _statusLineCount;
+        private float _nextStatusRefreshTime;
         private GUIStyle _titleStyle;
         private GUIStyle _labelStyle;
-        private GUIStyle _okStyle;
         private GUIStyle _warnStyle;
 
 #if UNITY_EDITOR
@@ -48,20 +61,39 @@ namespace Game.Scripts.Server
 
         private void Update()
         {
-            if (!IsServerEditorContext())
+            if (!Application.isEditor)
             {
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.F10))
+            _lastServerEditorContext = IsServerEditorContext();
+            if (Input.GetKeyDown(KeyCode.F10) && _lastServerEditorContext)
             {
                 _visible = !_visible;
+                _nextStatusRefreshTime = 0f;
+            }
+
+            if (!_visible || !_lastServerEditorContext)
+            {
+                return;
+            }
+
+            if (Time.unscaledTime >= _nextStatusRefreshTime)
+            {
+                _nextStatusRefreshTime = Time.unscaledTime + StatusRefreshIntervalSeconds;
+                RefreshStatusLines();
             }
         }
 
         private void OnGUI()
         {
-            if (!Application.isEditor || !_visible || !IsServerEditorContext())
+            if (!Application.isEditor || !_visible || !_lastServerEditorContext)
+            {
+                return;
+            }
+
+            Event current = Event.current;
+            if (current != null && current.type != EventType.Repaint)
             {
                 return;
             }
@@ -70,40 +102,108 @@ namespace Game.Scripts.Server
             {
                 EnsureStyles();
 
-                GUILayout.BeginArea(new Rect(10f, 10f, 430f, 360f), GUI.skin.box);
-                GUILayout.Label("Server Debug", _titleStyle);
-                GUILayout.Space(4f);
+                float height = Padding + TitleHeight + (_statusLineCount * LineHeight) + Padding;
+                GUI.Box(new Rect(OverlayX, OverlayY, OverlayWidth, height), GUIContent.none);
+                GUI.Label(new Rect(OverlayX + Padding, OverlayY + Padding, OverlayWidth - Padding * 2f, TitleHeight), "Server Debug", _titleStyle);
 
-                DrawNetworkStatus();
-                GUILayout.Space(6f);
-                DrawRoomsStatus();
-                GUILayout.Space(6f);
-                GUILayout.Label("F10 - hide/show overlay", _labelStyle);
-
-                GUILayout.EndArea();
+                float y = OverlayY + Padding + TitleHeight;
+                for (int i = 0; i < _statusLineCount; i++)
+                {
+                    GUI.Label(
+                        new Rect(OverlayX + Padding, y, OverlayWidth - Padding * 2f, LineHeight),
+                        _statusLines[i],
+                        _statusWarn[i] ? _warnStyle : _labelStyle);
+                    y += LineHeight;
+                }
             }
         }
 
-        private void DrawNetworkStatus()
+        private void RefreshStatusLines()
         {
+            _statusLineCount = 0;
+
             NetworkManager networkManager = GetNetworkManager();
             bool serverStarted = networkManager != null && networkManager.IsServerStarted;
             bool clientStarted = networkManager != null && networkManager.IsClientStarted;
 
-            GUILayout.Label("Scene: " + SceneManager.GetActiveScene().name, _labelStyle);
-            GUILayout.Label("Role: " + GetRoleText(serverStarted, clientStarted), _labelStyle);
-            GUILayout.Label("Server: " + GetStateText(serverStarted), serverStarted ? _okStyle : _warnStyle);
-            GUILayout.Label("Client: " + GetStateText(clientStarted), clientStarted ? _okStyle : _labelStyle);
-            GUILayout.Label("Start status: " + StartServerButtons.LastServerStatus, serverStarted ? _okStyle : _warnStyle);
+            AddStatusLine("Scene: " + SceneManager.GetActiveScene().name, false);
+            AddStatusLine("Role: " + GetRoleText(serverStarted, clientStarted), false);
+            AddStatusLine("Server: " + GetStateText(serverStarted), !serverStarted);
+            AddStatusLine("Client: " + GetStateText(clientStarted), false);
+            AddStatusLine("Start status: " + StartServerButtons.LastServerStatus, !serverStarted);
 
             if (networkManager == null)
             {
-                GUILayout.Label("NetworkManager: missing", _warnStyle);
+                AddStatusLine("NetworkManager: missing", true);
+                AddStatusLine("F10 - hide/show overlay", false);
                 return;
             }
 
-            GUILayout.Label("Port: " + networkManager.TransportManager.Transport.GetPort(), _labelStyle);
-            GUILayout.Label("Connected clients: " + networkManager.ServerManager.Clients.Count, _labelStyle);
+            AddStatusLine("Port: " + networkManager.TransportManager.Transport.GetPort(), false);
+            AddStatusLine("Connected clients: " + networkManager.ServerManager.Clients.Count, false);
+
+            int totalRooms = 0;
+            int matchmakingRooms = 0;
+            int activeBattles = 0;
+            int finishedBattles = 0;
+
+            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            {
+                if (room == null)
+                {
+                    continue;
+                }
+
+                totalRooms++;
+                if (!room.isInGame)
+                {
+                    matchmakingRooms++;
+                }
+                else if (room.isGameFinished)
+                {
+                    finishedBattles++;
+                }
+                else
+                {
+                    activeBattles++;
+                }
+            }
+
+            AddStatusLine("Rooms: " + totalRooms, false);
+            AddStatusLine("Matchmaking: " + matchmakingRooms + " | Active battles: " + activeBattles + " | Finished: " + finishedBattles, false);
+            AddStatusLine("Pending results: " + PendingBattleResults.GetPendingResultCount() + " for " + PendingBattleResults.GetPendingUserCount() + " users", false);
+
+            int shown = 0;
+            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            {
+                if (room == null)
+                {
+                    continue;
+                }
+
+                if (shown >= MaxRoomsShown)
+                {
+                    AddStatusLine("... more rooms not shown", false);
+                    break;
+                }
+
+                AddStatusLine(FormatRoom(room), false);
+                shown++;
+            }
+
+            AddStatusLine("F10 - hide/show overlay", false);
+        }
+
+        private void AddStatusLine(string line, bool warn)
+        {
+            if (_statusLineCount >= MaxStatusLines)
+            {
+                return;
+            }
+
+            _statusLines[_statusLineCount] = line;
+            _statusWarn[_statusLineCount] = warn;
+            _statusLineCount++;
         }
 
         private static bool IsServerEditorContext()
@@ -137,58 +237,6 @@ namespace Game.Scripts.Server
             }
 
             return instances[0];
-        }
-
-        private void DrawRoomsStatus()
-        {
-            int totalRooms = 0;
-            int matchmakingRooms = 0;
-            int activeBattles = 0;
-            int finishedBattles = 0;
-
-            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
-            {
-                if (room == null)
-                {
-                    continue;
-                }
-
-                totalRooms++;
-                if (!room.isInGame)
-                {
-                    matchmakingRooms++;
-                }
-                else if (room.isGameFinished)
-                {
-                    finishedBattles++;
-                }
-                else
-                {
-                    activeBattles++;
-                }
-            }
-
-            GUILayout.Label("Rooms: " + totalRooms, _labelStyle);
-            GUILayout.Label("Matchmaking: " + matchmakingRooms + " | Active battles: " + activeBattles + " | Finished: " + finishedBattles, _labelStyle);
-            GUILayout.Label("Pending results: " + PendingBattleResults.GetPendingResultCount() + " for " + PendingBattleResults.GetPendingUserCount() + " users", _labelStyle);
-
-            int shown = 0;
-            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
-            {
-                if (room == null)
-                {
-                    continue;
-                }
-
-                if (shown >= MaxRoomsShown)
-                {
-                    GUILayout.Label("... more rooms not shown", _labelStyle);
-                    break;
-                }
-
-                GUILayout.Label(FormatRoom(room), _labelStyle);
-                shown++;
-            }
         }
 
         private static string FormatRoom(ServerRoom room)
@@ -259,11 +307,6 @@ namespace Game.Scripts.Server
             {
                 fontSize = 12,
                 normal = { textColor = Color.white }
-            };
-
-            _okStyle = new GUIStyle(_labelStyle)
-            {
-                normal = { textColor = new Color(0.35f, 1f, 0.45f) }
             };
 
             _warnStyle = new GUIStyle(_labelStyle)

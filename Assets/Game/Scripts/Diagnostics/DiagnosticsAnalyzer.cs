@@ -39,7 +39,13 @@ namespace Game.Scripts.Diagnostics
             bool memoryBad = IsMemoryBad(buffer, snapshot.Spikes);
             bool rpcStorm = IsRpcStorm(buffer, network, seconds, topRpc);
             bool entityScale = IsEntityScaleBound(buffer, server, topServer);
+            bool terrainEditorBound = IsTerrainEditorBound(client, server);
             bool clientEditorBound = IsClientEditorBound(client, server);
+
+            if (terrainEditorBound)
+            {
+                return BuildTerrainEditorBound(sample, topClient, topEditor);
+            }
 
             if (clientEditorBound)
             {
@@ -153,6 +159,30 @@ namespace Game.Scripts.Diagnostics
             return highResolution && focused;
         }
 
+        private bool IsTerrainEditorBound(DiagnosticsClientMetrics client, DiagnosticsServerMetrics server)
+        {
+            if (client == null || !IsClientBad(client) || IsServerBad(server))
+            {
+                return false;
+            }
+
+            if (!client.IsEditor.HasValue || !client.IsEditor.Value)
+            {
+                return false;
+            }
+
+            bool highResolution = (client.ScreenWidth.HasValue && client.ScreenWidth.Value >= 1920)
+                                  || (client.ScreenHeight.HasValue && client.ScreenHeight.Value >= 1080);
+            bool focused = !client.ApplicationFocused.HasValue || client.ApplicationFocused.Value;
+            DiagnosticsTerrainMetrics terrain = client.Terrain;
+            bool terrainActive = terrain != null
+                                 && terrain.ActiveTerrainPresent.HasValue
+                                 && terrain.ActiveTerrainPresent.Value
+                                 && (!terrain.TerrainComponentEnabled.HasValue || terrain.TerrainComponentEnabled.Value)
+                                 && (!terrain.TerrainGameObjectActive.HasValue || terrain.TerrainGameObjectActive.Value);
+            return highResolution && focused && terrainActive;
+        }
+
         private bool IsMemoryBad(RollingMetricsBuffer buffer, List<DiagnosticsSpike> spikes)
         {
             double? clientGrowth = buffer.GetMemoryGrowthMbPerMinute(DiagnosticsCategories.Client, 30);
@@ -251,6 +281,28 @@ namespace Game.Scripts.Diagnostics
             analysis.RecommendedNextSteps.Add("Run A/B/C captures and compare applicationFocused, resolution, frame p95, ping, and top editor/client scopes.");
             analysis.RecommendedNextSteps.Add("If only the focused high-resolution client is bad, test disabling Game View Gizmos/Stats/debug overlay/HUD before touching server simulation.");
             analysis.RecommendedNextSteps.Add("Check frame-rate pacing settings: runInBackground, targetFrameRate, vSyncCount, Game View scale, and Maximize On Play.");
+            return analysis;
+        }
+
+        private DiagnosticsAnalysis BuildTerrainEditorBound(DiagnosticsMetricSample sample, List<DiagnosticsScopeSummary> topClient, List<DiagnosticsScopeSummary> topEditor)
+        {
+            DiagnosticsAnalysis analysis = Base(
+                "CLIENT_TERRAIN_EDITOR_RENDER_BOUND",
+                0.9d,
+                "high",
+                "Problem matches a focused high-resolution Unity Editor client with active Terrain while server tick is normal. This points to Terrain/Game View rendering or Terrain editor overhead, not multiplayer sync.");
+            AddClientEvidence(analysis, sample);
+            AddFramePacingEvidence(analysis, sample);
+            AddTerrainEvidence(analysis, sample);
+            AddServerEvidence(analysis, sample);
+            AddNetworkEvidence(analysis, sample);
+            AddSuspects(analysis, topEditor, "editor/debug work during focused Terrain rendering");
+            AddSuspects(analysis, topClient, "client frame pacing or high-resolution render work while Terrain is active");
+            analysis.FilesToInspect.Add("Assets/Game/Scenes/Map.unity");
+            analysis.FilesToInspect.Add("ProjectSettings/QualitySettings.asset");
+            analysis.RecommendedNextSteps.Add("Confirm by toggling only the Terrain object and comparing frame-spikes with the same 4K focused client.");
+            analysis.RecommendedNextSteps.Add("Test Terrain drawTreesAndFoliage, detailObjectDistance, treeDistance, heightmapPixelError, shadows, and Game View Gizmos/Stats before editing network code.");
+            analysis.RecommendedNextSteps.Add("If Development Build is smooth while Editor is bad, keep the fix in Editor/quality/Terrain settings instead of gameplay sync.");
             return analysis;
         }
 
@@ -421,6 +473,14 @@ namespace Game.Scripts.Diagnostics
             {
                 analysis.Evidence.Add("targetFrameRate is " + client.TargetFrameRate.Value);
             }
+            if (client.RenderFrameInterval.HasValue)
+            {
+                analysis.Evidence.Add("renderFrameInterval is " + client.RenderFrameInterval.Value);
+            }
+            if (client.EffectiveRenderFrameRate.HasValue)
+            {
+                analysis.Evidence.Add("effectiveRenderFrameRate is " + client.EffectiveRenderFrameRate.Value);
+            }
             if (client.RefreshRate.HasValue)
             {
                 analysis.Evidence.Add("refreshRate is " + Format(client.RefreshRate.Value));
@@ -444,6 +504,60 @@ namespace Game.Scripts.Diagnostics
             if (client.EditorPaused.HasValue)
             {
                 analysis.Evidence.Add("editorPaused is " + client.EditorPaused.Value);
+            }
+        }
+
+        private static void AddTerrainEvidence(DiagnosticsAnalysis analysis, DiagnosticsMetricSample sample)
+        {
+            if (sample == null || sample.Client == null || sample.Client.Terrain == null)
+            {
+                return;
+            }
+
+            DiagnosticsTerrainMetrics terrain = sample.Client.Terrain;
+            if (terrain.ActiveTerrainPresent.HasValue)
+            {
+                analysis.Evidence.Add("active Terrain present is " + terrain.ActiveTerrainPresent.Value);
+            }
+            if (!string.IsNullOrEmpty(terrain.ActiveTerrainName))
+            {
+                analysis.Evidence.Add("active Terrain is " + terrain.ActiveTerrainName);
+            }
+            if (terrain.ActiveTerrainCount.HasValue)
+            {
+                analysis.Evidence.Add("active Terrain count is " + terrain.ActiveTerrainCount.Value);
+            }
+            if (terrain.DrawHeightmap.HasValue)
+            {
+                analysis.Evidence.Add("terrain drawHeightmap is " + terrain.DrawHeightmap.Value);
+            }
+            if (terrain.DrawTreesAndFoliage.HasValue)
+            {
+                analysis.Evidence.Add("terrain drawTreesAndFoliage is " + terrain.DrawTreesAndFoliage.Value);
+            }
+            if (terrain.DetailObjectDistance.HasValue)
+            {
+                analysis.Evidence.Add("terrain detail distance is " + Format(terrain.DetailObjectDistance.Value));
+            }
+            if (terrain.TreeDistance.HasValue)
+            {
+                analysis.Evidence.Add("terrain tree distance is " + Format(terrain.TreeDistance.Value));
+            }
+            if (terrain.HeightmapPixelError.HasValue)
+            {
+                analysis.Evidence.Add("terrain heightmap pixel error is " + Format(terrain.HeightmapPixelError.Value));
+            }
+            if (terrain.HeightmapResolution.HasValue)
+            {
+                analysis.Evidence.Add("terrain heightmap resolution is " + terrain.HeightmapResolution.Value);
+            }
+            if (terrain.TreeInstanceCount.HasValue)
+            {
+                analysis.Evidence.Add("terrain tree instances is " + terrain.TreeInstanceCount.Value);
+            }
+            if (terrain.DetailPrototypeCount.HasValue)
+            {
+                analysis.Evidence.Add("terrain detail prototypes is " + terrain.DetailPrototypeCount.Value);
             }
         }
 

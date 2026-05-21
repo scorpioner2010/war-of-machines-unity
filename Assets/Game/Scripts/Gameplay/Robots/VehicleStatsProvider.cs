@@ -8,11 +8,12 @@ namespace Game.Scripts.Gameplay.Robots
     public static class VehicleStatsProvider
     {
         private static VehicleRuntimeStats[] _cache;
+        private static bool _cacheLoaded;
         private static bool _loading;
 
-        public static async UniTask PreloadAsync()
+        public static async UniTask PreloadAsync(bool forceReload = false)
         {
-            if (_cache != null)
+            if (_cacheLoaded && forceReload == false)
             {
                 return;
             }
@@ -24,7 +25,10 @@ namespace Game.Scripts.Gameplay.Robots
                     await UniTask.DelayFrame(1);
                 }
 
-                return;
+                if (_cacheLoaded && forceReload == false)
+                {
+                    return;
+                }
             }
 
             try
@@ -38,17 +42,21 @@ namespace Game.Scripts.Gameplay.Robots
                     {
                         _cache[i] = VehicleRuntimeStats.FromVehicleLite(result.items[i]);
                     }
+
+                    _cacheLoaded = true;
                 }
                 else
                 {
                     Debug.LogWarning("Failed to load vehicle stats from API: " + result.message);
                     _cache = new VehicleRuntimeStats[0];
+                    _cacheLoaded = false;
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("Failed to load vehicle stats from API: " + ex.Message);
                 _cache = new VehicleRuntimeStats[0];
+                _cacheLoaded = false;
             }
             finally
             {
@@ -76,9 +84,9 @@ namespace Game.Scripts.Gameplay.Robots
             return null;
         }
 
-        public static async UniTask<VehicleRuntimeStats[]> GetAllAsync()
+        public static async UniTask<VehicleRuntimeStats[]> GetAllAsync(bool forceReload = false)
         {
-            await PreloadAsync();
+            await PreloadAsync(forceReload);
 
             if (_cache == null || _cache.Length == 0)
             {

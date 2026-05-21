@@ -1,6 +1,9 @@
 using System;
 using Game.Scripts.Diagnostics;
 using UnityEngine;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Unity.Profiling;
+#endif
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -30,14 +33,26 @@ namespace Game.Scripts.Gameplay.Robots
 
     public static class ProjectileVisualSpawner
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly ProfilerMarker SpawnMarker = new ProfilerMarker("ProjectileVisualSpawner.Spawn");
+        private static readonly ProfilerMarker ImpactFxMarker = new ProfilerMarker("ProjectileVisualSpawner.ImpactFx");
+#endif
+
         public static Projectile Spawn(ProjectileVisualSpawnParams spawnParams)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (SpawnMarker.Auto())
+#endif
             using (ProfileScope.Measure(spawnParams.Authoritative ? "Server.Projectile.Spawn" : "Client.Projectile.Spawn", DiagnosticsCategories.Physics))
             {
-                Projectile projectile = UnityEngine.Object.Instantiate(
+                Projectile projectile = ProjectileRuntimePool.RentProjectile(
                     spawnParams.ProjectilePrefab,
                     spawnParams.StartPosition,
                     Quaternion.identity);
+                if (projectile == null)
+                {
+                    return null;
+                }
 
                 projectile.hitMask = spawnParams.HitMask;
                 projectile.damage = spawnParams.Damage;
@@ -97,10 +112,7 @@ namespace Game.Scripts.Gameplay.Robots
                     }
                 }
 
-                if (!spawnParams.Visible)
-                {
-                    projectile.SetVisualsEnabled(false);
-                }
+                projectile.SetVisualsEnabled(spawnParams.Visible);
 
                 return projectile;
             }
@@ -145,6 +157,9 @@ namespace Game.Scripts.Gameplay.Robots
 
         public static void SpawnImpactFx(Projectile projectilePrefab, Vector3 impactPoint, Vector3 impactNormal)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            using (ImpactFxMarker.Auto())
+#endif
             using (ProfileScope.Measure("Projectile.ImpactFx.Spawn", DiagnosticsCategories.Physics))
             {
                 if (projectilePrefab == null || projectilePrefab.explosionFX == null)
@@ -153,7 +168,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 Vector3 normal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal : Vector3.up;
-                UnityEngine.Object.Instantiate(projectilePrefab.explosionFX, impactPoint, Quaternion.LookRotation(normal));
+                ProjectileRuntimePool.SpawnImpactFx(projectilePrefab.explosionFX, impactPoint, Quaternion.LookRotation(normal));
             }
         }
     }

@@ -252,6 +252,8 @@ public class WaypointPointSpawner : MonoBehaviour
                 addedForThisPoint++;
                 createdConnections++;
             }
+            
+            
         }
 
         Debug.Log($"[WaypointPointSpawner] Built {createdConnections} waypoint connections. Blocked/skipped by obstacles: {blockedConnections}");

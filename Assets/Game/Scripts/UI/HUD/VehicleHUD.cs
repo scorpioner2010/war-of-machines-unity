@@ -17,6 +17,8 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private TMP_Text nickName;
         [SerializeField] private Image hpView;
         public FloatingDamageText floatingTextPrefab;
+        [SerializeField, Min(0)] private int floatingTextPoolPrewarmCount = 8;
+        [SerializeField, Min(1)] private int floatingTextPoolMaxInactive = 32;
 
         private float _nextTeamColorRefreshTime;
         private bool _subscribedToLocalPlayer;
@@ -45,6 +47,7 @@ namespace Game.Scripts.UI.HUD
             TryResolveVehicleRoot();
             TrySubscribeHealth();
             SubscribeToLocalPlayerChange();
+            PrewarmFloatingTextPool();
             _nextTeamColorRefreshTime = 0f;
             ApplyHpColor();
         }
@@ -134,9 +137,16 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
-            FloatingDamageText text = Instantiate(floatingTextPrefab, transform.position, Quaternion.identity, transform);
-            string damage = Mathf.RoundToInt(dmg).ToString();
-            text.SetText(damage);
+            FloatingDamageText floatingText = FloatingDamageText.Rent(
+                floatingTextPrefab,
+                transform.position,
+                Quaternion.identity,
+                transform,
+                floatingTextPoolMaxInactive);
+            if (floatingText != null)
+            {
+                floatingText.SetDamage(Mathf.RoundToInt(dmg));
+            }
         }
 
         public void SetNick(string nick)
@@ -263,6 +273,16 @@ namespace Game.Scripts.UI.HUD
             }
 
             transform.localScale = _baseLocalScale;
+        }
+
+        private void PrewarmFloatingTextPool()
+        {
+            if (floatingTextPrefab == null || floatingTextPoolPrewarmCount <= 0)
+            {
+                return;
+            }
+
+            FloatingDamageText.Prewarm(floatingTextPrefab, floatingTextPoolPrewarmCount, floatingTextPoolMaxInactive);
         }
 
         private void RefreshHpColorIfNeeded()

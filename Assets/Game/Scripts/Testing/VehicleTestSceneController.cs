@@ -2,16 +2,23 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Transporting;
+using Game.Scripts.API.Models;
+using Game.Scripts.Core.Resources;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
+using Game.Scripts.World.Spawns;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using LobbyPlayer = Game.Scripts.Networking.Lobby.Player;
+using SceneLoadData = FishNet.Managing.Scened.SceneLoadData;
 
 namespace Game.Scripts.Testing
 {
@@ -35,6 +42,14 @@ namespace Game.Scripts.Testing
         public float groundRayStartHeight = 25f;
         public float groundRayDistance = 80f;
         public float groundClearance = 0.02f;
+        public bool showTestGui = true;
+        public bool loadVehiclesFromApi = true;
+        public bool autoSpawnFirstVehicle;
+        public bool useDirectLocalSpawn;
+        public float autoSpawnTimeout = 10f;
+        public bool loadGameplaySceneForSpawns = true;
+        public string gameplaySceneName = "Map";
+        public float gameplaySceneLoadTimeout = 10f;
 
         private VehicleRuntimeStats[] _vehicles = new VehicleRuntimeStats[0];
         private VehicleRoot _spawnedVehicle;
@@ -53,6 +68,11 @@ namespace Game.Scripts.Testing
         private bool _testCursorMode = true;
         private Rect _testGuiArea;
         private GameObject _spawnedGameplayHud;
+        private bool _spawnInProgress;
+        private bool _gameplaySceneLoadInProgress;
+        private Scene _gameplayScene;
+        private ServerRoom _testRoom;
+        private readonly MatchVehicleSpawner _matchVehicleSpawner = new MatchVehicleSpawner();
 
         private void Awake()
         {
@@ -71,7 +91,15 @@ namespace Game.Scripts.Testing
                 StartHostAsync().Forget();
             }
 
-            LoadVehiclesAsync().Forget();
+            if (autoSpawnFirstVehicle)
+            {
+                AutoSpawnFirstVehicleAsync().Forget();
+            }
+
+            if (loadVehiclesFromApi)
+            {
+                LoadVehiclesAsync().Forget();
+            }
         }
 
         private void OnDestroy()
@@ -118,6 +146,11 @@ namespace Game.Scripts.Testing
 
         private void OnGUI()
         {
+            if (!showTestGui)
+            {
+                return;
+            }
+
             using (ProfileScope.Measure("OnGUI.VehicleTestSceneController", DiagnosticsCategories.Editor))
             {
                 _testGuiArea = new Rect(12f, 12f, 390f, Screen.height - 24f);
@@ -142,10 +175,10 @@ namespace Game.Scripts.Testing
 
                 VehicleRuntimeStats selected = GetSelected();
                 VehicleRoot prefab = GetSelectedPrefab(selected);
-                GUI.enabled = !_loading && IsNetworkReady() && selected != null && prefab != null;
+                GUI.enabled = !_loading && !_spawnInProgress && IsNetworkReady() && selected != null && prefab != null;
                 if (GUILayout.Button("Spawn selected robot", GUILayout.Height(34f)))
                 {
-                    SpawnSelected();
+                    SpawnSelectedAsync().Forget();
                 }
 
                 GUI.enabled = _spawnedVehicle != null;
@@ -179,7 +212,7 @@ namespace Game.Scripts.Testing
             _loading = true;
             _status = "Loading vehicles from API...";
 
-            VehicleRuntimeStats[] result = await VehicleStatsProvider.GetAllAsync();
+            VehicleRuntimeStats[] result = await VehicleStatsProvider.GetAllAsync(forceReload: true);
             _vehicles = result != null ? result : new VehicleRuntimeStats[0];
             _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _vehicles.Length - 1));
             _status = _vehicles.Length > 0
@@ -332,8 +365,74 @@ namespace Game.Scripts.Testing
             return registry.GetPrefab(stats.Code);
         }
 
-        private void SpawnSelected()
+        private async UniTaskVoid AutoSpawnFirstVehicleAsync()
         {
+            if (_spawnInProgress)
+            {
+                return;
+            }
+
+            bool networkReady = await WaitForNetworkReadyAsync(Mathf.Max(0.1f, autoSpawnTimeout));
+            if (!networkReady)
+            {
+                _status = "Auto spawn failed: local FishNet host is not ready.";
+                return;
+            }
+
+            NetworkConnection ownerConnection = GetLocalOwnerConnection();
+            if (!IsConnectionReady(ownerConnection))
+            {
+                _status = "Auto spawn failed: local owner connection missing.";
+                return;
+            }
+
+            if (!EnsureLocalConnectionInTestScene(ownerConnection))
+            {
+                _status = "Auto spawn failed: local owner is not in the test scene.";
+                return;
+            }
+
+            VehicleRoot prefab = GetFirstRegistryPrefab(out string vehicleCode);
+            if (prefab == null)
+            {
+                _status = "Auto spawn failed: RobotRegistry has no vehicle prefab.";
+                return;
+            }
+
+            _spawnInProgress = true;
+            bool spawned = SpawnVehicleDirect(prefab, null, ownerConnection, gameObject.scene, vehicleCode);
+            _spawnInProgress = false;
+
+            if (!spawned)
+            {
+                _status = "Auto spawn failed: direct spawn could not create vehicle.";
+            }
+        }
+
+        private VehicleRoot GetFirstRegistryPrefab(out string vehicleCode)
+        {
+            vehicleCode = string.Empty;
+            if (registry == null)
+            {
+                return null;
+            }
+
+            vehicleCode = registry.GetFirstCode();
+            if (string.IsNullOrEmpty(vehicleCode))
+            {
+                return null;
+            }
+
+            return registry.GetPrefab(vehicleCode);
+        }
+
+        private async UniTaskVoid SpawnSelectedAsync()
+        {
+            if (_spawnInProgress)
+            {
+                return;
+            }
+
             if (!IsNetworkReady())
             {
                 _status = "Network is not ready yet.";
@@ -344,11 +443,14 @@ namespace Game.Scripts.Testing
                 return;
             }
 
+            _spawnInProgress = true;
+
             VehicleRuntimeStats stats = GetSelected();
             VehicleRoot prefab = GetSelectedPrefab(stats);
             if (stats == null || prefab == null)
             {
                 _status = "Cannot spawn selected vehicle: prefab missing.";
+                _spawnInProgress = false;
                 return;
             }
 
@@ -356,47 +458,76 @@ namespace Game.Scripts.Testing
             if (runtimeStats == null)
             {
                 _status = "Cannot spawn selected vehicle: runtime stats missing.";
+                _spawnInProgress = false;
+                return;
+            }
+
+            NetworkConnection ownerConnection = GetLocalOwnerConnection();
+            if (!IsConnectionReady(ownerConnection))
+            {
+                _status = "Cannot spawn selected vehicle: local owner connection missing.";
+                _spawnInProgress = false;
+                return;
+            }
+
+            if (!EnsureLocalConnectionInTestScene(ownerConnection))
+            {
+                _status = "Cannot spawn selected vehicle: local owner is not in the test scene.";
+                _spawnInProgress = false;
+                return;
+            }
+
+            if (useDirectLocalSpawn)
+            {
+                bool spawned = SpawnVehicleDirect(prefab, runtimeStats, ownerConnection, gameObject.scene, runtimeStats.Name);
+                _spawnInProgress = false;
+
+                if (!spawned)
+                {
+                    _status = "Cannot spawn selected vehicle: direct spawn failed.";
+                }
+
+                return;
+            }
+
+            Scene spawnScene = await EnsureGameplaySpawnSceneAsync(ownerConnection, stats);
+            if (!spawnScene.IsValid() || !spawnScene.isLoaded)
+            {
+                _status = "Cannot spawn selected vehicle: gameplay scene is not loaded.";
+                _spawnInProgress = false;
+                return;
+            }
+
+            if (!HasSpawnPoint(spawnScene))
+            {
+                _status = "Cannot spawn selected vehicle: no spawn points in " + spawnScene.name + ".";
+                _spawnInProgress = false;
                 return;
             }
 
             DespawnCurrent();
 
-            Vector3 position = GetSpawnPosition();
-            Quaternion rotation = GetSpawnRotation();
-            bool hasGround = TryGetGroundHeight(position, out float groundY);
+            EnsureGameResourceManager();
+            ServerRoom room = PrepareTestRoom(ownerConnection, stats, spawnScene);
+            _spawnedVehicle = await _matchVehicleSpawner.SpawnPlayerAsync(
+                room,
+                ownerConnection,
+                spawnScene,
+                Mathf.Max(0.1f, gameplaySceneLoadTimeout),
+                networkManager.ServerManager,
+                null);
 
-            _spawnedVehicle = Instantiate(prefab, position, rotation);
-            _spawnedVehicle.gameObject.SetActive(true);
-
-            if (alignVisualBoundsToGround && hasGround)
+            if (_spawnedVehicle == null)
             {
-                AlignVisualBoundsToGround(_spawnedVehicle, groundY);
-            }
-
-            _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: false);
-
-            NetworkObject networkObject = _spawnedVehicle.networkObject != null
-                ? _spawnedVehicle.networkObject
-                : _spawnedVehicle.GetComponent<NetworkObject>();
-
-            if (networkObject == null)
-            {
-                Destroy(_spawnedVehicle.gameObject);
-                _spawnedVehicle = null;
-                _status = "Cannot spawn selected vehicle: NetworkObject missing.";
+                _status = "Cannot spawn selected vehicle: MatchVehicleSpawner failed.";
+                _spawnInProgress = false;
                 return;
             }
 
-            networkManager.ServerManager.Spawn(networkObject, networkManager.ClientManager.Connection, gameObject.scene);
             _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: true);
             if (testRuntimeSettings != null)
             {
                 testRuntimeSettings.ApplyToVehicle(_spawnedVehicle);
-            }
-
-            if (_spawnedVehicle.characterInit != null)
-            {
-                _spawnedVehicle.characterInit.ServerInit(1, PlayerType.Player, "VehicleTest", MatchTeam.None, gameObject.scene);
             }
 
             SetTestCursorMode(false);
@@ -406,6 +537,90 @@ namespace Game.Scripts.Testing
             {
                 _status += " Test combat overrides applied.";
             }
+
+            _spawnInProgress = false;
+        }
+
+        private bool SpawnVehicleDirect(
+            VehicleRoot prefab,
+            VehicleRuntimeStats runtimeStats,
+            NetworkConnection ownerConnection,
+            Scene spawnScene,
+            string vehicleName)
+        {
+            if (prefab == null || !IsConnectionReady(ownerConnection) || networkManager == null || networkManager.ServerManager == null)
+            {
+                return false;
+            }
+
+            if (!spawnScene.IsValid() || !spawnScene.isLoaded)
+            {
+                return false;
+            }
+
+            DespawnCurrent();
+
+            Vector3 position = GetSpawnPosition();
+            Quaternion rotation = GetSpawnRotation();
+            bool hasGround = TryGetGroundHeight(position, out float groundY);
+
+            _spawnedVehicle = Instantiate(prefab, position, rotation);
+            if (_spawnedVehicle == null)
+            {
+                return false;
+            }
+
+            _spawnedVehicle.gameObject.SetActive(true);
+
+            if (alignVisualBoundsToGround && hasGround)
+            {
+                AlignVisualBoundsToGround(_spawnedVehicle, groundY);
+            }
+
+            if (runtimeStats != null)
+            {
+                _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: false);
+            }
+
+            NetworkObject networkObject = _spawnedVehicle.networkObject != null
+                ? _spawnedVehicle.networkObject
+                : _spawnedVehicle.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                Destroy(_spawnedVehicle.gameObject);
+                _spawnedVehicle = null;
+                return false;
+            }
+
+            networkManager.ServerManager.Spawn(networkObject, ownerConnection, spawnScene);
+
+            if (runtimeStats != null)
+            {
+                _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: true);
+            }
+
+            if (testRuntimeSettings != null)
+            {
+                testRuntimeSettings.ApplyToVehicle(_spawnedVehicle);
+            }
+
+            if (_spawnedVehicle.characterInit != null)
+            {
+                _spawnedVehicle.characterInit.ServerInit(1, PlayerType.Player, "VehicleTest", MatchTeam.TeamA, spawnScene);
+            }
+
+            SetTestCursorMode(false);
+
+            string displayName = !string.IsNullOrEmpty(vehicleName)
+                ? vehicleName
+                : _spawnedVehicle.name;
+            _status = "Spawned " + displayName + ".";
+            if (testRuntimeSettings != null && testRuntimeSettings.HasActiveTestParameters)
+            {
+                _status += " Test combat overrides applied.";
+            }
+
+            return true;
         }
 
         private VehicleRuntimeStats BuildRuntimeStatsForSpawn(VehicleRuntimeStats source)
@@ -416,6 +631,206 @@ namespace Game.Scripts.Testing
             }
 
             return source != null ? source.Clone() : null;
+        }
+
+        private void EnsureGameResourceManager()
+        {
+            GameResourceManager resourceManager = FindAnyObjectByType<GameResourceManager>();
+            if (resourceManager == null)
+            {
+                GameObject resourceObject = new GameObject("VehicleTest_GameResourceManager");
+                SceneManager.MoveGameObjectToScene(resourceObject, gameObject.scene);
+                resourceManager = resourceObject.AddComponent<GameResourceManager>();
+            }
+
+            if (resourceManager.registry == null && registry != null)
+            {
+                resourceManager.registry = registry;
+            }
+        }
+
+        private async UniTask<Scene> EnsureGameplaySpawnSceneAsync(NetworkConnection ownerConnection, VehicleRuntimeStats stats)
+        {
+            if (!loadGameplaySceneForSpawns)
+            {
+                return gameObject.scene;
+            }
+
+            if (TryGetLoadedGameplayScene(out Scene loadedScene))
+            {
+                _gameplayScene = loadedScene;
+                return _gameplayScene;
+            }
+
+            if (_gameplaySceneLoadInProgress)
+            {
+                return await WaitForGameplaySceneLoadedAsync();
+            }
+
+            if (networkManager == null || networkManager.SceneManager == null || string.IsNullOrWhiteSpace(gameplaySceneName))
+            {
+                return default;
+            }
+
+            _gameplaySceneLoadInProgress = true;
+            _status = "Loading gameplay scene " + gameplaySceneName + "...";
+
+            RegisterTestProfile(ownerConnection, stats);
+
+            SceneLoadData sceneLoadData = new SceneLoadData(gameplaySceneName)
+            {
+                Options =
+                {
+                    AllowStacking = true,
+                    AutomaticallyUnload = true,
+                },
+                Params =
+                {
+                    ClientParams = System.BitConverter.GetBytes(0)
+                }
+            };
+
+            NetworkConnection[] connections = { ownerConnection };
+            networkManager.SceneManager.LoadConnectionScenes(connections, sceneLoadData);
+
+            _gameplayScene = await WaitForGameplaySceneLoadedAsync();
+            _gameplaySceneLoadInProgress = false;
+            return _gameplayScene;
+        }
+
+        private async UniTask<Scene> WaitForGameplaySceneLoadedAsync()
+        {
+            float timeout = Mathf.Max(0.1f, gameplaySceneLoadTimeout);
+            float endTime = Time.realtimeSinceStartup + timeout;
+            while (Time.realtimeSinceStartup < endTime)
+            {
+                if (TryGetLoadedGameplayScene(out Scene loadedScene))
+                {
+                    return loadedScene;
+                }
+
+                await UniTask.Yield();
+            }
+
+            return default;
+        }
+
+        private bool TryGetLoadedGameplayScene(out Scene loadedScene)
+        {
+            loadedScene = default;
+            if (string.IsNullOrWhiteSpace(gameplaySceneName))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (scene.IsValid() && scene.isLoaded && scene.name == gameplaySceneName && HasSpawnPoint(scene))
+                {
+                    loadedScene = scene;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasSpawnPoint(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return false;
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root != null && root.GetComponentInChildren<SpawnPoint>(true) != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private ServerRoom PrepareTestRoom(NetworkConnection ownerConnection, VehicleRuntimeStats stats, Scene spawnScene)
+        {
+            if (_testRoom == null)
+            {
+                GameObject roomObject = new GameObject("VehicleTest_ServerRoom");
+                SceneManager.MoveGameObjectToScene(roomObject, gameObject.scene);
+                _testRoom = roomObject.AddComponent<ServerRoom>();
+            }
+
+            RegisterTestProfile(ownerConnection, stats);
+
+            _testRoom.roomId = "VehicleTest";
+            _testRoom.roomName = "VehicleTest";
+            _testRoom.maxPlayers = 1;
+            _testRoom.selectedLocation = spawnScene.IsValid() ? spawnScene.name : gameplaySceneName;
+            _testRoom.isInGame = true;
+            _testRoom.loadedSceneName = spawnScene.IsValid() ? spawnScene.name : string.Empty;
+            _testRoom.handle = spawnScene.IsValid() ? spawnScene.handle : 0;
+            _testRoom.sceneSlotIndex = ServerRoom.NoSceneSlot;
+            _testRoom.sceneOffsetX = 0;
+            _testRoom.players.Clear();
+            _testRoom.AddPlayer(new LobbyPlayer
+            {
+                loginName = "VehicleTest",
+                Connection = ownerConnection,
+                userId = 0,
+                mmr = 1000,
+                activeVehicleId = stats != null ? stats.VehicleId : 0,
+                activeVehicleCode = stats != null ? stats.Code : string.Empty,
+                team = MatchTeam.TeamA,
+                randomPlayerConnected = true
+            });
+
+            return _testRoom;
+        }
+
+        private static void RegisterTestProfile(NetworkConnection ownerConnection, VehicleRuntimeStats stats)
+        {
+            if (!IsConnectionReady(ownerConnection) || stats == null)
+            {
+                return;
+            }
+
+            PlayerProfile profile = ServerPlayerSessions.GetProfile(ownerConnection.ClientId);
+            if (profile == null)
+            {
+                profile = new PlayerProfile
+                {
+                    id = 0,
+                    username = "VehicleTest",
+                    mmr = 1000
+                };
+            }
+
+            profile.activeVehicleId = stats.VehicleId;
+            profile.activeVehicleCode = stats.Code;
+            profile.activeVehicleName = stats.Name;
+            ServerPlayerSessions.SetProfile(ownerConnection, profile);
+        }
+
+        private void ClearTestRoomVehicle()
+        {
+            if (_testRoom == null || _testRoom.players == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _testRoom.players.Count; i++)
+            {
+                LobbyPlayer player = _testRoom.players[i];
+                if (player != null)
+                {
+                    player.playerRoot = null;
+                }
+            }
         }
 
         private void DespawnCurrent()
@@ -439,6 +854,7 @@ namespace Game.Scripts.Testing
             }
 
             _spawnedVehicle = null;
+            ClearTestRoomVehicle();
             SetTestCursorMode(true);
         }
 
@@ -697,12 +1113,22 @@ namespace Game.Scripts.Testing
             }
 
             await WaitForClientStartedAsync();
+            await WaitForLocalOwnerConnectionAsync();
 
             _startedNetwork = IsNetworkReady();
             _networkStartInProgress = false;
 
             if (_startedNetwork)
             {
+                NetworkConnection ownerConnection = GetLocalOwnerConnection();
+                if (!EnsureLocalConnectionInTestScene(ownerConnection))
+                {
+                    StopStartedTestNetwork();
+                    _startedNetwork = false;
+                    _status = "FishNet host failed: local owner did not enter the test scene.";
+                    return;
+                }
+
                 _status = "Local FishNet host ready on UDP " + networkManager.TransportManager.Transport.GetPort() + ".";
             }
             else
@@ -818,6 +1244,31 @@ namespace Game.Scripts.Testing
             }
         }
 
+        private async UniTask WaitForLocalOwnerConnectionAsync()
+        {
+            float endTime = Time.realtimeSinceStartup + 5f;
+            while (!IsConnectionReady(GetLocalOwnerConnection()) && Time.realtimeSinceStartup < endTime)
+            {
+                await UniTask.Yield();
+            }
+        }
+
+        private async UniTask<bool> WaitForNetworkReadyAsync(float timeout)
+        {
+            float endTime = Time.realtimeSinceStartup + timeout;
+            while (Time.realtimeSinceStartup < endTime)
+            {
+                if (IsNetworkReady())
+                {
+                    return true;
+                }
+
+                await UniTask.Yield();
+            }
+
+            return IsNetworkReady();
+        }
+
         private void OnServerConnectionState(ServerConnectionStateArgs args)
         {
             _serverState = args.ConnectionState;
@@ -838,7 +1289,62 @@ namespace Game.Scripts.Testing
             return networkManager.IsServerStarted
                    && networkManager.IsClientStarted
                    && _serverState == LocalConnectionState.Started
-                   && _clientState == LocalConnectionState.Started;
+                   && _clientState == LocalConnectionState.Started
+                   && IsConnectionReady(GetLocalOwnerConnection());
+        }
+
+        private NetworkConnection GetLocalOwnerConnection()
+        {
+            if (networkManager == null || networkManager.ClientManager == null || networkManager.ServerManager == null)
+            {
+                return null;
+            }
+
+            NetworkConnection clientConnection = networkManager.ClientManager.Connection;
+            if (!IsConnectionReady(clientConnection))
+            {
+                return null;
+            }
+
+            if (networkManager.ServerManager.Clients == null)
+            {
+                return null;
+            }
+
+            if (networkManager.ServerManager.Clients.TryGetValue(clientConnection.ClientId, out NetworkConnection serverConnection)
+                && IsConnectionReady(serverConnection))
+            {
+                return serverConnection;
+            }
+
+            return null;
+        }
+
+        private bool EnsureLocalConnectionInTestScene(NetworkConnection connection)
+        {
+            if (!IsConnectionReady(connection) || networkManager == null || networkManager.SceneManager == null)
+            {
+                return false;
+            }
+
+            Scene scene = gameObject.scene;
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return false;
+            }
+
+            if (connection.Scenes != null && connection.Scenes.Contains(scene))
+            {
+                return true;
+            }
+
+            networkManager.SceneManager.AddConnectionToScene(connection, scene);
+            return connection.Scenes != null && connection.Scenes.Contains(scene);
+        }
+
+        private static bool IsConnectionReady(NetworkConnection connection)
+        {
+            return connection != null && connection.IsValid;
         }
 
         private Vector3 GetSpawnPosition()
@@ -860,7 +1366,6 @@ namespace Game.Scripts.Testing
 
             return Quaternion.Euler(spawnRotationEuler);
         }
-
         private bool TryGetGroundHeight(Vector3 position, out float groundY)
         {
             Vector3 rayStart = position + Vector3.up * Mathf.Max(0f, groundRayStartHeight);

@@ -11,10 +11,14 @@ namespace Game.Scripts.UI.Lobby
 {
     public class GameResultUI : MonoBehaviour
     {
+        private const int ResultDisplayDelayMilliseconds = 2000;
+        private const int QueuedResultDisplayDelayMilliseconds = 350;
+
         private static GameResultUI _in;
         private static readonly Queue<ResultData> PendingResults = new Queue<ResultData>();
         private static ResultData? _current;
         private static bool _waitingForMainMenu;
+        private static bool _showNextScheduled;
 
         [SerializeField] private TMP_Text summaryText;
         [SerializeField] private Button okButton;
@@ -37,6 +41,24 @@ namespace Game.Scripts.UI.Lobby
         {
             _in = this;
             EnsureWired();
+        }
+
+        private void OnDestroy()
+        {
+            if (_in == this)
+            {
+                _in = null;
+            }
+
+            _showNextScheduled = false;
+            _waitingForMainMenu = false;
+
+            if (okButton != null)
+            {
+                okButton.onClick.RemoveListener(Close);
+            }
+
+            MenuManager.OnEnable -= HandleMenuOpened;
         }
 
         public static void Enqueue(string roomId, string result, int kills, int damage, int xpEarned, int bolts, int freeXp, int mmrDelta)
@@ -65,7 +87,7 @@ namespace Game.Scripts.UI.Lobby
                 return;
             }
 
-            ui.TryShowNext();
+            ui.ScheduleShowNext(ResultDisplayDelayMilliseconds);
         }
 
         private static GameResultUI GetOrCreate()
@@ -152,7 +174,7 @@ namespace Game.Scripts.UI.Lobby
             GameResultUI ui = GetOrCreate();
             if (ui != null)
             {
-                ui.TryShowNext();
+                ui.ScheduleShowNext(ResultDisplayDelayMilliseconds);
             }
         }
 
@@ -163,9 +185,14 @@ namespace Game.Scripts.UI.Lobby
                 return;
             }
 
-            if (PendingResults.Count == 0
-                || (MenuManager.CurrentType != MenuType.MainMenu && MenuManager.CurrentType != MenuType.GameResult))
+            if (PendingResults.Count == 0)
             {
+                return;
+            }
+
+            if (MenuManager.CurrentType != MenuType.MainMenu && MenuManager.CurrentType != MenuType.GameResult)
+            {
+                WaitForMainMenu();
                 return;
             }
 
@@ -205,16 +232,32 @@ namespace Game.Scripts.UI.Lobby
             if (PendingResults.Count > 0)
             {
                 MenuManager.CloseMenu(MenuType.GameResult);
-                ShowNextDelayed().Forget();
+                ScheduleShowNext(QueuedResultDisplayDelayMilliseconds);
                 return;
             }
 
             MenuManager.OpenMenu(MenuType.MainMenu);
         }
 
-        private async UniTaskVoid ShowNextDelayed()
+        private void ScheduleShowNext(int delayMilliseconds)
         {
-            await UniTask.Delay(350);
+            if (_showNextScheduled)
+            {
+                return;
+            }
+
+            _showNextScheduled = true;
+            ShowNextDelayed(delayMilliseconds).Forget();
+        }
+
+        private async UniTaskVoid ShowNextDelayed(int delayMilliseconds)
+        {
+            await UniTask.Delay(
+                delayMilliseconds,
+                DelayType.UnscaledDeltaTime,
+                cancellationToken: this.GetCancellationTokenOnDestroy());
+
+            _showNextScheduled = false;
             TryShowNext();
         }
 

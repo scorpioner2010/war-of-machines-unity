@@ -19,6 +19,13 @@ namespace Game.Scripts.Gameplay.Robots
         public Projectile projectilePrefab;
         public Transform muzzleTransform;
 
+        [Header("Runtime pooling")]
+        [SerializeField] private bool prewarmProjectilePools = true;
+        [SerializeField, Min(0)] private int projectilePoolPrewarmCount = 16;
+        [SerializeField, Min(1)] private int projectilePoolMaxInactive = 64;
+        [SerializeField, Min(0)] private int impactFxPoolPrewarmCount = 16;
+        [SerializeField, Min(1)] private int impactFxPoolMaxInactive = 64;
+
         public GunDispersionSettings dispersion = new GunDispersionSettings();
 
         public float projectileSpeed = VehicleRuntimeStats.DefaultShellSpeed;
@@ -82,6 +89,7 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly GunDispersionModel _serverDispersion = new GunDispersionModel();
         private readonly SyncVar<float> _serverDispersionDeg = new();
         private bool _testAccuracyDebugMode;
+        private bool _projectilePoolsPrepared;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -144,6 +152,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
         {
+            if (!context.IsMenu)
+            {
+                PrepareProjectilePools();
+            }
+
             if (context.IsServer)
             {
                 InitServerDispersion();
@@ -257,7 +270,10 @@ namespace Game.Scripts.Gameplay.Robots
                 DispersedShotRay predictedRay = BuildDispersedShotRay(startPos, baseAimPoint, shotId, predictedDispersionDeg, GetGlobalDispersion());
 
                 Projectile predicted = SpawnLocal(startPos, predictedRay.TargetPoint, 0f, false, false, Vector3.up, true);
-                _predictedProjectiles[shotId] = predicted;
+                if (predicted != null)
+                {
+                    _predictedProjectiles[shotId] = predicted;
+                }
                 AddOwnerShotBloom();
 
                 if (!IsSpawned)
@@ -313,6 +329,7 @@ namespace Game.Scripts.Gameplay.Robots
             System.Action onAuthoritativeImpact = null,
             bool configureResolvedTarget = true)
         {
+            PrepareProjectilePools();
             ProjectileVisualSpawnParams spawnParams = CreateProjectileSpawnParams(
                 startPos,
                 aimPoint,
@@ -362,6 +379,39 @@ namespace Game.Scripts.Gameplay.Robots
             };
 
             return spawnParams;
+        }
+
+        private void PrepareProjectilePools()
+        {
+            if (_projectilePoolsPrepared)
+            {
+                return;
+            }
+
+            _projectilePoolsPrepared = true;
+            if (projectilePrefab == null)
+            {
+                return;
+            }
+
+            int projectileMaxInactive = Mathf.Max(1, projectilePoolMaxInactive);
+            ProjectileRuntimePool.ConfigureProjectilePool(projectilePrefab, projectileMaxInactive);
+            if (prewarmProjectilePools && projectilePoolPrewarmCount > 0)
+            {
+                ProjectileRuntimePool.PrewarmProjectile(projectilePrefab, projectilePoolPrewarmCount, projectileMaxInactive);
+            }
+
+            if (projectilePrefab.explosionFX == null)
+            {
+                return;
+            }
+
+            int impactFxMaxInactive = Mathf.Max(1, impactFxPoolMaxInactive);
+            ProjectileRuntimePool.ConfigureImpactFxPool(projectilePrefab.explosionFX, impactFxMaxInactive);
+            if (prewarmProjectilePools && impactFxPoolPrewarmCount > 0)
+            {
+                ProjectileRuntimePool.PrewarmImpactFx(projectilePrefab.explosionFX, impactFxPoolPrewarmCount, impactFxMaxInactive);
+            }
         }
 
         [ServerRpc(RequireOwnership = true)]
@@ -878,7 +928,10 @@ namespace Game.Scripts.Gameplay.Robots
                 false,
                 Vector3.up
             );
-            _observedProjectiles[shotId] = projectile;
+            if (projectile != null)
+            {
+                _observedProjectiles[shotId] = projectile;
+            }
         }
 
         [TargetRpc]
