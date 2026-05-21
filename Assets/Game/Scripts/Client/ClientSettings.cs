@@ -348,6 +348,163 @@ namespace Game.Scripts.Client
     }
 
     [System.Serializable]
+    public class ClientProjectileVisualSettings
+    {
+        private static readonly ClientProjectileVisualSettings DefaultSettings = new ClientProjectileVisualSettings();
+
+        [Header("Projectile references")]
+        [Tooltip("Client-only projectile prefab override. Leave empty to use the weapon prefab.")]
+        public Projectile projectilePrefab;
+        [Tooltip("Material applied to the projectile mesh on the client.")]
+        public Material projectileMaterial;
+        [Tooltip("Material used by the projectile tracer trail.")]
+        public Material tracerMaterial;
+        [Tooltip("One-shot fire effect spawned at the muzzle.")]
+        public GameObject muzzleFlashPrefab;
+        [Tooltip("One-shot smoke effect spawned at the muzzle.")]
+        public GameObject muzzleSmokePrefab;
+
+        [Header("Projectile glow")]
+        public bool overrideProjectileMaterial = true;
+        [ColorUsage(false, true)] public Color projectileBaseColor = new Color(1f, 0.58f, 0.16f, 1f);
+        [ColorUsage(false, true)] public Color projectileEmissionColor = new Color(1f, 0.38f, 0.06f, 1f);
+        [Min(0f)] public float projectileEmissionIntensity = 4f;
+
+        [Header("Tracer")]
+        public bool tracerEnabled = true;
+        [Min(0.01f)] public float tracerLifetime = 0.35f;
+        [Min(0.001f)] public float tracerStartWidth = 0.18f;
+        [Min(0f)] public float tracerEndWidth = 0.02f;
+        [Min(0.001f)] public float tracerMinVertexDistance = 0.08f;
+        [Range(0, 8)] public int tracerCornerVertices = 2;
+        [Range(0, 8)] public int tracerCapVertices = 1;
+        [ColorUsage(false, true)] public Color tracerHeadColor = new Color(1f, 0.72f, 0.2f, 0.95f);
+        [ColorUsage(false, true)] public Color tracerTailColor = new Color(1f, 0.18f, 0.02f, 0f);
+
+        [Header("Muzzle FX")]
+        public bool muzzleFxEnabled = true;
+        [Min(0f)] public float muzzleForwardOffset = 0.25f;
+        [Min(0.01f)] public float muzzleFlashScale = 0.55f;
+        [Min(0.01f)] public float muzzleSmokeScale = 0.65f;
+
+        [Header("Visual pools")]
+        [Min(0)] public int clientProjectilePoolPrewarmCount = 16;
+        [Min(1)] public int clientProjectilePoolMaxInactive = 64;
+        [Min(0)] public int clientImpactFxPoolPrewarmCount = 16;
+        [Min(1)] public int clientImpactFxPoolMaxInactive = 64;
+        [Min(0)] public int muzzleFxPoolPrewarmCount = 8;
+        [Min(1)] public int muzzleFxPoolMaxInactive = 32;
+
+        public static ClientProjectileVisualSettings Default
+        {
+            get
+            {
+                return DefaultSettings;
+            }
+        }
+
+        public void Validate()
+        {
+            projectileBaseColor = ClampHdrColor(projectileBaseColor, Default.projectileBaseColor);
+            projectileEmissionColor = ClampHdrColor(projectileEmissionColor, Default.projectileEmissionColor);
+            projectileEmissionIntensity = ClampFinite(projectileEmissionIntensity, 0f, Default.projectileEmissionIntensity);
+            tracerLifetime = ClampFinite(tracerLifetime, 0.01f, Default.tracerLifetime);
+            tracerStartWidth = ClampFinite(tracerStartWidth, 0.001f, Default.tracerStartWidth);
+            tracerEndWidth = ClampFinite(tracerEndWidth, 0f, Default.tracerEndWidth);
+            if (tracerEndWidth > tracerStartWidth)
+            {
+                tracerEndWidth = tracerStartWidth;
+            }
+
+            tracerMinVertexDistance = ClampFinite(tracerMinVertexDistance, 0.001f, Default.tracerMinVertexDistance);
+            tracerCornerVertices = Mathf.Clamp(tracerCornerVertices, 0, 8);
+            tracerCapVertices = Mathf.Clamp(tracerCapVertices, 0, 8);
+            tracerHeadColor = ClampHdrColor(tracerHeadColor, Default.tracerHeadColor);
+            tracerTailColor = ClampHdrColor(tracerTailColor, Default.tracerTailColor);
+            muzzleForwardOffset = ClampFinite(muzzleForwardOffset, 0f, Default.muzzleForwardOffset);
+            muzzleFlashScale = ClampFinite(muzzleFlashScale, 0.01f, Default.muzzleFlashScale);
+            muzzleSmokeScale = ClampFinite(muzzleSmokeScale, 0.01f, Default.muzzleSmokeScale);
+            clientProjectilePoolPrewarmCount = Mathf.Max(0, clientProjectilePoolPrewarmCount);
+            clientProjectilePoolMaxInactive = Mathf.Max(1, clientProjectilePoolMaxInactive);
+            clientImpactFxPoolPrewarmCount = Mathf.Max(0, clientImpactFxPoolPrewarmCount);
+            clientImpactFxPoolMaxInactive = Mathf.Max(1, clientImpactFxPoolMaxInactive);
+            muzzleFxPoolPrewarmCount = Mathf.Max(0, muzzleFxPoolPrewarmCount);
+            muzzleFxPoolMaxInactive = Mathf.Max(1, muzzleFxPoolMaxInactive);
+        }
+
+        public void CopyFrom(ClientProjectileVisualSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            projectilePrefab = source.projectilePrefab;
+            projectileMaterial = source.projectileMaterial;
+            tracerMaterial = source.tracerMaterial;
+            muzzleFlashPrefab = source.muzzleFlashPrefab;
+            muzzleSmokePrefab = source.muzzleSmokePrefab;
+            overrideProjectileMaterial = source.overrideProjectileMaterial;
+            projectileBaseColor = source.projectileBaseColor;
+            projectileEmissionColor = source.projectileEmissionColor;
+            projectileEmissionIntensity = source.projectileEmissionIntensity;
+            tracerEnabled = source.tracerEnabled;
+            tracerLifetime = source.tracerLifetime;
+            tracerStartWidth = source.tracerStartWidth;
+            tracerEndWidth = source.tracerEndWidth;
+            tracerMinVertexDistance = source.tracerMinVertexDistance;
+            tracerCornerVertices = source.tracerCornerVertices;
+            tracerCapVertices = source.tracerCapVertices;
+            tracerHeadColor = source.tracerHeadColor;
+            tracerTailColor = source.tracerTailColor;
+            muzzleFxEnabled = source.muzzleFxEnabled;
+            muzzleForwardOffset = source.muzzleForwardOffset;
+            muzzleFlashScale = source.muzzleFlashScale;
+            muzzleSmokeScale = source.muzzleSmokeScale;
+            clientProjectilePoolPrewarmCount = source.clientProjectilePoolPrewarmCount;
+            clientProjectilePoolMaxInactive = source.clientProjectilePoolMaxInactive;
+            clientImpactFxPoolPrewarmCount = source.clientImpactFxPoolPrewarmCount;
+            clientImpactFxPoolMaxInactive = source.clientImpactFxPoolMaxInactive;
+            muzzleFxPoolPrewarmCount = source.muzzleFxPoolPrewarmCount;
+            muzzleFxPoolMaxInactive = source.muzzleFxPoolMaxInactive;
+        }
+
+        private static Color ClampHdrColor(Color value, Color fallback)
+        {
+            if (!IsFinite(value.r) || !IsFinite(value.g) || !IsFinite(value.b) || !IsFinite(value.a))
+            {
+                return fallback;
+            }
+
+            return new Color(
+                Mathf.Max(0f, value.r),
+                Mathf.Max(0f, value.g),
+                Mathf.Max(0f, value.b),
+                Mathf.Clamp01(value.a));
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+    }
+
+    [System.Serializable]
     public class ClientFramePacingSettings
     {
         public const int MinTargetFrameRate = 60;
@@ -453,6 +610,9 @@ namespace Game.Scripts.Client
         [Tooltip("Client frame pacing settings for production client builds.")]
         public ClientFramePacingSettings framePacing = new ClientFramePacingSettings();
 
+        [Tooltip("Client-only projectile, tracer and muzzle visual settings. The server does not read or synchronize these.")]
+        public ClientProjectileVisualSettings projectileVisuals = new ClientProjectileVisualSettings();
+
         [Tooltip("Локальні клієнтські runtime-налаштування HUD, карти та автоприцілу. Сервер їх не читає і не синхронізує.")]
         public GameplayRuntimeSettings gameplayRuntime = new GameplayRuntimeSettings();
 
@@ -498,6 +658,17 @@ namespace Game.Scripts.Client
             return In.framePacing;
         }
 
+        public static ClientProjectileVisualSettings GetProjectileVisuals()
+        {
+            if (In == null || In.projectileVisuals == null)
+            {
+                return ClientProjectileVisualSettings.Default;
+            }
+
+            In.projectileVisuals.Validate();
+            return In.projectileVisuals;
+        }
+
         public static void ApplyFramePacing(int targetFrameRate, bool verticalSyncEnabled)
         {
             if (In != null)
@@ -532,6 +703,11 @@ namespace Game.Scripts.Client
                 framePacing.Validate();
             }
 
+            if (projectileVisuals != null)
+            {
+                projectileVisuals.Validate();
+            }
+
             if (gameplayRuntime != null)
             {
                 gameplayRuntime.Validate();
@@ -544,6 +720,14 @@ namespace Game.Scripts.Client
         public static GameplayRuntimeSettings Get()
         {
             return ClientSettings.GetGameplayRuntime();
+        }
+    }
+
+    public static class ClientProjectileVisualSettingsProvider
+    {
+        public static ClientProjectileVisualSettings Get()
+        {
+            return ClientSettings.GetProjectileVisuals();
         }
     }
 }

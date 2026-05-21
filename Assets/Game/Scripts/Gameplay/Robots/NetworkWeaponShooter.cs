@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Server;
@@ -90,6 +91,7 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly SyncVar<float> _serverDispersionDeg = new();
         private bool _testAccuracyDebugMode;
         private bool _projectilePoolsPrepared;
+        private bool _clientVisualPoolsPrepared;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -274,6 +276,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     _predictedProjectiles[shotId] = predicted;
                 }
+                SpawnMuzzleFx(startPos, predictedRay.TargetPoint);
                 AddOwnerShotBloom();
 
                 if (!IsSpawned)
@@ -354,9 +357,11 @@ namespace Game.Scripts.Gameplay.Robots
             System.Action onAuthoritativeImpact,
             bool configureResolvedTarget)
         {
+            ClientProjectileVisualSettings visualSettings = visible ? GetClientProjectileVisualSettings() : null;
+            Projectile spawnPrefab = GetProjectilePrefabForSpawn(authoritative, visualSettings);
             ProjectileVisualSpawnParams spawnParams = new ProjectileVisualSpawnParams
             {
-                ProjectilePrefab = projectilePrefab,
+                ProjectilePrefab = spawnPrefab,
                 HitMask = hitMask,
                 Damage = Mathf.RoundToInt(Mathf.Max(0f, damageMax)),
                 StartPosition = startPos,
@@ -375,10 +380,31 @@ namespace Game.Scripts.Gameplay.Robots
                 Visible = visible,
                 OnAuthoritativeImpact = onAuthoritativeImpact,
                 ConfigureResolvedTarget = configureResolvedTarget,
-                MaxShotDistance = GetMaxShotDistance()
+                MaxShotDistance = GetMaxShotDistance(),
+                VisualSettings = visualSettings
             };
 
             return spawnParams;
+        }
+
+        private Projectile GetProjectilePrefabForSpawn(bool authoritative, ClientProjectileVisualSettings visualSettings)
+        {
+            if (!authoritative && visualSettings != null && visualSettings.projectilePrefab != null)
+            {
+                return visualSettings.projectilePrefab;
+            }
+
+            return projectilePrefab;
+        }
+
+        private ClientProjectileVisualSettings GetClientProjectileVisualSettings()
+        {
+            if (ClientSettings.In == null)
+            {
+                return null;
+            }
+
+            return ClientSettings.GetProjectileVisuals();
         }
 
         private void PrepareProjectilePools()
@@ -391,6 +417,7 @@ namespace Game.Scripts.Gameplay.Robots
             _projectilePoolsPrepared = true;
             if (projectilePrefab == null)
             {
+                PrepareClientVisualPools();
                 return;
             }
 
@@ -401,16 +428,76 @@ namespace Game.Scripts.Gameplay.Robots
                 ProjectileRuntimePool.PrewarmProjectile(projectilePrefab, projectilePoolPrewarmCount, projectileMaxInactive);
             }
 
-            if (projectilePrefab.explosionFX == null)
+            if (projectilePrefab.explosionFX != null)
+            {
+                int impactFxMaxInactive = Mathf.Max(1, impactFxPoolMaxInactive);
+                ProjectileRuntimePool.ConfigureImpactFxPool(projectilePrefab.explosionFX, impactFxMaxInactive);
+                if (prewarmProjectilePools && impactFxPoolPrewarmCount > 0)
+                {
+                    ProjectileRuntimePool.PrewarmImpactFx(projectilePrefab.explosionFX, impactFxPoolPrewarmCount, impactFxMaxInactive);
+                }
+            }
+
+            PrepareClientVisualPools();
+        }
+
+        private void PrepareClientVisualPools()
+        {
+            if (_clientVisualPoolsPrepared)
             {
                 return;
             }
 
-            int impactFxMaxInactive = Mathf.Max(1, impactFxPoolMaxInactive);
-            ProjectileRuntimePool.ConfigureImpactFxPool(projectilePrefab.explosionFX, impactFxMaxInactive);
-            if (prewarmProjectilePools && impactFxPoolPrewarmCount > 0)
+            ClientProjectileVisualSettings visualSettings = GetClientProjectileVisualSettings();
+            if (visualSettings == null)
             {
-                ProjectileRuntimePool.PrewarmImpactFx(projectilePrefab.explosionFX, impactFxPoolPrewarmCount, impactFxMaxInactive);
+                return;
+            }
+
+            _clientVisualPoolsPrepared = true;
+            Projectile visualProjectilePrefab = visualSettings.projectilePrefab != null ? visualSettings.projectilePrefab : projectilePrefab;
+            if (visualProjectilePrefab != null)
+            {
+                int visualProjectileMaxInactive = Mathf.Max(1, visualSettings.clientProjectilePoolMaxInactive);
+                ProjectileRuntimePool.ConfigureProjectilePool(visualProjectilePrefab, visualProjectileMaxInactive);
+                if (prewarmProjectilePools && visualSettings.clientProjectilePoolPrewarmCount > 0)
+                {
+                    ProjectileRuntimePool.PrewarmProjectile(
+                        visualProjectilePrefab,
+                        visualSettings.clientProjectilePoolPrewarmCount,
+                        visualProjectileMaxInactive);
+                }
+
+                if (visualProjectilePrefab.explosionFX != null)
+                {
+                    int visualImpactMaxInactive = Mathf.Max(1, visualSettings.clientImpactFxPoolMaxInactive);
+                    ProjectileRuntimePool.ConfigureImpactFxPool(visualProjectilePrefab.explosionFX, visualImpactMaxInactive);
+                    if (prewarmProjectilePools && visualSettings.clientImpactFxPoolPrewarmCount > 0)
+                    {
+                        ProjectileRuntimePool.PrewarmImpactFx(
+                            visualProjectilePrefab.explosionFX,
+                            visualSettings.clientImpactFxPoolPrewarmCount,
+                            visualImpactMaxInactive);
+                    }
+                }
+            }
+
+            PrepareMuzzleFxPool(visualSettings.muzzleFlashPrefab, visualSettings);
+            PrepareMuzzleFxPool(visualSettings.muzzleSmokePrefab, visualSettings);
+        }
+
+        private void PrepareMuzzleFxPool(GameObject prefab, ClientProjectileVisualSettings visualSettings)
+        {
+            if (prefab == null || visualSettings == null)
+            {
+                return;
+            }
+
+            int maxInactive = Mathf.Max(1, visualSettings.muzzleFxPoolMaxInactive);
+            ProjectileRuntimePool.ConfigureVisualFxPool(prefab, maxInactive);
+            if (prewarmProjectilePools && visualSettings.muzzleFxPoolPrewarmCount > 0)
+            {
+                ProjectileRuntimePool.PrewarmVisualFx(prefab, visualSettings.muzzleFxPoolPrewarmCount, maxInactive);
             }
         }
 
@@ -912,6 +999,8 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            SpawnMuzzleFx(startPos, targetPoint);
+
             if (_observedResolvedHitShots.Remove(shotId))
             {
                 return;
@@ -1063,6 +1152,48 @@ namespace Game.Scripts.Gameplay.Robots
         private void SpawnImpactFx(Vector3 impactPoint, Vector3 impactNormal)
         {
             ProjectileVisualSpawner.SpawnImpactFx(projectilePrefab, impactPoint, impactNormal);
+        }
+
+        private void SpawnMuzzleFx(Vector3 startPos, Vector3 targetPoint)
+        {
+            ClientProjectileVisualSettings visualSettings = GetClientProjectileVisualSettings();
+            if (visualSettings == null || !visualSettings.muzzleFxEnabled)
+            {
+                return;
+            }
+
+            if (visualSettings.muzzleFlashPrefab == null && visualSettings.muzzleSmokePrefab == null)
+            {
+                return;
+            }
+
+            PrepareClientVisualPools();
+            Vector3 direction = targetPoint - startPos;
+            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.000001f)
+            {
+                direction = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
+            }
+
+            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.000001f)
+            {
+                direction = Vector3.forward;
+            }
+
+            direction.Normalize();
+            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
+            Vector3 position = startPos + direction * visualSettings.muzzleForwardOffset;
+            SpawnMuzzleFxPrefab(visualSettings.muzzleFlashPrefab, position, rotation, visualSettings.muzzleFlashScale);
+            SpawnMuzzleFxPrefab(visualSettings.muzzleSmokePrefab, position, rotation, visualSettings.muzzleSmokeScale);
+        }
+
+        private static void SpawnMuzzleFxPrefab(GameObject prefab, Vector3 position, Quaternion rotation, float scale)
+        {
+            if (prefab == null)
+            {
+                return;
+            }
+
+            ProjectileRuntimePool.SpawnVisualFx(prefab, position, rotation, scale);
         }
 
         [TargetRpc]

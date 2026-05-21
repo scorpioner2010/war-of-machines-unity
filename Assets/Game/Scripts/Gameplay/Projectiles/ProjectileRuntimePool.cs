@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CartoonFX;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Unity.Profiling;
@@ -46,6 +47,11 @@ public static class ProjectileRuntimePool
         pool.MaxInactive = Mathf.Max(1, maxInactive);
     }
 
+    public static void ConfigureVisualFxPool(GameObject prefab, int maxInactive)
+    {
+        ConfigureImpactFxPool(prefab, maxInactive);
+    }
+
     public static void PrewarmProjectile(Projectile prefab, int count, int maxInactive)
     {
         if (prefab == null || count <= 0)
@@ -81,6 +87,11 @@ public static class ProjectileRuntimePool
             fx.PrepareForPoolRelease();
             pool.Inactive.Push(fx);
         }
+    }
+
+    public static void PrewarmVisualFx(GameObject prefab, int count, int maxInactive)
+    {
+        PrewarmImpactFx(prefab, count, maxInactive);
     }
 
     public static Projectile RentProjectile(Projectile prefab, Vector3 position, Quaternion rotation)
@@ -163,22 +174,22 @@ public static class ProjectileRuntimePool
         using (SpawnImpactFxMarker.Auto())
 #endif
         {
-            ImpactFxPool pool = GetImpactFxPool(prefab);
-            PooledImpactFx fx;
-            if (pool.Inactive.Count > 0)
-            {
-                fx = pool.Inactive.Pop();
-            }
-            else
-            {
-                fx = CreateImpactFxInstance(pool);
-                ImpactFxOverflowInstantiates++;
-            }
+            SpawnVisualFxInternal(prefab, position, rotation, 1f);
+        }
+    }
 
-            Transform fxTransform = fx.transform;
-            fxTransform.SetParent(null, false);
-            fxTransform.SetPositionAndRotation(position, rotation);
-            fx.Play();
+    public static void SpawnVisualFx(GameObject prefab, Vector3 position, Quaternion rotation, float scaleMultiplier)
+    {
+        if (prefab == null)
+        {
+            return;
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        using (SpawnImpactFxMarker.Auto())
+#endif
+        {
+            SpawnVisualFxInternal(prefab, position, rotation, scaleMultiplier);
         }
     }
 
@@ -206,6 +217,32 @@ public static class ProjectileRuntimePool
         fx.transform.SetParent(pool.Root, false);
         pool.Inactive.Push(fx);
         return true;
+    }
+
+    private static void SpawnVisualFxInternal(GameObject prefab, Vector3 position, Quaternion rotation, float scaleMultiplier)
+    {
+        ImpactFxPool pool = GetImpactFxPool(prefab);
+        PooledImpactFx fx;
+        if (pool.Inactive.Count > 0)
+        {
+            fx = pool.Inactive.Pop();
+        }
+        else
+        {
+            fx = CreateImpactFxInstance(pool);
+            ImpactFxOverflowInstantiates++;
+        }
+
+        Transform fxTransform = fx.transform;
+        fxTransform.SetParent(null, false);
+        fxTransform.SetPositionAndRotation(position, rotation);
+        fxTransform.localScale = ScaleVector(pool.DefaultScale, Mathf.Max(0.01f, scaleMultiplier));
+        fx.Play();
+    }
+
+    private static Vector3 ScaleVector(Vector3 value, float scale)
+    {
+        return new Vector3(value.x * scale, value.y * scale, value.z * scale);
     }
 
     private static ProjectilePool GetProjectilePool(Projectile prefab)
@@ -279,6 +316,7 @@ public static class ProjectileRuntimePool
         public readonly GameObject Prefab;
         public readonly Stack<PooledImpactFx> Inactive;
         public readonly Transform Root;
+        public readonly Vector3 DefaultScale;
         public int MaxInactive;
 
         public ImpactFxPool(GameObject prefab, int maxInactive)
@@ -287,6 +325,7 @@ public static class ProjectileRuntimePool
             MaxInactive = Mathf.Max(1, maxInactive);
             Inactive = new Stack<PooledImpactFx>(MaxInactive);
             Root = CreateRoot("ImpactFxPool_" + prefab.name);
+            DefaultScale = prefab.transform.localScale;
         }
     }
 
@@ -302,6 +341,7 @@ public static class ProjectileRuntimePool
 public sealed class PooledImpactFx : MonoBehaviour
 {
     private ParticleSystem[] _particles;
+    private CFXR_Effect[] _cartoonFxEffects;
     private float _fallbackLifetime;
     private float _releaseTime;
     private bool _playing;
@@ -310,6 +350,8 @@ public sealed class PooledImpactFx : MonoBehaviour
     {
         _fallbackLifetime = Mathf.Max(0.1f, fallbackLifetime);
         _particles = GetComponentsInChildren<ParticleSystem>(true);
+        _cartoonFxEffects = GetComponentsInChildren<CFXR_Effect>(true);
+        DisableExternalAutoDestroy();
     }
 
     public void Play()
@@ -319,6 +361,7 @@ public sealed class PooledImpactFx : MonoBehaviour
             Initialize(_fallbackLifetime);
         }
 
+        DisableExternalAutoDestroy();
         if (!gameObject.activeSelf)
         {
             gameObject.SetActive(true);
@@ -337,6 +380,18 @@ public sealed class PooledImpactFx : MonoBehaviour
             lifetime = Mathf.Max(lifetime, main.duration + main.startLifetime.constantMax);
             particle.Clear(true);
             particle.Play(true);
+        }
+
+        if (_cartoonFxEffects != null)
+        {
+            for (int i = 0; i < _cartoonFxEffects.Length; i++)
+            {
+                CFXR_Effect effect = _cartoonFxEffects[i];
+                if (effect != null)
+                {
+                    effect.ResetState();
+                }
+            }
         }
 
         _releaseTime = Time.unscaledTime + lifetime + 0.05f;
@@ -362,6 +417,23 @@ public sealed class PooledImpactFx : MonoBehaviour
         if (gameObject.activeSelf)
         {
             gameObject.SetActive(false);
+        }
+    }
+
+    private void DisableExternalAutoDestroy()
+    {
+        if (_cartoonFxEffects == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _cartoonFxEffects.Length; i++)
+        {
+            CFXR_Effect effect = _cartoonFxEffects[i];
+            if (effect != null)
+            {
+                effect.clearBehavior = CFXR_Effect.ClearBehavior.None;
+            }
         }
     }
 

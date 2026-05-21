@@ -13,7 +13,6 @@ namespace Game.Scripts.AI.WaypointGraph
 
         private readonly List<Vector3> _positions = new List<Vector3>(256);
         private readonly List<List<WaypointGraphEdge>> _neighbors = new List<List<WaypointGraphEdge>>(256);
-        private readonly Dictionary<Transform, int> _nodeByTransform = new Dictionary<Transform, int>(256);
         private int _edgeCount;
         private bool _isBuilt;
 
@@ -102,7 +101,6 @@ namespace Game.Scripts.AI.WaypointGraph
         {
             _positions.Clear();
             _neighbors.Clear();
-            _nodeByTransform.Clear();
             _edgeCount = 0;
             _isBuilt = false;
 
@@ -111,24 +109,21 @@ namespace Game.Scripts.AI.WaypointGraph
                 source = GetComponent<WaypointPointSpawner>();
             }
 
-            if (source == null || source.pointsParent == null)
+            if (source == null || source.WaypointPointCount <= 0)
             {
                 return;
             }
 
-            Transform pointsParent = source.pointsParent;
-            for (int i = 0; i < pointsParent.childCount; i++)
+            int pointCount = source.WaypointPointCount;
+            for (int i = 0; i < pointCount; i++)
             {
-                Transform point = pointsParent.GetChild(i);
-                if (point == null)
+                if (!source.TryGetWaypointPoint(i, out Vector3 pointPosition))
                 {
                     continue;
                 }
 
-                int nodeId = _positions.Count;
-                _positions.Add(point.position);
+                _positions.Add(pointPosition);
                 _neighbors.Add(new List<WaypointGraphEdge>(6));
-                _nodeByTransform[point] = nodeId;
             }
 
             IReadOnlyList<WaypointPointSpawner.WaypointConnection> connections = source.Connections;
@@ -137,25 +132,17 @@ namespace Game.Scripts.AI.WaypointGraph
                 for (int i = 0; i < connections.Count; i++)
                 {
                     WaypointPointSpawner.WaypointConnection connection = connections[i];
-                    if (connection.from == null || connection.to == null)
+                    if (!connection.IsValid(_positions.Count))
                     {
                         continue;
                     }
 
-                    if (!_nodeByTransform.TryGetValue(connection.from, out int fromNodeId))
-                    {
-                        continue;
-                    }
-
-                    if (!_nodeByTransform.TryGetValue(connection.to, out int toNodeId))
-                    {
-                        continue;
-                    }
-
+                    int fromNodeId = connection.fromIndex;
+                    int toNodeId = connection.toIndex;
                     float distance = connection.distance;
                     if (distance <= 0f)
                     {
-                        distance = Vector3.Distance(connection.from.position, connection.to.position);
+                        distance = Vector3.Distance(_positions[fromNodeId], _positions[toNodeId]);
                     }
 
                     AddBidirectionalEdge(fromNodeId, toNodeId, distance);

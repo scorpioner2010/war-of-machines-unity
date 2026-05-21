@@ -1007,6 +1007,40 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9a8d3fce3e54a85a599665c3f5874e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  projectileVisuals:
+    projectilePrefab: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
+      type: 3}
+    projectileMaterial: {fileID: 2100000, guid: f444cc14fffa4044bfbe275d1b0c19e1,
+      type: 2}
+    tracerMaterial: {fileID: 2100000, guid: e09e8aed58e546b29ca4b569e18788c9,
+      type: 2}
+    muzzleFlashPrefab: {fileID: 8194992990867289339, guid: 99bc28c0d45f51c4fbac01080b73edc7,
+      type: 3}
+    muzzleSmokePrefab: {fileID: 725748389856807714, guid: 4bda94453d2ca7444a0fff05b2d425f5,
+      type: 3}
+    overrideProjectileMaterial: 1
+    projectileBaseColor: {r: 1, g: 0.58, b: 0.16, a: 1}
+    projectileEmissionColor: {r: 1, g: 0.38, b: 0.06, a: 1}
+    projectileEmissionIntensity: 4
+    tracerEnabled: 1
+    tracerLifetime: 0.35
+    tracerStartWidth: 0.18
+    tracerEndWidth: 0.02
+    tracerMinVertexDistance: 0.08
+    tracerCornerVertices: 2
+    tracerCapVertices: 1
+    tracerHeadColor: {r: 1, g: 0.72, b: 0.2, a: 0.95}
+    tracerTailColor: {r: 1, g: 0.18, b: 0.02, a: 0}
+    muzzleFxEnabled: 1
+    muzzleForwardOffset: 0.25
+    muzzleFlashScale: 0.55
+    muzzleSmokeScale: 0.65
+    clientProjectilePoolPrewarmCount: 16
+    clientProjectilePoolMaxInactive: 64
+    clientImpactFxPoolPrewarmCount: 16
+    clientImpactFxPoolMaxInactive: 64
+    muzzleFxPoolPrewarmCount: 8
+    muzzleFxPoolMaxInactive: 32
   gameplayRuntime:
     alliedHpColor: {r: 0.1, g: 0.35, b: 1, a: 1}
     enemyHpColor: {r: 1, g: 0.08, b: 0.04, a: 1}

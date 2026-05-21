@@ -1,7 +1,9 @@
 using System;
+using Game.Scripts.Client;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using UnityEngine;
+using UnityEngine.Rendering;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Unity.Profiling;
 #endif
@@ -26,6 +28,9 @@ public class Projectile : MonoBehaviour
     private static int _groundLayer = -1;
     private static int _obstacleLayer = -1;
     private static bool _layersInitialized;
+    private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
+    private static readonly int EmissionColorPropertyId = Shader.PropertyToID("_EmissionColor");
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static readonly ProfilerMarker UpdateMarker = new ProfilerMarker("Projectile.Update");
@@ -85,7 +90,15 @@ public class Projectile : MonoBehaviour
     private Renderer[] _cachedRenderers;
     private ParticleSystem[] _cachedParticles;
     private Collider[] _cachedColliders;
+    private TrailRenderer _trailRenderer;
+    private MaterialPropertyBlock _projectilePropertyBlock;
+    private Gradient _tracerGradient;
+    private GradientColorKey[] _tracerColorKeys;
+    private GradientAlphaKey[] _tracerAlphaKeys;
     private bool _componentCacheBuilt;
+    private bool _tracerConfigured;
+    private bool _waitingForTrailFade;
+    private float _trailReleaseTime;
 
     public Vector3 Origin => _origin;
     public Vector3 InitialVelocity => _initialVelocity;
@@ -109,6 +122,20 @@ public class Projectile : MonoBehaviour
     }
     public bool IsAuthoritative => _authoritative;
 
+    public void ApplyClientVisualSettings(ClientProjectileVisualSettings settings)
+    {
+        if (settings == null)
+        {
+            DisableTracer();
+            return;
+        }
+
+        settings.Validate();
+        EnsureComponentCache();
+        ApplyProjectileMaterial(settings);
+        ConfigureTracer(settings);
+    }
+
     public void SetVisualsEnabled(bool enabled)
     {
         _visualsEnabled = enabled;
@@ -116,9 +143,10 @@ public class Projectile : MonoBehaviour
         EnsureComponentCache();
         for (int i = 0; i < _cachedRenderers.Length; i++)
         {
-            if (_cachedRenderers[i] != null)
+            Renderer cachedRenderer = _cachedRenderers[i];
+            if (cachedRenderer != null && cachedRenderer != _trailRenderer)
             {
-                _cachedRenderers[i].enabled = enabled;
+                cachedRenderer.enabled = enabled;
             }
         }
 
@@ -139,6 +167,143 @@ public class Projectile : MonoBehaviour
                 particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
         }
+
+        SetTracerVisible(enabled && _tracerConfigured);
+    }
+
+    private void ApplyProjectileMaterial(ClientProjectileVisualSettings settings)
+    {
+        if (!settings.overrideProjectileMaterial && settings.projectileMaterial == null)
+        {
+            return;
+        }
+
+        Color emission = settings.projectileEmissionColor * Mathf.Max(0f, settings.projectileEmissionIntensity);
+        emission.a = settings.projectileEmissionColor.a;
+
+        if (_projectilePropertyBlock == null)
+        {
+            _projectilePropertyBlock = new MaterialPropertyBlock();
+        }
+
+        _projectilePropertyBlock.Clear();
+        _projectilePropertyBlock.SetColor(BaseColorPropertyId, settings.projectileBaseColor);
+        _projectilePropertyBlock.SetColor(ColorPropertyId, settings.projectileBaseColor);
+        _projectilePropertyBlock.SetColor(EmissionColorPropertyId, emission);
+
+        for (int i = 0; i < _cachedRenderers.Length; i++)
+        {
+            Renderer cachedRenderer = _cachedRenderers[i];
+            if (cachedRenderer == null || cachedRenderer == _trailRenderer || cachedRenderer is ParticleSystemRenderer)
+            {
+                continue;
+            }
+
+            if (settings.overrideProjectileMaterial && settings.projectileMaterial != null)
+            {
+                cachedRenderer.sharedMaterial = settings.projectileMaterial;
+            }
+
+            cachedRenderer.SetPropertyBlock(_projectilePropertyBlock);
+        }
+    }
+
+    private void ConfigureTracer(ClientProjectileVisualSettings settings)
+    {
+        if (!settings.tracerEnabled)
+        {
+            DisableTracer();
+            return;
+        }
+
+        EnsureTrailRenderer();
+        if (_trailRenderer == null)
+        {
+            _tracerConfigured = false;
+            return;
+        }
+
+        _tracerConfigured = true;
+        _trailRenderer.sharedMaterial = settings.tracerMaterial != null
+            ? settings.tracerMaterial
+            : settings.projectileMaterial;
+        _trailRenderer.time = settings.tracerLifetime;
+        _trailRenderer.startWidth = settings.tracerStartWidth;
+        _trailRenderer.endWidth = settings.tracerEndWidth;
+        _trailRenderer.minVertexDistance = settings.tracerMinVertexDistance;
+        _trailRenderer.numCornerVertices = settings.tracerCornerVertices;
+        _trailRenderer.numCapVertices = settings.tracerCapVertices;
+        _trailRenderer.alignment = LineAlignment.View;
+        _trailRenderer.textureMode = LineTextureMode.Stretch;
+        _trailRenderer.shadowCastingMode = ShadowCastingMode.Off;
+        _trailRenderer.receiveShadows = false;
+        _trailRenderer.generateLightingData = false;
+        _trailRenderer.allowOcclusionWhenDynamic = false;
+        ApplyTracerGradient(settings);
+        SetTracerVisible(_visualsEnabled && _initialized);
+    }
+
+    private void EnsureTrailRenderer()
+    {
+        if (_trailRenderer != null)
+        {
+            return;
+        }
+
+        _trailRenderer = GetComponent<TrailRenderer>();
+        if (_trailRenderer == null)
+        {
+            _trailRenderer = gameObject.AddComponent<TrailRenderer>();
+        }
+
+        _componentCacheBuilt = false;
+        EnsureComponentCache();
+    }
+
+    private void ApplyTracerGradient(ClientProjectileVisualSettings settings)
+    {
+        if (_tracerGradient == null)
+        {
+            _tracerGradient = new Gradient();
+            _tracerColorKeys = new GradientColorKey[2];
+            _tracerAlphaKeys = new GradientAlphaKey[2];
+        }
+
+        _tracerColorKeys[0] = new GradientColorKey(settings.tracerTailColor, 0f);
+        _tracerColorKeys[1] = new GradientColorKey(settings.tracerHeadColor, 1f);
+        _tracerAlphaKeys[0] = new GradientAlphaKey(settings.tracerTailColor.a, 0f);
+        _tracerAlphaKeys[1] = new GradientAlphaKey(settings.tracerHeadColor.a, 1f);
+        _tracerGradient.SetKeys(_tracerColorKeys, _tracerAlphaKeys);
+        _trailRenderer.colorGradient = _tracerGradient;
+    }
+
+    private void SetTracerVisible(bool visible)
+    {
+        if (_trailRenderer == null)
+        {
+            return;
+        }
+
+        bool enabled = visible && _tracerConfigured;
+        _trailRenderer.enabled = enabled;
+        _trailRenderer.emitting = enabled && _initialized && !_waitingForTrailFade;
+        if (!enabled)
+        {
+            _trailRenderer.Clear();
+        }
+    }
+
+    private void DisableTracer()
+    {
+        _tracerConfigured = false;
+        if (_trailRenderer == null)
+        {
+            return;
+        }
+
+        _trailRenderer.emitting = false;
+        _trailRenderer.enabled = false;
+        _trailRenderer.Clear();
     }
 
     public void Init(
@@ -163,6 +328,8 @@ public class Projectile : MonoBehaviour
         _liveCollisionEnabled = false;
         _resolvedTargetHandled = false;
         _hasLastHitPoint = false;
+        _waitingForTrailFade = false;
+        _trailReleaseTime = 0f;
 
         _elapsedTime = authoritative ? 0f : Mathf.Max(0f, passedTime);
         _pendingAuthoritativeCatchupTime = authoritative ? Mathf.Max(0f, passedTime) : 0f;
@@ -176,6 +343,7 @@ public class Projectile : MonoBehaviour
 
         _initialized = true;
         ConfigureScriptedPhysics();
+        ResetTracerForFlight();
     }
 
     public void ReconfigureBallistic(Vector3 initialVelocity, Vector3 gravity)
@@ -255,7 +423,7 @@ public class Projectile : MonoBehaviour
         transform.position = impactPoint;
         DrawDebugHit(impactPoint, _lastHitNormal);
         Explode(impactPoint, _lastHitNormal);
-        ReleaseOrDestroy();
+        CompleteFlight();
     }
 
     public void ConfigureResolvedMiss(Vector3 targetPoint, Action onAuthoritativeMiss = null)
@@ -307,6 +475,16 @@ public class Projectile : MonoBehaviour
 #endif
         using (ProfileScope.Measure(_authoritative ? "Server.Projectile.Update" : "Client.Projectile.Update", _authoritative ? DiagnosticsCategories.Physics : DiagnosticsCategories.Client))
         {
+            if (_waitingForTrailFade)
+            {
+                if (Time.time >= _trailReleaseTime)
+                {
+                    ReleaseOrDestroy();
+                }
+
+                return;
+            }
+
             if (!_initialized)
             {
                 return;
@@ -384,7 +562,7 @@ public class Projectile : MonoBehaviour
 
         DrawDebugHit(hit.point, _lastHitNormal);
         Explode(hit.point, _lastHitNormal);
-        ReleaseOrDestroy();
+        CompleteFlight();
     }
 
     private bool HasExceededLimits()
@@ -566,7 +744,62 @@ public class Projectile : MonoBehaviour
 
     private void DestroyWithoutExplosion()
     {
+        CompleteFlight();
+    }
+
+    private void CompleteFlight()
+    {
+        _initialized = false;
+        _liveCollisionEnabled = false;
+        _pendingAuthoritativeCatchupTime = 0f;
+
+        if (BeginTrailFade())
+        {
+            return;
+        }
+
         ReleaseOrDestroy();
+    }
+
+    private bool BeginTrailFade()
+    {
+        if (!_visualsEnabled || !_tracerConfigured || _trailRenderer == null || !_trailRenderer.enabled || _trailRenderer.time <= 0.01f)
+        {
+            return false;
+        }
+
+        _trailRenderer.emitting = false;
+        _waitingForTrailFade = true;
+        _trailReleaseTime = Time.time + _trailRenderer.time + 0.02f;
+        HideNonTracerVisuals();
+        return true;
+    }
+
+    private void HideNonTracerVisuals()
+    {
+        EnsureComponentCache();
+        for (int i = 0; i < _cachedRenderers.Length; i++)
+        {
+            Renderer cachedRenderer = _cachedRenderers[i];
+            if (cachedRenderer != null && cachedRenderer != _trailRenderer)
+            {
+                cachedRenderer.enabled = false;
+            }
+        }
+
+        StopCachedParticles();
+        ConfigureScriptedPhysics();
+    }
+
+    private void ResetTracerForFlight()
+    {
+        if (_trailRenderer == null)
+        {
+            return;
+        }
+
+        _trailRenderer.Clear();
+        SetTracerVisible(_visualsEnabled && _tracerConfigured);
     }
 
     internal void PrepareForPoolRelease()
@@ -578,10 +811,13 @@ public class Projectile : MonoBehaviour
         _resolvedTargetHandled = false;
         _hasLastHitPoint = false;
         _pendingAuthoritativeCatchupTime = 0f;
+        _waitingForTrailFade = false;
+        _trailReleaseTime = 0f;
         _ignoredRoot = null;
         _onAuthoritativeLiveHit = null;
         _onAuthoritativeLiveMiss = null;
 
+        DisableTracer();
         StopCachedParticles();
         ConfigureScriptedPhysics();
 

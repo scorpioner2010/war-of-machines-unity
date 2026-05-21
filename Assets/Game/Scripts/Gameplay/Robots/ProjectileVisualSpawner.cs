@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Client;
 using Game.Scripts.Diagnostics;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -29,6 +30,7 @@ namespace Game.Scripts.Gameplay.Robots
         public Action OnAuthoritativeImpact;
         public bool ConfigureResolvedTarget;
         public float MaxShotDistance;
+        public ClientProjectileVisualSettings VisualSettings;
     }
 
     public static class ProjectileVisualSpawner
@@ -56,6 +58,7 @@ namespace Game.Scripts.Gameplay.Robots
 
                 projectile.hitMask = spawnParams.HitMask;
                 projectile.damage = spawnParams.Damage;
+                projectile.ApplyClientVisualSettings(spawnParams.VisualSettings);
 
                 Vector3 initialVelocity = BuildInitialVelocity(
                     spawnParams,
