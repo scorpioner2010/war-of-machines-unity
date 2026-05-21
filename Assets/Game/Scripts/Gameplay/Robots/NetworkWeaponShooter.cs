@@ -204,11 +204,11 @@ namespace Game.Scripts.Gameplay.Robots
 
                     if (_testAccuracyDebugMode)
                     {
-                        _ownerDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: true);
+                        _ownerDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: false);
                     }
                     else
                     {
-                        _ownerDispersion.Tick(vehicleRoot, dispersion, GetGlobalDispersion(), Time.deltaTime, includeCameraAimMotion: true);
+                        _ownerDispersion.Tick(vehicleRoot, dispersion, GetGlobalDispersion(), Time.deltaTime, includeCameraAimMotion: false);
                     }
                     ApplyCrosshairDispersion();
                 }
@@ -260,7 +260,7 @@ namespace Game.Scripts.Gameplay.Robots
                 float predictedDispersionDeg;
                 if (_testAccuracyDebugMode)
                 {
-                    _ownerDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: true);
+                    _ownerDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: false);
                     predictedDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
                 }
                 else

@@ -322,18 +322,6 @@ public class WaypointPointSpawner : MonoBehaviour
 #endif
     }
 
-    [Button("Import Legacy Cubes To Points")]
-    public void ImportLegacyCubesToPoints()
-    {
-#if UNITY_EDITOR
-        EnsureLists();
-        int imported = ImportLegacyPointObjects(true);
-        RemoveInvalidConnections();
-        Debug.Log("[WaypointPointSpawner] Imported " + imported + " legacy point objects to logical waypoint points.");
-        EditorUtility.SetDirty(this);
-#endif
-    }
-
     [Button("Clear Connections")]
     public void ClearConnectionsButton()
     {

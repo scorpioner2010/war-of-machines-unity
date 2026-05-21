@@ -58,7 +58,10 @@ namespace Game.Scripts.Gameplay.Robots
 
                 projectile.hitMask = spawnParams.HitMask;
                 projectile.damage = spawnParams.Damage;
-                projectile.ApplyClientVisualSettings(spawnParams.VisualSettings);
+                if (spawnParams.Visible && !spawnParams.Authoritative)
+                {
+                    projectile.ApplyClientVisualSettings(spawnParams.VisualSettings);
+                }
 
                 Vector3 initialVelocity = BuildInitialVelocity(
                     spawnParams,

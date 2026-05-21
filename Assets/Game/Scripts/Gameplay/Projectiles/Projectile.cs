@@ -13,6 +13,129 @@ public interface IDamageable
     void ApplyDamage(int amount, Vector3 hitPoint, Vector3 hitNormal);
 }
 
+[Serializable]
+public class ProjectileVisualSettings
+{
+    [Header("Projectile Glow")]
+    public bool applyProjectileMaterialProperties = true;
+    public bool overrideProjectileMaterial = true;
+    public Material projectileMaterial;
+    [ColorUsage(false, true)] public Color projectileBaseColor = new Color(1f, 0.58f, 0.16f, 1f);
+    [ColorUsage(false, true)] public Color projectileEmissionColor = new Color(1f, 0.35f, 0.04f, 1f);
+    [Min(0f)] public float projectileEmissionIntensity = 5f;
+
+    [Header("Tracer")]
+    public bool tracerEnabled = true;
+    public TrailRenderer tracerRenderer;
+    public Material tracerMaterial;
+    [Min(0.01f)] public float tracerLifetime = 0.5f;
+    [Min(0.001f)] public float tracerStartWidth = 0.32f;
+    [Min(0f)] public float tracerEndWidth = 0.035f;
+    public bool useTracerWidthCurve = true;
+    [Min(0.001f)] public float tracerWidthMultiplier = 0.32f;
+    public AnimationCurve tracerWidthCurve = CreateDefaultWidthCurve();
+    [Min(0.001f)] public float tracerMinVertexDistance = 0.025f;
+    [Range(0, 8)] public int tracerCornerVertices = 6;
+    [Range(0, 8)] public int tracerCapVertices = 4;
+    public LineAlignment tracerAlignment = LineAlignment.View;
+    public LineTextureMode tracerTextureMode = LineTextureMode.Stretch;
+    public ShadowCastingMode tracerShadowCastingMode = ShadowCastingMode.Off;
+    public bool tracerReceiveShadows;
+    public bool tracerGenerateLightingData;
+    public bool tracerAllowOcclusionWhenDynamic;
+    public Gradient tracerGradient = CreateDefaultTracerGradient();
+
+    public void Validate()
+    {
+        projectileBaseColor = ClampHdrColor(projectileBaseColor, new Color(1f, 0.58f, 0.16f, 1f));
+        projectileEmissionColor = ClampHdrColor(projectileEmissionColor, new Color(1f, 0.35f, 0.04f, 1f));
+        projectileEmissionIntensity = ClampFinite(projectileEmissionIntensity, 0f, 5f);
+        tracerLifetime = ClampFinite(tracerLifetime, 0.01f, 0.5f);
+        tracerStartWidth = ClampFinite(tracerStartWidth, 0.001f, 0.32f);
+        tracerEndWidth = ClampFinite(tracerEndWidth, 0f, 0.035f);
+        if (tracerEndWidth > tracerStartWidth)
+        {
+            tracerEndWidth = tracerStartWidth;
+        }
+
+        tracerWidthMultiplier = ClampFinite(tracerWidthMultiplier, 0.001f, tracerStartWidth);
+        tracerMinVertexDistance = ClampFinite(tracerMinVertexDistance, 0.001f, 0.025f);
+        tracerCornerVertices = Mathf.Clamp(tracerCornerVertices, 0, 8);
+        tracerCapVertices = Mathf.Clamp(tracerCapVertices, 0, 8);
+
+        if (tracerGradient == null)
+        {
+            tracerGradient = CreateDefaultTracerGradient();
+        }
+
+        if (tracerWidthCurve == null || tracerWidthCurve.length == 0)
+        {
+            tracerWidthCurve = CreateDefaultWidthCurve();
+        }
+    }
+
+    private static Gradient CreateDefaultTracerGradient()
+    {
+        Gradient gradient = new Gradient();
+        GradientColorKey[] colors =
+        {
+            new GradientColorKey(new Color(1f, 0.18f, 0.02f, 1f), 0f),
+            new GradientColorKey(new Color(1f, 0.55f, 0.08f, 1f), 0.55f),
+            new GradientColorKey(new Color(1f, 1f, 0.72f, 1f), 1f)
+        };
+        GradientAlphaKey[] alphas =
+        {
+            new GradientAlphaKey(0f, 0f),
+            new GradientAlphaKey(0.45f, 0.22f),
+            new GradientAlphaKey(0.95f, 1f)
+        };
+        gradient.SetKeys(colors, alphas);
+        return gradient;
+    }
+
+    private static AnimationCurve CreateDefaultWidthCurve()
+    {
+        return new AnimationCurve(
+            new Keyframe(0f, 0.08f),
+            new Keyframe(0.28f, 0.35f),
+            new Keyframe(1f, 1f));
+    }
+
+    private static Color ClampHdrColor(Color value, Color fallback)
+    {
+        if (!IsFinite(value.r) || !IsFinite(value.g) || !IsFinite(value.b) || !IsFinite(value.a))
+        {
+            return fallback;
+        }
+
+        return new Color(
+            Mathf.Max(0f, value.r),
+            Mathf.Max(0f, value.g),
+            Mathf.Max(0f, value.b),
+            Mathf.Clamp01(value.a));
+    }
+
+    private static float ClampFinite(float value, float minValue, float fallback)
+    {
+        if (float.IsNaN(value) || float.IsInfinity(value))
+        {
+            if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+            {
+                return minValue;
+            }
+
+            return Mathf.Max(minValue, fallback);
+        }
+
+        return Mathf.Max(minValue, value);
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+}
+
 public class Projectile : MonoBehaviour
 {
     private const int CollisionBufferSize = 128;
@@ -41,6 +164,9 @@ public class Projectile : MonoBehaviour
     public float hitRadius = 0.05f;
     public int damage = 40;
     public GameObject explosionFX;
+
+    [Header("Projectile Visuals")]
+    [SerializeField] private ProjectileVisualSettings visualSettings = new ProjectileVisualSettings();
 
     [Header("Debug")]
     public bool debugDrawTrajectory;
@@ -92,9 +218,6 @@ public class Projectile : MonoBehaviour
     private Collider[] _cachedColliders;
     private TrailRenderer _trailRenderer;
     private MaterialPropertyBlock _projectilePropertyBlock;
-    private Gradient _tracerGradient;
-    private GradientColorKey[] _tracerColorKeys;
-    private GradientAlphaKey[] _tracerAlphaKeys;
     private bool _componentCacheBuilt;
     private bool _tracerConfigured;
     private bool _waitingForTrailFade;
@@ -108,7 +231,23 @@ public class Projectile : MonoBehaviour
 
     private void Awake()
     {
+        ValidateVisualSettings();
         EnsureComponentCache();
+    }
+
+    private void OnValidate()
+    {
+        ValidateVisualSettings();
+    }
+
+    private void ValidateVisualSettings()
+    {
+        if (visualSettings == null)
+        {
+            visualSettings = new ProjectileVisualSettings();
+        }
+
+        visualSettings.Validate();
     }
 
     private void OnEnable()
@@ -124,16 +263,15 @@ public class Projectile : MonoBehaviour
 
     public void ApplyClientVisualSettings(ClientProjectileVisualSettings settings)
     {
-        if (settings == null)
+        if (settings != null)
         {
-            DisableTracer();
-            return;
+            settings.Validate();
         }
 
-        settings.Validate();
+        ValidateVisualSettings();
         EnsureComponentCache();
-        ApplyProjectileMaterial(settings);
-        ConfigureTracer(settings);
+        ApplyProjectileMaterial(visualSettings, settings);
+        ConfigureTracer(visualSettings, settings);
     }
 
     public void SetVisualsEnabled(bool enabled)
@@ -171,15 +309,33 @@ public class Projectile : MonoBehaviour
         SetTracerVisible(enabled && _tracerConfigured);
     }
 
-    private void ApplyProjectileMaterial(ClientProjectileVisualSettings settings)
+    private void ApplyProjectileMaterial(ProjectileVisualSettings projectileVisuals, ClientProjectileVisualSettings clientSettings)
     {
-        if (!settings.overrideProjectileMaterial && settings.projectileMaterial == null)
+        if (projectileVisuals == null)
         {
             return;
         }
 
-        Color emission = settings.projectileEmissionColor * Mathf.Max(0f, settings.projectileEmissionIntensity);
-        emission.a = settings.projectileEmissionColor.a;
+        Material material = projectileVisuals.projectileMaterial;
+        bool useClientFallbackMaterial = material == null
+                                         && clientSettings != null
+                                         && clientSettings.overrideProjectileMaterial
+                                         && clientSettings.projectileMaterial != null;
+        if (useClientFallbackMaterial)
+        {
+            material = clientSettings.projectileMaterial;
+        }
+
+        bool shouldOverrideMaterial = material != null
+                                      && (projectileVisuals.overrideProjectileMaterial || useClientFallbackMaterial);
+
+        if (!projectileVisuals.applyProjectileMaterialProperties && !shouldOverrideMaterial)
+        {
+            return;
+        }
+
+        Color emission = projectileVisuals.projectileEmissionColor * Mathf.Max(0f, projectileVisuals.projectileEmissionIntensity);
+        emission.a = projectileVisuals.projectileEmissionColor.a;
 
         if (_projectilePropertyBlock == null)
         {
@@ -187,8 +343,8 @@ public class Projectile : MonoBehaviour
         }
 
         _projectilePropertyBlock.Clear();
-        _projectilePropertyBlock.SetColor(BaseColorPropertyId, settings.projectileBaseColor);
-        _projectilePropertyBlock.SetColor(ColorPropertyId, settings.projectileBaseColor);
+        _projectilePropertyBlock.SetColor(BaseColorPropertyId, projectileVisuals.projectileBaseColor);
+        _projectilePropertyBlock.SetColor(ColorPropertyId, projectileVisuals.projectileBaseColor);
         _projectilePropertyBlock.SetColor(EmissionColorPropertyId, emission);
 
         for (int i = 0; i < _cachedRenderers.Length; i++)
@@ -199,24 +355,27 @@ public class Projectile : MonoBehaviour
                 continue;
             }
 
-            if (settings.overrideProjectileMaterial && settings.projectileMaterial != null)
+            if (shouldOverrideMaterial)
             {
-                cachedRenderer.sharedMaterial = settings.projectileMaterial;
+                cachedRenderer.sharedMaterial = material;
             }
 
-            cachedRenderer.SetPropertyBlock(_projectilePropertyBlock);
+            if (projectileVisuals.applyProjectileMaterialProperties)
+            {
+                cachedRenderer.SetPropertyBlock(_projectilePropertyBlock);
+            }
         }
     }
 
-    private void ConfigureTracer(ClientProjectileVisualSettings settings)
+    private void ConfigureTracer(ProjectileVisualSettings projectileVisuals, ClientProjectileVisualSettings clientSettings)
     {
-        if (!settings.tracerEnabled)
+        if (projectileVisuals == null || !projectileVisuals.tracerEnabled || (clientSettings != null && !clientSettings.tracerEnabled))
         {
             DisableTracer();
             return;
         }
 
-        EnsureTrailRenderer();
+        EnsureTrailRenderer(projectileVisuals);
         if (_trailRenderer == null)
         {
             _tracerConfigured = false;
@@ -224,27 +383,37 @@ public class Projectile : MonoBehaviour
         }
 
         _tracerConfigured = true;
-        _trailRenderer.sharedMaterial = settings.tracerMaterial != null
-            ? settings.tracerMaterial
-            : settings.projectileMaterial;
-        _trailRenderer.time = settings.tracerLifetime;
-        _trailRenderer.startWidth = settings.tracerStartWidth;
-        _trailRenderer.endWidth = settings.tracerEndWidth;
-        _trailRenderer.minVertexDistance = settings.tracerMinVertexDistance;
-        _trailRenderer.numCornerVertices = settings.tracerCornerVertices;
-        _trailRenderer.numCapVertices = settings.tracerCapVertices;
-        _trailRenderer.alignment = LineAlignment.View;
-        _trailRenderer.textureMode = LineTextureMode.Stretch;
-        _trailRenderer.shadowCastingMode = ShadowCastingMode.Off;
-        _trailRenderer.receiveShadows = false;
-        _trailRenderer.generateLightingData = false;
-        _trailRenderer.allowOcclusionWhenDynamic = false;
-        ApplyTracerGradient(settings);
+        _trailRenderer.sharedMaterial = ResolveTracerMaterial(projectileVisuals, clientSettings);
+        _trailRenderer.time = projectileVisuals.tracerLifetime;
+        ApplyTracerWidth(projectileVisuals);
+        _trailRenderer.minVertexDistance = projectileVisuals.tracerMinVertexDistance;
+        _trailRenderer.numCornerVertices = projectileVisuals.tracerCornerVertices;
+        _trailRenderer.numCapVertices = projectileVisuals.tracerCapVertices;
+        _trailRenderer.alignment = projectileVisuals.tracerAlignment;
+        _trailRenderer.textureMode = projectileVisuals.tracerTextureMode;
+        _trailRenderer.shadowCastingMode = projectileVisuals.tracerShadowCastingMode;
+        _trailRenderer.receiveShadows = projectileVisuals.tracerReceiveShadows;
+        _trailRenderer.generateLightingData = projectileVisuals.tracerGenerateLightingData;
+        _trailRenderer.allowOcclusionWhenDynamic = projectileVisuals.tracerAllowOcclusionWhenDynamic;
+        _trailRenderer.autodestruct = false;
+        _trailRenderer.colorGradient = projectileVisuals.tracerGradient;
         SetTracerVisible(_visualsEnabled && _initialized);
     }
 
-    private void EnsureTrailRenderer()
+    private void EnsureTrailRenderer(ProjectileVisualSettings projectileVisuals)
     {
+        if (projectileVisuals != null && projectileVisuals.tracerRenderer != null)
+        {
+            if (_trailRenderer != projectileVisuals.tracerRenderer)
+            {
+                _trailRenderer = projectileVisuals.tracerRenderer;
+                _componentCacheBuilt = false;
+                EnsureComponentCache();
+            }
+
+            return;
+        }
+
         if (_trailRenderer != null)
         {
             return;
@@ -260,21 +429,40 @@ public class Projectile : MonoBehaviour
         EnsureComponentCache();
     }
 
-    private void ApplyTracerGradient(ClientProjectileVisualSettings settings)
+    private Material ResolveTracerMaterial(ProjectileVisualSettings projectileVisuals, ClientProjectileVisualSettings clientSettings)
     {
-        if (_tracerGradient == null)
+        if (projectileVisuals.tracerMaterial != null)
         {
-            _tracerGradient = new Gradient();
-            _tracerColorKeys = new GradientColorKey[2];
-            _tracerAlphaKeys = new GradientAlphaKey[2];
+            return projectileVisuals.tracerMaterial;
         }
 
-        _tracerColorKeys[0] = new GradientColorKey(settings.tracerTailColor, 0f);
-        _tracerColorKeys[1] = new GradientColorKey(settings.tracerHeadColor, 1f);
-        _tracerAlphaKeys[0] = new GradientAlphaKey(settings.tracerTailColor.a, 0f);
-        _tracerAlphaKeys[1] = new GradientAlphaKey(settings.tracerHeadColor.a, 1f);
-        _tracerGradient.SetKeys(_tracerColorKeys, _tracerAlphaKeys);
-        _trailRenderer.colorGradient = _tracerGradient;
+        if (clientSettings != null && clientSettings.tracerMaterial != null)
+        {
+            return clientSettings.tracerMaterial;
+        }
+
+        if (projectileVisuals.projectileMaterial != null)
+        {
+            return projectileVisuals.projectileMaterial;
+        }
+
+        return clientSettings != null ? clientSettings.projectileMaterial : null;
+    }
+
+    private void ApplyTracerWidth(ProjectileVisualSettings projectileVisuals)
+    {
+        if (projectileVisuals.useTracerWidthCurve
+            && projectileVisuals.tracerWidthCurve != null
+            && projectileVisuals.tracerWidthCurve.length > 0)
+        {
+            _trailRenderer.widthCurve = projectileVisuals.tracerWidthCurve;
+            _trailRenderer.widthMultiplier = projectileVisuals.tracerWidthMultiplier;
+            return;
+        }
+
+        _trailRenderer.widthMultiplier = 1f;
+        _trailRenderer.startWidth = projectileVisuals.tracerStartWidth;
+        _trailRenderer.endWidth = projectileVisuals.tracerEndWidth;
     }
 
     private void SetTracerVisible(bool visible)

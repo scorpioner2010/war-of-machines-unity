@@ -14,10 +14,14 @@ namespace Game.Scripts.Gameplay.Robots
 
         [Header("Розширення розкиду")]
         public float movingDispersionDeg = 1.5f;
+        [Tooltip("World movement speed that applies the full moving dispersion penalty.")]
+        public float referenceMovementSpeed = 8f;
         public float hullTraverseDispersionDeg = 1.25f;
         public float turretTraverseDispersionDeg = 1.5f;
         public float gunTraverseDispersionDeg = 1f;
         public float shotDispersionDeg = 2f;
+        [Tooltip("Shot bloom multiplier. 1.3 means the aiming circle grows by 30% after a shot.")]
+        public float shotDispersionMultiplier = 1.3f;
 
         public float MinDispersion
         {
@@ -230,8 +234,8 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _hasLastSample;
         private Quaternion _lastHullRotation;
         private Quaternion _lastTurretRotation;
-        private Quaternion _lastGunRotation;
-        private Quaternion _lastCameraRotation;
+        private Vector3 _lastMovePosition;
+        private bool _hasLastMovePosition;
         private float _forcedExpandTargetDeg;
 
         public float CurrentDeg { get; private set; }
@@ -240,14 +244,16 @@ namespace Game.Scripts.Gameplay.Robots
         {
             CurrentDeg = settings != null ? settings.MinDispersion : 0f;
             _forcedExpandTargetDeg = 0f;
-            Sample(root, includeCamera: true);
+            _hasLastMovePosition = false;
+            Sample(root);
         }
 
         public void ForceFullyAimed(VehicleRoot root, GunDispersionSettings settings, bool includeCameraAimMotion)
         {
             CurrentDeg = settings != null ? settings.MinDispersion : 0f;
             _forcedExpandTargetDeg = 0f;
-            Sample(root, includeCameraAimMotion);
+            _hasLastMovePosition = false;
+            Sample(root);
         }
 
         public float Tick(
@@ -267,7 +273,7 @@ namespace Game.Scripts.Gameplay.Robots
             if (!globalSettings.enabled)
             {
                 CurrentDeg = settings.MinDispersion;
-                Sample(root, includeCameraAimMotion);
+                Sample(root);
                 return CurrentDeg;
             }
 
@@ -283,18 +289,10 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             float targetDeg = settings.MinDispersion;
-            targetDeg += GetMovementPenalty(root, settings);
+            targetDeg += GetMovementPenalty(root, settings, dt);
 
             float hullPenalty = GetRotationPenalty(GetHullRotation(root), _lastHullRotation, dt, globalSettings.referenceHullTraverseDegPerSec, settings.hullTraverseDispersionDeg);
-            float aimRotationPenalty =
-                GetRotationPenalty(GetTurretRotation(root), _lastTurretRotation, dt, globalSettings.referenceTurretTraverseDegPerSec, settings.turretTraverseDispersionDeg) +
-                GetRotationPenalty(GetGunRotation(root), _lastGunRotation, dt, globalSettings.referenceGunTraverseDegPerSec, settings.gunTraverseDispersionDeg);
-
-            if (includeCameraAimMotion)
-            {
-                float cameraPenalty = GetRotationPenalty(GetCameraRotation(), _lastCameraRotation, dt, globalSettings.referenceCameraAimDegPerSec, settings.gunTraverseDispersionDeg);
-                aimRotationPenalty = Mathf.Max(aimRotationPenalty, cameraPenalty);
-            }
+            float aimRotationPenalty = GetRotationPenalty(GetTurretRotation(root), _lastTurretRotation, dt, globalSettings.referenceTurretTraverseDegPerSec, settings.turretTraverseDispersionDeg);
 
             targetDeg += hullPenalty + aimRotationPenalty;
             if (_forcedExpandTargetDeg > 0f)
@@ -323,7 +321,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _forcedExpandTargetDeg = 0f;
             }
 
-            Sample(root, includeCameraAimMotion);
+            Sample(root);
             return CurrentDeg;
         }
 
@@ -335,19 +333,45 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float target = CurrentDeg + Mathf.Max(0f, settings.shotDispersionDeg);
+            float shotMultiplier = settings.shotDispersionMultiplier;
+            if (float.IsNaN(shotMultiplier) || float.IsInfinity(shotMultiplier) || shotMultiplier <= 0f)
+            {
+                shotMultiplier = 1.3f;
+            }
+
+            shotMultiplier = Mathf.Max(1f, shotMultiplier);
+            float target = Mathf.Max(CurrentDeg, settings.MinDispersion) * shotMultiplier;
             _forcedExpandTargetDeg = Mathf.Clamp(target, settings.MinDispersion, settings.MaxDispersion);
+            CurrentDeg = Mathf.Clamp(Mathf.Max(CurrentDeg, _forcedExpandTargetDeg), settings.MinDispersion, settings.MaxDispersion);
         }
 
-        private static float GetMovementPenalty(VehicleRoot root, GunDispersionSettings settings)
+        private float GetMovementPenalty(VehicleRoot root, GunDispersionSettings settings, float dt)
         {
-            if (root.inputManager == null)
+            if (settings.movingDispersionDeg <= 0f || dt <= 0f)
             {
                 return 0f;
             }
 
-            float move = Mathf.Clamp01(root.inputManager.Move.magnitude);
-            return settings.movingDispersionDeg * move;
+            Vector3 currentPosition = GetMovementPosition(root);
+            if (!_hasLastMovePosition)
+            {
+                _lastMovePosition = currentPosition;
+                _hasLastMovePosition = true;
+                return 0f;
+            }
+
+            Vector3 delta = currentPosition - _lastMovePosition;
+            delta.y = 0f;
+
+            float referenceSpeed = settings.referenceMovementSpeed;
+            if (float.IsNaN(referenceSpeed) || float.IsInfinity(referenceSpeed) || referenceSpeed <= 0.001f)
+            {
+                referenceSpeed = 8f;
+            }
+
+            float speed = delta.magnitude / dt;
+            float factor = Mathf.Clamp01(speed / referenceSpeed);
+            return settings.movingDispersionDeg * factor;
         }
 
         private static float GetRotationPenalty(Quaternion current, Quaternion last, float dt, float referenceDegPerSec, float maxPenaltyDeg)
@@ -362,16 +386,12 @@ namespace Game.Scripts.Gameplay.Robots
             return maxPenaltyDeg * factor;
         }
 
-        private void Sample(VehicleRoot root, bool includeCamera)
+        private void Sample(VehicleRoot root)
         {
             _lastHullRotation = GetHullRotation(root);
             _lastTurretRotation = GetTurretRotation(root);
-            _lastGunRotation = GetGunRotation(root);
-            if (includeCamera)
-            {
-                _lastCameraRotation = GetCameraRotation();
-            }
-
+            _lastMovePosition = GetMovementPosition(root);
+            _hasLastMovePosition = true;
             _hasLastSample = true;
         }
 
@@ -395,24 +415,15 @@ namespace Game.Scripts.Gameplay.Robots
             return GetHullRotation(root);
         }
 
-        private static Quaternion GetGunRotation(VehicleRoot root)
+        private static Vector3 GetMovementPosition(VehicleRoot root)
         {
-            if (root != null && root.weaponAimAtCamera != null && root.weaponAimAtCamera.gun != null)
+            if (root != null && root.objectMover != null)
             {
-                return root.weaponAimAtCamera.gun.rotation;
+                return root.objectMover.transform.position;
             }
 
-            return GetTurretRotation(root);
+            return root != null ? root.transform.position : Vector3.zero;
         }
 
-        private static Quaternion GetCameraRotation()
-        {
-            if (CameraSync.In != null)
-            {
-                return CameraSync.In.GetAimRotation();
-            }
-
-            return Quaternion.identity;
-        }
     }
 }
