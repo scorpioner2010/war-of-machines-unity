@@ -328,6 +328,8 @@ namespace Game.Scripts.Diagnostics
             AppendField(sb, "qualityName", metrics != null ? metrics.QualityName : null, false);
             AppendField(sb, "vSyncCount", metrics != null ? metrics.VSyncCount : null, false);
             AppendField(sb, "targetFrameRate", metrics != null ? metrics.TargetFrameRate : null, false);
+            AppendField(sb, "renderFrameInterval", metrics != null ? metrics.RenderFrameInterval : null, false);
+            AppendField(sb, "effectiveRenderFrameRate", metrics != null ? metrics.EffectiveRenderFrameRate : null, false);
             AppendField(sb, "refreshRate", metrics != null ? metrics.RefreshRate : null, false);
             AppendField(sb, "fixedDeltaTime", metrics != null ? metrics.FixedDeltaTime : null, false);
             AppendField(sb, "maximumDeltaTime", metrics != null ? metrics.MaximumDeltaTime : null, false);
@@ -410,6 +412,8 @@ namespace Game.Scripts.Diagnostics
             AppendField(sb, "qualityName", metrics != null ? metrics.QualityName : null, false);
             AppendField(sb, "vSyncCount", metrics != null ? metrics.VSyncCount : null, false);
             AppendField(sb, "targetFrameRate", metrics != null ? metrics.TargetFrameRate : null, false);
+            AppendField(sb, "renderFrameInterval", metrics != null ? metrics.RenderFrameInterval : null, false);
+            AppendField(sb, "effectiveRenderFrameRate", metrics != null ? metrics.EffectiveRenderFrameRate : null, false);
             AppendField(sb, "refreshRate", metrics != null ? metrics.RefreshRate : null, false);
             AppendField(sb, "fixedDeltaTime", metrics != null ? metrics.FixedDeltaTime : null, false);
             AppendField(sb, "maximumDeltaTime", metrics != null ? metrics.MaximumDeltaTime : null, false);

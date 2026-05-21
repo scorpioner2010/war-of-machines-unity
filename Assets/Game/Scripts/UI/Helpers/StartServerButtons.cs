@@ -8,6 +8,7 @@ using Game.Scripts.Player.Data;
 using Game.Scripts.Server;
 using Game.Scripts.UI.Loading;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -247,7 +248,7 @@ namespace Game.Scripts.UI.Helpers
 
         private IEnumerator RequestActiveServerConnectionInfo(System.Action<bool, ServerConnectionInfo, string> onComplete)
         {
-            string[] apiBases = HttpLink.GetBaseCandidates();
+            string[] apiBases = GetServerLookupApiBases();
             string lastError = "Server API is not available";
 
             for (int i = 0; i < apiBases.Length; i++)
@@ -289,6 +290,49 @@ namespace Game.Scripts.UI.Helpers
             }
 
             onComplete(false, default, lastError);
+        }
+
+        private static string[] GetServerLookupApiBases()
+        {
+            string[] primaryBases = HttpLink.GetBaseCandidates();
+            if (HttpLink.IsLocal)
+            {
+                return primaryBases;
+            }
+
+            string[] localBases = HttpLink.GetLocalBaseCandidates();
+            List<string> apiBases = new List<string>(primaryBases.Length + localBases.Length);
+
+            for (int i = 0; i < localBases.Length; i++)
+            {
+                AddUniqueApiBase(apiBases, localBases[i]);
+            }
+
+            for (int i = 0; i < primaryBases.Length; i++)
+            {
+                AddUniqueApiBase(apiBases, primaryBases[i]);
+            }
+
+            return apiBases.ToArray();
+        }
+
+        private static void AddUniqueApiBase(List<string> apiBases, string apiBase)
+        {
+            string normalizedBase = HttpLink.NormalizeBase(apiBase);
+            if (string.IsNullOrWhiteSpace(normalizedBase))
+            {
+                return;
+            }
+
+            for (int i = 0; i < apiBases.Count; i++)
+            {
+                if (string.Equals(apiBases[i], normalizedBase, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            apiBases.Add(normalizedBase);
         }
 
         private bool TryReadServerConnectionInfo(string responseText, out ServerConnectionInfo connectionInfo, out string error)

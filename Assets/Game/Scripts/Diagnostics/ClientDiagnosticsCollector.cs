@@ -3,6 +3,7 @@ using FishNet.Managing;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -162,6 +163,8 @@ namespace Game.Scripts.Diagnostics
 
             metrics.VSyncCount = QualitySettings.vSyncCount;
             metrics.TargetFrameRate = Application.targetFrameRate;
+            metrics.RenderFrameInterval = OnDemandRendering.renderFrameInterval;
+            metrics.EffectiveRenderFrameRate = OnDemandRendering.effectiveRenderFrameRate;
 #if UNITY_2022_2_OR_NEWER
             metrics.RefreshRate = Screen.currentResolution.refreshRateRatio.value;
 #else

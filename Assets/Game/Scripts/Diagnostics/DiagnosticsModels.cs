@@ -94,6 +94,8 @@ namespace Game.Scripts.Diagnostics
         public string QualityName;
         public int? VSyncCount;
         public int? TargetFrameRate;
+        public int? RenderFrameInterval;
+        public int? EffectiveRenderFrameRate;
         public double? RefreshRate;
         public double? FixedDeltaTime;
         public double? MaximumDeltaTime;

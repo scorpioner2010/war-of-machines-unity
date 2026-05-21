@@ -473,6 +473,14 @@ namespace Game.Scripts.Diagnostics
             {
                 analysis.Evidence.Add("targetFrameRate is " + client.TargetFrameRate.Value);
             }
+            if (client.RenderFrameInterval.HasValue)
+            {
+                analysis.Evidence.Add("renderFrameInterval is " + client.RenderFrameInterval.Value);
+            }
+            if (client.EffectiveRenderFrameRate.HasValue)
+            {
+                analysis.Evidence.Add("effectiveRenderFrameRate is " + client.EffectiveRenderFrameRate.Value);
+            }
             if (client.RefreshRate.HasValue)
             {
                 analysis.Evidence.Add("refreshRate is " + Format(client.RefreshRate.Value));

@@ -50,7 +50,7 @@ namespace Game.Scripts.Diagnostics
         public int HttpPort = 8765;
         public int EditorClientTargetFrameRate = DefaultEditorTargetFrameRate;
         public int EditorServerTargetFrameRate = DefaultEditorTargetFrameRate;
-        public int EditorServerRenderFrameInterval = 20;
+        public int EditorServerRenderFrameInterval = 60;
         public int EditorGcIncrementalBudgetNanoseconds = 500000;
         public int MaxPortFallbackAttempts = 10;
         public string Token = string.Empty;

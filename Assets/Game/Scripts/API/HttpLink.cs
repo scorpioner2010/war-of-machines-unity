@@ -76,6 +76,29 @@ namespace Game.Scripts.API
             return uniqueCandidates.ToArray();
         }
 
+        public static string[] GetLocalBaseCandidates()
+        {
+            string[] candidates =
+            {
+                LocalAPIBase,
+                LocalKestrelHttpAPIBase,
+                LocalIisHttpsAPIBase,
+                LocalIisHttpAPIBase,
+                "https://127.0.0.1:7216",
+                "http://127.0.0.1:5220",
+                "https://127.0.0.1:44377",
+                "http://127.0.0.1:43606"
+            };
+
+            List<string> uniqueCandidates = new List<string>(candidates.Length);
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                AddUnique(uniqueCandidates, candidates[i]);
+            }
+
+            return uniqueCandidates.ToArray();
+        }
+
         private static void ApplyRuntimeConfig()
         {
             if (_runtimeConfigApplied)
