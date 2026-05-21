@@ -20,6 +20,7 @@ namespace Game.Scripts.Gameplay.Robots
         public float brakeDeceleration = 90f;
         public float naturalDeceleration = 20f;
         public float turnAcceleration = 360f;
+        [Range(0f, 0.25f)] public float inputDeadZone = 0.02f;
 
         [Header("Grounding")]
         public float gravity = 25f;
@@ -36,8 +37,8 @@ namespace Game.Scripts.Gameplay.Robots
         [Header("Optimization")]
         public bool useDirectionalEdgeGroundProbe = true;
         public bool useEdgeProbeOnlyWhenMoving = true;
-        public float minEdgeProbeMotion = 0.02f;
-        public float minCollisionCastDistance = 0.01f;
+        public float minEdgeProbeMotion = 0.06f;
+        public float minCollisionCastDistance = 0.03f;
 
         [Header("Steep Slope Sliding")]
         public bool slideOnSteepSlopes = true;
@@ -68,15 +69,52 @@ namespace Game.Scripts.Gameplay.Robots
         [System.NonSerialized] public Vector3 groundNormal = Vector3.up;
         [System.NonSerialized] public float slopeAngle;
 
+        private Transform _cachedTransform;
         private bool _useRuntimeTraverseSpeed;
         private float _runtimeTraverseSpeedDegPerSecond;
         private bool _hasMotorYaw;
         private float _motorYaw;
+        private Vector3 _yawForward = Vector3.forward;
         private Vector3 _slopeSlideVelocity;
-        private RobotMovementGlobalSettings _activeSettings;
-        private GroundProbe _lastGround;
+        private Vector3 _probeUp = Vector3.up;
+
+        private float _maxForwardSpeed;
+        private float _maxReverseSpeed;
+        private float _acceleration;
+        private float _brakeDeceleration;
+        private float _naturalDeceleration;
+        private float _turnSpeed;
+        private float _turnAcceleration;
+        private float _gravity;
+        private float _maxFallSpeed;
+        private float _groundCheckDistance;
+        private float _groundSnapDistance;
+        private float _groundProbeDistance;
+        private float _groundHeightLerpSpeed;
+        private float _smallPitBridgeMaxDrop;
+        private float _maxSlopeAngle;
+        private float _maxSlopeDot;
+        private bool _slideOnSteepSlopes;
+        private float _steepSlopeSlideAcceleration;
+        private float _steepSlopeMaxSlideSpeed;
+        private float _steepSlopeSlideDamping;
+        private float _steepSlopeUphillControl;
+        private float _slopeAlignmentStrength;
+        private float _slopeAlignmentSpeed;
+        private float _maxSlopeAlignmentAngle;
+        private bool _wallSlideEnabled;
 
         public float MotorYaw => _hasMotorYaw ? _motorYaw : transform.eulerAngles.y;
+
+        private void Awake()
+        {
+            EnsureReady();
+        }
+
+        private void OnEnable()
+        {
+            EnsureReady();
+        }
 
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
         {
@@ -109,38 +147,38 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            EnsureBody();
+            EnsureReady();
             settings ??= RobotMovementGlobalSettings.Default;
-            _activeSettings = settings;
-            EnsureMotorYawInitialized();
+            RefreshRuntimeValues(settings, isLegged, dt);
 
-            movementInput = Mathf.Clamp(input.y, -1f, 1f);
-            turnInput = Mathf.Clamp(input.x, -1f, 1f);
+            movementInput = ApplyInputDeadZone(input.y);
+            turnInput = ApplyInputDeadZone(input.x);
 
-            Vector3 startPosition = transform.position;
+            Vector3 startPosition = _cachedTransform.position;
             bool wasGrounded = isGrounded;
-            float probeDistance = GetGroundProbeDistance(settings);
-            GroundProbe startGround = ProbeGround(startPosition, probeDistance, Vector3.zero);
+            GroundProbe startGround = ProbeGround(startPosition, _groundProbeDistance, Vector3.zero);
 
             ApplyGroundState(startGround, startPosition, wasGrounded);
-            UpdateTurn(settings, dt);
-            UpdateForwardSpeed(settings, isLegged, dt);
+            UpdateTurn(dt);
+            UpdateForwardSpeed(dt);
 
             Vector3 horizontalMotion = BuildHorizontalMotion(startGround, dt);
             horizontalMotion += UpdateSteepSlopeSlide(startGround, startPosition, wasGrounded, dt);
             horizontalMotion = ResolveCollision(startPosition, horizontalMotion);
-            float verticalMotion = UpdateVerticalVelocity(settings, startGround, startPosition, wasGrounded, dt);
 
+            float verticalMotion = UpdateVerticalVelocity(startGround, startPosition, wasGrounded, dt);
             Vector3 nextPosition = startPosition + horizontalMotion + Vector3.up * verticalMotion;
-            GroundProbe finalGround = horizontalMotion.sqrMagnitude <= 0.000001f && Mathf.Abs(verticalMotion) <= 0.000001f
-                ? startGround
-                : ProbeGround(nextPosition, probeDistance + Mathf.Abs(verticalMotion), horizontalMotion);
-            if (TryResolveFinalGround(finalGround, wasGrounded, settings, dt, ref nextPosition))
+
+            GroundProbe finalGround = ShouldProbeFinalGround(horizontalMotion, verticalMotion)
+                ? ProbeGround(nextPosition, _groundProbeDistance + Mathf.Abs(verticalMotion), horizontalMotion)
+                : startGround;
+
+            if (TryResolveFinalGround(finalGround, wasGrounded, dt, ref nextPosition))
             {
                 verticalVelocity = 0f;
             }
 
-            transform.position = nextPosition;
+            _cachedTransform.position = nextPosition;
             ApplyMotorRotation((isGrounded || isSlidingOnSteepSlope) ? groundNormal : Vector3.up, dt);
             velocity = (nextPosition - startPosition) / dt;
 
@@ -150,25 +188,212 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private void EnsureBody()
+        private void EnsureReady()
         {
-            if (movementBody != null)
+            if (_cachedTransform == null)
             {
+                _cachedTransform = transform;
+            }
+
+            if (movementBody == null)
+            {
+                movementBody = GetComponent<RobotMovementBody>();
+                if (movementBody == null)
+                {
+                    movementBody = gameObject.AddComponent<RobotMovementBody>();
+                }
+            }
+
+            EnsureMotorYawInitialized();
+        }
+
+        private void RefreshRuntimeValues(RobotMovementGlobalSettings settings, bool isLegged, float dt)
+        {
+            _maxForwardSpeed = maxForwardSpeed > 0f
+                ? maxForwardSpeed
+                : Mathf.Max(0f, settings.fallbackMaxSpeed);
+            _maxReverseSpeed = maxReverseSpeed > 0f
+                ? maxReverseSpeed
+                : _maxForwardSpeed * 0.5f;
+
+            float baseAcceleration = acceleration > 0f
+                ? acceleration
+                : Mathf.Max(0.01f, settings.fallbackAcceleration);
+            float accelerationMultiplier = settings.GetAccelerationMultiplier(isLegged);
+            float brakingMultiplier = settings.GetBrakingMultiplier(isLegged);
+            _acceleration = Mathf.Max(0.01f, baseAcceleration * accelerationMultiplier);
+
+            float brakeBase = brakeDeceleration > 0f
+                ? brakeDeceleration
+                : baseAcceleration * Mathf.Max(1f, settings.stoppingAccelerationMultiplier);
+            _brakeDeceleration = Mathf.Max(0.01f, brakeBase * brakingMultiplier);
+            _naturalDeceleration = naturalDeceleration > 0f
+                ? Mathf.Max(naturalDeceleration, baseAcceleration)
+                : _acceleration;
+
+            _turnSpeed = ResolveTurnSpeed(settings, dt);
+            _turnAcceleration = turnAcceleration > 0f
+                ? turnAcceleration
+                : Mathf.Max(1f, _turnSpeed * 5f);
+
+            _gravity = settings.gravity > 0f
+                ? settings.gravity
+                : Mathf.Max(0.01f, gravity);
+            _maxFallSpeed = settings.maxFallSpeed > 0f
+                ? settings.maxFallSpeed
+                : Mathf.Max(0.01f, maxFallSpeed);
+            _groundCheckDistance = settings.groundCheckDistance > 0f
+                ? settings.groundCheckDistance
+                : Mathf.Max(0.01f, groundCheckDistance);
+            _groundSnapDistance = settings.groundSnapDistance > 0f
+                ? settings.groundSnapDistance
+                : Mathf.Max(0.01f, groundSnapDistance);
+            _groundProbeDistance = Mathf.Max(_groundCheckDistance, _groundSnapDistance);
+            _groundHeightLerpSpeed = settings.groundHeightLerpSpeed >= 0f
+                ? settings.groundHeightLerpSpeed
+                : Mathf.Max(0f, groundHeightLerpSpeed);
+            _smallPitBridgeMaxDrop = settings.smallPitBridgeMaxDrop >= 0f
+                ? settings.smallPitBridgeMaxDrop
+                : Mathf.Max(0f, smallPitBridgeMaxDrop);
+
+            _maxSlopeAngle = settings.maxSlopeAngle > 0f
+                ? Mathf.Clamp(settings.maxSlopeAngle, 0.01f, 89f)
+                : Mathf.Clamp(maxSlopeAngle, 0.01f, 89f);
+            _maxSlopeDot = Mathf.Cos(_maxSlopeAngle * Mathf.Deg2Rad);
+
+            _slideOnSteepSlopes = settings.slideOnSteepSlopes && slideOnSteepSlopes;
+            _steepSlopeSlideAcceleration = settings.steepSlopeSlideAcceleration >= 0f
+                ? settings.steepSlopeSlideAcceleration
+                : Mathf.Max(0f, steepSlopeSlideAcceleration);
+            _steepSlopeMaxSlideSpeed = settings.steepSlopeMaxSlideSpeed >= 0f
+                ? settings.steepSlopeMaxSlideSpeed
+                : Mathf.Max(0f, steepSlopeMaxSlideSpeed);
+            _steepSlopeSlideDamping = settings.steepSlopeSlideDamping >= 0f
+                ? settings.steepSlopeSlideDamping
+                : Mathf.Max(0f, steepSlopeSlideDamping);
+            _steepSlopeUphillControl = settings.steepSlopeUphillControl >= 0f
+                ? Mathf.Clamp01(settings.steepSlopeUphillControl)
+                : Mathf.Clamp01(steepSlopeUphillControl);
+
+            _slopeAlignmentStrength = settings.slopeAlignmentStrength >= 0f
+                ? settings.slopeAlignmentStrength
+                : Mathf.Max(0f, slopeAlignmentStrength);
+            _slopeAlignmentSpeed = settings.slopeAlignmentSpeed >= 0f
+                ? settings.slopeAlignmentSpeed
+                : Mathf.Max(0f, slopeAlignmentSpeed);
+            _maxSlopeAlignmentAngle = settings.maxSlopeAlignmentAngle >= 0f
+                ? Mathf.Clamp(settings.maxSlopeAlignmentAngle, 0f, 85f)
+                : Mathf.Clamp(maxSlopeAlignmentAngle, 0f, 85f);
+            _wallSlideEnabled = settings.wallSlideEnabled;
+            _probeUp = BuildProbeUp();
+        }
+
+        private float ResolveTurnSpeed(RobotMovementGlobalSettings settings, float dt)
+        {
+            if (_useRuntimeTraverseSpeed)
+            {
+                return Mathf.Max(0f, _runtimeTraverseSpeedDegPerSecond);
+            }
+
+            if (turnSpeed > 0f)
+            {
+                return turnSpeed;
+            }
+
+            if (settings.fallbackTraverseSpeedDegPerSecond > 0f)
+            {
+                return settings.fallbackTraverseSpeedDegPerSecond;
+            }
+
+            return rotateSpeed / Mathf.Max(dt, 0.0001f);
+        }
+
+        private float ApplyInputDeadZone(float value)
+        {
+            float clamped = Mathf.Clamp(value, -1f, 1f);
+            float deadZone = Mathf.Clamp(inputDeadZone, 0f, 0.25f);
+            if (Mathf.Abs(clamped) <= deadZone)
+            {
+                return 0f;
+            }
+
+            return clamped;
+        }
+
+        private void UpdateTurn(float dt)
+        {
+            float targetTurnSpeed = turnInput * _turnSpeed;
+            float turnRate = _turnAcceleration;
+
+            if (Mathf.Abs(turnInput) <= 0.001f)
+            {
+                turnRate *= 1.35f;
+            }
+            else if (currentTurnSpeed * targetTurnSpeed < -0.01f)
+            {
+                turnRate *= 1.8f;
+            }
+
+            currentTurnSpeed = Mathf.MoveTowards(currentTurnSpeed, targetTurnSpeed, turnRate * dt);
+            if (Mathf.Abs(currentTurnSpeed) <= 0.001f)
+            {
+                currentTurnSpeed = 0f;
                 return;
             }
 
-            movementBody = GetComponent<RobotMovementBody>();
-            if (movementBody == null)
+            _motorYaw = Mathf.Repeat(_motorYaw + currentTurnSpeed * dt, 360f);
+            UpdateYawForward();
+        }
+
+        private void UpdateForwardSpeed(float dt)
+        {
+            float targetSpeed = GetTargetForwardSpeed();
+            float changeRate;
+            if (Mathf.Abs(movementInput) <= 0.001f)
             {
-                movementBody = gameObject.AddComponent<RobotMovementBody>();
+                changeRate = _naturalDeceleration;
             }
+            else if (IsBraking(targetSpeed))
+            {
+                changeRate = _brakeDeceleration;
+            }
+            else
+            {
+                changeRate = _acceleration;
+            }
+
+            currentForwardSpeed = Mathf.MoveTowards(currentForwardSpeed, targetSpeed, changeRate * dt);
+            currentForwardSpeed = Mathf.Clamp(currentForwardSpeed, -_maxReverseSpeed, _maxForwardSpeed);
+            if (Mathf.Abs(currentForwardSpeed) <= 0.001f)
+            {
+                currentForwardSpeed = 0f;
+            }
+        }
+
+        private float GetTargetForwardSpeed()
+        {
+            if (movementInput > 0f)
+            {
+                return movementInput * _maxForwardSpeed;
+            }
+
+            if (movementInput < 0f)
+            {
+                return movementInput * _maxReverseSpeed;
+            }
+
+            return 0f;
         }
 
         private Vector3 BuildHorizontalMotion(GroundProbe ground, float dt)
         {
-            float slopeLimit = GetMaxSlopeAngle();
-            Vector3 direction = GetYawForward();
-            if (ground.Hit && ground.SlopeAngle <= slopeLimit)
+            if (Mathf.Abs(currentForwardSpeed) <= 0.001f)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 direction = _yawForward;
+            if (ground.Hit && !IsSteep(ground))
             {
                 Vector3 slopeDirection = Vector3.ProjectOnPlane(direction, ground.Normal);
                 slopeDirection.y = 0f;
@@ -177,14 +402,10 @@ namespace Game.Scripts.Gameplay.Robots
                     direction = slopeDirection.normalized;
                 }
             }
-            else if (ground.Hit && IsMovingUpTooSteepSlope(direction, ground.Normal))
-            {
-                direction = Vector3.Lerp(direction, GetSlopeDownhill(ground.Normal), Mathf.Clamp01(1f - GetSteepSlopeUphillControl()));
-            }
 
             Vector3 motion = direction * (currentForwardSpeed * dt);
             motion.y = 0f;
-            if (ground.Hit && ground.SlopeAngle > slopeLimit)
+            if (ground.Hit && IsSteep(ground))
             {
                 motion = RemoveUphillMotion(motion, ground.Normal);
             }
@@ -192,46 +413,9 @@ namespace Game.Scripts.Gameplay.Robots
             return motion;
         }
 
-        private void UpdateTurn(RobotMovementGlobalSettings settings, float dt)
-        {
-            float targetTurnSpeed = turnInput * GetTurnSpeed(settings);
-            float turnRate = GetTurnAcceleration(settings);
-            currentTurnSpeed = Mathf.MoveTowards(currentTurnSpeed, targetTurnSpeed, turnRate * dt);
-
-            if (Mathf.Abs(currentTurnSpeed) <= 0.001f)
-            {
-                currentTurnSpeed = 0f;
-                return;
-            }
-
-            _motorYaw = Mathf.Repeat(_motorYaw + currentTurnSpeed * dt, 360f);
-        }
-
-        private void UpdateForwardSpeed(RobotMovementGlobalSettings settings, bool isLegged, float dt)
-        {
-            float targetSpeed = GetTargetForwardSpeed(settings);
-            float changeRate;
-            if (Mathf.Abs(movementInput) <= 0.001f)
-            {
-                changeRate = GetNaturalDeceleration(settings);
-            }
-            else if (IsBraking(targetSpeed))
-            {
-                changeRate = GetBrakeDeceleration(settings, isLegged);
-            }
-            else
-            {
-                changeRate = GetAcceleration(settings) * settings.GetAccelerationMultiplier(isLegged);
-            }
-
-            currentForwardSpeed = Mathf.MoveTowards(currentForwardSpeed, targetSpeed, changeRate * dt);
-            currentForwardSpeed = Mathf.Clamp(currentForwardSpeed, -GetMaxReverseSpeed(settings), GetMaxForwardSpeed(settings));
-        }
-
         private Vector3 UpdateSteepSlopeSlide(GroundProbe ground, Vector3 position, bool wasGrounded, float dt)
         {
-            float slopeLimit = GetMaxSlopeAngle();
-            if (!GetSlideOnSteepSlopes() || !ground.Hit || ground.SlopeAngle <= slopeLimit || !CanUseGround(ground, position, wasGrounded))
+            if (!_slideOnSteepSlopes || !ground.Hit || !IsSteep(ground) || !CanUseGround(ground, position, wasGrounded))
             {
                 DecaySlopeSlideVelocity(dt);
                 return Vector3.zero;
@@ -244,14 +428,13 @@ namespace Game.Scripts.Gameplay.Robots
                 return Vector3.zero;
             }
 
-            float slope01 = Mathf.InverseLerp(slopeLimit, 89f, ground.SlopeAngle);
-            float accelerationValue = GetSteepSlopeSlideAcceleration() * Mathf.Clamp01(slope01);
-            _slopeSlideVelocity += downhill * (accelerationValue * dt);
+            float slope01 = Mathf.InverseLerp(_maxSlopeAngle, 89f, ground.SlopeAngle);
+            _slopeSlideVelocity += downhill * (_steepSlopeSlideAcceleration * Mathf.Clamp01(slope01) * dt);
 
-            float maxSpeed = GetSteepSlopeMaxSlideSpeed();
-            if (maxSpeed > 0f && _slopeSlideVelocity.magnitude > maxSpeed)
+            float maxSlideSpeedSqr = _steepSlopeMaxSlideSpeed * _steepSlopeMaxSlideSpeed;
+            if (_steepSlopeMaxSlideSpeed > 0f && _slopeSlideVelocity.sqrMagnitude > maxSlideSpeedSqr)
             {
-                _slopeSlideVelocity = _slopeSlideVelocity.normalized * maxSpeed;
+                _slopeSlideVelocity = _slopeSlideVelocity.normalized * _steepSlopeMaxSlideSpeed;
             }
 
             return _slopeSlideVelocity * dt;
@@ -265,13 +448,12 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float damping = GetSteepSlopeSlideDamping();
-            if (damping <= 0f || dt <= 0f)
+            if (_steepSlopeSlideDamping <= 0f)
             {
                 return;
             }
 
-            float t = 1f - Mathf.Exp(-damping * dt);
+            float t = 1f - Mathf.Exp(-_steepSlopeSlideDamping * dt);
             _slopeSlideVelocity = Vector3.Lerp(_slopeSlideVelocity, Vector3.zero, t);
             if (_slopeSlideVelocity.sqrMagnitude <= 0.000001f)
             {
@@ -279,9 +461,9 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private float UpdateVerticalVelocity(RobotMovementGlobalSettings settings, GroundProbe ground, Vector3 position, bool wasGrounded, float dt)
+        private float UpdateVerticalVelocity(GroundProbe ground, Vector3 position, bool wasGrounded, float dt)
         {
-            if (ground.Hit && CanUseGround(ground, position, wasGrounded) && (ground.SlopeAngle <= GetMaxSlopeAngle() || GetSlideOnSteepSlopes()))
+            if (ground.Hit && CanUseGround(ground, position, wasGrounded) && (!IsSteep(ground) || _slideOnSteepSlopes))
             {
                 if (verticalVelocity < 0f)
                 {
@@ -291,11 +473,10 @@ namespace Game.Scripts.Gameplay.Robots
                 return 0f;
             }
 
-            verticalVelocity -= GetGravity(settings) * dt;
-            float fallSpeedLimit = GetMaxFallSpeed(settings);
-            if (verticalVelocity < -fallSpeedLimit)
+            verticalVelocity -= _gravity * dt;
+            if (verticalVelocity < -_maxFallSpeed)
             {
-                verticalVelocity = -fallSpeedLimit;
+                verticalVelocity = -_maxFallSpeed;
             }
 
             return verticalVelocity * dt;
@@ -303,16 +484,14 @@ namespace Game.Scripts.Gameplay.Robots
 
         private GroundProbe ProbeGround(Vector3 position, float distance, Vector3 motion)
         {
-            GroundProbe probe = CreateEmptyGroundProbe(position);
-            if (movementBody.groundMask.value == 0)
+            bool hasCenter = TryProbeGroundSingle(position, position, distance, 0f, out GroundProbe probe);
+            if (!hasCenter)
             {
-                return probe;
+                probe = CreateEmptyGroundProbe(position);
             }
 
-            bool hasCenter = TryProbeGroundSingle(position, position, distance, 0f, out probe);
             if (!ShouldUseEdgeProbe(motion))
             {
-                UpdateCachedGround(probe);
                 return probe;
             }
 
@@ -320,30 +499,35 @@ namespace Game.Scripts.Gameplay.Robots
             float edgeOffset = GetEdgeProbeOffset(edgeDirection);
             if (edgeOffset <= 0.001f)
             {
-                UpdateCachedGround(probe);
                 return probe;
             }
 
-            if (TryProbeGroundSingle(position, position + edgeDirection * edgeOffset, distance, edgeOffset * edgeOffset, out GroundProbe edgeProbe))
+            if (!TryProbeGroundSingle(position, position + edgeDirection * edgeOffset, distance, edgeOffset * edgeOffset, out GroundProbe edgeProbe))
             {
-                if (hasCenter)
-                {
-                    ApplyEdgeProbeNormal(ref probe, edgeProbe);
-                }
+                return probe;
+            }
 
-                if (IsBetterGroundProbe(edgeProbe, probe))
+            if (!hasCenter || ShouldPreferEdgeProbe(probe, edgeProbe))
+            {
+                return edgeProbe;
+            }
+
+            if (!IsSteep(probe) && !IsSteep(edgeProbe))
+            {
+                Vector3 alignmentNormal = probe.Normal + edgeProbe.Normal;
+                if (alignmentNormal.sqrMagnitude > 0.000001f)
                 {
-                    probe = edgeProbe;
+                    alignmentNormal.Normalize();
+                    probe.AlignmentNormal = alignmentNormal;
                 }
             }
 
-            UpdateCachedGround(probe);
             return probe;
         }
 
         private bool ShouldUseEdgeProbe(Vector3 motion)
         {
-            if (!useDirectionalEdgeGroundProbe)
+            if (!useDirectionalEdgeGroundProbe || movementBody == null || movementBody.groundMask.value == 0)
             {
                 return false;
             }
@@ -353,7 +537,67 @@ namespace Game.Scripts.Gameplay.Robots
                 return true;
             }
 
-            return motion.sqrMagnitude >= minEdgeProbeMotion * minEdgeProbeMotion || Mathf.Abs(currentForwardSpeed) > 0.05f;
+            float threshold = Mathf.Max(0.05f, minEdgeProbeMotion);
+            return motion.sqrMagnitude >= threshold * threshold;
+        }
+
+        private bool TryProbeGroundSingle(Vector3 centerPosition, Vector3 samplePosition, float distance, float sampleOffsetSqr, out GroundProbe probe)
+        {
+            probe = CreateEmptyGroundProbe(centerPosition);
+            if (movementBody == null || movementBody.groundMask.value == 0)
+            {
+                return false;
+            }
+
+            float radius = movementBody.GroundProbeRadius;
+            Vector3 origin = samplePosition + _probeUp * radius;
+            float castDistance = Mathf.Max(0.01f, movementBody.BodyHeightOffset + radius + distance);
+            if (!Physics.SphereCast(
+                    origin,
+                    radius,
+                    -_probeUp,
+                    out RaycastHit hit,
+                    castDistance,
+                    movementBody.groundMask,
+                    QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            Vector3 normal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal.normalized : Vector3.up;
+            float groundY = GetGroundYAtPoint(centerPosition, hit.point, normal);
+            Vector3 groundPosition = new Vector3(centerPosition.x, groundY, centerPosition.z);
+            float desiredY = groundY + movementBody.BodyHeightOffset;
+
+            probe = new GroundProbe
+            {
+                Hit = true,
+                Point = groundPosition,
+                Normal = normal,
+                AlignmentNormal = normal,
+                DesiredY = desiredY,
+                DistanceToDesiredHeight = centerPosition.y - desiredY,
+                SampleOffsetSqr = sampleOffsetSqr,
+                SlopeAngle = Vector3.Angle(normal, Vector3.up)
+            };
+            return true;
+        }
+
+        private bool ShouldPreferEdgeProbe(GroundProbe center, GroundProbe edge)
+        {
+            bool centerSteep = IsSteep(center);
+            bool edgeSteep = IsSteep(edge);
+            if (centerSteep && !edgeSteep)
+            {
+                return true;
+            }
+
+            if (!centerSteep && edgeSteep)
+            {
+                return false;
+            }
+
+            return edge.DesiredY > center.DesiredY + 0.025f;
         }
 
         private Vector3 GetEdgeProbeDirection(Vector3 motion)
@@ -364,82 +608,18 @@ namespace Game.Scripts.Gameplay.Robots
                 return flatMotion.normalized;
             }
 
-            return GetYawForward();
+            return _yawForward;
         }
 
         private float GetEdgeProbeOffset(Vector3 edgeDirection)
         {
-            Vector3 forward = GetYawForward();
-            float forwardDot = Mathf.Abs(Vector3.Dot(edgeDirection, forward));
-            return forwardDot >= 0.707f
-                ? movementBody.GroundProbeForwardOffset
-                : movementBody.GroundProbeSideOffset;
-        }
-
-        private bool TryProbeGroundSingle(Vector3 centerPosition, Vector3 samplePosition, float distance, float sampleOffsetSqr, out GroundProbe probe)
-        {
-            probe = CreateEmptyGroundProbe(centerPosition);
-            float radius = movementBody.GroundProbeRadius;
-            Vector3 probeUp = GetGroundProbeUp();
-            Vector3 origin = samplePosition + probeUp * radius;
-            float castDistance = Mathf.Max(0.01f, movementBody.BodyHeightOffset + radius + distance);
-            if (!Physics.SphereCast(
-                    origin,
-                    radius,
-                    -probeUp,
-                    out RaycastHit hit,
-                    castDistance,
-                    movementBody.groundMask,
-                    QueryTriggerInteraction.Ignore))
+            float forwardDot = Mathf.Abs(Vector3.Dot(edgeDirection, _yawForward));
+            if (forwardDot >= 0.707f)
             {
-                return false;
+                return movementBody.GroundProbeForwardOffset;
             }
 
-            Vector3 normal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal.normalized : Vector3.up;
-            Vector3 groundPoint = GetGroundPointUnderTiltedBody(centerPosition, hit.point, normal, probeUp);
-            float desiredY = groundPoint.y + probeUp.y * movementBody.BodyHeightOffset;
-            probe = new GroundProbe
-            {
-                Hit = true,
-                Point = groundPoint,
-                Normal = normal,
-                AlignmentNormal = normal,
-                ProbeUp = probeUp,
-                DesiredY = desiredY,
-                DistanceToDesiredHeight = centerPosition.y - desiredY,
-                SampleOffsetSqr = sampleOffsetSqr,
-                SampleGroundY = hit.point.y
-            };
-            probe.SlopeAngle = Vector3.Angle(probe.Normal, Vector3.up);
-            return true;
-        }
-
-        private void ApplyEdgeProbeNormal(ref GroundProbe center, GroundProbe edge)
-        {
-            if (!center.Hit || !edge.Hit || center.SlopeAngle > GetMaxSlopeAngle())
-            {
-                return;
-            }
-
-            Vector3 normal = center.Normal + edge.Normal;
-            if (normal.sqrMagnitude <= 0.000001f)
-            {
-                return;
-            }
-
-            normal.Normalize();
-            float angle = Vector3.Angle(normal, Vector3.up);
-            if (angle <= GetMaxSlopeAlignmentAngle())
-            {
-                center.AlignmentNormal = normal;
-            }
-        }
-
-        private Vector3 GetGroundPointUnderTiltedBody(Vector3 centerPosition, Vector3 hitPoint, Vector3 normal, Vector3 probeUp)
-        {
-            Vector3 lowerPoint = centerPosition - probeUp * movementBody.BodyHeightOffset;
-            float supportY = GetGroundYAtPoint(lowerPoint, hitPoint, normal);
-            return new Vector3(lowerPoint.x, supportY, lowerPoint.z);
+            return movementBody.GroundProbeSideOffset;
         }
 
         private static float GetGroundYAtPoint(Vector3 worldPoint, Vector3 hitPoint, Vector3 normal)
@@ -454,102 +634,34 @@ namespace Game.Scripts.Gameplay.Robots
             return hitPoint.y - (normal.x * dx + normal.z * dz) / normal.y;
         }
 
-        private bool IsBetterGroundProbe(GroundProbe candidate, GroundProbe current)
+        private bool ShouldProbeFinalGround(Vector3 horizontalMotion, float verticalMotion)
         {
-            if (!candidate.Hit)
-            {
-                return false;
-            }
-
-            if (!current.Hit)
-            {
-                return true;
-            }
-
-            bool candidateUsable = candidate.SlopeAngle <= GetMaxSlopeAngle();
-            bool currentUsable = current.SlopeAngle <= GetMaxSlopeAngle();
-            if (candidateUsable && !currentUsable)
-            {
-                return true;
-            }
-
-            if (!candidateUsable && currentUsable)
-            {
-                return false;
-            }
-
-            bool candidateNeedsLift = candidate.DistanceToDesiredHeight < -0.001f;
-            bool currentNeedsLift = current.DistanceToDesiredHeight < -0.001f;
-            if (candidateUsable && currentUsable && candidateNeedsLift != currentNeedsLift)
-            {
-                return candidateNeedsLift;
-            }
-
-            float candidateDistance = Mathf.Abs(candidate.DistanceToDesiredHeight);
-            float currentDistance = Mathf.Abs(current.DistanceToDesiredHeight);
-            if (candidateDistance < currentDistance - 0.01f)
-            {
-                return true;
-            }
-
-            if (candidateDistance > currentDistance + 0.01f)
-            {
-                return false;
-            }
-
-            return candidate.SampleOffsetSqr < current.SampleOffsetSqr;
-        }
-
-        private void UpdateCachedGround(GroundProbe probe)
-        {
-            if (probe.Hit)
-            {
-                _lastGround = probe;
-            }
-        }
-
-        private GroundProbe CreateEmptyGroundProbe(Vector3 position)
-        {
-            return new GroundProbe
-            {
-                Hit = false,
-                Point = position,
-                Normal = Vector3.up,
-                AlignmentNormal = Vector3.up,
-                ProbeUp = Vector3.up,
-                SlopeAngle = 0f,
-                DesiredY = position.y,
-                DistanceToDesiredHeight = float.PositiveInfinity,
-                SampleOffsetSqr = float.PositiveInfinity,
-                SampleGroundY = position.y
-            };
+            return horizontalMotion.sqrMagnitude > 0.0000005f || Mathf.Abs(verticalMotion) > 0.0001f || !isGrounded;
         }
 
         private void ApplyGroundState(GroundProbe ground, Vector3 position, bool wasGrounded)
         {
-            if (ground.Hit)
+            if (!ground.Hit)
             {
-                groundPoint = ground.Point;
-                groundNormal = GetProbeAlignmentNormal(ground);
-                slopeAngle = ground.SlopeAngle;
-                bool canUseGround = CanUseGround(ground, position, wasGrounded);
-                isGrounded = ground.SlopeAngle <= GetMaxSlopeAngle() && canUseGround;
-                isSlidingOnSteepSlope = !isGrounded && GetSlideOnSteepSlopes() && ground.SlopeAngle > GetMaxSlopeAngle() && canUseGround;
+                SetAirborneGroundState(position);
                 return;
             }
 
-            groundPoint = position;
-            groundNormal = Vector3.up;
-            slopeAngle = 0f;
-            isGrounded = false;
-            isSlidingOnSteepSlope = false;
+            groundPoint = ground.Point;
+            groundNormal = GetProbeAlignmentNormal(ground);
+            slopeAngle = ground.SlopeAngle;
+
+            bool canUseGround = CanUseGround(ground, position, wasGrounded);
+            bool steep = IsSteep(ground);
+            isGrounded = canUseGround && !steep;
+            isSlidingOnSteepSlope = canUseGround && steep && _slideOnSteepSlopes;
         }
 
-        private bool TryResolveFinalGround(GroundProbe finalGround, bool wasGrounded, RobotMovementGlobalSettings settings, float dt, ref Vector3 position)
+        private bool TryResolveFinalGround(GroundProbe finalGround, bool wasGrounded, float dt, ref Vector3 position)
         {
             if (!finalGround.Hit)
             {
-                ApplyGroundState(finalGround, position, wasGrounded);
+                SetAirborneGroundState(position);
                 return false;
             }
 
@@ -564,33 +676,45 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            bool steep = finalGround.SlopeAngle > GetMaxSlopeAngle();
-            if (steep && !GetSlideOnSteepSlopes())
+            bool steep = IsSteep(finalGround);
+            if (steep && !_slideOnSteepSlopes)
             {
                 isGrounded = false;
                 isSlidingOnSteepSlope = false;
                 return false;
             }
 
-            ApplyGroundHeight(finalGround, settings, dt, ref position);
+            ApplyGroundHeight(finalGround, dt, ref position);
             isGrounded = !steep;
             isSlidingOnSteepSlope = steep;
             return true;
         }
 
-        private void ApplyGroundHeight(GroundProbe ground, RobotMovementGlobalSettings settings, float dt, ref Vector3 position)
+        private void SetAirborneGroundState(Vector3 position)
+        {
+            groundPoint = position;
+            groundNormal = Vector3.up;
+            slopeAngle = 0f;
+            isGrounded = false;
+            isSlidingOnSteepSlope = false;
+        }
+
+        private void ApplyGroundHeight(GroundProbe ground, float dt, ref Vector3 position)
         {
             float targetY = ground.DesiredY;
-            float lerpSpeed = GetGroundHeightLerpSpeed(settings);
-            if (lerpSpeed <= 0f || dt <= 0f)
+            if (_groundHeightLerpSpeed <= 0f)
             {
                 position.y = targetY;
                 return;
             }
 
-            float t = 1f - Mathf.Exp(-lerpSpeed * dt);
+            float heightSpeed = targetY >= position.y
+                ? _groundHeightLerpSpeed * 1.75f
+                : _groundHeightLerpSpeed;
+            float t = 1f - Mathf.Exp(-heightSpeed * dt);
             position.y = Mathf.Lerp(position.y, targetY, t);
-            float maxAllowedError = Mathf.Max(0.01f, GetGroundCheckDistance(settings) * 0.5f);
+
+            float maxAllowedError = Mathf.Max(0.01f, _groundCheckDistance * 0.5f);
             if (targetY > position.y && targetY - position.y > maxAllowedError)
             {
                 position.y = targetY - maxAllowedError;
@@ -605,31 +729,22 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             float distanceToDesired = position.y - ground.DesiredY;
-            float checkDistance = GetGroundCheckDistance(_activeSettings);
-            float snapDistance = Mathf.Max(checkDistance, GetGroundSnapDistance(_activeSettings));
-            if (distanceToDesired >= -snapDistance && distanceToDesired <= snapDistance)
-            {
-                return true;
-            }
+            float lowerTolerance = wasGrounded
+                ? -(_groundCheckDistance + _smallPitBridgeMaxDrop)
+                : -_groundCheckDistance;
+            float upperTolerance = wasGrounded
+                ? _groundSnapDistance + _smallPitBridgeMaxDrop
+                : _groundSnapDistance;
 
-            if (wasGrounded && distanceToDesired >= -(snapDistance + checkDistance) && distanceToDesired <= snapDistance + checkDistance)
-            {
-                return true;
-            }
-
-            if (_lastGround.Hit && GetSmallPitBridgeMaxDrop() > 0f && Mathf.Abs(distanceToDesired) <= snapDistance + GetSmallPitBridgeMaxDrop())
-            {
-                return true;
-            }
-
-            return false;
+            return distanceToDesired >= lowerTolerance && distanceToDesired <= upperTolerance;
         }
 
         private Vector3 ResolveCollision(Vector3 startPosition, Vector3 motion)
         {
             Vector3 flatMotion = new Vector3(motion.x, 0f, motion.z);
             float flatDistance = flatMotion.magnitude;
-            if (flatDistance <= minCollisionCastDistance || movementBody.collisionMask.value == 0)
+            float collisionThreshold = Mathf.Max(0.01f, minCollisionCastDistance);
+            if (flatDistance <= collisionThreshold || movementBody == null || movementBody.collisionMask.value == 0)
             {
                 return motion;
             }
@@ -670,7 +785,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private Vector3 TryBuildCollisionSlide(Vector3 startPosition, Vector3 allowedMotion, Vector3 remainingMotion, Vector3 hitNormal, float skin)
         {
-            if (!allowCollisionSlide || !GetWallSlideEnabled())
+            if (!allowCollisionSlide || !_wallSlideEnabled)
             {
                 return allowedMotion;
             }
@@ -678,7 +793,8 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 slide = Vector3.ProjectOnPlane(remainingMotion, hitNormal);
             slide.y = 0f;
             float slideDistance = slide.magnitude;
-            if (slideDistance <= 0.0001f)
+            float collisionThreshold = Mathf.Max(0.01f, minCollisionCastDistance);
+            if (slideDistance <= collisionThreshold)
             {
                 return allowedMotion;
             }
@@ -709,22 +825,22 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyMotorRotation(Vector3 targetGroundNormal, float dt)
         {
-            Transform alignmentRoot = slopeAlignmentRoot != null ? slopeAlignmentRoot : transform;
+            Transform alignmentRoot = slopeAlignmentRoot != null ? slopeAlignmentRoot : _cachedTransform;
             Vector3 alignmentNormal = GetSlopeAlignmentNormal(targetGroundNormal);
-            Vector3 forward = Vector3.ProjectOnPlane(GetYawForward(), alignmentNormal);
+            Vector3 forward = Vector3.ProjectOnPlane(_yawForward, alignmentNormal);
             if (forward.sqrMagnitude <= 0.000001f)
             {
-                forward = GetYawForward();
+                forward = _yawForward;
             }
 
             Quaternion targetRotation = Quaternion.LookRotation(forward.normalized, alignmentNormal);
-            float t = 1f;
-            float alignmentSpeed = GetSlopeAlignmentSpeed();
-            if (alignmentSpeed > 0f && dt > 0f)
+            if (_slopeAlignmentSpeed <= 0f)
             {
-                t = 1f - Mathf.Exp(-alignmentSpeed * dt);
+                alignmentRoot.rotation = targetRotation;
+                return;
             }
 
+            float t = 1f - Mathf.Exp(-_slopeAlignmentSpeed * dt);
             alignmentRoot.rotation = Quaternion.Slerp(alignmentRoot.rotation, targetRotation, t);
         }
 
@@ -748,18 +864,18 @@ namespace Game.Scripts.Gameplay.Robots
                 return Vector3.up;
             }
 
-            float targetAngle = Mathf.Min(GetMaxSlopeAlignmentAngle(), groundAngle * GetSlopeAlignmentStrength());
+            float targetAngle = Mathf.Min(_maxSlopeAlignmentAngle, groundAngle * _slopeAlignmentStrength);
             return Quaternion.AngleAxis(targetAngle, axis.normalized) * Vector3.up;
         }
 
-        private Vector3 GetGroundProbeUp()
+        private Vector3 BuildProbeUp()
         {
             if (!useAlignedGroundProbeDirection)
             {
                 return Vector3.up;
             }
 
-            Transform alignmentRoot = slopeAlignmentRoot != null ? slopeAlignmentRoot : transform;
+            Transform alignmentRoot = slopeAlignmentRoot != null ? slopeAlignmentRoot : _cachedTransform;
             Vector3 up = alignmentRoot != null ? alignmentRoot.up : Vector3.up;
             if (up.sqrMagnitude <= 0.000001f)
             {
@@ -780,8 +896,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             float angle = Vector3.Angle(Vector3.up, up);
-            float maxAngle = Mathf.Clamp(GetMaxSlopeAlignmentAngle(), 0f, 85f);
-            if (angle <= maxAngle)
+            if (angle <= _maxSlopeAlignmentAngle)
             {
                 return up;
             }
@@ -792,7 +907,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return Vector3.up;
             }
 
-            return Quaternion.AngleAxis(maxAngle, axis.normalized) * Vector3.up;
+            return Quaternion.AngleAxis(_maxSlopeAlignmentAngle, axis.normalized) * Vector3.up;
         }
 
         private Vector3 GetProbeAlignmentNormal(GroundProbe ground)
@@ -815,24 +930,18 @@ namespace Game.Scripts.Gameplay.Robots
             Color color = Color.red;
             if (ground.Hit)
             {
-                color = ground.SlopeAngle <= GetMaxSlopeAngle() ? Color.green : Color.yellow;
+                color = IsSteep(ground) ? Color.yellow : Color.green;
                 Debug.DrawLine(position, ground.Point, color, Time.fixedDeltaTime);
                 Debug.DrawRay(ground.Point, ground.Normal * 0.5f, color, Time.fixedDeltaTime);
                 return;
             }
 
-            Debug.DrawRay(position, -GetGroundProbeUp() * Mathf.Max(0.1f, movementBody.BodyHeightOffset + GetGroundSnapDistance(_activeSettings)), color, Time.fixedDeltaTime);
+            Debug.DrawRay(position, -_probeUp * Mathf.Max(0.1f, movementBody.BodyHeightOffset + _groundProbeDistance), color, Time.fixedDeltaTime);
         }
 
-        private bool IsMovingUpTooSteepSlope(Vector3 flatDirection, Vector3 normal)
+        private bool IsSteep(GroundProbe ground)
         {
-            Vector3 downhill = GetSlopeDownhill(normal);
-            if (downhill.sqrMagnitude <= 0.000001f)
-            {
-                return false;
-            }
-
-            return Vector3.Dot(flatDirection, downhill) < -0.05f;
+            return ground.Hit && ground.Normal.y < _maxSlopeDot;
         }
 
         private static Vector3 GetSlopeDownhill(Vector3 normal)
@@ -848,8 +957,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private Vector3 RemoveUphillMotion(Vector3 motion, Vector3 normal)
         {
-            Vector3 flatMotion = new Vector3(motion.x, 0f, motion.z);
-            if (flatMotion.sqrMagnitude <= 0.000001f)
+            if (motion.sqrMagnitude <= 0.000001f)
             {
                 return Vector3.zero;
             }
@@ -860,130 +968,20 @@ namespace Game.Scripts.Gameplay.Robots
                 return motion;
             }
 
-            float uphillAmount = Vector3.Dot(flatMotion, -downhill);
+            float uphillAmount = Vector3.Dot(motion, -downhill);
             if (uphillAmount <= 0f)
             {
                 return motion;
             }
 
-            float removeAmount = uphillAmount * Mathf.Clamp01(1f - GetSteepSlopeUphillControl());
-            Vector3 adjusted = flatMotion + downhill * removeAmount;
+            float removeAmount = uphillAmount * Mathf.Clamp01(1f - _steepSlopeUphillControl);
+            Vector3 adjusted = motion + downhill * removeAmount;
             if (adjusted.sqrMagnitude <= 0.000001f)
             {
                 return Vector3.zero;
             }
 
             return adjusted;
-        }
-
-        private Vector3 GetYawForward()
-        {
-            Quaternion yawRotation = Quaternion.Euler(0f, _motorYaw, 0f);
-            return yawRotation * Vector3.forward;
-        }
-
-        private void EnsureMotorYawInitialized()
-        {
-            if (_hasMotorYaw)
-            {
-                return;
-            }
-
-            _motorYaw = transform.eulerAngles.y;
-            _hasMotorYaw = true;
-        }
-
-        private float GetTargetForwardSpeed(RobotMovementGlobalSettings settings)
-        {
-            if (movementInput > 0f)
-            {
-                return movementInput * GetMaxForwardSpeed(settings);
-            }
-
-            if (movementInput < 0f)
-            {
-                return movementInput * GetMaxReverseSpeed(settings);
-            }
-
-            return 0f;
-        }
-
-        private float GetMaxForwardSpeed(RobotMovementGlobalSettings settings)
-        {
-            if (maxForwardSpeed > 0f)
-            {
-                return maxForwardSpeed;
-            }
-
-            return Mathf.Max(0f, settings.fallbackMaxSpeed);
-        }
-
-        private float GetMaxReverseSpeed(RobotMovementGlobalSettings settings)
-        {
-            if (maxReverseSpeed > 0f)
-            {
-                return maxReverseSpeed;
-            }
-
-            return GetMaxForwardSpeed(settings) * 0.5f;
-        }
-
-        private float GetAcceleration(RobotMovementGlobalSettings settings)
-        {
-            if (acceleration > 0f)
-            {
-                return acceleration;
-            }
-
-            return Mathf.Max(0.01f, settings.fallbackAcceleration);
-        }
-
-        private float GetBrakeDeceleration(RobotMovementGlobalSettings settings, bool isLegged)
-        {
-            float value = brakeDeceleration > 0f
-                ? brakeDeceleration
-                : GetAcceleration(settings) * Mathf.Max(1f, settings.stoppingAccelerationMultiplier);
-            return Mathf.Max(0.01f, value * settings.GetBrakingMultiplier(isLegged));
-        }
-
-        private float GetNaturalDeceleration(RobotMovementGlobalSettings settings)
-        {
-            if (naturalDeceleration > 0f)
-            {
-                return naturalDeceleration;
-            }
-
-            return GetAcceleration(settings);
-        }
-
-        private float GetTurnSpeed(RobotMovementGlobalSettings settings)
-        {
-            if (_useRuntimeTraverseSpeed)
-            {
-                return Mathf.Max(0f, _runtimeTraverseSpeedDegPerSecond);
-            }
-
-            if (turnSpeed > 0f)
-            {
-                return turnSpeed;
-            }
-
-            if (settings.fallbackTraverseSpeedDegPerSecond > 0f)
-            {
-                return settings.fallbackTraverseSpeedDegPerSecond;
-            }
-
-            return rotateSpeed / Mathf.Max(Time.fixedDeltaTime, 0.0001f);
-        }
-
-        private float GetTurnAcceleration(RobotMovementGlobalSettings settings)
-        {
-            if (turnAcceleration > 0f)
-            {
-                return turnAcceleration;
-            }
-
-            return Mathf.Max(1f, GetTurnSpeed(settings) * 4f);
         }
 
         private bool IsBraking(float targetSpeed)
@@ -1003,199 +1001,36 @@ namespace Game.Scripts.Gameplay.Robots
             return directionChanged || reducingSpeed;
         }
 
-        private float GetGravity(RobotMovementGlobalSettings settings)
+        private void EnsureMotorYawInitialized()
         {
-            if (settings != null && settings.gravity > 0f)
+            if (_hasMotorYaw)
             {
-                return settings.gravity;
+                return;
             }
 
-            if (gravity > 0f)
-            {
-                return gravity;
-            }
-
-            return RobotMovementGlobalSettings.Default.gravity;
+            _motorYaw = _cachedTransform != null ? _cachedTransform.eulerAngles.y : transform.eulerAngles.y;
+            _hasMotorYaw = true;
+            UpdateYawForward();
         }
 
-        private float GetMaxFallSpeed(RobotMovementGlobalSettings settings)
+        private void UpdateYawForward()
         {
-            if (settings != null && settings.maxFallSpeed > 0f)
-            {
-                return settings.maxFallSpeed;
-            }
-
-            if (maxFallSpeed > 0f)
-            {
-                return maxFallSpeed;
-            }
-
-            return RobotMovementGlobalSettings.Default.maxFallSpeed;
+            _yawForward = Quaternion.Euler(0f, _motorYaw, 0f) * Vector3.forward;
         }
 
-        private float GetGroundProbeDistance(RobotMovementGlobalSettings settings)
+        private GroundProbe CreateEmptyGroundProbe(Vector3 position)
         {
-            return Mathf.Max(GetGroundCheckDistance(settings), GetGroundSnapDistance(settings));
-        }
-
-        private float GetGroundCheckDistance(RobotMovementGlobalSettings settings)
-        {
-            if (settings != null && settings.groundCheckDistance > 0f)
+            return new GroundProbe
             {
-                return settings.groundCheckDistance;
-            }
-
-            if (groundCheckDistance > 0f)
-            {
-                return groundCheckDistance;
-            }
-
-            return RobotMovementGlobalSettings.Default.groundCheckDistance;
-        }
-
-        private float GetGroundSnapDistance(RobotMovementGlobalSettings settings)
-        {
-            if (settings != null && settings.groundSnapDistance > 0f)
-            {
-                return settings.groundSnapDistance;
-            }
-
-            if (groundSnapDistance > 0f)
-            {
-                return groundSnapDistance;
-            }
-
-            if (settings != null && settings.groundedSnap > 0f)
-            {
-                return settings.groundedSnap;
-            }
-
-            return RobotMovementGlobalSettings.Default.groundSnapDistance;
-        }
-
-        private float GetGroundHeightLerpSpeed(RobotMovementGlobalSettings settings)
-        {
-            if (settings != null && settings.groundHeightLerpSpeed >= 0f)
-            {
-                return settings.groundHeightLerpSpeed;
-            }
-
-            return Mathf.Max(0f, groundHeightLerpSpeed);
-        }
-
-        private float GetSmallPitBridgeMaxDrop()
-        {
-            if (_activeSettings != null && _activeSettings.smallPitBridgeMaxDrop >= 0f)
-            {
-                return _activeSettings.smallPitBridgeMaxDrop;
-            }
-
-            return Mathf.Max(0f, smallPitBridgeMaxDrop);
-        }
-
-        private float GetMaxSlopeAngle()
-        {
-            if (_activeSettings != null && _activeSettings.maxSlopeAngle > 0f)
-            {
-                return Mathf.Clamp(_activeSettings.maxSlopeAngle, 0.01f, 89f);
-            }
-
-            if (maxSlopeAngle > 0f)
-            {
-                return Mathf.Clamp(maxSlopeAngle, 0.01f, 89f);
-            }
-
-            return RobotMovementGlobalSettings.Default.maxSlopeAngle;
-        }
-
-        private bool GetSlideOnSteepSlopes()
-        {
-            if (_activeSettings != null)
-            {
-                return _activeSettings.slideOnSteepSlopes;
-            }
-
-            return slideOnSteepSlopes;
-        }
-
-        private float GetSteepSlopeSlideAcceleration()
-        {
-            if (_activeSettings != null && _activeSettings.steepSlopeSlideAcceleration >= 0f)
-            {
-                return _activeSettings.steepSlopeSlideAcceleration;
-            }
-
-            return Mathf.Max(0f, steepSlopeSlideAcceleration);
-        }
-
-        private float GetSteepSlopeMaxSlideSpeed()
-        {
-            if (_activeSettings != null && _activeSettings.steepSlopeMaxSlideSpeed >= 0f)
-            {
-                return _activeSettings.steepSlopeMaxSlideSpeed;
-            }
-
-            return Mathf.Max(0f, steepSlopeMaxSlideSpeed);
-        }
-
-        private float GetSteepSlopeSlideDamping()
-        {
-            if (_activeSettings != null && _activeSettings.steepSlopeSlideDamping >= 0f)
-            {
-                return _activeSettings.steepSlopeSlideDamping;
-            }
-
-            return Mathf.Max(0f, steepSlopeSlideDamping);
-        }
-
-        private float GetSteepSlopeUphillControl()
-        {
-            if (_activeSettings != null && _activeSettings.steepSlopeUphillControl >= 0f)
-            {
-                return Mathf.Clamp01(_activeSettings.steepSlopeUphillControl);
-            }
-
-            return Mathf.Clamp01(steepSlopeUphillControl);
-        }
-
-        private float GetSlopeAlignmentStrength()
-        {
-            if (_activeSettings != null && _activeSettings.slopeAlignmentStrength >= 0f)
-            {
-                return _activeSettings.slopeAlignmentStrength;
-            }
-
-            return Mathf.Max(0f, slopeAlignmentStrength);
-        }
-
-        private float GetSlopeAlignmentSpeed()
-        {
-            if (_activeSettings != null && _activeSettings.slopeAlignmentSpeed >= 0f)
-            {
-                return _activeSettings.slopeAlignmentSpeed;
-            }
-
-            return Mathf.Max(0f, slopeAlignmentSpeed);
-        }
-
-        private float GetMaxSlopeAlignmentAngle()
-        {
-            if (_activeSettings != null && _activeSettings.maxSlopeAlignmentAngle >= 0f)
-            {
-                return Mathf.Clamp(_activeSettings.maxSlopeAlignmentAngle, 0f, 85f);
-            }
-
-            return Mathf.Clamp(maxSlopeAlignmentAngle, 0f, 85f);
-        }
-
-        private bool GetWallSlideEnabled()
-        {
-            if (_activeSettings != null)
-            {
-                return _activeSettings.wallSlideEnabled;
-            }
-
-            return true;
+                Hit = false,
+                Point = position,
+                Normal = Vector3.up,
+                AlignmentNormal = Vector3.up,
+                DesiredY = position.y,
+                DistanceToDesiredHeight = float.PositiveInfinity,
+                SampleOffsetSqr = float.PositiveInfinity,
+                SlopeAngle = 0f
+            };
         }
 
         private struct GroundProbe
@@ -1204,12 +1039,10 @@ namespace Game.Scripts.Gameplay.Robots
             public Vector3 Point;
             public Vector3 Normal;
             public Vector3 AlignmentNormal;
-            public Vector3 ProbeUp;
-            public float SlopeAngle;
             public float DesiredY;
             public float DistanceToDesiredHeight;
             public float SampleOffsetSqr;
-            public float SampleGroundY;
+            public float SlopeAngle;
         }
     }
 }

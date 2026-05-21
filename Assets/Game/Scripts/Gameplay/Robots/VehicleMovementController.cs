@@ -7,6 +7,11 @@ namespace Game.Scripts.Gameplay.Robots
     [DisallowMultipleComponent]
     public class VehicleMovementController : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
     {
+        private const float MovementSettingsRefreshInterval = 0.5f;
+
+        private static RobotMovementGlobalSettings _sharedMovementSettings;
+        private static float _nextMovementSettingsRefreshTime;
+
         public VehicleRoot vehicleRoot;
         public RobotMovementMotor motor;
 
@@ -56,10 +61,21 @@ namespace Game.Scripts.Gameplay.Robots
             using (ProfileScope.Measure("Server.VehicleMovement.FixedUpdate", DiagnosticsCategories.Physics))
             {
                 Vector2 moveInput = vehicleRoot.inputManager != null ? vehicleRoot.inputManager.Move : Vector2.zero;
-                RobotMovementGlobalSettings settings = ServerSettings.GetRobotMovement();
+                RobotMovementGlobalSettings settings = GetMovementSettings();
                 bool isLegged = vehicleRoot.footAnimator != null;
                 motor.Tick(moveInput, settings, Time.fixedDeltaTime, isLegged);
             }
+        }
+
+        private static RobotMovementGlobalSettings GetMovementSettings()
+        {
+            if (_sharedMovementSettings == null || Time.unscaledTime >= _nextMovementSettingsRefreshTime)
+            {
+                _sharedMovementSettings = ServerSettings.GetRobotMovement();
+                _nextMovementSettingsRefreshTime = Time.unscaledTime + MovementSettingsRefreshInterval;
+            }
+
+            return _sharedMovementSettings;
         }
 
         private void EnsureMotor()
