@@ -5,6 +5,8 @@ namespace Game.Scripts.Conditions
 {
     public class RoomConditionRebuilder : NetworkBehaviour
     {
+        public NetworkObserver networkObserver;
+
         private string _roomID;
         
         public void SetupRoomID(string roomID)
@@ -14,7 +16,6 @@ namespace Game.Scripts.Conditions
         
         public override void OnStartServer()
         {
-            NetworkObserver networkObserver = GetComponent<NetworkObserver>();
             if (networkObserver != null)
             {
                 ObserverCondition roomCondition = networkObserver.GetObserverCondition<RoomCondition>();

@@ -21,6 +21,7 @@ namespace Game.Scripts.AI.WaypointGraph
 
         private void Awake()
         {
+            RegisterForScene();
             if (buildOnAwake)
             {
                 Build();
@@ -45,47 +46,18 @@ namespace Game.Scripts.AI.WaypointGraph
                 return cachedGraph;
             }
 
-            GameObject[] roots = scene.GetRootGameObjects();
-            for (int i = 0; i < roots.Length; i++)
-            {
-                WaypointGraphRuntime graph = roots[i].GetComponentInChildren<WaypointGraphRuntime>(true);
-                if (graph != null)
-                {
-                    if (!graph.IsBuilt)
-                    {
-                        graph.Build();
-                    }
-
-                    GraphBySceneHandle[sceneHandle] = graph;
-                    return graph;
-                }
-            }
-
-            for (int i = 0; i < roots.Length; i++)
-            {
-                WaypointPointSpawner spawner = roots[i].GetComponentInChildren<WaypointPointSpawner>(true);
-                if (spawner == null)
-                {
-                    continue;
-                }
-
-                WaypointGraphRuntime graph = spawner.GetComponent<WaypointGraphRuntime>();
-                if (graph == null)
-                {
-                    graph = spawner.gameObject.AddComponent<WaypointGraphRuntime>();
-                }
-
-                graph.source = spawner;
-                if (!graph.IsBuilt)
-                {
-                    graph.Build();
-                }
-
-                GraphBySceneHandle[sceneHandle] = graph;
-                return graph;
-            }
-
             return null;
+        }
+
+        private void RegisterForScene()
+        {
+            Scene scene = gameObject.scene;
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            GraphBySceneHandle[scene.handle] = this;
         }
 
         private void OnDestroy()
@@ -103,11 +75,6 @@ namespace Game.Scripts.AI.WaypointGraph
             _neighbors.Clear();
             _edgeCount = 0;
             _isBuilt = false;
-
-            if (source == null)
-            {
-                source = GetComponent<WaypointPointSpawner>();
-            }
 
             if (source == null || source.WaypointPointCount <= 0)
             {

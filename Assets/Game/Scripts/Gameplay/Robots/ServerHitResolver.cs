@@ -146,9 +146,10 @@ namespace Game.Scripts.Gameplay.Robots
                 dir.Normalize();
             }
 
-            ArmorMap armor = hit.collider != null ? hit.collider.GetComponentInParent<ArmorMap>() : null;
-
-            if (armor != null && armor.TryGetArmorLoS(hit, dir, normDeg, out float baseMm, out float losMm))
+            ArmorMap armor = null;
+            bool hasArmor = hit.collider != null
+                            && VehicleColliderRegistry.TryGetArmor(hit.collider, out armor, out _);
+            if (hasArmor && armor.TryGetArmorLoS(hit, dir, normDeg, out float baseMm, out float losMm))
             {
                 hr.armor = armor;
                 hr.baseMm = baseMm;

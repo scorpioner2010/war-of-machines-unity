@@ -73,16 +73,7 @@ namespace Game.Scripts.UI.HUD
         {
             if (statsText == null)
             {
-                GameObject textObject = new GameObject("PerformanceStatsText", typeof(RectTransform));
-                textObject.transform.SetParent(transform, false);
-                RectTransform rectTransform = textObject.GetComponent<RectTransform>();
-                rectTransform.anchorMin = new Vector2(0f, 1f);
-                rectTransform.anchorMax = new Vector2(0f, 1f);
-                rectTransform.pivot = new Vector2(0f, 1f);
-                rectTransform.anchoredPosition = anchoredPosition;
-                rectTransform.sizeDelta = sizeDelta;
-
-                statsText = textObject.AddComponent<TextMeshProUGUI>();
+                return;
             }
 
             statsText.raycastTarget = false;

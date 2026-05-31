@@ -614,22 +614,7 @@ public class WaypointPointSpawner : MonoBehaviour
 
     private Vector3 GetLegacyPointPosition(Transform pointTransform)
     {
-        Vector3 position = pointTransform.position;
-
-        Renderer pointRenderer = pointTransform.GetComponent<Renderer>();
-        if (pointRenderer != null)
-        {
-            position.y = pointRenderer.bounds.min.y;
-            return position;
-        }
-
-        Collider pointCollider = pointTransform.GetComponent<Collider>();
-        if (pointCollider != null)
-        {
-            position.y = pointCollider.bounds.min.y;
-        }
-
-        return position;
+        return pointTransform.position;
     }
 
     private void ClearLegacyPointObjects()

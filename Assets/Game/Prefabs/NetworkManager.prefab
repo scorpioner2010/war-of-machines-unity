@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3590085890762013607}
   - component: {fileID: 6741285400773246127}
   - component: {fileID: 7906509426840605445}
+  - component: {fileID: 3451912067597259211}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -45,15 +46,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d2c95dfde7d73b54dbbdc23155d35d36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
+  _logging: {fileID: 11400000, guid: c290743b51aae5746a659b528bfcaa8b, type: 2}
+  _spawnablePrefabs: {fileID: 11400000, guid: 6fded6538a390c3489661def0cc083f2, type: 2}
   _refreshDefaultPrefabs: 0
   _runInBackground: 1
   _dontDestroyOnLoad: 1
   _objectPool: {fileID: 0}
   _persistence: 0
-  _logging: {fileID: 11400000, guid: c290743b51aae5746a659b528bfcaa8b, type: 2}
-  _spawnablePrefabs: {fileID: 11400000, guid: 6fded6538a390c3489661def0cc083f2, type: 2}
 --- !u!114 &3590085890762013607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64,8 +65,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34e4a322dca349547989b14021da4e23, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   Transport: {fileID: 6741285400773246127}
   _intermediateLayer: {fileID: 0}
   _latencySimulator:
@@ -84,9 +85,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1cdcee4396754c63a1574492499cffc8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_ProtocolType: 0
+  m_UseWebSockets: 0
+  m_UseEncryption: 0
   m_MaxPacketQueueSize: 128
   m_MaxPayloadSize: 8192
   m_HeartbeatTimeoutMS: 300
@@ -112,8 +115,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68828c85278210948b9d50a8db3aab74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _authenticator: {fileID: 0}
   _remoteClientTimeout: 2
   _remoteClientTimeoutDuration: 60
@@ -128,3 +131,15 @@ MonoBehaviour:
   _frameRate: 500
   _shareIds: 1
   _startOnHeadless: 0
+--- !u!114 &3451912067597259211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2253888701579178645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 001a8cbb62557d44e90ffa0b071297ed, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:

@@ -78,6 +78,7 @@ namespace Game.Scripts.UI.Tree
 
         private void Awake()
         {
+            Singleton<DevelopmentTree>.Register(this);
             if (buttonBack != null)
             {
                 buttonBack.onClick.AddListener(() =>
@@ -682,6 +683,11 @@ namespace Game.Scripts.UI.Tree
                 Popup.ShowText(errorMessage, Color.red);
                 Helpers.StandardLoadingOverlay.Hide();
             }
+        }
+
+        private void OnDestroy()
+        {
+            Singleton<DevelopmentTree>.Unregister(this);
         }
 
         private async UniTask<(bool ok, string msg)> ValidateVehiclePurchaseAsync(string token, string code)

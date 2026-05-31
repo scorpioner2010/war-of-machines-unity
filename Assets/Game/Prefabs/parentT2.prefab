@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 9152046975144589221}
   - component: {fileID: 3682794906883062741}
   - component: {fileID: 7513945445161903994}
+  - component: {fileID: 2430326155810438223}
+  - component: {fileID: 4205130831756668889}
   m_Layer: 6
   m_Name: Mesh
   m_TagString: Untagged
@@ -125,11 +127,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 9152046975144589221}
   minMm: 0
   maxMm: 500
 --- !u!64 &7513945445161903994
@@ -154,6 +157,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &2430326155810438223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3604782360140633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 3682794906883062741}
+  targetCollider: {fileID: 9152046975144589221}
+  targetColliders:
+  - {fileID: 9152046975144589221}
+  - {fileID: 7513945445161903994}
+--- !u!54 &4205130831756668889
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3604782360140633}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &647455470006836335
 GameObject:
   m_ObjectHideFlags: 0
@@ -197,8 +245,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -258,9 +306,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 805d44f536815cc4da19ce0c5f7b2d84, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   target: {fileID: 5542631702882726890}
+  vehicleRoot: {fileID: 0}
 --- !u!114 &13695487001349382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -271,8 +320,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fc02ea525be24849a70636e8c1944b0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 3
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -290,8 +339,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 4
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -333,8 +382,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fb5ce5979365aee4c8a9598785470f3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 5
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -362,8 +411,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5987f9551384272479bbd4abf8ab2314, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 2321927772602250882}
 --- !u!114 &8224641798986285655
 MonoBehaviour:
@@ -375,8 +424,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef0270c2c4760f244a9b728879dd45e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 6
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -384,6 +433,11 @@ MonoBehaviour:
   projectilePrefab: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
     type: 3}
   muzzleTransform: {fileID: 8952852033910042811}
+  prewarmProjectilePools: 1
+  projectilePoolPrewarmCount: 16
+  projectilePoolMaxInactive: 64
+  impactFxPoolPrewarmCount: 16
+  impactFxPoolMaxInactive: 64
   dispersion:
     minDispersionDeg: 0.35
     maxDispersionDeg: 6
@@ -478,8 +532,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d292b6943a4058f4cbdaf76a3ebc5911, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 7
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -504,6 +558,7 @@ GameObject:
   - component: {fileID: 4526065669619433319}
   - component: {fileID: 5421960799121922505}
   - component: {fileID: 1699867880869822920}
+  - component: {fileID: 6430385352218942434}
   m_Layer: 7
   m_Name: ChassisT2
   m_TagString: Untagged
@@ -541,8 +596,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 8
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -584,13 +639,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36fdd18e124788c4a899a54447e560ee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 9
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
   vehicleRoot: {fileID: 2321927772602250882}
-  autoAimController: {fileID: 0}
+  autoAimController: {fileID: 1939820047033769441}
 --- !u!114 &271880699550436314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -601,8 +656,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5654b776c9481674196bf442d87b136a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 2321927772602250882}
   controller: {fileID: 1699867880869822920}
   rotateSpeed: 1.5
@@ -618,8 +673,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e3a559416ea40cc4bac26208109b3c58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 2321927772602250882}
   mesh:
   - {fileID: 1813136458937377862}
@@ -661,8 +716,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3d2785b136e27bd4885bd218c26c18ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 2321927772602250882}
   isActive: 0
 --- !u!143 &1699867880869822920
@@ -690,6 +745,23 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: -0.35, z: 0}
+--- !u!114 &6430385352218942434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007538495778513688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 1699867880869822920}
+  targetColliders:
+  - {fileID: 1699867880869822920}
 --- !u!1 &1588279267747323874
 GameObject:
   m_ObjectHideFlags: 0
@@ -775,8 +847,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -828,8 +900,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -880,9 +952,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d74e09d71de398042bb2b73b90ae2463, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   rig: {fileID: 6688549383904352704}
   distance: 7
 --- !u!1 &2414172230721072739
@@ -897,6 +969,8 @@ GameObject:
   - component: {fileID: 1656960205495312077}
   - component: {fileID: 3655962489009411274}
   - component: {fileID: 610723477013382111}
+  - component: {fileID: 4842784459178835108}
+  - component: {fileID: 55004523620787112}
   m_Layer: 0
   m_Name: MeshGun
   m_TagString: Untagged
@@ -998,6 +1072,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &4842784459178835108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2414172230721072739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 610723477013382111}
+  targetColliders:
+  - {fileID: 610723477013382111}
+--- !u!54 &55004523620787112
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2414172230721072739}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &3680316517887346052
 GameObject:
   m_ObjectHideFlags: 0
@@ -1088,8 +1206,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88d2cee355626ec40b7c83f74b16612a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   raycastLength: 11
   surfaceCheckRadius: 0.5
   raysCount: 8
@@ -1112,6 +1230,8 @@ GameObject:
   - component: {fileID: 2072330985774519493}
   - component: {fileID: 4270121147670834721}
   - component: {fileID: 6840360718182248203}
+  - component: {fileID: 1659798017940381142}
+  - component: {fileID: 887894824306328479}
   m_Layer: 6
   m_Name: Mesh
   m_TagString: Untagged
@@ -1223,11 +1343,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 2072330985774519493}
   minMm: 0
   maxMm: 500
 --- !u!64 &6840360718182248203
@@ -1252,6 +1373,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1659798017940381142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4274408501602491008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 4270121147670834721}
+  targetCollider: {fileID: 2072330985774519493}
+  targetColliders:
+  - {fileID: 2072330985774519493}
+  - {fileID: 6840360718182248203}
+--- !u!54 &887894824306328479
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4274408501602491008}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &4785588825367150714
 GameObject:
   m_ObjectHideFlags: 0
@@ -1296,9 +1462,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ee5f3a5442a81d94e87320844b11dfdc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
 --- !u!114 &6259965124179857752
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1309,8 +1475,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 11
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -1356,6 +1522,8 @@ GameObject:
   - component: {fileID: 5857380509063025}
   - component: {fileID: 8692079976205236039}
   - component: {fileID: 4095854428274272603}
+  - component: {fileID: 5638121352926722959}
+  - component: {fileID: 1654056944249042415}
   m_Layer: 6
   m_Name: MeshBody
   m_TagString: Untagged
@@ -1467,11 +1635,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 5857380509063025}
   minMm: 0
   maxMm: 500
 --- !u!64 &4095854428274272603
@@ -1496,6 +1665,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &5638121352926722959
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4796455086593408660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 8692079976205236039}
+  targetCollider: {fileID: 5857380509063025}
+  targetColliders:
+  - {fileID: 5857380509063025}
+  - {fileID: 4095854428274272603}
+--- !u!54 &1654056944249042415
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4796455086593408660}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &4875260440321820404
 GameObject:
   m_ObjectHideFlags: 0
@@ -1541,8 +1755,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 10
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -1648,8 +1862,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -1701,8 +1915,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -1754,6 +1968,8 @@ GameObject:
   - component: {fileID: 691761467879034209}
   - component: {fileID: 7732302324856301273}
   - component: {fileID: 8983144263683686509}
+  - component: {fileID: 2107462868621070431}
+  - component: {fileID: 255217148474027018}
   m_Layer: 0
   m_Name: Mesh
   m_TagString: Untagged
@@ -1855,6 +2071,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -5495902117074765545, guid: 609779f22d8204b42be0923c6d1e23d3, type: 3}
+--- !u!114 &2107462868621070431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6250260374648159333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 8983144263683686509}
+  targetColliders:
+  - {fileID: 8983144263683686509}
+--- !u!54 &255217148474027018
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6250260374648159333}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &6542548527386282998
 GameObject:
   m_ObjectHideFlags: 0
@@ -1898,8 +2158,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -1951,8 +2211,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -1973,6 +2233,8 @@ GameObject:
   - component: {fileID: 5956355965860058864}
   - component: {fileID: 7734310989905840844}
   - component: {fileID: 2111746909324580752}
+  - component: {fileID: 1281315918735255294}
+  - component: {fileID: 2792516745646551454}
   m_Layer: 0
   m_Name: Mesh
   m_TagString: Untagged
@@ -2074,6 +2336,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -5495902117074765545, guid: 609779f22d8204b42be0923c6d1e23d3, type: 3}
+--- !u!114 &1281315918735255294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7368987007398116940}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 2111746909324580752}
+  targetColliders:
+  - {fileID: 2111746909324580752}
+--- !u!54 &2792516745646551454
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7368987007398116940}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &7389821364265542770
 GameObject:
   m_ObjectHideFlags: 0
@@ -2091,6 +2397,9 @@ GameObject:
   - component: {fileID: -5797703676881531830}
   - component: {fileID: 4814927226351074180}
   - component: {fileID: -7510844428716302861}
+  - component: {fileID: 1939820047033769441}
+  - component: {fileID: 3957680207120508506}
+  - component: {fileID: 5129350956868591253}
   m_Layer: 0
   m_Name: parentT2
   m_TagString: Untagged
@@ -2125,8 +2434,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71fd7f855ec523429999fc4e14a1928, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _overrideType: 3
   _updateHostVisibility: 1
   _observerConditions:
@@ -2141,8 +2450,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   NetworkObserver: {fileID: 0}
   _enablePrediction: 0
   _predictionType: 0
@@ -2203,15 +2512,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2bbe50b95b773004b9859953495130ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
   networkObject: {fileID: 5555427657669337170}
   characterInit: {fileID: -2008785619023378557}
   inputManager: {fileID: 583531272242224289}
-  autoAimController: {fileID: 0}
+  autoAimController: {fileID: 1939820047033769441}
   health: {fileID: 1658283125609888059}
   objectMover: {fileID: 271880699550436314}
   uiSenerd: {fileID: 5421960799121922505}
@@ -2224,6 +2533,200 @@ MonoBehaviour:
   caterpillarTrack: {fileID: 4526065669619433319}
   footAnimator: {fileID: 0}
   vehicleHUD: {fileID: 3572072622275958224}
+  botBrain: {fileID: 3957680207120508506}
+  hoverOutline: {fileID: -7510844428716302861}
+  armorMaps:
+  - {fileID: 8004442081116261019}
+  - {fileID: 8692079976205236039}
+  - {fileID: 4270121147670834721}
+  - {fileID: 3682794906883062741}
+  - {fileID: 3650292885614718680}
+  - {fileID: 8725564028157070820}
+  - {fileID: 1906019534699524755}
+  - {fileID: 6205814235775474080}
+  - {fileID: 8022442518340610916}
+  - {fileID: 1532703198835925729}
+  - {fileID: 1454225938804248227}
+  - {fileID: 7415047185657185143}
+  - {fileID: 1298408056330008778}
+  - {fileID: 2441526047146849457}
+  - {fileID: 4198743985533376642}
+  - {fileID: 75988970454053820}
+  - {fileID: 8890246006673799685}
+  - {fileID: 1729280925316017542}
+  - {fileID: 2212405997371013641}
+  - {fileID: 1023940320580154838}
+  - {fileID: 6464788593453567412}
+  - {fileID: 7853028681350563894}
+  - {fileID: 7448807371655244324}
+  - {fileID: 8928009108090078409}
+  - {fileID: 3727856998539578665}
+  - {fileID: 2704431153785476794}
+  turretColliders:
+  - {fileID: 6359557323337602642}
+  - {fileID: 7419464297932952746}
+  - {fileID: 5857380509063025}
+  - {fileID: 4095854428274272603}
+  - {fileID: 610723477013382111}
+  - {fileID: 7838465248962563390}
+  colliderReferences:
+  - {fileID: 162499315009951648}
+  - {fileID: 5638121352926722959}
+  - {fileID: 4842784459178835108}
+  - {fileID: 5196171549542547461}
+  - {fileID: 6430385352218942434}
+  - {fileID: 1281315918735255294}
+  - {fileID: 2107462868621070431}
+  - {fileID: 1659798017940381142}
+  - {fileID: 2430326155810438223}
+  - {fileID: 5163884804300265696}
+  - {fileID: 6211589802119290877}
+  - {fileID: 2688701030576857527}
+  - {fileID: 8460663429009148044}
+  - {fileID: 5722163358886116040}
+  - {fileID: 5252511564902676318}
+  - {fileID: 3677952070823901587}
+  - {fileID: 5081430935062914465}
+  - {fileID: 1392747580037796205}
+  - {fileID: 6043039433050499127}
+  - {fileID: 326151221952630521}
+  - {fileID: 123061811115773657}
+  - {fileID: 4252500430211999011}
+  - {fileID: 8278208124350282607}
+  - {fileID: 5600179259686216263}
+  - {fileID: 1454713110399970374}
+  - {fileID: 6730173098774637424}
+  - {fileID: 1975823538510508220}
+  - {fileID: 3684205982283823322}
+  - {fileID: 8832862116502943083}
+  - {fileID: 996121427595333909}
+  - {fileID: 7735890674649805522}
+  menuStripComponents:
+  - {fileID: 1991983900910442081}
+  - {fileID: 564381332950435122}
+  - {fileID: 253449025594040953}
+  - {fileID: 8600414046191083880}
+  - {fileID: 6259965124179857752}
+  - {fileID: 5555427657669337170}
+  rootAwareBehaviours:
+  - {fileID: -2008785619023378557}
+  - {fileID: -5797703676881531830}
+  - {fileID: 4814927226351074180}
+  - {fileID: -7510844428716302861}
+  - {fileID: 1939820047033769441}
+  - {fileID: 3957680207120508506}
+  - {fileID: 13695487001349382}
+  - {fileID: 1688689953925605337}
+  - {fileID: 6733234712343286394}
+  - {fileID: 8224641798986285655}
+  - {fileID: 3855264161025134098}
+  - {fileID: 8004442081116261019}
+  - {fileID: 162499315009951648}
+  - {fileID: 8692079976205236039}
+  - {fileID: 5638121352926722959}
+  - {fileID: 4842784459178835108}
+  - {fileID: 5196171549542547461}
+  - {fileID: 583531272242224289}
+  - {fileID: 271880699550436314}
+  - {fileID: 4526065669619433319}
+  - {fileID: 5421960799121922505}
+  - {fileID: 6430385352218942434}
+  - {fileID: 2441243145673459874}
+  - {fileID: 1281315918735255294}
+  - {fileID: 2107462868621070431}
+  - {fileID: 4270121147670834721}
+  - {fileID: 1659798017940381142}
+  - {fileID: 3682794906883062741}
+  - {fileID: 2430326155810438223}
+  - {fileID: 3650292885614718680}
+  - {fileID: 5163884804300265696}
+  - {fileID: 8725564028157070820}
+  - {fileID: 6211589802119290877}
+  - {fileID: 1906019534699524755}
+  - {fileID: 2688701030576857527}
+  - {fileID: 6205814235775474080}
+  - {fileID: 8460663429009148044}
+  - {fileID: 8022442518340610916}
+  - {fileID: 5722163358886116040}
+  - {fileID: 1532703198835925729}
+  - {fileID: 5252511564902676318}
+  - {fileID: 1454225938804248227}
+  - {fileID: 3677952070823901587}
+  - {fileID: 7415047185657185143}
+  - {fileID: 5081430935062914465}
+  - {fileID: 1298408056330008778}
+  - {fileID: 1392747580037796205}
+  - {fileID: 2441526047146849457}
+  - {fileID: 6043039433050499127}
+  - {fileID: 4198743985533376642}
+  - {fileID: 326151221952630521}
+  - {fileID: 75988970454053820}
+  - {fileID: 123061811115773657}
+  - {fileID: 8890246006673799685}
+  - {fileID: 4252500430211999011}
+  - {fileID: 1729280925316017542}
+  - {fileID: 8278208124350282607}
+  - {fileID: 2212405997371013641}
+  - {fileID: 5600179259686216263}
+  - {fileID: 1023940320580154838}
+  - {fileID: 1454713110399970374}
+  - {fileID: 6464788593453567412}
+  - {fileID: 6730173098774637424}
+  - {fileID: 7853028681350563894}
+  - {fileID: 1975823538510508220}
+  - {fileID: 7448807371655244324}
+  - {fileID: 3684205982283823322}
+  - {fileID: 8928009108090078409}
+  - {fileID: 8832862116502943083}
+  - {fileID: 3727856998539578665}
+  - {fileID: 996121427595333909}
+  - {fileID: 2704431153785476794}
+  - {fileID: 7735890674649805522}
+  - {fileID: 7546239790013466749}
+  - {fileID: 3572072622275958224}
+  initializableBehaviours:
+  - {fileID: -5797703676881531830}
+  - {fileID: -7510844428716302861}
+  - {fileID: 1939820047033769441}
+  - {fileID: 13695487001349382}
+  - {fileID: 1688689953925605337}
+  - {fileID: 6733234712343286394}
+  - {fileID: 8224641798986285655}
+  - {fileID: 3855264161025134098}
+  - {fileID: 5421960799121922505}
+  - {fileID: 7546239790013466749}
+  statsConsumerBehaviours:
+  - {fileID: 1658283125609888059}
+  - {fileID: 13695487001349382}
+  - {fileID: 8224641798986285655}
+  - {fileID: 3855264161025134098}
+  - {fileID: 8004442081116261019}
+  - {fileID: 8692079976205236039}
+  - {fileID: 271880699550436314}
+  - {fileID: 4270121147670834721}
+  - {fileID: 3682794906883062741}
+  - {fileID: 3650292885614718680}
+  - {fileID: 8725564028157070820}
+  - {fileID: 1906019534699524755}
+  - {fileID: 6205814235775474080}
+  - {fileID: 8022442518340610916}
+  - {fileID: 1532703198835925729}
+  - {fileID: 1454225938804248227}
+  - {fileID: 7415047185657185143}
+  - {fileID: 1298408056330008778}
+  - {fileID: 2441526047146849457}
+  - {fileID: 4198743985533376642}
+  - {fileID: 75988970454053820}
+  - {fileID: 8890246006673799685}
+  - {fileID: 1729280925316017542}
+  - {fileID: 2212405997371013641}
+  - {fileID: 1023940320580154838}
+  - {fileID: 6464788593453567412}
+  - {fileID: 7853028681350563894}
+  - {fileID: 7448807371655244324}
+  - {fileID: 8928009108090078409}
+  - {fileID: 3727856998539578665}
+  - {fileID: 2704431153785476794}
 --- !u!114 &-2008785619023378557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2234,8 +2737,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87497f6416ac94c832de5c280cac7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 1
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -2251,8 +2754,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d14736a01a3c214f84f4490d3797126, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 2
   _addedNetworkObject: {fileID: 5555427657669337170}
   _networkObjectCache: {fileID: 5555427657669337170}
@@ -2271,8 +2774,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19fd1eb95597e27479e07615e10677ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 2321927772602250882}
 --- !u!114 &4814927226351074180
 MonoBehaviour:
@@ -2284,9 +2787,129 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ddc6b0aae129f145b1654cabbd6d5b0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   colliders:
+  - {fileID: 7419464297932952746}
+  - {fileID: 4095854428274272603}
+  - {fileID: 610723477013382111}
+  - {fileID: 7838465248962563390}
+  - {fileID: 2111746909324580752}
+  - {fileID: 8983144263683686509}
+  - {fileID: 6840360718182248203}
+  - {fileID: 7513945445161903994}
+  - {fileID: 8194297457813125503}
+  - {fileID: 1095833752880260122}
+  - {fileID: 5424275322147991612}
+  - {fileID: 4244923633123718078}
+  - {fileID: 4532932391078641551}
+  - {fileID: 4391912020080607893}
+  - {fileID: 9085115716384259601}
+  - {fileID: 5698515257061702386}
+  - {fileID: 8360624742571251983}
+  - {fileID: 5743720100917391854}
+  - {fileID: 6019392609054479280}
+  - {fileID: 8305173394046899317}
+  - {fileID: 7227848908484048163}
+  - {fileID: 7234726495519578863}
+  - {fileID: 794506024265617579}
+  - {fileID: 6321933406348387978}
+  - {fileID: 2130927625185890227}
+  - {fileID: 4245066437657216718}
+  - {fileID: 107326768660374187}
+  - {fileID: 6264627073132632711}
+  - {fileID: 6603075169660441860}
+  - {fileID: 980925288584698060}
+  collidersToDisableOnDeath:
+  - {fileID: 6359557323337602642}
+  - {fileID: 5857380509063025}
+  - {fileID: 2072330985774519493}
+  - {fileID: 9152046975144589221}
+  - {fileID: 8526321810954592432}
+  - {fileID: 6135510293892853828}
+  - {fileID: 3828359492960923160}
+  - {fileID: 1910583051558141037}
+  - {fileID: 1988616797881180148}
+  - {fileID: 872323208623602412}
+  - {fileID: 9183316295129230118}
+  - {fileID: 837295946341148287}
+  - {fileID: 8036306181924591081}
+  - {fileID: 1253561263171910942}
+  - {fileID: 1828106421730453637}
+  - {fileID: 7735106214942948262}
+  - {fileID: 3300567756550759263}
+  - {fileID: 96582089115529570}
+  - {fileID: 4264209888752616044}
+  - {fileID: 3073311853378146959}
+  - {fileID: 3405546215280710683}
+  - {fileID: 6162514065905404849}
+  - {fileID: 5019527036824514268}
+  - {fileID: 3077889226862981973}
+  - {fileID: 5406653056877023228}
+  - {fileID: 2493431253634194526}
+  debrisRigidbodies:
+  - {fileID: 2600101409663027861}
+  - {fileID: 1654056944249042415}
+  - {fileID: 55004523620787112}
+  - {fileID: 8175131611056976583}
+  - {fileID: 2792516745646551454}
+  - {fileID: 255217148474027018}
+  - {fileID: 887894824306328479}
+  - {fileID: 4205130831756668889}
+  - {fileID: 6550350887833497871}
+  - {fileID: 6586630751252515118}
+  - {fileID: 1332176447877740403}
+  - {fileID: 2164504293764296434}
+  - {fileID: 2421214108505431256}
+  - {fileID: 1899378249479760507}
+  - {fileID: 4563128280517411485}
+  - {fileID: 8001511911034499238}
+  - {fileID: 3956759131527740556}
+  - {fileID: 3308601561875419322}
+  - {fileID: 1622455456301890062}
+  - {fileID: 486273708650813775}
+  - {fileID: 4000356141792054569}
+  - {fileID: 8340790661018325950}
+  - {fileID: 7830658103218405702}
+  - {fileID: 6876447155564704475}
+  - {fileID: 5978859041544578864}
+  - {fileID: 3188679407938308505}
+  - {fileID: 1923812436279724857}
+  - {fileID: 7502552367709262553}
+  - {fileID: 4549125189550109990}
+  - {fileID: 3583541895438687242}
+  debrisRenderers:
+  - {fileID: 6949986546154459379}
+  - {fileID: 7235807716430704803}
+  - {fileID: 3655962489009411274}
+  - {fileID: 6912964702376936708}
+  - {fileID: 7734310989905840844}
+  - {fileID: 7732302324856301273}
+  - {fileID: 8523720953123429277}
+  - {fileID: 289438138855730721}
+  - {fileID: 1555827111961769813}
+  - {fileID: 7834738412763003006}
+  - {fileID: 8084499935846880498}
+  - {fileID: 5218753307078625189}
+  - {fileID: 3406334132482994147}
+  - {fileID: 7195050903145077432}
+  - {fileID: 4239520631160917030}
+  - {fileID: 2597816787719140956}
+  - {fileID: 950911291569337553}
+  - {fileID: 168570279194689379}
+  - {fileID: 6496770756439244697}
+  - {fileID: 1102687385187770973}
+  - {fileID: 7607111400229007610}
+  - {fileID: 1477647890441582799}
+  - {fileID: 6061741085965685850}
+  - {fileID: 8226922678867685305}
+  - {fileID: 7758043629985128861}
+  - {fileID: 3357523369330404511}
+  - {fileID: 5718443990045437208}
+  - {fileID: 6110592906021938728}
+  - {fileID: 2656569932305844428}
+  - {fileID: 2560373952717783505}
+  debrisMeshColliders:
   - {fileID: 7419464297932952746}
   - {fileID: 4095854428274272603}
   - {fileID: 610723477013382111}
@@ -2331,12 +2954,122 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d9d625ff77e94224b75fdb0872941ebe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 2321927772602250882}
   hoverMask:
     serializedVersion: 2
     m_Bits: 64
+  outlineRenderers:
+  - {fileID: 289438138855730721}
+  - {fileID: 3655962489009411274}
+  - {fileID: 8523720953123429277}
+  - {fileID: 7235807716430704803}
+  - {fileID: 7732302324856301273}
+  - {fileID: 7734310989905840844}
+  - {fileID: 6949986546154459379}
+  - {fileID: 6912964702376936708}
+  - {fileID: 1555827111961769813}
+  - {fileID: 1477647890441582799}
+  - {fileID: 168570279194689379}
+  - {fileID: 1102687385187770973}
+  - {fileID: 950911291569337553}
+  - {fileID: 4239520631160917030}
+  - {fileID: 2656569932305844428}
+  - {fileID: 2597816787719140956}
+  - {fileID: 2560373952717783505}
+  - {fileID: 3406334132482994147}
+  - {fileID: 3357523369330404511}
+  - {fileID: 6110592906021938728}
+  - {fileID: 6061741085965685850}
+  - {fileID: 6496770756439244697}
+  - {fileID: 5718443990045437208}
+  - {fileID: 5218753307078625189}
+  - {fileID: 8226922678867685305}
+  - {fileID: 8084499935846880498}
+  - {fileID: 1813136458937377862}
+  - {fileID: 1915172692120381114}
+  - {fileID: 7195050903145077432}
+  - {fileID: 7834738412763003006}
+  - {fileID: 7758043629985128861}
+  - {fileID: 7607111400229007610}
+  outlineSubMeshCounts:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+--- !u!114 &1939820047033769441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7389821364265542770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4e8e57c07bd4fd19e1816d01bb56941, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleAutoAimController
+  vehicleRoot: {fileID: 2321927772602250882}
+  acquireMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &3957680207120508506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7389821364265542770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29d83922f5d84618a77f61bcbb0ad986, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBotBrain
+  vehicleRoot: {fileID: 2321927772602250882}
+  navigator: {fileID: 5129350956868591253}
+--- !u!114 &5129350956868591253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7389821364265542770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37936653d8934de4af5bb9ece911246a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.AI.WaypointGraph.BotNavigator
+  target: {fileID: 0}
+  drawDebugGizmos: 1
 --- !u!1 &7503567715314216954
 GameObject:
   m_ObjectHideFlags: 0
@@ -2351,6 +3084,8 @@ GameObject:
   - component: {fileID: 6359557323337602642}
   - component: {fileID: 8004442081116261019}
   - component: {fileID: 7419464297932952746}
+  - component: {fileID: 162499315009951648}
+  - component: {fileID: 2600101409663027861}
   m_Layer: 6
   m_Name: MeshR
   m_TagString: Untagged
@@ -2462,11 +3197,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 6359557323337602642}
   minMm: 0
   maxMm: 500
 --- !u!64 &7419464297932952746
@@ -2491,6 +3227,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &162499315009951648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7503567715314216954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 8004442081116261019}
+  targetCollider: {fileID: 6359557323337602642}
+  targetColliders:
+  - {fileID: 6359557323337602642}
+  - {fileID: 7419464297932952746}
+--- !u!54 &2600101409663027861
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7503567715314216954}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &7507170028685843701
 GameObject:
   m_ObjectHideFlags: 0
@@ -2534,8 +3315,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -2556,6 +3337,8 @@ GameObject:
   - component: {fileID: 152462662010935668}
   - component: {fileID: 6912964702376936708}
   - component: {fileID: 7838465248962563390}
+  - component: {fileID: 5196171549542547461}
+  - component: {fileID: 8175131611056976583}
   m_Layer: 0
   m_Name: MeshGun
   m_TagString: Untagged
@@ -2657,6 +3440,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &5196171549542547461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8043027383151132651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 7838465248962563390}
+  targetColliders:
+  - {fileID: 7838465248962563390}
+--- !u!54 &8175131611056976583
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8043027383151132651}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &8795418488626722663
 GameObject:
   m_ObjectHideFlags: 0
@@ -2764,7 +3591,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -2796,6 +3623,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8194297457813125503}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5163884804300265696}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6550350887833497871}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!4 &422287641094442042 stripped
 Transform:
@@ -2819,8 +3654,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 900
   currentSpeed: 0
 --- !u!64 &8526321810954592432
@@ -2855,11 +3690,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 8526321810954592432}
   minMm: 0
   maxMm: 500
 --- !u!64 &8194297457813125503
@@ -2884,6 +3720,57 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &5163884804300265696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051472812948625024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 3650292885614718680}
+  targetCollider: {fileID: 8526321810954592432}
+  targetColliders:
+  - {fileID: 8526321810954592432}
+  - {fileID: 8194297457813125503}
+--- !u!54 &6550350887833497871
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051472812948625024}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!23 &1555827111961769813 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 168600359462611921}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &234254580442113099
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2960,7 +3847,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -2992,6 +3879,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 7234726495519578863}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8278208124350282607}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8340790661018325950}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!4 &345233670673515424 stripped
 Transform:
@@ -3015,8 +3910,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -900
   currentSpeed: 0
 --- !u!64 &96582089115529570
@@ -3051,11 +3946,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 96582089115529570}
   minMm: 0
   maxMm: 500
 --- !u!64 &7234726495519578863
@@ -3080,6 +3976,57 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &8278208124350282607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1117267217366358298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 1729280925316017542}
+  targetCollider: {fileID: 96582089115529570}
+  targetColliders:
+  - {fileID: 96582089115529570}
+  - {fileID: 7234726495519578863}
+--- !u!54 &8340790661018325950
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1117267217366358298}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!23 &1477647890441582799 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 234254580442113099}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1555840183246840807
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3156,7 +4103,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -3188,7 +4135,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 5743720100917391854}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6043039433050499127}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3308601561875419322}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &168570279194689379 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 1555840183246840807}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1305424979483526156 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -3211,8 +4172,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 2500
   currentSpeed: 0
 --- !u!64 &1253561263171910942
@@ -3247,11 +4208,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 1253561263171910942}
   minMm: 0
   maxMm: 500
 --- !u!64 &5743720100917391854
@@ -3276,6 +4238,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &6043039433050499127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1825679369381207734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 2441526047146849457}
+  targetCollider: {fileID: 1253561263171910942}
+  targetColliders:
+  - {fileID: 1253561263171910942}
+  - {fileID: 5743720100917391854}
+--- !u!54 &3308601561875419322
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1825679369381207734}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &1768821689451904729
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3352,7 +4359,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -3384,7 +4391,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8305173394046899317}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 123061811115773657}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 486273708650813775}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &1102687385187770973 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 1768821689451904729}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1462953158690227080 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -3401,8 +4422,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -900
   currentSpeed: 0
 --- !u!64 &7735106214942948262
@@ -3437,11 +4458,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 7735106214942948262}
   minMm: 0
   maxMm: 500
 --- !u!64 &8305173394046899317
@@ -3466,6 +4488,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &123061811115773657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1462953158690227080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 75988970454053820}
+  targetCollider: {fileID: 7735106214942948262}
+  targetColliders:
+  - {fileID: 7735106214942948262}
+  - {fileID: 8305173394046899317}
+--- !u!54 &486273708650813775
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1462953158690227080}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &2235655173495331122 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -3548,7 +4615,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -3580,7 +4647,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8360624742571251983}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1392747580037796205}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3956759131527740556}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &950911291569337553 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 1942112922314958933}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1599530724552758532 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -3597,8 +4678,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 2500
   currentSpeed: 0
 --- !u!64 &8036306181924591081
@@ -3633,11 +4714,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 8036306181924591081}
   minMm: 0
   maxMm: 500
 --- !u!64 &8360624742571251983
@@ -3662,6 +4744,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &1392747580037796205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1599530724552758532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 1298408056330008778}
+  targetCollider: {fileID: 8036306181924591081}
+  targetColliders:
+  - {fileID: 8036306181924591081}
+  - {fileID: 8360624742571251983}
+--- !u!54 &3956759131527740556
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1599530724552758532}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &2123865127827148734 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -3744,7 +4871,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -3776,6 +4903,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 9085115716384259601}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3677952070823901587}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4563128280517411485}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!1 &2437909737613225459 stripped
 GameObject:
@@ -3793,8 +4928,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 2500
   currentSpeed: 0
 --- !u!64 &9183316295129230118
@@ -3829,11 +4964,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 9183316295129230118}
   minMm: 0
   maxMm: 500
 --- !u!64 &9085115716384259601
@@ -3858,9 +4994,60 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &3677952070823901587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2437909737613225459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 1454225938804248227}
+  targetCollider: {fileID: 9183316295129230118}
+  targetColliders:
+  - {fileID: 9183316295129230118}
+  - {fileID: 9085115716384259601}
+--- !u!54 &4563128280517411485
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2437909737613225459}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &3071139738121844553 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 3248318179472822434}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &4239520631160917030 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
     type: 3}
   m_PrefabInstance: {fileID: 3248318179472822434}
   m_PrefabAsset: {fileID: 0}
@@ -3940,7 +5127,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -3972,7 +5159,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6603075169660441860}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 996121427595333909}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4549125189550109990}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &2656569932305844428 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 3683836633841423432}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3788974913600959395 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -3995,8 +5196,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -2500
   currentSpeed: 0
 --- !u!64 &5406653056877023228
@@ -4031,11 +5232,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 5406653056877023228}
   minMm: 0
   maxMm: 500
 --- !u!64 &6603075169660441860
@@ -4060,6 +5262,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &996121427595333909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4602384388271728921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 3727856998539578665}
+  targetCollider: {fileID: 5406653056877023228}
+  targetColliders:
+  - {fileID: 5406653056877023228}
+  - {fileID: 6603075169660441860}
+--- !u!54 &4549125189550109990
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4602384388271728921}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &3732597038964615896
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4136,7 +5383,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -4168,7 +5415,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 5698515257061702386}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5081430935062914465}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8001511911034499238}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &2597816787719140956 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 3732597038964615896}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3766803993910857011 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -4191,8 +5452,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 2500
   currentSpeed: 0
 --- !u!64 &837295946341148287
@@ -4227,11 +5488,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 837295946341148287}
   minMm: 0
   maxMm: 500
 --- !u!64 &5698515257061702386
@@ -4256,6 +5518,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &5081430935062914465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4543482122201208713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 7415047185657185143}
+  targetCollider: {fileID: 837295946341148287}
+  targetColliders:
+  - {fileID: 837295946341148287}
+  - {fileID: 5698515257061702386}
+--- !u!54 &8001511911034499238
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4543482122201208713}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &3767774743655783765
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4332,7 +5639,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -4364,7 +5671,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 980925288584698060}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7735890674649805522}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3583541895438687242}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &2560373952717783505 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 3767774743655783765}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3729941841709628094 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -4387,8 +5708,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -2500
   currentSpeed: 0
 --- !u!64 &2493431253634194526
@@ -4423,11 +5744,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 2493431253634194526}
   minMm: 0
   maxMm: 500
 --- !u!64 &980925288584698060
@@ -4452,6 +5774,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &7735890674649805522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4073711451519819780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 2704431153785476794}
+  targetCollider: {fileID: 2493431253634194526}
+  targetColliders:
+  - {fileID: 2493431253634194526}
+  - {fileID: 980925288584698060}
+--- !u!54 &3583541895438687242
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4073711451519819780}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &4072432160899691367
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4528,7 +5895,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -4560,7 +5927,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4532932391078641551}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5722163358886116040}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2421214108505431256}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &3406334132482994147 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 4072432160899691367}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &3766494353522970166 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -4577,8 +5958,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 2500
   currentSpeed: 0
 --- !u!64 &1988616797881180148
@@ -4613,11 +5994,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 1988616797881180148}
   minMm: 0
   maxMm: 500
 --- !u!64 &4532932391078641551
@@ -4642,6 +6024,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &5722163358886116040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3766494353522970166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 8022442518340610916}
+  targetCollider: {fileID: 1988616797881180148}
+  targetColliders:
+  - {fileID: 1988616797881180148}
+  - {fileID: 4532932391078641551}
+--- !u!54 &2421214108505431256
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3766494353522970166}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &4543734019009811596 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -4724,7 +6151,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -4756,7 +6183,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4245066437657216718}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1975823538510508220}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3188679407938308505}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &3357523369330404511 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 4132549736028729371}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &3862027751161417034 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -4773,8 +6214,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -2500
   currentSpeed: 0
 --- !u!64 &6162514065905404849
@@ -4809,11 +6250,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 6162514065905404849}
   minMm: 0
   maxMm: 500
 --- !u!64 &4245066437657216718
@@ -4838,6 +6280,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &1975823538510508220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862027751161417034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 7853028681350563894}
+  targetCollider: {fileID: 6162514065905404849}
+  targetColliders:
+  - {fileID: 6162514065905404849}
+  - {fileID: 4245066437657216718}
+--- !u!54 &3188679407938308505
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862027751161417034}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &4527099951202506736 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -4920,7 +6407,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -4952,6 +6439,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6264627073132632711}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8832862116502943083}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7502552367709262553}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!4 &4937637356206972231 stripped
 Transform:
@@ -4975,8 +6470,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -2500
   currentSpeed: 0
 --- !u!64 &3077889226862981973
@@ -5011,11 +6506,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 3077889226862981973}
   minMm: 0
   maxMm: 500
 --- !u!64 &6264627073132632711
@@ -5040,6 +6536,57 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &8832862116502943083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5750485049352521725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 8928009108090078409}
+  targetCollider: {fileID: 3077889226862981973}
+  targetColliders:
+  - {fileID: 3077889226862981973}
+  - {fileID: 6264627073132632711}
+--- !u!54 &7502552367709262553
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5750485049352521725}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!23 &6110592906021938728 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 4831441553691458220}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4890404276414875870
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5116,7 +6663,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -5148,6 +6695,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 794506024265617579}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5600179259686216263}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7830658103218405702}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!4 &4923716123054042933 stripped
 Transform:
@@ -5171,8 +6726,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -900
   currentSpeed: 0
 --- !u!64 &4264209888752616044
@@ -5207,11 +6762,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 4264209888752616044}
   minMm: 0
   maxMm: 500
 --- !u!64 &794506024265617579
@@ -5236,6 +6792,57 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &5600179259686216263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5701378004556428687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 2212405997371013641}
+  targetCollider: {fileID: 4264209888752616044}
+  targetColliders:
+  - {fileID: 4264209888752616044}
+  - {fileID: 794506024265617579}
+--- !u!54 &7830658103218405702
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5701378004556428687}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!23 &6061741085965685850 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 4890404276414875870}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4991489132076270963
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5354,20 +6961,35 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6888389142017244291, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 6888389142017244291, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 6888389142017244291, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: tankRoot
-      value: 
+      value:
       objectReference: {fileID: 2321927772602250882}
     - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: vehicleRoot
-      value: 
+      value:
       objectReference: {fileID: 2321927772602250882}
     - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: floatingTextPrefab
-      value: 
+      value:
       objectReference: {fileID: 1599035085840930297, guid: 63a614522a9b5fd48bab655eaaf47a3f,
         type: 3}
     m_RemovedComponents: []
@@ -5385,8 +7007,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f117a6f87a7b7934c8bd7a3cda064e2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!224 &8533605576455244069 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3686233559821536342, guid: 9043c1ae5d088df4690974177aa623d2,
@@ -5469,7 +7091,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -5501,6 +7123,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6019392609054479280}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 326151221952630521}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1622455456301890062}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!1 &4695520364776349260 stripped
 GameObject:
@@ -5518,8 +7148,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 2500
   currentSpeed: 0
 --- !u!64 &1828106421730453637
@@ -5554,11 +7184,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 1828106421730453637}
   minMm: 0
   maxMm: 500
 --- !u!64 &6019392609054479280
@@ -5583,9 +7214,60 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &326151221952630521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4695520364776349260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 4198743985533376642}
+  targetCollider: {fileID: 1828106421730453637}
+  targetColliders:
+  - {fileID: 1828106421730453637}
+  - {fileID: 6019392609054479280}
+--- !u!54 &1622455456301890062
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4695520364776349260}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &5359853414050890998 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 5613947170778931997}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &6496770756439244697 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
     type: 3}
   m_PrefabInstance: {fileID: 5613947170778931997}
   m_PrefabAsset: {fileID: 0}
@@ -5665,7 +7347,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -5697,7 +7379,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 107326768660374187}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3684205982283823322}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1923812436279724857}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &5718443990045437208 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 6384533220691718556}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &6078455363962637517 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -5714,8 +7410,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -2500
   currentSpeed: 0
 --- !u!64 &5019527036824514268
@@ -5750,11 +7446,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 5019527036824514268}
   minMm: 0
   maxMm: 500
 --- !u!64 &107326768660374187
@@ -5779,6 +7476,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &3684205982283823322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6078455363962637517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 7448807371655244324}
+  targetCollider: {fileID: 5019527036824514268}
+  targetColliders:
+  - {fileID: 5019527036824514268}
+  - {fileID: 107326768660374187}
+--- !u!54 &1923812436279724857
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6078455363962637517}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &6850206335653369463 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -5861,7 +7603,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -5893,7 +7635,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4244923633123718078}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8460663429009148044}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2164504293764296434}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &5218753307078625189 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 6894212622404786977}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &6011250021716895344 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -5910,8 +7666,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 900
   currentSpeed: 0
 --- !u!64 &1910583051558141037
@@ -5946,11 +7702,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 1910583051558141037}
   minMm: 0
   maxMm: 500
 --- !u!64 &4244923633123718078
@@ -5975,6 +7732,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &8460663429009148044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6011250021716895344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 6205814235775474080}
+  targetCollider: {fileID: 1910583051558141037}
+  targetColliders:
+  - {fileID: 1910583051558141037}
+  - {fileID: 4244923633123718078}
+--- !u!54 &2164504293764296434
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6011250021716895344}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &6352204846947302602 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -6057,7 +7859,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -6089,6 +7891,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6321933406348387978}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1454713110399970374}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6876447155564704475}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!4 &7088888233473119446 stripped
 Transform:
@@ -6112,8 +7922,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -2500
   currentSpeed: 0
 --- !u!64 &3073311853378146959
@@ -6148,11 +7958,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 3073311853378146959}
   minMm: 0
   maxMm: 500
 --- !u!64 &6321933406348387978
@@ -6177,6 +7988,57 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &1454713110399970374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7578180375980854892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 1023940320580154838}
+  targetCollider: {fileID: 3073311853378146959}
+  targetColliders:
+  - {fileID: 3073311853378146959}
+  - {fileID: 6321933406348387978}
+--- !u!54 &6876447155564704475
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7578180375980854892}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!23 &8226922678867685305 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 7343808823752258365}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7489623045832755318
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6253,7 +8115,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -6285,6 +8147,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 5424275322147991612}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2688701030576857527}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1332176447877740403}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
 --- !u!4 &6952085608702259101 stripped
 Transform:
@@ -6308,8 +8178,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 900
   currentSpeed: 0
 --- !u!64 &3828359492960923160
@@ -6344,11 +8214,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 3828359492960923160}
   minMm: 0
   maxMm: 500
 --- !u!64 &5424275322147991612
@@ -6373,6 +8244,57 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &2688701030576857527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7723978662659093799}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 1906019534699524755}
+  targetCollider: {fileID: 3828359492960923160}
+  targetColliders:
+  - {fileID: 3828359492960923160}
+  - {fileID: 5424275322147991612}
+--- !u!54 &1332176447877740403
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7723978662659093799}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!23 &8084499935846880498 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 7489623045832755318}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7924637217067737560
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6454,7 +8376,7 @@ PrefabInstance:
     - target: {fileID: 8417361359673230750, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 8af14c01fa36af04bafebc4fafd4eeb3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6613,8 +8535,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6639,8 +8561,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6665,8 +8587,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6691,8 +8613,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6717,8 +8639,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6749,8 +8671,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6775,8 +8697,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6801,8 +8723,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6827,8 +8749,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6853,8 +8775,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6879,8 +8801,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6905,8 +8827,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6931,8 +8853,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6957,8 +8879,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -6983,8 +8905,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7009,8 +8931,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7035,8 +8957,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7061,8 +8983,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7087,8 +9009,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7113,8 +9035,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7139,8 +9061,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7165,8 +9087,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7191,8 +9113,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7223,8 +9145,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7249,8 +9171,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7275,8 +9197,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7307,8 +9229,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7333,8 +9255,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7359,8 +9281,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7385,8 +9307,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7411,8 +9333,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7437,8 +9359,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7463,8 +9385,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7554,7 +9476,7 @@ PrefabInstance:
     - target: {fileID: 8417361359673230750, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 8af14c01fa36af04bafebc4fafd4eeb3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7713,8 +9635,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7739,8 +9661,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7765,8 +9687,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7791,8 +9713,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7817,8 +9739,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7849,8 +9771,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7875,8 +9797,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7901,8 +9823,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7927,8 +9849,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7953,8 +9875,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -7979,8 +9901,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8005,8 +9927,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8031,8 +9953,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8057,8 +9979,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8083,8 +10005,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8109,8 +10031,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8135,8 +10057,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8161,8 +10083,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8187,8 +10109,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8213,8 +10135,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8239,8 +10161,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8265,8 +10187,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8291,8 +10213,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8317,8 +10239,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8343,8 +10265,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8381,8 +10303,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8407,8 +10329,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8433,8 +10355,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8459,8 +10381,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8485,8 +10407,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8511,8 +10433,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8537,8 +10459,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8563,8 +10485,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fffc6e62645b1f943b83e460bc9856c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rayHeight: 1
   rayDistance: 2
   groundLayer:
@@ -8649,7 +10571,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -8681,7 +10603,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4391912020080607893}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5252511564902676318}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1899378249479760507}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &7195050903145077432 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 8365543017183069756}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8327956637764493783 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -8704,8 +10640,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 2500
   currentSpeed: 0
 --- !u!64 &872323208623602412
@@ -8740,11 +10676,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 872323208623602412}
   minMm: 0
   maxMm: 500
 --- !u!64 &4391912020080607893
@@ -8769,6 +10706,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &5252511564902676318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8708001098981407597}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 1532703198835925729}
+  targetCollider: {fileID: 872323208623602412}
+  targetColliders:
+  - {fileID: 872323208623602412}
+  - {fileID: 4391912020080607893}
+--- !u!54 &1899378249479760507
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8708001098981407597}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &8897706254688462074
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8845,7 +10827,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -8877,7 +10859,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1095833752880260122}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6211589802119290877}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6586630751252515118}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &7834738412763003006 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 8897706254688462074}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8627323913165543851 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -8894,8 +10890,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: 900
   currentSpeed: 0
 --- !u!64 &6135510293892853828
@@ -8930,11 +10926,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 6135510293892853828}
   minMm: 0
   maxMm: 500
 --- !u!64 &1095833752880260122
@@ -8959,6 +10956,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &6211589802119290877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8627323913165543851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 8725564028157070820}
+  targetCollider: {fileID: 6135510293892853828}
+  targetColliders:
+  - {fileID: 6135510293892853828}
+  - {fileID: 1095833752880260122}
+--- !u!54 &6586630751252515118
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8627323913165543851}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &9003181429550957329 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -9041,7 +11083,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -9073,7 +11115,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 2130927625185890227}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6730173098774637424}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5978859041544578864}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &7758043629985128861 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 8965415828872527129}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8118556244384497736 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -9090,8 +11146,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -2500
   currentSpeed: 0
 --- !u!64 &3405546215280710683
@@ -9126,11 +11182,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 3405546215280710683}
   minMm: 0
   maxMm: 500
 --- !u!64 &2130927625185890227
@@ -9155,6 +11212,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &6730173098774637424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8118556244384497736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 6464788593453567412}
+  targetCollider: {fileID: 3405546215280710683}
+  targetColliders:
+  - {fileID: 3405546215280710683}
+  - {fileID: 2130927625185890227}
+--- !u!54 &5978859041544578864
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8118556244384497736}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &8926476750764972786 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -9237,7 +11339,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: f3a0b290c38054a4d8de6c51ff344346, type: 2}
     - target: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
         type: 3}
@@ -9269,7 +11371,21 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 7227848908484048163}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4252500430211999011}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4000356141792054569}
   m_SourcePrefab: {fileID: 100100000, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!23 &7607111400229007610 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4ac11223141b59c42bee6644dd7b1feb,
+    type: 3}
+  m_PrefabInstance: {fileID: 9101904737394748542}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8255414723165999407 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ac11223141b59c42bee6644dd7b1feb,
@@ -9286,8 +11402,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f17ad4ab2d388c4b871ef9710d3ca8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   speed: -900
   currentSpeed: 0
 --- !u!64 &3300567756550759263
@@ -9322,11 +11438,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 2321927772602250882}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 3300567756550759263}
   minMm: 0
   maxMm: 500
 --- !u!64 &7227848908484048163
@@ -9351,6 +11468,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 4ac11223141b59c42bee6644dd7b1feb, type: 3}
+--- !u!114 &4252500430211999011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8255414723165999407}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 2321927772602250882}
+  armorMap: {fileID: 8890246006673799685}
+  targetCollider: {fileID: 3300567756550759263}
+  targetColliders:
+  - {fileID: 3300567756550759263}
+  - {fileID: 7227848908484048163}
+--- !u!54 &4000356141792054569
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8255414723165999407}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &8780558430531652501 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ac11223141b59c42bee6644dd7b1feb,

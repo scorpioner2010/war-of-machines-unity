@@ -1,5 +1,6 @@
 using TMPro;
 using Game.Scripts.Client;
+using Game.Scripts.Core.Services;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace Game.Scripts.UI.HUD
     public class GunCrosshair : MonoBehaviour
     {
         public Canvas canvas;
+        public RectTransform canvasRect;
         public RectTransform crosshair;
         public RectTransform serverCrosshair;
         public Image  fillImage;
@@ -47,6 +49,7 @@ namespace Game.Scripts.UI.HUD
 
         private void OnEnable()
         {
+            Singleton<GunCrosshair>.Register(this);
             ResolveCanvasReference();
             ClientGameplaySettings.ServerCrosshairChanged += OnServerCrosshairSettingChanged;
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
@@ -61,6 +64,7 @@ namespace Game.Scripts.UI.HUD
             }
 
             ClientGameplaySettings.ServerCrosshairChanged -= OnServerCrosshairSettingChanged;
+            Singleton<GunCrosshair>.Unregister(this);
         }
 
         public void SetAimingDiameters(float localDiameter, float serverDiameter)
@@ -474,11 +478,6 @@ namespace Game.Scripts.UI.HUD
                 return true;
             }
 
-            if (child.GetComponent<SniperScopeOverlay>() != null)
-            {
-                return true;
-            }
-
             if (GameplayGUI.In != null && IsSameOrParentOf(child, GameplayGUI.In.ShotResultTextTransform))
             {
                 return true;
@@ -496,11 +495,39 @@ namespace Game.Scripts.UI.HUD
 
             if (canvas != null)
             {
+                RectTransform resolvedCanvasRect = canvas.transform as RectTransform;
+                if (resolvedCanvasRect != null)
+                {
+                    canvasRect = resolvedCanvasRect;
+                }
+
                 return canvas;
             }
 
-            canvas = GetComponentInParent<Canvas>();
+            if (canvasRect == null)
+            {
+                canvasRect = ResolveRootRectTransform();
+            }
+
             return canvas;
+        }
+
+        private RectTransform ResolveRootRectTransform()
+        {
+            RectTransform lastRect = null;
+            Transform current = transform;
+            while (current != null)
+            {
+                RectTransform currentRect = current as RectTransform;
+                if (currentRect != null)
+                {
+                    lastRect = currentRect;
+                }
+
+                current = current.parent;
+            }
+
+            return lastRect;
         }
 
         private static bool IsSameOrParentOf(Transform possibleParent, Transform target)

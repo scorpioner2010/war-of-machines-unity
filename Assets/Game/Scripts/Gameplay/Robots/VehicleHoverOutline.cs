@@ -13,10 +13,10 @@ namespace Game.Scripts.Gameplay.Robots
 
         private static readonly RaycastHit[] RaycastBuffer = new RaycastHit[RaycastBufferSize];
         private static readonly Dictionary<Collider, VehicleRoot> RootByCollider = new Dictionary<Collider, VehicleRoot>(256);
-        private static Camera _fallbackCamera;
-
         public VehicleRoot vehicleRoot;
         public LayerMask hoverMask = ~0;
+        public Renderer[] outlineRenderers = System.Array.Empty<Renderer>();
+        public int[] outlineSubMeshCounts = System.Array.Empty<int>();
 
         private readonly List<Renderer> _targetRenderers = new List<Renderer>(64);
         private readonly List<int> _targetSubMeshCounts = new List<int>(64);
@@ -189,14 +189,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return null;
             }
 
-            VehicleHoverOutline targetOutline = targetRoot.GetComponent<VehicleHoverOutline>();
-            if (targetOutline == null)
-            {
-                targetOutline = targetRoot.gameObject.AddComponent<VehicleHoverOutline>();
-                targetOutline.SetVehicleRoot(targetRoot);
-            }
-
-            return targetOutline;
+            return targetRoot.hoverOutline;
         }
 
         private void EnsureOutlineRenderers()
@@ -210,17 +203,24 @@ namespace Game.Scripts.Gameplay.Robots
             _targetRenderers.Clear();
             _targetSubMeshCounts.Clear();
 
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
+            if (outlineRenderers == null)
             {
-                Renderer renderer = renderers[i];
+                return;
+            }
+
+            for (int i = 0; i < outlineRenderers.Length; i++)
+            {
+                Renderer renderer = outlineRenderers[i];
                 if (!IsValidOutlineRenderer(renderer))
                 {
                     continue;
                 }
 
                 _targetRenderers.Add(renderer);
-                _targetSubMeshCounts.Add(GetSubMeshCount(renderer));
+                int subMeshCount = outlineSubMeshCounts != null && i < outlineSubMeshCounts.Length
+                    ? outlineSubMeshCounts[i]
+                    : 1;
+                _targetSubMeshCounts.Add(Mathf.Max(1, subMeshCount));
             }
         }
 
@@ -231,35 +231,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            if (renderer is MeshRenderer)
-            {
-                MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
-                return meshFilter != null && meshFilter.sharedMesh != null;
-            }
-
-            SkinnedMeshRenderer skinnedRenderer = renderer as SkinnedMeshRenderer;
-            return skinnedRenderer != null && skinnedRenderer.sharedMesh != null;
-        }
-
-        private static int GetSubMeshCount(Renderer renderer)
-        {
-            MeshRenderer meshRenderer = renderer as MeshRenderer;
-            if (meshRenderer != null)
-            {
-                MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
-                if (meshFilter != null && meshFilter.sharedMesh != null)
-                {
-                    return Mathf.Max(1, meshFilter.sharedMesh.subMeshCount);
-                }
-            }
-
-            SkinnedMeshRenderer skinnedRenderer = renderer as SkinnedMeshRenderer;
-            if (skinnedRenderer != null && skinnedRenderer.sharedMesh != null)
-            {
-                return Mathf.Max(1, skinnedRenderer.sharedMesh.subMeshCount);
-            }
-
-            return 1;
+            return renderer is MeshRenderer || renderer is SkinnedMeshRenderer;
         }
 
         private bool IsValidEnemyTarget(VehicleRoot targetRoot)
@@ -302,26 +274,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return cachedRoot;
             }
 
-            ArmorMap armorMap = hitCollider.GetComponent<ArmorMap>();
-            if (armorMap == null)
-            {
-                armorMap = hitCollider.GetComponentInParent<ArmorMap>();
-            }
-
-            if (armorMap != null)
-            {
-                if (armorMap.vehicleRoot != null)
-                {
-                    RootByCollider[hitCollider] = armorMap.vehicleRoot;
-                    return armorMap.vehicleRoot;
-                }
-
-                VehicleRoot armorRoot = armorMap.GetComponentInParent<VehicleRoot>();
-                RootByCollider[hitCollider] = armorRoot;
-                return armorRoot;
-            }
-
-            VehicleRoot root = hitCollider.GetComponentInParent<VehicleRoot>();
+            VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot root);
             RootByCollider[hitCollider] = root;
             return root;
         }
@@ -333,13 +286,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return CameraSync.In.gameplayCamera;
             }
 
-            if (_fallbackCamera != null)
-            {
-                return _fallbackCamera;
-            }
-
-            _fallbackCamera = Camera.main;
-            return _fallbackCamera;
+            return null;
         }
     }
 }

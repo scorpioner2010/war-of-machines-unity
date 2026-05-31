@@ -33,21 +33,6 @@ namespace Game.Scripts.Server
         private GUIStyle _labelStyle;
         private GUIStyle _warnStyle;
 
-#if UNITY_EDITOR
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void CreateInEditor()
-        {
-            if (_instance != null)
-            {
-                return;
-            }
-
-            GameObject obj = new GameObject(nameof(ServerDebugOverlay));
-            DontDestroyOnLoad(obj);
-            _instance = obj.AddComponent<ServerDebugOverlay>();
-        }
-#endif
-
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -57,6 +42,7 @@ namespace Game.Scripts.Server
             }
 
             _instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
         private void Update()

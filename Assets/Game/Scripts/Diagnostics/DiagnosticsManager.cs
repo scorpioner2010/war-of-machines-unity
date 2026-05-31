@@ -18,6 +18,7 @@ namespace Game.Scripts.Diagnostics
     public sealed class DiagnosticsManager : MonoBehaviour
     {
         private static DiagnosticsManager _instance;
+        private static bool _missingManagerLogged;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static readonly ProfilerMarker JsonlFrameSpikeMarker = new ProfilerMarker("Diagnostics.Jsonl.FrameSpike");
@@ -65,11 +66,6 @@ namespace Game.Scripts.Diagnostics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateOnLoad()
         {
-            if (_instance != null)
-            {
-                return;
-            }
-
             DiagnosticsConfig config = DiagnosticsConfig.LoadRuntime();
             if (!config.IsEnabled)
             {
@@ -77,7 +73,7 @@ namespace Game.Scripts.Diagnostics
                 return;
             }
 
-            CreateManager(config);
+            StartConfiguredManager(config, false);
         }
 
         public static bool EnsureStarted(DiagnosticsConfig config)
@@ -102,32 +98,42 @@ namespace Game.Scripts.Diagnostics
                 config.StateReason = "manual start";
             }
 
-            CreateManager(config);
-            return _instance != null && _instance.IsRunning;
+            return StartConfiguredManager(config, true);
         }
 
-        private static void CreateManager(DiagnosticsConfig config)
+        private static bool StartConfiguredManager(DiagnosticsConfig config, bool logMissingManager)
         {
-            GameObject obj = new GameObject(nameof(DiagnosticsManager));
-            DontDestroyOnLoad(obj);
-            DiagnosticsManager manager = obj.AddComponent<DiagnosticsManager>();
-            manager.Initialize(config);
-
-            if (config.EnableOverlay)
+            if (_instance == null)
             {
-                obj.AddComponent<DiagnosticsOverlay>();
+                if (logMissingManager && !_missingManagerLogged)
+                {
+                    _missingManagerLogged = true;
+                    UnityEngine.Debug.LogWarning(
+                        "[Diagnostics] DiagnosticsManager is not configured in the scene. Add it to a prefab/scene and wire optional DiagnosticsOverlay there.");
+                }
+
+                return false;
             }
+
+            if (_instance.IsRunning)
+            {
+                return true;
+            }
+
+            _instance.Initialize(config);
+            return _instance.IsRunning;
         }
 
         private void Awake()
         {
             if (_instance != null && _instance != this)
             {
-                Destroy(gameObject);
+                Destroy(this);
                 return;
             }
 
             _instance = this;
+            _missingManagerLogged = false;
         }
 
         public void Initialize(DiagnosticsConfig config)
@@ -141,6 +147,7 @@ namespace Game.Scripts.Diagnostics
             }
 
             _config = config;
+            enabled = true;
             _sessionId = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
             _buffer = new RollingMetricsBuffer(_config.BufferSeconds, _config.MaxScopeSamples);
             _clientCollector = new ClientDiagnosticsCollector(_config);

@@ -6,14 +6,30 @@ namespace Game.Scripts.Audio
 {
     public class AudioPreset : MonoBehaviour
     {
-        private AudioSource _source;
+        [SerializeField] private AudioSource source;
         private AudionElement _element;
         public SoundType Type { get; private set; }
-        public bool IsPlaying => _source.isPlaying;
+        public bool IsPlaying => source != null && source.isPlaying;
 
-        public void Init() => _source = gameObject.GetComponent<AudioSource>();
-        public void SetPitch(float value) => _source.pitch = value;
-        public void SetLoop(bool value) => _source.loop = value;
+        public void Init()
+        {
+        }
+
+        public void SetPitch(float value)
+        {
+            if (source != null)
+            {
+                source.pitch = value;
+            }
+        }
+
+        public void SetLoop(bool value)
+        {
+            if (source != null)
+            {
+                source.loop = value;
+            }
+        }
 
         public void SetType(SoundType type)
         {
@@ -21,11 +37,17 @@ namespace Game.Scripts.Audio
 
             if (Type == SoundType.Sfx)
             {
-                _source.spatialBlend = 1f;
+                if (source != null)
+                {
+                    source.spatialBlend = 1f;
+                }
             }
             else if (Type == SoundType.Music || Type == SoundType.Ui)
             {
-                _source.spatialBlend = 0;
+                if (source != null)
+                {
+                    source.spatialBlend = 0;
+                }
             }
         }
 
@@ -42,27 +64,42 @@ namespace Game.Scripts.Audio
                 return;
             }
 
+            if (source == null)
+            {
+                return;
+            }
+
             AudioClip clip = _element.clips.RandomElement();
             if (clip == null)
             {
                 return;
             }
 
-            _source.clip = clip;
-            _source.time = 0;
-            _source.Stop();
-            _source.enabled = true; //bug with turn off AudioSource
-            _source.loop = false;
+            source.clip = clip;
+            source.time = 0;
+            source.Stop();
+            source.enabled = true; //bug with turn off AudioSource
+            source.loop = false;
             SetPitch(1);
             int delay = (int)_element.delay * 1000;
             await UniTask.Delay(delay);
-            _source.Play();
+            source.Play();
         }
         
-        public void Stop() => _source.Stop();
+        public void Stop()
+        {
+            if (source != null)
+            {
+                source.Stop();
+            }
+        }
+
         public void SetVolume(float volume)
         {
-            _source.volume = volume * _element.volume;
+            if (source != null && _element != null)
+            {
+                source.volume = volume * _element.volume;
+            }
         }
     }
 }

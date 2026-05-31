@@ -274,8 +274,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_UsePipelineSettings: 0
   m_AdditionalLightsShadowResolutionTier: 2
   m_CustomShadowLayers: 0
@@ -472,7 +472,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -483,7 +483,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 53145065}
+  boundsRenderers:
+  - {fileID: 53145066}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &53145065 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 53145061}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &53145066 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 53145061}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &67938826
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -628,7 +644,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -639,7 +655,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 67938835}
+  boundsRenderers:
+  - {fileID: 67938836}
+  - {fileID: 67938834}
+  - {fileID: 67938833}
+  - {fileID: 67938832}
+  - {fileID: 67938831}
+  - {fileID: 67938830}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &67938830 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 67938826}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &67938831 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 67938826}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &67938832 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 67938826}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &67938833 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 67938826}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &67938834 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 67938826}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &67938835 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 67938826}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &67938836 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 67938826}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &70989218
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -754,7 +821,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -765,7 +832,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 70989222}
+  boundsRenderers:
+  - {fileID: 70989223}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &70989222 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 70989218}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &70989223 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 70989218}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &80267692
 GameObject:
   m_ObjectHideFlags: 0
@@ -992,7 +1075,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -1003,7 +1086,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 88198530}
+  boundsRenderers:
+  - {fileID: 88198531}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &88198530 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 88198526}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &88198531 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 88198526}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &93219860
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1118,7 +1217,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -1129,7 +1228,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 93219864}
+  boundsRenderers:
+  - {fileID: 93219865}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &93219864 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 93219860}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &93219865 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 93219860}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &104194699
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1244,7 +1359,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -1255,7 +1370,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 104194703}
+  boundsRenderers:
+  - {fileID: 104194704}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &104194703 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 7582345434443347536, guid: 70fa0768735a6054fa06ea890e9f3df5,
+    type: 3}
+  m_PrefabInstance: {fileID: 104194699}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &104194704 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4396740942158076808, guid: 70fa0768735a6054fa06ea890e9f3df5,
+    type: 3}
+  m_PrefabInstance: {fileID: 104194699}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &115616748
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1370,7 +1501,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -1381,7 +1512,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 115616752}
+  boundsRenderers:
+  - {fileID: 115616753}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &115616752 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 9183012655122819427, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 115616748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &115616753 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 822928772766520482, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 115616748}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &120293976
 GameObject:
   m_ObjectHideFlags: 0
@@ -1573,11 +1720,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 134504295}
 --- !u!1001 &240640516
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1692,7 +1840,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -1703,7 +1851,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 240640520}
+  boundsRenderers:
+  - {fileID: 240640521}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &240640520 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3034835831133262426, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 240640516}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &240640521 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6334154169433040479, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 240640516}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &268004846
 GameObject:
   m_ObjectHideFlags: 0
@@ -1930,7 +2094,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -1941,7 +2105,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 277632358}
+  boundsRenderers:
+  - {fileID: 277632359}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &277632358 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 9183012655122819427, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 277632354}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &277632359 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 822928772766520482, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 277632354}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &297045987
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2086,7 +2266,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -2097,7 +2277,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 297045996}
+  boundsRenderers:
+  - {fileID: 297045997}
+  - {fileID: 297045995}
+  - {fileID: 297045994}
+  - {fileID: 297045993}
+  - {fileID: 297045992}
+  - {fileID: 297045991}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &297045991 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 297045987}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &297045992 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 297045987}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &297045993 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 297045987}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &297045994 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 297045987}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &297045995 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 297045987}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &297045996 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 297045987}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &297045997 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 297045987}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &297925923
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2212,7 +2443,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -2223,7 +2454,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 297925927}
+  boundsRenderers:
+  - {fileID: 297925928}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &297925927 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 297925923}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &297925928 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 297925923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &302518033
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2338,7 +2585,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -2349,7 +2596,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 302518037}
+  boundsRenderers:
+  - {fileID: 302518038}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &302518037 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 302518033}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &302518038 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 302518033}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &303878624
 GameObject:
   m_ObjectHideFlags: 0
@@ -2581,11 +2844,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 359703907}
 --- !u!4 &359703905
 Transform:
   m_ObjectHideFlags: 0
@@ -2759,11 +3023,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 382388577}
 --- !u!1001 &385026641
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2878,7 +3143,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -2889,7 +3154,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 385026645}
+  boundsRenderers:
+  - {fileID: 385026646}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &385026645 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 385026641}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &385026646 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 385026641}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &403032886
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3034,7 +3315,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -3045,7 +3326,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 403032895}
+  boundsRenderers:
+  - {fileID: 403032896}
+  - {fileID: 403032894}
+  - {fileID: 403032893}
+  - {fileID: 403032892}
+  - {fileID: 403032891}
+  - {fileID: 403032890}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &403032890 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 403032886}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &403032891 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 403032886}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &403032892 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 403032886}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &403032893 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 403032886}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &403032894 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 403032886}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &403032895 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 403032886}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &403032896 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 403032886}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &409273203
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3160,7 +3492,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -3171,7 +3503,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 409273207}
+  boundsRenderers:
+  - {fileID: 409273208}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &409273207 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 409273203}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &409273208 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 409273203}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &419150677
 GameObject:
   m_ObjectHideFlags: 0
@@ -3296,8 +3644,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   NetworkObserver: {fileID: 0}
   _enablePrediction: 0
   _predictionType: 0
@@ -3346,8 +3694,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71fd7f855ec523429999fc4e14a1928, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _overrideType: 3
   _updateHostVisibility: 1
   _observerConditions:
@@ -3453,11 +3801,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 446146776}
 --- !u!1001 &453819615
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3602,7 +3951,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -3613,7 +3962,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 453819624}
+  boundsRenderers:
+  - {fileID: 453819625}
+  - {fileID: 453819623}
+  - {fileID: 453819622}
+  - {fileID: 453819621}
+  - {fileID: 453819620}
+  - {fileID: 453819619}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &453819619 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 453819615}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &453819620 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 453819615}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &453819621 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 453819615}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &453819622 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 453819615}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &453819623 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 453819615}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &453819624 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 453819615}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &453819625 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 453819615}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &458518380
 GameObject:
   m_ObjectHideFlags: 0
@@ -3763,7 +4163,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -3774,7 +4174,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 462624304}
+  boundsRenderers:
+  - {fileID: 462624305}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &462624304 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 9183012655122819427, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 462624300}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &462624305 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 822928772766520482, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 462624300}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &500305868
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3889,7 +4305,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -3900,7 +4316,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 500305872}
+  boundsRenderers:
+  - {fileID: 500305873}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &500305872 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 500305868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &500305873 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 500305868}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &549773941
 GameObject:
   m_ObjectHideFlags: 0
@@ -4157,7 +4589,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -4168,7 +4600,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 558892904}
+  boundsRenderers:
+  - {fileID: 558892905}
+  - {fileID: 558892903}
+  - {fileID: 558892902}
+  - {fileID: 558892901}
+  - {fileID: 558892900}
+  - {fileID: 558892899}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &558892899 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 558892895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &558892900 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 558892895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &558892901 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 558892895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &558892902 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 558892895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &558892903 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 558892895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &558892904 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 558892895}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &558892905 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 558892895}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &562114756
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4313,7 +4796,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -4324,7 +4807,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 562114765}
+  boundsRenderers:
+  - {fileID: 562114766}
+  - {fileID: 562114764}
+  - {fileID: 562114763}
+  - {fileID: 562114762}
+  - {fileID: 562114761}
+  - {fileID: 562114760}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &562114760 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 562114756}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &562114761 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 562114756}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &562114762 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 562114756}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &562114763 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 562114756}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &562114764 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 562114756}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &562114765 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 562114756}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &562114766 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 562114756}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &581322272
 GameObject:
   m_ObjectHideFlags: 0
@@ -4426,11 +4960,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 581322275}
 --- !u!1001 &605406335
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4545,7 +5080,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -4556,7 +5091,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 605406339}
+  boundsRenderers:
+  - {fileID: 605406340}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &605406339 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 605406335}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &605406340 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 605406335}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &622044115
 GameObject:
   m_ObjectHideFlags: 0
@@ -4751,11 +5302,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 641791603}
 --- !u!1001 &659055876
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4870,7 +5422,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -4881,7 +5433,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 659055880}
+  boundsRenderers:
+  - {fileID: 659055881}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &659055880 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 659055876}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &659055881 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 659055876}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &699667294
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4996,7 +5564,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -5007,7 +5575,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 699667298}
+  boundsRenderers:
+  - {fileID: 699667299}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &699667298 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 699667294}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &699667299 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 699667294}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &716894971
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5122,7 +5706,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -5133,7 +5717,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 716894975}
+  boundsRenderers:
+  - {fileID: 716894976}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &716894975 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 716894971}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &716894976 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 716894971}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &736075657
 GameObject:
   m_ObjectHideFlags: 0
@@ -5437,7 +6037,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -5448,7 +6048,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 787674067}
+  boundsRenderers:
+  - {fileID: 787674068}
+  - {fileID: 787674066}
+  - {fileID: 787674065}
+  - {fileID: 787674064}
+  - {fileID: 787674063}
+  - {fileID: 787674062}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &787674062 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 787674058}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &787674063 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 787674058}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &787674064 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 787674058}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &787674065 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 787674058}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &787674066 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 787674058}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &787674067 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 787674058}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &787674068 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 787674058}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &840666735
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5593,7 +6244,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -5604,7 +6255,146 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 840666744}
+  boundsRenderers:
+  - {fileID: 840666745}
+  - {fileID: 840666743}
+  - {fileID: 840666742}
+  - {fileID: 840666741}
+  - {fileID: 840666740}
+  - {fileID: 840666739}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &840666739 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 840666735}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &840666740 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 840666735}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &840666741 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 840666735}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &840666742 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 840666735}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &840666743 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 840666735}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &840666744 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 840666735}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &840666745 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 840666735}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &863076262
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 65.16206
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.38
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 184.82
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 487773948810047696, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1468269192062404472, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_Name
+      value: Projectile
+      objectReference: {fileID: 0}
+    - target: {fileID: 1468269192062404472, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6397048010553405107, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6397048010553405107, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 6cd2d08f4a4d93542aa0004bdac91566, type: 2}
+    - target: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5c0e3fb49fbd8c948953622a99303421, type: 3}
 --- !u!1 &865538287
 GameObject:
   m_ObjectHideFlags: 0
@@ -5896,7 +6686,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -5907,7 +6697,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 893426001}
+  boundsRenderers:
+  - {fileID: 893426002}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &893426001 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 893425997}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &893426002 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 893425997}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &904165282
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6052,7 +6858,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -6063,7 +6869,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 904165291}
+  boundsRenderers:
+  - {fileID: 904165292}
+  - {fileID: 904165290}
+  - {fileID: 904165289}
+  - {fileID: 904165288}
+  - {fileID: 904165287}
+  - {fileID: 904165286}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &904165286 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 904165282}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &904165287 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 904165282}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &904165288 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 904165282}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &904165289 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 904165282}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &904165290 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 904165282}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &904165291 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 904165282}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &904165292 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 904165282}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &927162789
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6208,7 +7065,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -6219,7 +7076,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 927162798}
+  boundsRenderers:
+  - {fileID: 927162799}
+  - {fileID: 927162797}
+  - {fileID: 927162796}
+  - {fileID: 927162795}
+  - {fileID: 927162794}
+  - {fileID: 927162793}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &927162793 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 927162789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &927162794 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 927162789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &927162795 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 927162789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &927162796 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 927162789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &927162797 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 927162789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &927162798 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 927162789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &927162799 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 927162789}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &938547006
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6334,7 +7242,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -6345,7 +7253,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 938547010}
+  boundsRenderers:
+  - {fileID: 938547011}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &938547010 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3034835831133262426, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 938547006}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &938547011 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6334154169433040479, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 938547006}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &962759638
 GameObject:
   m_ObjectHideFlags: 0
@@ -6602,7 +7526,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -6613,7 +7537,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 966496013}
+  boundsRenderers:
+  - {fileID: 966496014}
+  - {fileID: 966496012}
+  - {fileID: 966496011}
+  - {fileID: 966496010}
+  - {fileID: 966496009}
+  - {fileID: 966496008}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &966496008 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 966496004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &966496009 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 966496004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &966496010 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 966496004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &966496011 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 966496004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &966496012 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 966496004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &966496013 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 966496004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &966496014 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 966496004}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &981415341
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6728,7 +7703,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -6739,7 +7714,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 981415345}
+  boundsRenderers:
+  - {fileID: 981415346}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &981415345 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6457726111400129269, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 981415341}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &981415346 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4299478626785698809, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 981415341}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1070062898
 GameObject:
   m_ObjectHideFlags: 0
@@ -6784,11 +7775,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1070062902}
 --- !u!33 &1070062901
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -6856,6 +7848,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1073120368}
   - component: {fileID: 1073120369}
+  - component: {fileID: 1073120370}
   m_Layer: 0
   m_Name: WaypointPointSpawner
   m_TagString: Untagged
@@ -6888,7 +7881,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6baada8c2ac30fa49b7245ac71aa39a6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::WaypointPointSpawner
   contourPoints:
   - {fileID: 120293977}
@@ -35723,6 +36716,20 @@ MonoBehaviour:
   - fromIndex: 1801
     toIndex: 821
     distance: 7.7511425
+--- !u!114 &1073120370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073120367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2c19c1a909ae4d4b9466bcc40c834c6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  source: {fileID: 1073120369}
+  buildOnAwake: 1
 --- !u!1 &1096054831
 GameObject:
   m_ObjectHideFlags: 0
@@ -35824,11 +36831,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1096054834}
 --- !u!1 &1099381608
 GameObject:
   m_ObjectHideFlags: 0
@@ -35997,7 +37005,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -36008,7 +37016,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1125944988}
+  boundsRenderers:
+  - {fileID: 1125944989}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1125944988 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 7582345434443347536, guid: 70fa0768735a6054fa06ea890e9f3df5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1125944984}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1125944989 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4396740942158076808, guid: 70fa0768735a6054fa06ea890e9f3df5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1125944984}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1152871369
 GameObject:
   m_ObjectHideFlags: 0
@@ -36110,11 +37134,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1152871372}
 --- !u!1001 &1160015293
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36229,7 +37254,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -36240,7 +37265,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1160015297}
+  boundsRenderers:
+  - {fileID: 1160015298}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1160015297 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6457726111400129269, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 1160015293}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1160015298 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4299478626785698809, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 1160015293}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1160684536
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36355,7 +37396,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -36366,7 +37407,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1160684540}
+  boundsRenderers:
+  - {fileID: 1160684541}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1160684540 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1160684536}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1160684541 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1160684536}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1166004885
 GameObject:
   m_ObjectHideFlags: 0
@@ -36395,8 +37452,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_SerializedVersion: 0
   m_AgentTypeID: 0
   m_CollectObjects: 3
@@ -36442,8 +37499,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41ea9a5b2bd4cf5499cb1221236ee129, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   navMeshSurface: {fileID: 1166004886}
   navMeshData: {fileID: 23800000, guid: 0be772fbeff676e4899da4b17fd54abb, type: 2}
 --- !u!1001 &1191785511
@@ -36751,7 +37808,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -36762,7 +37819,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1278004930}
+  boundsRenderers:
+  - {fileID: 1278004931}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1278004930 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 9183012655122819427, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1278004926}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1278004931 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 822928772766520482, guid: 28ac5debd9ebb6b4db5b3cd07a09068f,
+    type: 3}
+  m_PrefabInstance: {fileID: 1278004926}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1281383972
 GameObject:
   m_ObjectHideFlags: 0
@@ -36864,11 +37937,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1281383975}
 --- !u!1001 &1312743037
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36983,7 +38057,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -36994,7 +38068,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1312743041}
+  boundsRenderers:
+  - {fileID: 1312743042}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1312743041 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1312743037}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1312743042 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1312743037}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1330594020
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -37139,7 +38229,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -37150,7 +38240,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1330594029}
+  boundsRenderers:
+  - {fileID: 1330594030}
+  - {fileID: 1330594028}
+  - {fileID: 1330594027}
+  - {fileID: 1330594026}
+  - {fileID: 1330594025}
+  - {fileID: 1330594024}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &1330594024 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1330594020}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1330594025 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1330594020}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1330594026 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1330594020}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1330594027 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1330594020}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1330594028 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1330594020}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1330594029 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1330594020}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1330594030 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1330594020}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1334172115
 GameObject:
   m_ObjectHideFlags: 0
@@ -37252,11 +38393,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1334172118}
 --- !u!1 &1337344640
 GameObject:
   m_ObjectHideFlags: 0
@@ -37301,11 +38443,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1337344644}
 --- !u!33 &1337344643
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -37477,7 +38620,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -37488,7 +38631,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1364217338}
+  boundsRenderers:
+  - {fileID: 1364217339}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1364217338 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1364217334}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1364217339 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1364217334}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1369620896
 GameObject:
   m_ObjectHideFlags: 0
@@ -37533,11 +38692,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1369620900}
 --- !u!33 &1369620899
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -37709,7 +38869,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -37720,7 +38880,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1421104152}
+  boundsRenderers:
+  - {fileID: 1421104153}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1421104152 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 7582345434443347536, guid: 70fa0768735a6054fa06ea890e9f3df5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1421104148}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1421104153 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4396740942158076808, guid: 70fa0768735a6054fa06ea890e9f3df5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1421104148}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1424800307
 GameObject:
   m_ObjectHideFlags: 0
@@ -37934,11 +39110,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1436512092}
 --- !u!1 &1455427434
 GameObject:
   m_ObjectHideFlags: 0
@@ -38040,11 +39217,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1455427437}
 --- !u!1001 &1477284409
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38159,7 +39337,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -38170,7 +39348,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1477284413}
+  boundsRenderers:
+  - {fileID: 1477284414}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1477284413 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3034835831133262426, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 1477284409}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1477284414 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6334154169433040479, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 1477284409}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1489714247
 GameObject:
   m_ObjectHideFlags: 0
@@ -38384,11 +39578,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1503612999}
 --- !u!1001 &1522773472
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38533,7 +39728,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -38544,7 +39739,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1522773481}
+  boundsRenderers:
+  - {fileID: 1522773482}
+  - {fileID: 1522773480}
+  - {fileID: 1522773479}
+  - {fileID: 1522773478}
+  - {fileID: 1522773477}
+  - {fileID: 1522773476}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &1522773476 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1522773472}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1522773477 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1522773472}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1522773478 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1522773472}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1522773479 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1522773472}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1522773480 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1522773472}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1522773481 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1522773472}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1522773482 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1522773472}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1526738456
 GameObject:
   m_ObjectHideFlags: 0
@@ -38646,11 +39892,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1526738459}
 --- !u!1001 &1550328625
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38831,11 +40078,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1563464899}
 --- !u!1 &1579309171
 GameObject:
   m_ObjectHideFlags: 0
@@ -38880,11 +40128,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1579309175}
 --- !u!33 &1579309174
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -39091,7 +40340,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -39102,7 +40351,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1593514811}
+  boundsRenderers:
+  - {fileID: 1593514812}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1593514811 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 1593514807}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1593514812 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 1593514807}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1611883761
 GameObject:
   m_ObjectHideFlags: 0
@@ -39459,11 +40724,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1659509065}
 --- !u!1 &1675994967
 GameObject:
   m_ObjectHideFlags: 0
@@ -39866,7 +41132,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -39877,7 +41143,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1712421240}
+  boundsRenderers:
+  - {fileID: 1712421241}
+  - {fileID: 1712421239}
+  - {fileID: 1712421238}
+  - {fileID: 1712421237}
+  - {fileID: 1712421236}
+  - {fileID: 1712421235}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &1712421235 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1712421231}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1712421236 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1712421231}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1712421237 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1712421231}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1712421238 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1712421231}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1712421239 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1712421231}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1712421240 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1712421231}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1712421241 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1712421231}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1713549776
 GameObject:
   m_ObjectHideFlags: 0
@@ -39979,11 +41296,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1713549779}
 --- !u!1001 &1722679067
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -40098,7 +41416,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -40109,7 +41427,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1722679071}
+  boundsRenderers:
+  - {fileID: 1722679072}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1722679071 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 1722679067}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1722679072 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 4c060fbb3796f494e98f31626c73d6dd,
+    type: 3}
+  m_PrefabInstance: {fileID: 1722679067}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1749004869
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -40254,7 +41588,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -40265,7 +41599,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1749004878}
+  boundsRenderers:
+  - {fileID: 1749004879}
+  - {fileID: 1749004877}
+  - {fileID: 1749004876}
+  - {fileID: 1749004875}
+  - {fileID: 1749004874}
+  - {fileID: 1749004873}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &1749004873 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1749004869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1749004874 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1749004869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1749004875 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1749004869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1749004876 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1749004869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1749004877 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1749004869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1749004878 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1749004869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1749004879 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1749004869}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1759688809
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -40380,7 +41765,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -40391,7 +41776,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1759688813}
+  boundsRenderers:
+  - {fileID: 1759688814}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1759688813 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3034835831133262426, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 1759688809}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1759688814 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6334154169433040479, guid: 32f23c80203feae4281c82bfb793bca6,
+    type: 3}
+  m_PrefabInstance: {fileID: 1759688809}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1761058057
 GameObject:
   m_ObjectHideFlags: 0
@@ -40454,8 +41855,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7530e31cdd15a0e40b7c0c19b70d2f07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   target: {fileID: 0}
   gameplayCamera: {fileID: 1771415520}
 --- !u!114 &1771415518
@@ -40468,8 +41869,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
@@ -40625,8 +42026,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 577f37e6a08953a4f9ac6dcb8091d2b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   gridWidth: 4
   spacing: 2
 --- !u!114 &1786657438
@@ -40639,8 +42040,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   NetworkObserver: {fileID: 0}
   _enablePrediction: 0
   _predictionType: 0
@@ -40689,8 +42090,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71fd7f855ec523429999fc4e14a1928, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _overrideType: 3
   _updateHostVisibility: 1
   _observerConditions:
@@ -40809,7 +42210,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -40820,7 +42221,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1799614815}
+  boundsRenderers:
+  - {fileID: 1799614816}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1799614815 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6457726111400129269, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 1799614811}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1799614816 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4299478626785698809, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 1799614811}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1821505738
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -40935,7 +42352,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -40946,7 +42363,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1821505742}
+  boundsRenderers:
+  - {fileID: 1821505743}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1821505742 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1821505738}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1821505743 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: ec2ed4b455e16aa418827e63db970dc5,
+    type: 3}
+  m_PrefabInstance: {fileID: 1821505738}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1833115348
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41002,7 +42435,7 @@ PrefabInstance:
     - target: {fileID: 198455030134970290, guid: 5d41ecd2f05b8e8438370d790768e264,
         type: 3}
       propertyPath: SubModule.subEmitters.Array.data[0].emitter
-      value: 
+      value:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -41129,7 +42562,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -41140,7 +42573,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1871330935}
+  boundsRenderers:
+  - {fileID: 1871330936}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1871330935 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 1871330931}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1871330936 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 35dbdcbd6a0b1f84a9b7d6392ad9b652,
+    type: 3}
+  m_PrefabInstance: {fileID: 1871330931}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1879493584
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41285,7 +42734,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -41296,7 +42745,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1879493593}
+  boundsRenderers:
+  - {fileID: 1879493594}
+  - {fileID: 1879493592}
+  - {fileID: 1879493591}
+  - {fileID: 1879493590}
+  - {fileID: 1879493589}
+  - {fileID: 1879493588}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &1879493588 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1879493584}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1879493589 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1879493584}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1879493590 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1879493584}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1879493591 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1879493584}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1879493592 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1879493584}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1879493593 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1879493584}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1879493594 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 1879493584}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1908211268
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41411,7 +42911,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -41422,7 +42922,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 1908211272}
+  boundsRenderers:
+  - {fileID: 1908211273}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &1908211272 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1908211268}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &1908211273 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 1908211268}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1912517518
 GameObject:
   m_ObjectHideFlags: 0
@@ -41726,11 +43242,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1973335631}
 --- !u!1 &1990552690
 GameObject:
   m_ObjectHideFlags: 0
@@ -41832,11 +43349,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1990552693}
 --- !u!1 &1997706382
 GameObject:
   m_ObjectHideFlags: 0
@@ -41938,11 +43456,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 2079817575}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 1997706385}
 --- !u!1 &2017568000
 GameObject:
   m_ObjectHideFlags: 0
@@ -42147,7 +43666,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -42158,7 +43677,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 2036851904}
+  boundsRenderers:
+  - {fileID: 2036851905}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &2036851904 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 3451118302482216456, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 2036851900}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2036851905 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 797c0fca21fb11f46bf2e3eff1c9510b,
+    type: 3}
+  m_PrefabInstance: {fileID: 2036851900}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2073790754
 GameObject:
   m_ObjectHideFlags: 0
@@ -42202,8 +43737,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_UsePipelineSettings: 0
   m_AdditionalLightsShadowResolutionTier: 2
   m_CustomShadowLayers: 0
@@ -42315,8 +43850,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71fd7f855ec523429999fc4e14a1928, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _overrideType: 3
   _updateHostVisibility: 1
   _observerConditions:
@@ -42331,8 +43866,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   NetworkObserver: {fileID: 0}
   _enablePrediction: 0
   _predictionType: 0
@@ -42381,8 +43916,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 577f37e6a08953a4f9ac6dcb8091d2b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   gridWidth: 4
   spacing: 2
 --- !u!4 &2079817577
@@ -42514,11 +44049,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 2092599176}
 --- !u!1001 &2111179293
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -42633,7 +44169,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -42644,7 +44180,23 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 2111179297}
+  boundsRenderers:
+  - {fileID: 2111179298}
   normalizedLegacyGroundOffset: 1
+--- !u!64 &2111179297 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6457726111400129269, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 2111179293}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2111179298 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4299478626785698809, guid: 2314966121d0f794d8c6b95b205b6f02,
+    type: 3}
+  m_PrefabInstance: {fileID: 2111179293}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2118709754
 GameObject:
   m_ObjectHideFlags: 0
@@ -42746,11 +44298,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ad9d377cf024688a20b994480ac8be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1786657438}
   _networkObjectCache: {fileID: 0}
+  markerRenderer: {fileID: 2118709757}
 --- !u!1 &2121047737
 GameObject:
   m_ObjectHideFlags: 0
@@ -43007,7 +44560,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -43018,7 +44571,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 2121306512}
+  boundsRenderers:
+  - {fileID: 2121306513}
+  - {fileID: 2121306511}
+  - {fileID: 2121306510}
+  - {fileID: 2121306509}
+  - {fileID: 2121306508}
+  - {fileID: 2121306507}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &2121306507 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2121306503}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2121306508 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2121306503}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2121306509 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2121306503}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2121306510 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2121306503}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2121306511 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2121306503}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &2121306512 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2121306503}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2121306513 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2121306503}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2123034533
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -43163,7 +44767,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f70e36d18d8d1a4c9868cfad6fb8c86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPuter
   groundMask:
     serializedVersion: 2
@@ -43174,7 +44778,58 @@ MonoBehaviour:
   samplesPerAxis: 3
   alignToGroundNormal: 1
   includeTriggerColliders: 0
+  boundsColliders:
+  - {fileID: 2123034542}
+  boundsRenderers:
+  - {fileID: 2123034543}
+  - {fileID: 2123034541}
+  - {fileID: 2123034540}
+  - {fileID: 2123034539}
+  - {fileID: 2123034538}
+  - {fileID: 2123034537}
   normalizedLegacyGroundOffset: 1
+--- !u!23 &2123034537 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 3405274273820927627, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2123034533}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2123034538 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 248767597330965834, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2123034533}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2123034539 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4964052101410287328, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2123034533}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2123034540 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6207979161027003754, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2123034533}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2123034541 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8543308413649050039, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2123034533}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &2123034542 stripped
+MeshCollider:
+  m_CorrespondingSourceObject: {fileID: 6401909331302830052, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2123034533}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &2123034543 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8616609759972271608, guid: d80d66283d5ec724d86504f8e8de85f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2123034533}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -43190,3 +44845,4 @@ SceneRoots:
   - {fileID: 1073120368}
   - {fileID: 1593339415}
   - {fileID: 1675994968}
+  - {fileID: 863076262}

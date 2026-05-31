@@ -33,33 +33,37 @@ namespace Game.Scripts.Core.Services
             return GetInstance(false);
         }
 
+        public static void Register(TSingleton instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            _cachedInstance = instance;
+        }
+
+        public static void Unregister(TSingleton instance)
+        {
+            if (_cachedInstance == instance)
+            {
+                _cachedInstance = null;
+            }
+        }
+
         private static TSingleton GetInstance(bool canBeNull)
         {
             if (_cachedInstance != null)
             {
                 return _cachedInstance;
             }
-            
-            var allInstances = FindObjectsByType<TSingleton>(FindObjectsSortMode.None);
-            var instance = allInstances.Length > 0
-                ? allInstances[0]
-                : GetInstanceIfNotFound(canBeNull);
-            
-            if (allInstances.Length > 1)
+
+            if (!canBeNull)
             {
-            }
-            
-            for (var i = 1; i < allInstances.Length; i++)
-            {
-                Destroy(allInstances[i]);
+                Debug.LogError($"Singleton<{typeof(TSingleton).Name}> is not registered. Configure it in the scene and call Singleton.Register from the component.");
             }
 
-            return _cachedInstance = instance;
-        }
-
-        private static TSingleton GetInstanceIfNotFound(bool canBeNull)
-        {
-            return canBeNull ? null : new GameObject($"[Singleton] {typeof(TSingleton).Name}").AddComponent<TSingleton>();
+            return null;
         }
     }
 }

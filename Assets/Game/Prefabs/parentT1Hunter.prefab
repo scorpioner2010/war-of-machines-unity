@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 4360793744156350885}
   - component: {fileID: 520028622929890377}
   - component: {fileID: 280164736109979964}
+  - component: {fileID: 8968729971617156625}
+  - component: {fileID: 4317279946859288357}
   m_Layer: 6
   m_Name: Mesh2
   m_TagString: Untagged
@@ -125,11 +127,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 4360793744156350885}
   minMm: 0
   maxMm: 500
 --- !u!64 &280164736109979964
@@ -154,6 +157,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 6147760830989450615, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+--- !u!114 &8968729971617156625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 318322331363839806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 520028622929890377}
+  targetCollider: {fileID: 4360793744156350885}
+  targetColliders:
+  - {fileID: 4360793744156350885}
+  - {fileID: 280164736109979964}
+--- !u!54 &4317279946859288357
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 318322331363839806}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &331624823617908616
 GameObject:
   m_ObjectHideFlags: 0
@@ -210,8 +258,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2d8418b0b9634b1892b0268dd9c2743, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   boneShape: 1
   drawBones: 1
   drawTripods: 0
@@ -236,7 +284,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -251,8 +299,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fff0960ef4ea6e04eac66b4a7fd2189d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_RigLayers:
   - m_Rig: {fileID: 7567731426504661780}
     m_Active: 1
@@ -267,8 +315,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88d2cee355626ec40b7c83f74b16612a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   raycastLength: 11
   surfaceCheckRadius: 1
   raysCount: 8
@@ -287,8 +335,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c9b0c41d275a5fb4eb2aa23a37cbeac5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   playerRoot: {fileID: 5798367828239414435}
   walkingBobbingAmplitude: 0.1
   walkingBobbingFrequency: 2
@@ -339,8 +387,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d218499ba2f560447863e2da494c69c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   groundLayer:
     serializedVersion: 2
     m_Bits: 264
@@ -360,6 +408,8 @@ GameObject:
   - component: {fileID: 767164312777523552}
   - component: {fileID: 4868978899337833852}
   - component: {fileID: 5417225858349264197}
+  - component: {fileID: 3477146319294403381}
+  - component: {fileID: 1765156098939795341}
   m_Layer: 6
   m_Name: Mesh
   m_TagString: Untagged
@@ -471,11 +521,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 767164312777523552}
   minMm: 0
   maxMm: 500
 --- !u!64 &5417225858349264197
@@ -500,6 +551,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -3013810785857205889, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+--- !u!114 &3477146319294403381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 407656106772770317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 4868978899337833852}
+  targetCollider: {fileID: 767164312777523552}
+  targetColliders:
+  - {fileID: 767164312777523552}
+  - {fileID: 5417225858349264197}
+--- !u!54 &1765156098939795341
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 407656106772770317}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &677300579693285468
 GameObject:
   m_ObjectHideFlags: 0
@@ -581,9 +677,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 805d44f536815cc4da19ce0c5f7b2d84, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   target: {fileID: 7551106815414730899}
+  vehicleRoot: {fileID: 0}
 --- !u!114 &5065024342052178338
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -594,8 +691,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fc02ea525be24849a70636e8c1944b0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 3
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -613,8 +710,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 4
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -656,8 +753,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fb5ce5979365aee4c8a9598785470f3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 5
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -685,8 +782,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5987f9551384272479bbd4abf8ab2314, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 5798367828239414435}
 --- !u!114 &9074224211107656160
 MonoBehaviour:
@@ -698,8 +795,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef0270c2c4760f244a9b728879dd45e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 6
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -707,6 +804,11 @@ MonoBehaviour:
   projectilePrefab: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
     type: 3}
   muzzleTransform: {fileID: 1529863960069715363}
+  prewarmProjectilePools: 1
+  projectilePoolPrewarmCount: 16
+  projectilePoolMaxInactive: 64
+  impactFxPoolPrewarmCount: 16
+  impactFxPoolMaxInactive: 64
   dispersion:
     minDispersionDeg: 0.35
     maxDispersionDeg: 6
@@ -801,8 +903,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d292b6943a4058f4cbdaf76a3ebc5911, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 7
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -856,8 +958,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70b342d8ce5c2fd48b8fa3147d48d1d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Weight: 1
   m_Effectors: []
 --- !u!1 &1145656105534545315
@@ -874,6 +976,8 @@ GameObject:
   - component: {fileID: 3794602094844054661}
   - component: {fileID: 4826513166262792340}
   - component: {fileID: 5446144248660303113}
+  - component: {fileID: 1848479234217586944}
+  - component: {fileID: 4894572133668390523}
   m_Layer: 6
   m_Name: rootMesh
   m_TagString: Untagged
@@ -985,11 +1089,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 3794602094844054661}
   minMm: 0
   maxMm: 500
 --- !u!64 &5446144248660303113
@@ -1014,6 +1119,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -6053382344825935911, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+--- !u!114 &1848479234217586944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145656105534545315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 4826513166262792340}
+  targetCollider: {fileID: 3794602094844054661}
+  targetColliders:
+  - {fileID: 3794602094844054661}
+  - {fileID: 5446144248660303113}
+--- !u!54 &4894572133668390523
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145656105534545315}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &1215269598981264953
 GameObject:
   m_ObjectHideFlags: 0
@@ -1031,6 +1181,9 @@ GameObject:
   - component: {fileID: -8928229179660308858}
   - component: {fileID: 4431787478038301119}
   - component: {fileID: -5874392096248117331}
+  - component: {fileID: 5792092772794916013}
+  - component: {fileID: 6669848709525505659}
+  - component: {fileID: 4741424496171530709}
   m_Layer: 0
   m_Name: parentT1Hunter
   m_TagString: Untagged
@@ -1065,8 +1218,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71fd7f855ec523429999fc4e14a1928, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _overrideType: 3
   _updateHostVisibility: 1
   _observerConditions:
@@ -1081,8 +1234,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   NetworkObserver: {fileID: 0}
   _enablePrediction: 0
   _predictionType: 0
@@ -1142,15 +1295,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2bbe50b95b773004b9859953495130ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
   networkObject: {fileID: 8373391785206311523}
   characterInit: {fileID: -3806935235157792045}
   inputManager: {fileID: 8241540855846823989}
-  autoAimController: {fileID: 0}
+  autoAimController: {fileID: 5792092772794916013}
   health: {fileID: 3388262343912614856}
   objectMover: {fileID: 6204458581192626764}
   uiSenerd: {fileID: 2411425367087528452}
@@ -1163,6 +1316,115 @@ MonoBehaviour:
   caterpillarTrack: {fileID: 0}
   footAnimator: {fileID: 3255222161953777300}
   vehicleHUD: {fileID: 3362392733163342225}
+  botBrain: {fileID: 6669848709525505659}
+  hoverOutline: {fileID: -5874392096248117331}
+  armorMaps:
+  - {fileID: 2077916439149122598}
+  - {fileID: 4252008643497341549}
+  - {fileID: 520028622929890377}
+  - {fileID: 6104427293873313638}
+  - {fileID: 4868978899337833852}
+  - {fileID: 9186475139496115545}
+  - {fileID: 8136387865976004171}
+  - {fileID: 4826513166262792340}
+  - {fileID: 4076722003197149775}
+  turretColliders:
+  - {fileID: 652491443468396252}
+  - {fileID: 4107053979294197441}
+  - {fileID: 5798801152788211317}
+  - {fileID: 2037673359618735848}
+  - {fileID: 3051439345780351181}
+  colliderReferences:
+  - {fileID: 1976853330801038057}
+  - {fileID: 8489242056178203174}
+  - {fileID: 8661115085487910050}
+  - {fileID: 7804421978944400615}
+  - {fileID: 4458493190729412839}
+  - {fileID: 7601005510878196058}
+  - {fileID: 8968729971617156625}
+  - {fileID: 1938145136095799984}
+  - {fileID: 3477146319294403381}
+  - {fileID: 1180475892077743507}
+  - {fileID: 5553428210259765740}
+  - {fileID: 1848479234217586944}
+  - {fileID: 7755847984301753187}
+  - {fileID: 8702876254040727799}
+  - {fileID: 3737218006011223405}
+  menuStripComponents:
+  - {fileID: 8929552993543633262}
+  - {fileID: 5275206044390719025}
+  - {fileID: 1675835141766194317}
+  - {fileID: 1606332068934995315}
+  - {fileID: 8373391785206311523}
+  rootAwareBehaviours:
+  - {fileID: -3806935235157792045}
+  - {fileID: -8928229179660308858}
+  - {fileID: 4431787478038301119}
+  - {fileID: -5874392096248117331}
+  - {fileID: 5792092772794916013}
+  - {fileID: 6669848709525505659}
+  - {fileID: 5065024342052178338}
+  - {fileID: 9144081178157368529}
+  - {fileID: 8801226646842633102}
+  - {fileID: 9074224211107656160}
+  - {fileID: 2411042778565667645}
+  - {fileID: 2077916439149122598}
+  - {fileID: 1976853330801038057}
+  - {fileID: 8489242056178203174}
+  - {fileID: 8661115085487910050}
+  - {fileID: 7804421978944400615}
+  - {fileID: 8241540855846823989}
+  - {fileID: 6204458581192626764}
+  - {fileID: 3255222161953777300}
+  - {fileID: 2411425367087528452}
+  - {fileID: 4458493190729412839}
+  - {fileID: 2256879642197945629}
+  - {fileID: 4252008643497341549}
+  - {fileID: 7601005510878196058}
+  - {fileID: 520028622929890377}
+  - {fileID: 8968729971617156625}
+  - {fileID: 6104427293873313638}
+  - {fileID: 1938145136095799984}
+  - {fileID: 4868978899337833852}
+  - {fileID: 3477146319294403381}
+  - {fileID: 9186475139496115545}
+  - {fileID: 1180475892077743507}
+  - {fileID: 8136387865976004171}
+  - {fileID: 5553428210259765740}
+  - {fileID: 4826513166262792340}
+  - {fileID: 1848479234217586944}
+  - {fileID: 7755847984301753187}
+  - {fileID: 8702876254040727799}
+  - {fileID: 4076722003197149775}
+  - {fileID: 3737218006011223405}
+  - {fileID: 3067797613776090229}
+  - {fileID: 3362392733163342225}
+  initializableBehaviours:
+  - {fileID: -8928229179660308858}
+  - {fileID: -5874392096248117331}
+  - {fileID: 5792092772794916013}
+  - {fileID: 5065024342052178338}
+  - {fileID: 9144081178157368529}
+  - {fileID: 8801226646842633102}
+  - {fileID: 9074224211107656160}
+  - {fileID: 2411042778565667645}
+  - {fileID: 2411425367087528452}
+  - {fileID: 3067797613776090229}
+  statsConsumerBehaviours:
+  - {fileID: 3388262343912614856}
+  - {fileID: 5065024342052178338}
+  - {fileID: 9074224211107656160}
+  - {fileID: 2411042778565667645}
+  - {fileID: 2077916439149122598}
+  - {fileID: 6204458581192626764}
+  - {fileID: 4252008643497341549}
+  - {fileID: 520028622929890377}
+  - {fileID: 6104427293873313638}
+  - {fileID: 4868978899337833852}
+  - {fileID: 9186475139496115545}
+  - {fileID: 8136387865976004171}
+  - {fileID: 4826513166262792340}
+  - {fileID: 4076722003197149775}
 --- !u!114 &-3806935235157792045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1173,8 +1435,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87497f6416ac94c832de5c280cac7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 1
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -1190,8 +1452,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d14736a01a3c214f84f4490d3797126, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 2
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -1210,10 +1472,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19fd1eb95597e27479e07615e10677ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 5798367828239414435}
-  smoothSpeed: 10
 --- !u!114 &4431787478038301119
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1224,9 +1485,64 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ddc6b0aae129f145b1654cabbd6d5b0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   colliders:
+  - {fileID: 4107053979294197441}
+  - {fileID: 5798801152788211317}
+  - {fileID: 2037673359618735848}
+  - {fileID: 3051439345780351181}
+  - {fileID: 1422888967430625180}
+  - {fileID: 280164736109979964}
+  - {fileID: 8704823098841653016}
+  - {fileID: 5417225858349264197}
+  - {fileID: 8010988680014485137}
+  - {fileID: 1377382651147083215}
+  - {fileID: 5446144248660303113}
+  - {fileID: 9110561440462134208}
+  - {fileID: 4434917365862437182}
+  - {fileID: 9210437389913318608}
+  collidersToDisableOnDeath:
+  - {fileID: 652491443468396252}
+  - {fileID: 5632499654188064403}
+  - {fileID: 4360793744156350885}
+  - {fileID: 5826019950762845577}
+  - {fileID: 767164312777523552}
+  - {fileID: 4242294503707881504}
+  - {fileID: 8648479739825349089}
+  - {fileID: 3794602094844054661}
+  - {fileID: 8351656625206431751}
+  debrisRigidbodies:
+  - {fileID: 5618368860577006029}
+  - {fileID: 2025882119937710634}
+  - {fileID: 7650123794167977706}
+  - {fileID: 843865985873708606}
+  - {fileID: 4849961215294860545}
+  - {fileID: 4317279946859288357}
+  - {fileID: 7195704814611114502}
+  - {fileID: 1765156098939795341}
+  - {fileID: 2732421374349647404}
+  - {fileID: 6282199805806122311}
+  - {fileID: 4894572133668390523}
+  - {fileID: 8025941111873239586}
+  - {fileID: 4553327594057727996}
+  - {fileID: 7687176220500095037}
+  debrisRenderers:
+  - {fileID: 1399841858764603769}
+  - {fileID: 1927881673127734015}
+  - {fileID: 4696780279620901908}
+  - {fileID: 3292622886569190129}
+  - {fileID: 1886268037743369847}
+  - {fileID: 4011954965671401720}
+  - {fileID: 7541561385323695328}
+  - {fileID: 5233824291366137862}
+  - {fileID: 3314107586735822998}
+  - {fileID: 2287934140982763291}
+  - {fileID: 8790597454562735377}
+  - {fileID: 5492150923427435131}
+  - {fileID: 2387018496320024848}
+  - {fileID: 5731366993136918381}
+  debrisMeshColliders:
   - {fileID: 4107053979294197441}
   - {fileID: 5798801152788211317}
   - {fileID: 2037673359618735848}
@@ -1253,12 +1569,88 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d9d625ff77e94224b75fdb0872941ebe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 5798367828239414435}
   hoverMask:
     serializedVersion: 2
     m_Bits: 64
+  outlineRenderers:
+  - {fileID: 4011954965671401720}
+  - {fileID: 5233824291366137862}
+  - {fileID: 8790597454562735377}
+  - {fileID: 4661920479052967063}
+  - {fileID: 3292622886569190129}
+  - {fileID: 4696780279620901908}
+  - {fileID: 1927881673127734015}
+  - {fileID: 1886268037743369847}
+  - {fileID: 3314107586735822998}
+  - {fileID: 7541561385323695328}
+  - {fileID: 2287934140982763291}
+  - {fileID: 2387018496320024848}
+  - {fileID: 1399841858764603769}
+  - {fileID: 5492150923427435131}
+  - {fileID: 5731366993136918381}
+  outlineSubMeshCounts:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+--- !u!114 &5792092772794916013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4e8e57c07bd4fd19e1816d01bb56941, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleAutoAimController
+  vehicleRoot: {fileID: 5798367828239414435}
+  acquireMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &6669848709525505659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29d83922f5d84618a77f61bcbb0ad986, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBotBrain
+  vehicleRoot: {fileID: 5798367828239414435}
+  navigator: {fileID: 4741424496171530709}
+--- !u!114 &4741424496171530709
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37936653d8934de4af5bb9ece911246a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.AI.WaypointGraph.BotNavigator
+  target: {fileID: 0}
+  drawDebugGizmos: 1
 --- !u!1 &1476538492309367418
 GameObject:
   m_ObjectHideFlags: 0
@@ -1274,6 +1666,7 @@ GameObject:
   - component: {fileID: 3255222161953777300}
   - component: {fileID: 2411425367087528452}
   - component: {fileID: 7605531651926363149}
+  - component: {fileID: 4458493190729412839}
   m_Layer: 0
   m_Name: Chassis
   m_TagString: Untagged
@@ -1310,8 +1703,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 8
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -1353,13 +1746,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36fdd18e124788c4a899a54447e560ee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 9
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
   vehicleRoot: {fileID: 5798367828239414435}
-  autoAimController: {fileID: 0}
+  autoAimController: {fileID: 5792092772794916013}
 --- !u!114 &6204458581192626764
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1370,8 +1763,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5654b776c9481674196bf442d87b136a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 5798367828239414435}
   controller: {fileID: 7605531651926363149}
   rotateSpeed: 2
@@ -1387,8 +1780,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c66b841b92113a74aae0803c2bf926f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   playerRoot: {fileID: 5798367828239414435}
   leftFoot: {fileID: 347267942056810950}
   rightFoot: {fileID: 9027659986341262872}
@@ -1411,8 +1804,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3d2785b136e27bd4885bd218c26c18ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   vehicleRoot: {fileID: 5798367828239414435}
   isActive: 0
 --- !u!143 &7605531651926363149
@@ -1440,6 +1833,23 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: -0.2, z: 0}
+--- !u!114 &4458493190729412839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476538492309367418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 7605531651926363149}
+  targetColliders:
+  - {fileID: 7605531651926363149}
 --- !u!1 &1717965098956383009
 GameObject:
   m_ObjectHideFlags: 0
@@ -1483,8 +1893,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88d2cee355626ec40b7c83f74b16612a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   raycastLength: 2
   surfaceCheckRadius: 0.01
   raysCount: 8
@@ -1692,9 +2102,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d74e09d71de398042bb2b73b90ae2463, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   rig: {fileID: 8086914337191537714}
   distance: 10
 --- !u!1 &2218403415302206512
@@ -1709,6 +2119,8 @@ GameObject:
   - component: {fileID: 836982713167364704}
   - component: {fileID: 3292622886569190129}
   - component: {fileID: 3051439345780351181}
+  - component: {fileID: 7804421978944400615}
+  - component: {fileID: 843865985873708606}
   m_Layer: 0
   m_Name: gunMesh
   m_TagString: Untagged
@@ -1810,6 +2222,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &7804421978944400615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2218403415302206512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 3051439345780351181}
+  targetColliders:
+  - {fileID: 3051439345780351181}
+--- !u!54 &843865985873708606
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2218403415302206512}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &2550335069704673658
 GameObject:
   m_ObjectHideFlags: 0
@@ -1822,6 +2278,8 @@ GameObject:
   - component: {fileID: 1822390685983529206}
   - component: {fileID: 4696780279620901908}
   - component: {fileID: 2037673359618735848}
+  - component: {fileID: 8661115085487910050}
+  - component: {fileID: 7650123794167977706}
   m_Layer: 0
   m_Name: gunMesh
   m_TagString: Untagged
@@ -1923,6 +2381,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &8661115085487910050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2550335069704673658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 2037673359618735848}
+  targetColliders:
+  - {fileID: 2037673359618735848}
+--- !u!54 &7650123794167977706
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2550335069704673658}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &2791936025318778502
 GameObject:
   m_ObjectHideFlags: 0
@@ -1997,8 +2499,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88d2cee355626ec40b7c83f74b16612a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   raycastLength: 2
   surfaceCheckRadius: 0.01
   raysCount: 8
@@ -2049,8 +2551,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aeda7bfbf984f2a4da5ab4b8967b115d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Weight: 1
   m_Data:
     m_Root: {fileID: 7155548098021085642}
@@ -2170,8 +2672,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aeda7bfbf984f2a4da5ab4b8967b115d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Weight: 1
   m_Data:
     m_Root: {fileID: 6237617736594132214}
@@ -2230,6 +2732,8 @@ GameObject:
   - component: {fileID: 8268371875526275179}
   - component: {fileID: 1927881673127734015}
   - component: {fileID: 5798801152788211317}
+  - component: {fileID: 8489242056178203174}
+  - component: {fileID: 2025882119937710634}
   m_Layer: 0
   m_Name: gunMesh
   m_TagString: Untagged
@@ -2331,6 +2835,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &8489242056178203174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5199208344456474211}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 5798801152788211317}
+  targetColliders:
+  - {fileID: 5798801152788211317}
+--- !u!54 &2025882119937710634
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5199208344456474211}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &5332669806933013541
 GameObject:
   m_ObjectHideFlags: 0
@@ -2377,6 +2925,8 @@ GameObject:
   - component: {fileID: 5632499654188064403}
   - component: {fileID: 4252008643497341549}
   - component: {fileID: 1422888967430625180}
+  - component: {fileID: 7601005510878196058}
+  - component: {fileID: 4849961215294860545}
   m_Layer: 6
   m_Name: Mesh
   m_TagString: Untagged
@@ -2488,11 +3038,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 5632499654188064403}
   minMm: 0
   maxMm: 500
 --- !u!64 &1422888967430625180
@@ -2517,6 +3068,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -3013810785857205889, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+--- !u!114 &7601005510878196058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5352737963007362888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 4252008643497341549}
+  targetCollider: {fileID: 5632499654188064403}
+  targetColliders:
+  - {fileID: 5632499654188064403}
+  - {fileID: 1422888967430625180}
+--- !u!54 &4849961215294860545
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5352737963007362888}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &5617066474265864493
 GameObject:
   m_ObjectHideFlags: 0
@@ -2531,6 +3127,8 @@ GameObject:
   - component: {fileID: 4242294503707881504}
   - component: {fileID: 9186475139496115545}
   - component: {fileID: 8010988680014485137}
+  - component: {fileID: 1180475892077743507}
+  - component: {fileID: 2732421374349647404}
   m_Layer: 6
   m_Name: Mesh
   m_TagString: Untagged
@@ -2642,11 +3240,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 4242294503707881504}
   minMm: 0
   maxMm: 500
 --- !u!64 &8010988680014485137
@@ -2671,6 +3270,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 6147760830989450615, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+--- !u!114 &1180475892077743507
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5617066474265864493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 9186475139496115545}
+  targetCollider: {fileID: 4242294503707881504}
+  targetColliders:
+  - {fileID: 4242294503707881504}
+  - {fileID: 8010988680014485137}
+--- !u!54 &2732421374349647404
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5617066474265864493}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &6326056662240755403
 GameObject:
   m_ObjectHideFlags: 0
@@ -2685,6 +3329,8 @@ GameObject:
   - component: {fileID: 5826019950762845577}
   - component: {fileID: 6104427293873313638}
   - component: {fileID: 8704823098841653016}
+  - component: {fileID: 1938145136095799984}
+  - component: {fileID: 7195704814611114502}
   m_Layer: 0
   m_Name: footRMesh
   m_TagString: Untagged
@@ -2796,11 +3442,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 5826019950762845577}
   minMm: 0
   maxMm: 500
 --- !u!64 &8704823098841653016
@@ -2825,6 +3472,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -3369733745826847544, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+--- !u!114 &1938145136095799984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326056662240755403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 6104427293873313638}
+  targetCollider: {fileID: 5826019950762845577}
+  targetColliders:
+  - {fileID: 5826019950762845577}
+  - {fileID: 8704823098841653016}
+--- !u!54 &7195704814611114502
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6326056662240755403}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &6664236091546759009
 GameObject:
   m_ObjectHideFlags: 0
@@ -2867,8 +3559,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d218499ba2f560447863e2da494c69c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   groundLayer:
     serializedVersion: 2
     m_Bits: 264
@@ -2920,6 +3612,8 @@ GameObject:
   - component: {fileID: 8648479739825349089}
   - component: {fileID: 8136387865976004171}
   - component: {fileID: 1377382651147083215}
+  - component: {fileID: 5553428210259765740}
+  - component: {fileID: 6282199805806122311}
   m_Layer: 0
   m_Name: footLMesh
   m_TagString: Untagged
@@ -3031,11 +3725,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 8648479739825349089}
   minMm: 0
   maxMm: 500
 --- !u!64 &1377382651147083215
@@ -3060,6 +3755,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -3369733745826847544, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+--- !u!114 &5553428210259765740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6756606574503816637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 8136387865976004171}
+  targetCollider: {fileID: 8648479739825349089}
+  targetColliders:
+  - {fileID: 8648479739825349089}
+  - {fileID: 1377382651147083215}
+--- !u!54 &6282199805806122311
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6756606574503816637}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &6851534511285849972
 GameObject:
   m_ObjectHideFlags: 0
@@ -3072,6 +3812,8 @@ GameObject:
   - component: {fileID: 4749947370769005265}
   - component: {fileID: 2387018496320024848}
   - component: {fileID: 4434917365862437182}
+  - component: {fileID: 8702876254040727799}
+  - component: {fileID: 4553327594057727996}
   m_Layer: 6
   m_Name: r2Mesh
   m_TagString: Untagged
@@ -3173,6 +3915,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &8702876254040727799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6851534511285849972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 4434917365862437182}
+  targetColliders:
+  - {fileID: 4434917365862437182}
+--- !u!54 &4553327594057727996
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6851534511285849972}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &7636852754885561432
 GameObject:
   m_ObjectHideFlags: 0
@@ -3219,6 +4005,8 @@ GameObject:
   - component: {fileID: 652491443468396252}
   - component: {fileID: 2077916439149122598}
   - component: {fileID: 4107053979294197441}
+  - component: {fileID: 1976853330801038057}
+  - component: {fileID: 5618368860577006029}
   m_Layer: 6
   m_Name: BodyMesh
   m_TagString: Untagged
@@ -3330,11 +4118,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 652491443468396252}
   minMm: 0
   maxMm: 500
 --- !u!64 &4107053979294197441
@@ -3359,6 +4148,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1976853330801038057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7647233394492613072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 2077916439149122598}
+  targetCollider: {fileID: 652491443468396252}
+  targetColliders:
+  - {fileID: 652491443468396252}
+  - {fileID: 4107053979294197441}
+--- !u!54 &5618368860577006029
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7647233394492613072}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &7697420800534066556
 GameObject:
   m_ObjectHideFlags: 0
@@ -3529,6 +4363,8 @@ GameObject:
   - component: {fileID: 1553447581184252969}
   - component: {fileID: 5492150923427435131}
   - component: {fileID: 9110561440462134208}
+  - component: {fileID: 7755847984301753187}
+  - component: {fileID: 8025941111873239586}
   m_Layer: 6
   m_Name: r1Mesh
   m_TagString: Untagged
@@ -3630,6 +4466,50 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &7755847984301753187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8736389222036730361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 0}
+  targetCollider: {fileID: 9110561440462134208}
+  targetColliders:
+  - {fileID: 9110561440462134208}
+--- !u!54 &8025941111873239586
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8736389222036730361}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &8911524707642226244
 GameObject:
   m_ObjectHideFlags: 0
@@ -3644,6 +4524,8 @@ GameObject:
   - component: {fileID: 8351656625206431751}
   - component: {fileID: 4076722003197149775}
   - component: {fileID: 9210437389913318608}
+  - component: {fileID: 3737218006011223405}
+  - component: {fileID: 7687176220500095037}
   m_Layer: 6
   m_Name: SphereMesh
   m_TagString: Untagged
@@ -3755,11 +4637,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vehicleRoot: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  vehicleRoot: {fileID: 5798367828239414435}
   thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 0
+  armorCollider: {fileID: 8351656625206431751}
   minMm: 0
   maxMm: 500
 --- !u!64 &9210437389913318608
@@ -3784,6 +4667,51 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &3737218006011223405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8911524707642226244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
+  vehicleRoot: {fileID: 5798367828239414435}
+  armorMap: {fileID: 4076722003197149775}
+  targetCollider: {fileID: 8351656625206431751}
+  targetColliders:
+  - {fileID: 8351656625206431751}
+  - {fileID: 9210437389913318608}
+--- !u!54 &7687176220500095037
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8911524707642226244}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &9099464208353685555
 GameObject:
   m_ObjectHideFlags: 0
@@ -3830,8 +4758,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _componentIndexCache: 10
   _addedNetworkObject: {fileID: 8373391785206311523}
   _networkObjectCache: {fileID: 8373391785206311523}
@@ -3976,20 +4904,35 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6888389142017244291, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 6888389142017244291, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 6888389142017244291, guid: 9043c1ae5d088df4690974177aa623d2,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: tankRoot
-      value: 
+      value:
       objectReference: {fileID: 5798367828239414435}
     - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: vehicleRoot
-      value: 
+      value:
       objectReference: {fileID: 5798367828239414435}
     - target: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: floatingTextPrefab
-      value: 
+      value:
       objectReference: {fileID: 1599035085840930297, guid: 63a614522a9b5fd48bab655eaaf47a3f,
         type: 3}
     m_RemovedComponents: []
@@ -4007,8 +4950,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f117a6f87a7b7934c8bd7a3cda064e2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!224 &7590366855765562724 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3686233559821536342, guid: 9043c1ae5d088df4690974177aa623d2,

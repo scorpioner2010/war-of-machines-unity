@@ -3,15 +3,27 @@ using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Game.Scripts.Core.Services;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
-using Object = UnityEngine.Object;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Game.Scripts.Core.Helpers
 {
     public class GameplayAssistantMember : MonoBehaviour
     {
+        private void OnEnable()
+        {
+            Singleton<GameplayAssistantMember>.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            Singleton<GameplayAssistantMember>.Unregister(this);
+        }
+
         public void RunWithDelay(float time, Action logic) => StartCoroutine(StopDelay(time, logic));
         private IEnumerator StopDelay(float time, Action logic)
         {
@@ -44,7 +56,7 @@ namespace Game.Scripts.Core.Helpers
                 ForceRebuildRecursive(t.GetChild(i));
             }
 
-            RectTransform rt = t as RectTransform ?? t.GetComponent<RectTransform>();
+            RectTransform rt = t as RectTransform;
         
             if (rt != null)
             {
@@ -56,18 +68,6 @@ namespace Game.Scripts.Core.Helpers
         public static void RunWithDelay(float time, Action logic)
         {
             Singleton<GameplayAssistantMember>.Current.RunWithDelay(time, logic);
-        }
-        
-        public static void DestroyAll<T>(GameObject root) where T : Component
-        {
-            T[] comps = root.GetComponentsInChildren<T>(true);
-            for (int i = 0; i < comps.Length; i++)
-            {
-                if (comps[i] != null)
-                {
-                    Object.Destroy(comps[i]);
-                }
-            }
         }
         
         public static int GetRandomInt(params int[] values)
@@ -393,26 +393,6 @@ namespace Game.Scripts.Core.Helpers
             Vector3 viewportPoint = camera.WorldToViewportPoint(obj);
             return viewportPoint.x >= 0 && viewportPoint.x <= 1 && viewportPoint.y >= 0 && viewportPoint.y <= 1 && viewportPoint.z > 0;
         }
-
-        public static void CreateSphereDots(Vector3 pos, float size, int amountDots = 1000, float lifeTime = 6, float sizeDot = 0.5f)
-        {
-            for (int i = 0; i < amountDots; i++)
-            {
-                Vector3 c = pos + UnityEngine.Random.onUnitSphere * size;
-                CreateSphere(Color.blue, sizeDot, c, lifeTime);
-            }
-        }
-
-        public static void CreateSphere(Color color, float size, Vector3 pos, float lifeTime = 6)
-        {
-            GameObject f = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            f.transform.position = pos;
-            f.transform.localScale = Vector3.one * size;
-            f.GetComponent<MeshRenderer>().material.color = color;
-            GameObject.Destroy(f.GetComponent<Collider>());
-            GameObject.Destroy(f, lifeTime);
-        }
-        
     }
     
     public static class EnumExtensions

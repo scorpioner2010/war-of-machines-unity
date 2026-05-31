@@ -6,9 +6,7 @@ namespace Game.Scripts.UI.HUD
     public class GameplayHudRuntimeBinder : MonoBehaviour
     {
         [SerializeField] private Canvas canvas;
-
-        private GunCrosshair[] _crosshairs;
-        private bool _crosshairsCached;
+        [SerializeField] private GunCrosshair[] crosshairs = System.Array.Empty<GunCrosshair>();
 
         private void Awake()
         {
@@ -34,23 +32,17 @@ namespace Game.Scripts.UI.HUD
 
             if (canvas == null)
             {
-                canvas = GetComponentInParent<Canvas>();
+                return;
             }
 
-            if (canvas == null)
+            if (crosshairs == null)
             {
                 return;
             }
 
-            EnsureCrosshairs();
-            if (_crosshairs == null)
+            for (int i = 0; i < crosshairs.Length; i++)
             {
-                return;
-            }
-
-            for (int i = 0; i < _crosshairs.Length; i++)
-            {
-                GunCrosshair crosshair = _crosshairs[i];
+                GunCrosshair crosshair = crosshairs[i];
                 if (crosshair == null)
                 {
                     continue;
@@ -58,17 +50,6 @@ namespace Game.Scripts.UI.HUD
 
                 crosshair.ResolveCanvasReference(canvas);
             }
-        }
-
-        private void EnsureCrosshairs()
-        {
-            if (_crosshairsCached)
-            {
-                return;
-            }
-
-            _crosshairs = GetComponentsInChildren<GunCrosshair>(true);
-            _crosshairsCached = true;
         }
     }
 }

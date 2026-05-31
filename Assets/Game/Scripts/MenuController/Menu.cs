@@ -8,6 +8,7 @@ namespace Game.Scripts.MenuController
     {
         [SerializeField] private RectTransform menuRect;
         [SerializeField] private RectTransform animationPanel;
+        [SerializeField] private Canvas rootCanvas;
         
         [SerializeField] private CanvasGroup canvasGroup;
         
@@ -119,20 +120,19 @@ namespace Game.Scripts.MenuController
 
         private void BringToFront()
         {
-            Canvas canvas = menuRect.GetComponentInParent<Canvas>();
-            if (canvas == null)
+            if (rootCanvas == null)
             {
                 menuRect.SetAsLastSibling();
                 return;
             }
 
             Transform current = menuRect;
-            while (current.parent != null && current.parent != canvas.transform)
+            while (current.parent != null && current.parent != rootCanvas.transform)
             {
                 current = current.parent;
             }
 
-            if (current.parent == canvas.transform)
+            if (current.parent == rootCanvas.transform)
             {
                 current.SetAsLastSibling();
             }

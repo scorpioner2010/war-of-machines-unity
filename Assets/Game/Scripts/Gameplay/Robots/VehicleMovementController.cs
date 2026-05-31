@@ -18,14 +18,6 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _useRuntimeTraverseSpeed;
         private float _runtimeTraverseSpeedDegPerSecond;
 
-        private void Awake()
-        {
-            if (controller == null)
-            {
-                controller = GetComponent<CharacterController>();
-            }
-        }
-
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;

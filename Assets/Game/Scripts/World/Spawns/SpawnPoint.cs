@@ -3,7 +3,6 @@ using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Game.Scripts.Core.Helpers;
-using Game.Scripts.Gameplay.SceneManagement;
 using Game.Scripts.Networking.Lobby;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -12,7 +11,10 @@ namespace Game.Scripts.World.Spawns
 {
     public class SpawnPoint : NetworkBehaviour
     {
+        private static readonly List<SpawnPoint> ActivePoints = new List<SpawnPoint>(64);
+
         public readonly SyncVar<bool> IsNotFree = new (false);
+        [SerializeField] private MeshRenderer markerRenderer;
 
         private void ReserveTemporarily()
         {
@@ -28,12 +30,27 @@ namespace Game.Scripts.World.Spawns
 
         private void Awake()
         {
-            MeshRenderer mesh = GetComponent<MeshRenderer>();
-            
-                if (mesh != null)
-                {
-                    mesh.enabled = false;
-                }
+            if (markerRenderer != null)
+            {
+                markerRenderer.enabled = false;
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (!ActivePoints.Contains(this))
+            {
+                ActivePoints.Add(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            int index = ActivePoints.IndexOf(this);
+            if (index >= 0)
+            {
+                ActivePoints.RemoveAt(index);
+            }
         }
 
         public static SpawnPoint GetFreePoint(Scene scene)
@@ -43,13 +60,18 @@ namespace Game.Scripts.World.Spawns
 
         public static SpawnPoint GetFreePoint(Scene scene, MatchTeam team)
         {
-            List<SpawnPoint> allPoints = SceneObjectFinder.FindInScene<SpawnPoint>(scene);
             List<SpawnPoint> preferredPoints = new List<SpawnPoint>();
             List<SpawnPoint> fallbackPoints = new List<SpawnPoint>();
 
-            foreach (SpawnPoint point in allPoints)
+            for (int i = 0; i < ActivePoints.Count; i++)
             {
+                SpawnPoint point = ActivePoints[i];
                 if (point == null || point.IsNotFree.Value)
+                {
+                    continue;
+                }
+
+                if (point.gameObject.scene != scene)
                 {
                     continue;
                 }

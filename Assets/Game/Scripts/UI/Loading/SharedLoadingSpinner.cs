@@ -18,8 +18,8 @@ namespace Game.Scripts.UI.Loading
         [SerializeField] private bool hideGraphicDuringConnection = true;
         [SerializeField] private Graphic spinnerGraphic;
         [SerializeField] private TMP_Text connectionStatusText;
+        [SerializeField] private RectTransform rectTransform;
 
-        private RectTransform _rectTransform;
         private Quaternion _initialRotation;
         private Vector3 _initialScale;
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
@@ -27,26 +27,14 @@ namespace Game.Scripts.UI.Loading
 
         private void Awake()
         {
-            _rectTransform = GetComponent<RectTransform>();
-            _initialRotation = _rectTransform.localRotation;
-            _initialScale = _rectTransform.localScale;
-
-            if (spinnerGraphic == null)
+            if (rectTransform == null)
             {
-                spinnerGraphic = GetComponent<Graphic>();
+                enabled = false;
+                return;
             }
 
-            if (networkManager == null)
-            {
-                networkManager = FindFirstObjectByType<NetworkManager>();
-            }
-
-            if (statusText == null)
-            {
-                statusText = GetComponentInChildren<TMP_Text>(true);
-            }
-
-            EnsureConnectionStatusText();
+            _initialRotation = rectTransform.localRotation;
+            _initialScale = rectTransform.localScale;
         }
 
         private void OnEnable()
@@ -67,61 +55,26 @@ namespace Game.Scripts.UI.Loading
 
         private void RefreshVisualState()
         {
+            if (rectTransform == null)
+            {
+                return;
+            }
+
             bool isConnectionMode = MenuLoadingScreenManager.CurrentMode == MenuLoadingScreenMode.Connection;
             SetSpinnerGraphicVisible(isConnectionMode == false || hideGraphicDuringConnection == false);
             SetConnectionStatusTextVisible(isConnectionMode);
 
             if (isConnectionMode)
             {
-                _rectTransform.localRotation = _initialRotation;
-                _rectTransform.localScale = _initialScale;
+                rectTransform.localRotation = _initialRotation;
+                rectTransform.localScale = _initialScale;
                 UpdateStatusText();
                 return;
             }
 
-            _rectTransform.Rotate(0f, 0f, -rotationSpeed * Time.deltaTime);
-            _rectTransform.localScale = _initialScale;
+            rectTransform.Rotate(0f, 0f, -rotationSpeed * Time.deltaTime);
+            rectTransform.localScale = _initialScale;
             UpdateStatusText();
-        }
-
-        private void EnsureConnectionStatusText()
-        {
-            if (connectionStatusText != null)
-            {
-                return;
-            }
-
-            Transform parent = transform.parent != null ? transform.parent : transform;
-            GameObject textObject = new GameObject("Connection Status Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            textObject.transform.SetParent(parent, false);
-            textObject.transform.SetAsLastSibling();
-
-            RectTransform rectTransform = textObject.GetComponent<RectTransform>();
-            rectTransform.anchorMin = new Vector2(0.08f, 0.38f);
-            rectTransform.anchorMax = new Vector2(0.92f, 0.62f);
-            rectTransform.offsetMin = Vector2.zero;
-            rectTransform.offsetMax = Vector2.zero;
-            rectTransform.pivot = new Vector2(0.5f, 0.5f);
-
-            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
-            text.text = string.Empty;
-            text.color = Color.white;
-            text.alignment = TextAlignmentOptions.Center;
-            text.enableAutoSizing = true;
-            text.fontSizeMin = 12f;
-            text.fontSizeMax = 27f;
-            text.fontSize = 21f;
-            text.textWrappingMode = TextWrappingModes.Normal;
-            text.raycastTarget = false;
-
-            if (statusText != null)
-            {
-                text.font = statusText.font;
-                text.fontSharedMaterial = statusText.fontSharedMaterial;
-            }
-
-            connectionStatusText = text;
-            SetConnectionStatusTextVisible(false);
         }
 
         private void SetSpinnerGraphicVisible(bool visible)
@@ -136,8 +89,6 @@ namespace Game.Scripts.UI.Loading
 
         private void SetConnectionStatusTextVisible(bool visible)
         {
-            EnsureConnectionStatusText();
-
             if (connectionStatusText == null || connectionStatusText.gameObject.activeSelf == visible)
             {
                 return;
@@ -175,9 +126,11 @@ namespace Game.Scripts.UI.Loading
 
         private void UpdateStatusText()
         {
-            TMP_Text targetText = MenuLoadingScreenManager.CurrentMode == MenuLoadingScreenMode.Connection
-                ? connectionStatusText
-                : statusText;
+            TMP_Text targetText = statusText;
+            if (MenuLoadingScreenManager.CurrentMode == MenuLoadingScreenMode.Connection)
+            {
+                targetText = connectionStatusText != null ? connectionStatusText : statusText;
+            }
 
             if (targetText == null)
             {

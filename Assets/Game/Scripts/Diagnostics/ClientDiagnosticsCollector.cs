@@ -218,13 +218,7 @@ namespace Game.Scripts.Diagnostics
             metrics.TreeBillboardDistance = terrain.treeBillboardDistance;
             metrics.TreeMaximumFullLodCount = terrain.treeMaximumFullLODCount;
 
-            TerrainCollider terrainCollider;
-            if (terrain.TryGetComponent(out terrainCollider))
-            {
-                metrics.TerrainColliderEnabled = terrainCollider.enabled;
-                // Unity 6 serializes tree collider state, but does not expose it through TerrainCollider runtime API here.
-                metrics.TerrainTreeCollidersEnabled = null;
-            }
+            metrics.TerrainTreeCollidersEnabled = null;
 
             TerrainData data = terrain.terrainData;
             if (data == null)

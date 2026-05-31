@@ -10,8 +10,6 @@ namespace Game.Scripts.UI.HUD
 {
     public class VehicleHUD : MonoBehaviour, IVehicleRootAware
     {
-        private static Camera _fallbackCamera;
-
         public VehicleRoot vehicleRoot;
         private Camera _mainCamera;
         [SerializeField] private TMP_Text nickName;
@@ -38,13 +36,11 @@ namespace Game.Scripts.UI.HUD
         private void Awake()
         {
             CaptureBaseLocalScale();
-            TryResolveVehicleRoot();
         }
 
         private void OnEnable()
         {
             CaptureBaseLocalScale();
-            TryResolveVehicleRoot();
             TrySubscribeHealth();
             SubscribeToLocalPlayerChange();
             PrewarmFloatingTextPool();
@@ -60,7 +56,6 @@ namespace Game.Scripts.UI.HUD
         
         private void Start()
         {
-            TryResolveVehicleRoot();
             TrySubscribeHealth();
             ApplyHpColor();
         }
@@ -69,16 +64,6 @@ namespace Game.Scripts.UI.HUD
         {
             UnsubscribeFromLocalPlayerChange();
             UnsubscribeFromHealth();
-        }
-
-        private void TryResolveVehicleRoot()
-        {
-            if (vehicleRoot != null)
-            {
-                return;
-            }
-
-            vehicleRoot = GetComponentInParent<VehicleRoot>();
         }
 
         private void TrySubscribeHealth()
@@ -239,16 +224,6 @@ namespace Game.Scripts.UI.HUD
             {
                 _mainCamera = CameraSync.In.gameplayCamera;
                 return _mainCamera;
-            }
-
-            if (_fallbackCamera == null)
-            {
-                _fallbackCamera = Camera.main;
-            }
-
-            if (_fallbackCamera != null)
-            {
-                _mainCamera = _fallbackCamera;
             }
 
             return _mainCamera;

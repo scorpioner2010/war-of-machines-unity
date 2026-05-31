@@ -3,8 +3,6 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
 using UnityEngine.Events;
-using System.Collections.Generic;
-using NaughtyAttributes;
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -30,24 +28,6 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _hasAppliedSyncHealth;
         private float _appliedSyncHealth;
 
-        [Button]
-        private void FindArmorColliders()
-        {
-            List<Collider> list = new List<Collider>();
-            MeshCollider[] all = GetComponentsInChildren<MeshCollider>(true);
-            int armorLayer = LayerMask.NameToLayer("Armor");
-
-            foreach (MeshCollider c in all)
-            {
-                if (c.gameObject.layer == armorLayer && c.convex == false)
-                {
-                    list.Add(c);
-                }
-            }
-
-            colliders = list.ToArray();
-        }
-        
         public float Current
         {
             get
@@ -227,7 +207,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            _runtimeColliders = GetComponentsInChildren<Collider>(true);
+            _runtimeColliders = Array.Empty<Collider>();
         }
 
         private static bool IsDeathDebrisCollider(Collider targetCollider)

@@ -67,3 +67,4 @@ MonoBehaviour:
   - type: 7
     prefab: {fileID: 9300000400, guid: 5545b2e272ed4fa59730ac5e8472a937, type: 3}
     parent: {fileID: 0}
+  defaultPrefabMenuParent: {fileID: 0}

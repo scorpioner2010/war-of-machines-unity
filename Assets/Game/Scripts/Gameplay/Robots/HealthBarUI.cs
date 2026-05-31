@@ -81,7 +81,7 @@ namespace Game.Scripts.Gameplay.Robots
             float cur01 = Mathf.Clamp01(vehicleRoot.health.Current / vehicleRoot.health.MaxHealth);
             _display01 = cur01;
             _healthBar.slider.value = _display01;
-            CacheFillImage();
+            _fillImage = _healthBar.fillImage;
             ApplyHealthColor();
             RefreshLabel();
 
@@ -167,16 +167,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _fillImage.color = GameplayRuntimeSettingsProvider.Get().alliedHpColor;
-        }
-
-        private void CacheFillImage()
-        {
-            if (_healthBar == null || _healthBar.slider == null || _healthBar.slider.fillRect == null)
-            {
-                return;
-            }
-
-            _fillImage = _healthBar.slider.fillRect.GetComponent<Image>();
         }
     }
 }

@@ -360,9 +360,9 @@ namespace Game.Scripts.Client
         [Tooltip("Material used by the projectile tracer trail.")]
         public Material tracerMaterial;
         [Tooltip("One-shot fire effect spawned at the muzzle.")]
-        public GameObject muzzleFlashPrefab;
+        public PooledImpactFx muzzleFlashPrefab;
         [Tooltip("One-shot smoke effect spawned at the muzzle.")]
-        public GameObject muzzleSmokePrefab;
+        public PooledImpactFx muzzleSmokePrefab;
 
         [Header("Projectile glow")]
         public bool overrideProjectileMaterial = true;

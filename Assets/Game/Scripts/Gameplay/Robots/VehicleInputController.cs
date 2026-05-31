@@ -612,20 +612,9 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ResolveAutoAimController()
         {
-            if (autoAimController != null)
+            if (autoAimController == null && vehicleRoot != null)
             {
-                return;
-            }
-
-            if (vehicleRoot == null)
-            {
-                return;
-            }
-
-            autoAimController = vehicleRoot.autoAimController;
-            if (autoAimController == null)
-            {
-                autoAimController = vehicleRoot.GetComponentInChildren<VehicleAutoAimController>(true);
+                autoAimController = vehicleRoot.autoAimController;
             }
         }
 

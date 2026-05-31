@@ -25,6 +25,8 @@ public class ObjectPuter : MonoBehaviour
     [SerializeField] private int samplesPerAxis = 3;
     [SerializeField] private bool alignToGroundNormal = true;
     [SerializeField] private bool includeTriggerColliders;
+    [SerializeField] private Collider[] boundsColliders = System.Array.Empty<Collider>();
+    [SerializeField] private Renderer[] boundsRenderers = System.Array.Empty<Renderer>();
     [SerializeField, HideInInspector] private bool normalizedLegacyGroundOffset;
 
     private void Reset()
@@ -134,30 +136,30 @@ public class ObjectPuter : MonoBehaviour
 
     private bool TryGetObjectBounds(out Bounds bounds)
     {
-        Collider[] colliders = GetComponentsInChildren<Collider>();
         bool hasBounds = false;
         bounds = new Bounds(transform.position, Vector3.zero);
 
-        for (int i = 0; i < colliders.Length; i++)
+        for (int i = 0; boundsColliders != null && i < boundsColliders.Length; i++)
         {
-            if (!colliders[i].enabled)
+            Collider targetCollider = boundsColliders[i];
+            if (targetCollider == null || !targetCollider.enabled)
             {
                 continue;
             }
 
-            if (!includeTriggerColliders && colliders[i].isTrigger)
+            if (!includeTriggerColliders && targetCollider.isTrigger)
             {
                 continue;
             }
 
             if (!hasBounds)
             {
-                bounds = colliders[i].bounds;
+                bounds = targetCollider.bounds;
                 hasBounds = true;
             }
             else
             {
-                bounds.Encapsulate(colliders[i].bounds);
+                bounds.Encapsulate(targetCollider.bounds);
             }
         }
 
@@ -166,22 +168,22 @@ public class ObjectPuter : MonoBehaviour
             return true;
         }
 
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        for (int i = 0; i < renderers.Length; i++)
+        for (int i = 0; boundsRenderers != null && i < boundsRenderers.Length; i++)
         {
-            if (!renderers[i].enabled)
+            Renderer targetRenderer = boundsRenderers[i];
+            if (targetRenderer == null || !targetRenderer.enabled)
             {
                 continue;
             }
 
             if (!hasBounds)
             {
-                bounds = renderers[i].bounds;
+                bounds = targetRenderer.bounds;
                 hasBounds = true;
             }
             else
             {
-                bounds.Encapsulate(renderers[i].bounds);
+                bounds.Encapsulate(targetRenderer.bounds);
             }
         }
 
@@ -296,23 +298,23 @@ public class ObjectPuter : MonoBehaviour
 
     private bool TryGetLowestObjectOffset(Vector3 normal, out float lowestOffset)
     {
-        Collider[] colliders = GetComponentsInChildren<Collider>();
         bool hasSupportPoint = false;
         lowestOffset = float.MaxValue;
 
-        for (int i = 0; i < colliders.Length; i++)
+        for (int i = 0; boundsColliders != null && i < boundsColliders.Length; i++)
         {
-            if (!colliders[i].enabled)
+            Collider targetCollider = boundsColliders[i];
+            if (targetCollider == null || !targetCollider.enabled)
             {
                 continue;
             }
 
-            if (!includeTriggerColliders && colliders[i].isTrigger)
+            if (!includeTriggerColliders && targetCollider.isTrigger)
             {
                 continue;
             }
 
-            CheckColliderSupportPoints(colliders[i], normal, ref lowestOffset);
+            CheckColliderSupportPoints(targetCollider, normal, ref lowestOffset);
             hasSupportPoint = true;
         }
 
@@ -321,15 +323,15 @@ public class ObjectPuter : MonoBehaviour
             return true;
         }
 
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        for (int i = 0; i < renderers.Length; i++)
+        for (int i = 0; boundsRenderers != null && i < boundsRenderers.Length; i++)
         {
-            if (!renderers[i].enabled)
+            Renderer targetRenderer = boundsRenderers[i];
+            if (targetRenderer == null || !targetRenderer.enabled)
             {
                 continue;
             }
 
-            CheckBoundsCorners(renderers[i].bounds, normal, ref lowestOffset);
+            CheckBoundsCorners(targetRenderer.bounds, normal, ref lowestOffset);
             hasSupportPoint = true;
         }
 

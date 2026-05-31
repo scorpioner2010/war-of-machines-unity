@@ -42,17 +42,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b93a610d758a1da43985848108efa322, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _componentIndexCache: 0
-  _addedNetworkObject: {fileID: 0}
-  _networkObjectCache: {fileID: 0}
-  roomId: 
-  roomName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  roomId:
+  roomName:
   maxPlayers: 0
-  selectedLocation: 
+  selectedLocation:
   isInGame: 0
-  loadedSceneName: 
+  loadedSceneName:
   handle: 0
+  sceneSlotIndex: -1
+  sceneOffsetX: 0
   players: []
   isAutoRoom: 0
+  gameplayTimer: {fileID: 0}
+  isGameFinished: 0
+  spawnStarted: 0
+  matchEndSubmitted: 0
+  matchRewardsSent: 0
+  matchId: 0

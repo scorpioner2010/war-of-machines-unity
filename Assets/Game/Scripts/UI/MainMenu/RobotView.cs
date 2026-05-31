@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using FishNet.Component.Transforming;
 using FishNet.Connection;
 using FishNet.Object;
-using FishNet.Observing;
 using Game.Scripts.API;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
@@ -413,12 +411,10 @@ namespace Game.Scripts.UI.MainMenu
 
         private void StripFishNetRuntime(GameObject root)
         {
-            // 1) Components that depend on NetworkObject.
-            GameplayAssistant.DestroyAll<NetworkObserver>(root);
-            GameplayAssistant.DestroyAll<NetworkTransform>(root);
-
-            // 2) Remove NetworkObject last.
-            GameplayAssistant.DestroyAll<NetworkObject>(root);
+            if (_vehicleRoot != null)
+            {
+                _vehicleRoot.DestroyConfiguredMenuStripComponents();
+            }
         }
     }
 

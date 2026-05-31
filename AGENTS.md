@@ -16,6 +16,9 @@
 - Avoid LINQ in gameplay/runtime hot paths when a simpler manual implementation is better.
 - Do not use reflection in gameplay/runtime code.
 - Reflection is allowed only for editor tooling when truly necessary.
+- Runtime gameplay code must not create or discover required components with `AddComponent`, `GetComponent*`, `FindObject*`, `FindObjects*`, `GameObject.Find`, tag searches, or `Resources.FindObjectsOfTypeAll`.
+- Components and dependencies that can exist in prefabs or scenes must be created and wired in the prefab/scene inspector. Runtime code should use serialized references and only validate/report missing configuration.
+- Heavy scene-wide lookup APIs are allowed only in editor tooling or one-off migration scripts, not in gameplay/client/server runtime paths.
 
 # Live Diagnostics Workflow
 

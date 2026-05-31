@@ -51,12 +51,5 @@ namespace Game.Scripts.Core.Utils
             }
         }
 
-        public static ValueTimeUpdater InitUpdater(string updaterName, Transform parent)
-        {
-            GameObject objUpdater = new GameObject(updaterName);
-            objUpdater.transform.parent = parent;
-            ValueTimeUpdater updater = objUpdater.AddComponent<ValueTimeUpdater>();
-            return updater;
-        }
     }
 }

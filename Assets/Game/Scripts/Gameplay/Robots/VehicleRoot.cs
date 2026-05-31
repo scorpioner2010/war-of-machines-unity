@@ -30,6 +30,17 @@ namespace Game.Scripts.Gameplay.Robots
         public CaterpillarTrack caterpillarTrack;
         public RobotFootAnimator footAnimator;
         public VehicleHUD vehicleHUD;
+        public VehicleBotBrain botBrain;
+        public VehicleHoverOutline hoverOutline;
+        public ArmorMap[] armorMaps = System.Array.Empty<ArmorMap>();
+        public Collider[] turretColliders = System.Array.Empty<Collider>();
+        public VehicleColliderReference[] colliderReferences = System.Array.Empty<VehicleColliderReference>();
+        public Component[] menuStripComponents = System.Array.Empty<Component>();
+
+        [Header("Configured component lists")]
+        [SerializeField] private MonoBehaviour[] rootAwareBehaviours = System.Array.Empty<MonoBehaviour>();
+        [SerializeField] private MonoBehaviour[] initializableBehaviours = System.Array.Empty<MonoBehaviour>();
+        [SerializeField] private MonoBehaviour[] statsConsumerBehaviours = System.Array.Empty<MonoBehaviour>();
 
         private readonly List<IVehicleInitializable> _initializables = new List<IVehicleInitializable>(16);
         private readonly List<IVehicleStatsConsumer> _statsConsumers = new List<IVehicleStatsConsumer>(16);
@@ -153,101 +164,152 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (networkObject == null)
-            {
-                networkObject = GetComponent<NetworkObject>();
-            }
-            if (characterInit == null)
-            {
-                characterInit = GetComponentInChildren<VehicleNetworkInitializer>(true);
-            }
-            if (inputManager == null)
-            {
-                inputManager = GetComponentInChildren<VehicleInputController>(true);
-            }
-            if (autoAimController == null)
-            {
-                autoAimController = GetComponentInChildren<VehicleAutoAimController>(true);
-            }
-            if (autoAimController == null)
-            {
-                autoAimController = gameObject.AddComponent<VehicleAutoAimController>();
-            }
-            if (health == null)
-            {
-                health = GetComponentInChildren<VehicleHealth>(true);
-            }
-            if (objectMover == null)
-            {
-                objectMover = GetComponentInChildren<VehicleMovementController>(true);
-            }
-            if (uiSenerd == null)
-            {
-                uiSenerd = GetComponentInChildren<VehicleHudInitializer>(true);
-            }
-            if (cameraController == null)
-            {
-                cameraController = GetComponentInChildren<CameraController>(true);
-            }
-            if (robotHullRotation == null)
-            {
-                robotHullRotation = GetComponentInChildren<VehicleTurretRotationController>(true);
-            }
-            if (weaponAimAtCamera == null)
-            {
-                weaponAimAtCamera = GetComponentInChildren<WeaponAimController>(true);
-            }
-            if (gunReticleUIFollower == null)
-            {
-                gunReticleUIFollower = GetComponentInChildren<WeaponReticlePresenter>(true);
-            }
-            if (shooterNet == null)
-            {
-                shooterNet = GetComponentInChildren<NetworkWeaponShooter>(true);
-            }
-            if (weaponReloadController == null)
-            {
-                weaponReloadController = GetComponentInChildren<WeaponReloadController>(true);
-            }
-            if (caterpillarTrack == null)
-            {
-                caterpillarTrack = GetComponentInChildren<CaterpillarTrack>(true);
-            }
-            if (footAnimator == null)
-            {
-                footAnimator = GetComponentInChildren<RobotFootAnimator>(true);
-            }
-            if (vehicleHUD == null)
-            {
-                vehicleHUD = GetComponentInChildren<VehicleHUD>(true);
-            }
+            _initializables.Clear();
+            _statsConsumers.Clear();
 
-            MonoBehaviour[] behaviours = GetComponentsInChildren<MonoBehaviour>(true);
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                MonoBehaviour behaviour = behaviours[i];
-                if (behaviour == null)
-                {
-                    continue;
-                }
+            ApplyRootAware(characterInit);
+            ApplyRootAware(inputManager);
+            ApplyRootAware(autoAimController);
+            ApplyRootAware(objectMover);
+            ApplyRootAware(uiSenerd);
+            ApplyRootAware(cameraController);
+            ApplyRootAware(robotHullRotation);
+            ApplyRootAware(weaponAimAtCamera);
+            ApplyRootAware(gunReticleUIFollower);
+            ApplyRootAware(shooterNet);
+            ApplyRootAware(weaponReloadController);
+            ApplyRootAware(caterpillarTrack);
+            ApplyRootAware(footAnimator);
+            ApplyRootAware(vehicleHUD);
+            ApplyRootAware(botBrain);
+            ApplyRootAware(hoverOutline);
+            ApplyRootAware(rootAwareBehaviours);
+            ApplyRootAware(armorMaps);
+            ApplyRootAware(colliderReferences);
 
-                if (behaviour is IVehicleRootAware rootAware)
-                {
-                    rootAware.SetVehicleRoot(this);
-                }
+            AddInitializable(characterInit);
+            AddInitializable(uiSenerd);
+            AddInitializable(cameraController);
+            AddInitializable(robotHullRotation);
+            AddInitializable(weaponAimAtCamera);
+            AddInitializable(gunReticleUIFollower);
+            AddInitializable(shooterNet);
+            AddInitializable(weaponReloadController);
+            AddInitializable(autoAimController);
+            AddInitializable(hoverOutline);
+            AddInitializable(initializableBehaviours);
 
-                if (behaviour is IVehicleInitializable initializable)
-                {
-                    _initializables.Add(initializable);
-                }
-
-                if (behaviour is IVehicleStatsConsumer statsConsumer)
-                {
-                    _statsConsumers.Add(statsConsumer);
-                }
-            }
+            AddStatsConsumer(health);
+            AddStatsConsumer(objectMover);
+            AddStatsConsumer(robotHullRotation);
+            AddStatsConsumer(shooterNet);
+            AddStatsConsumer(weaponReloadController);
+            AddStatsConsumer(statsConsumerBehaviours);
+            AddStatsConsumer(armorMaps);
 
             _componentsCached = true;
+        }
+
+        private void ApplyRootAware(MonoBehaviour behaviour)
+        {
+            if (behaviour is IVehicleRootAware rootAware)
+            {
+                rootAware.SetVehicleRoot(this);
+            }
+        }
+
+        private void ApplyRootAware(MonoBehaviour[] behaviours)
+        {
+            if (behaviours == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                ApplyRootAware(behaviours[i]);
+            }
+        }
+
+        private void ApplyRootAware(ArmorMap[] behaviours)
+        {
+            if (behaviours == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                ApplyRootAware(behaviours[i]);
+            }
+        }
+
+        private void ApplyRootAware(VehicleColliderReference[] behaviours)
+        {
+            if (behaviours == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                ApplyRootAware(behaviours[i]);
+            }
+        }
+
+        private void AddInitializable(MonoBehaviour behaviour)
+        {
+            if (behaviour is IVehicleInitializable initializable && !_initializables.Contains(initializable))
+            {
+                _initializables.Add(initializable);
+            }
+        }
+
+        private void AddInitializable(MonoBehaviour[] behaviours)
+        {
+            if (behaviours == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                AddInitializable(behaviours[i]);
+            }
+        }
+
+        private void AddStatsConsumer(MonoBehaviour behaviour)
+        {
+            if (behaviour is IVehicleStatsConsumer statsConsumer && !_statsConsumers.Contains(statsConsumer))
+            {
+                _statsConsumers.Add(statsConsumer);
+            }
+        }
+
+        private void AddStatsConsumer(MonoBehaviour[] behaviours)
+        {
+            if (behaviours == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                AddStatsConsumer(behaviours[i]);
+            }
+        }
+
+        private void AddStatsConsumer(ArmorMap[] behaviours)
+        {
+            if (behaviours == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                AddStatsConsumer(behaviours[i]);
+            }
         }
 
         private void InitializeComponents(VehicleInitializationPhase phase)
@@ -295,6 +357,23 @@ namespace Game.Scripts.Gameplay.Robots
                     _runtimeStats.TurretArmor.Side,
                     _runtimeStats.TurretArmor.Rear
                 );
+            }
+        }
+
+        public void DestroyConfiguredMenuStripComponents()
+        {
+            if (menuStripComponents == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < menuStripComponents.Length; i++)
+            {
+                Component component = menuStripComponents[i];
+                if (component != null)
+                {
+                    Destroy(component);
+                }
             }
         }
 

@@ -12,7 +12,6 @@ namespace Game.Scripts.Gameplay.Robots
     public class WeaponReticlePresenter : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         public VehicleRoot vehicleRoot;
-        private static Camera _fallbackCamera;
 
         private RectTransform _serverCrosshair;
         private RectTransform _reticleRect;
@@ -63,7 +62,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (!force && Time.unscaledTime < _nextHudResolveTime)
             {
-                return _canvas != null && _reticleRect != null;
+                return _canvasRect != null && _reticleRect != null;
             }
 
             _nextHudResolveTime = Time.unscaledTime + 0.25f;
@@ -77,7 +76,7 @@ namespace Game.Scripts.Gameplay.Robots
             _reticleRect = gunCrosshair.crosshair;
             _serverCrosshair = gunCrosshair.serverCrosshair;
             _canvas = gunCrosshair.ResolveCanvasReference();
-            _canvasRect = _canvas != null ? _canvas.GetComponent<RectTransform>() : null;
+            _canvasRect = gunCrosshair.canvasRect;
 
             if (_reticleRect != null)
             {
@@ -91,7 +90,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _visibleServer = _serverCrosshair.gameObject.activeSelf;
             }
 
-            return _canvas != null && _canvasRect != null && _reticleRect != null;
+            return _canvasRect != null && _reticleRect != null;
         }
 
         private void LateUpdate()
@@ -103,7 +102,7 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                if (_canvas == null || _canvasRect == null || _reticleRect == null)
+                if (_canvasRect == null || _reticleRect == null)
                 {
                     if (!TryResolveHudReferences(false))
                     {
@@ -148,65 +147,70 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                Vector3 worldAim = vehicleRoot.weaponAimAtCamera.CurrentAimPoint;
+                Vector3 worldAim = ResolveVisualAimPoint(vehicleRoot.weaponAimAtCamera);
                 if (worldAim == Vector3.zero)
                 {
                     worldAim = vehicleRoot.weaponAimAtCamera.DesiredAimPoint;
                 }
 
-            GetReticleLerpSpeeds(sniperMode, out float horizontalLerpSpeed, out float verticalLerpSpeed);
-
-            if (!UpdateReticle(
-                    worldAim,
-                    cam,
-                    _reticleRect,
-                    ref _curLocal,
-                    ref _tgtLocal,
-                        ref _visualAimPoint,
-                        ref _hasVisualAimPoint,
-                        horizontalLerpSpeed,
-                        verticalLerpSpeed,
-                        runtimeSettings))
-            {
-                if (runtimeSettings.reticleHideWhenBehindCamera)
-                {
-                    SetVisible(false);
-                    _hasVisualAimPoint = false;
-                }
-                else
-                {
-                    SetVisible(true);
-                }
-            }
-            else
-            {
-                SetVisible(true);
-            }
-
-            if (runtimeSettings.reticleShowServerReticle && ClientGameplaySettings.ServerCrosshairEnabled && _serverCrosshair != null)
-            {
-                Vector3 srvAim = vehicleRoot.weaponAimAtCamera.ServerAimPoint;
-                if (srvAim == Vector3.zero)
-                {
-                    srvAim = worldAim;
-                }
+                GetReticleLerpSpeeds(sniperMode, out float horizontalLerpSpeed, out float verticalLerpSpeed);
 
                 if (!UpdateReticle(
-                        srvAim,
+                        worldAim,
                         cam,
-                        _serverCrosshair,
-                        ref _curLocalServer,
-                        ref _tgtLocalServer,
-                        ref _visualAimPointServer,
-                        ref _hasVisualAimPointServer,
+                        _reticleRect,
+                        ref _curLocal,
+                        ref _tgtLocal,
+                        ref _visualAimPoint,
+                        ref _hasVisualAimPoint,
                         horizontalLerpSpeed,
                         verticalLerpSpeed,
                         runtimeSettings))
                 {
                     if (runtimeSettings.reticleHideWhenBehindCamera)
                     {
-                        SetVisibleServer(false);
-                        _hasVisualAimPointServer = false;
+                        SetVisible(false);
+                        _hasVisualAimPoint = false;
+                    }
+                    else
+                    {
+                        SetVisible(true);
+                    }
+                }
+                else
+                {
+                    SetVisible(true);
+                }
+
+                if (runtimeSettings.reticleShowServerReticle && ClientGameplaySettings.ServerCrosshairEnabled && _serverCrosshair != null)
+                {
+                    Vector3 srvAim = vehicleRoot.weaponAimAtCamera.ServerAimPoint;
+                    if (srvAim == Vector3.zero)
+                    {
+                        srvAim = worldAim;
+                    }
+
+                    if (!UpdateReticle(
+                            srvAim,
+                            cam,
+                            _serverCrosshair,
+                            ref _curLocalServer,
+                            ref _tgtLocalServer,
+                            ref _visualAimPointServer,
+                            ref _hasVisualAimPointServer,
+                            horizontalLerpSpeed,
+                            verticalLerpSpeed,
+                            runtimeSettings))
+                    {
+                        if (runtimeSettings.reticleHideWhenBehindCamera)
+                        {
+                            SetVisibleServer(false);
+                            _hasVisualAimPointServer = false;
+                        }
+                        else
+                        {
+                            SetVisibleServer(true);
+                        }
                     }
                     else
                     {
@@ -215,14 +219,9 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 else
                 {
-                    SetVisibleServer(true);
+                    SetVisibleServer(false);
+                    _hasVisualAimPointServer = false;
                 }
-            }
-            else
-            {
-                SetVisibleServer(false);
-                _hasVisualAimPointServer = false;
-            }
             }
         }
 
@@ -255,7 +254,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
             }
 
-            Camera canvasCam = _canvas.renderMode == RenderMode.ScreenSpaceOverlay
+            Camera canvasCam = _canvas == null || _canvas.renderMode == RenderMode.ScreenSpaceOverlay
                 ? null
                 : (_canvas.worldCamera != null ? _canvas.worldCamera : cam);
 
@@ -425,7 +424,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            Camera canvasCam = _canvas.renderMode == RenderMode.ScreenSpaceOverlay
+            Camera canvasCam = _canvas == null || _canvas.renderMode == RenderMode.ScreenSpaceOverlay
                 ? null
                 : (_canvas.worldCamera != null ? _canvas.worldCamera : cam);
             Vector3 canvasWorldPoint = _canvasRect.TransformPoint(localPoint);
@@ -438,6 +437,39 @@ namespace Game.Scripts.Gameplay.Robots
         {
             _hasVisualAimPoint = false;
             _hasVisualAimPointServer = false;
+        }
+
+        private static Vector3 ResolveVisualAimPoint(WeaponAimController weaponAim)
+        {
+            if (weaponAim == null)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 currentAimPoint = weaponAim.CurrentAimPoint;
+            if (IsFinite(currentAimPoint) && currentAimPoint != Vector3.zero)
+            {
+                return currentAimPoint;
+            }
+
+            Transform gun = weaponAim.gun;
+            if (gun != null)
+            {
+                Vector3 forward = weaponAim.GetLogicalAimForwardWorld();
+                if (IsFinite(forward) && forward.sqrMagnitude > 0.000001f)
+                {
+                    forward.Normalize();
+                    return gun.position + forward * Mathf.Max(0.25f, weaponAim.maxAimDistance);
+                }
+            }
+
+            Vector3 desiredAimPoint = weaponAim.DesiredAimPoint;
+            if (IsFinite(desiredAimPoint))
+            {
+                return desiredAimPoint;
+            }
+
+            return Vector3.zero;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -457,13 +489,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return CameraSync.In.gameplayCamera;
             }
 
-            if (_fallbackCamera != null)
-            {
-                return _fallbackCamera;
-            }
-
-            _fallbackCamera = Camera.main;
-            return _fallbackCamera;
+            return null;
         }
 
         private void SetVisible(bool v)

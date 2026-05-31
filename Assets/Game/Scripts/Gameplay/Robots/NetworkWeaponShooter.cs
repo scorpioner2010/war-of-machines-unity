@@ -486,7 +486,7 @@ namespace Game.Scripts.Gameplay.Robots
             PrepareMuzzleFxPool(visualSettings.muzzleSmokePrefab, visualSettings);
         }
 
-        private void PrepareMuzzleFxPool(GameObject prefab, ClientProjectileVisualSettings visualSettings)
+        private void PrepareMuzzleFxPool(PooledImpactFx prefab, ClientProjectileVisualSettings visualSettings)
         {
             if (prefab == null || visualSettings == null)
             {
@@ -919,24 +919,18 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (hr.hit && hr.collider != null)
             {
-                targetHealth = hr.collider.GetComponentInParent<VehicleHealth>();
-                if (targetHealth != null)
+                if (hr.armor != null && hr.armor.vehicleRoot != null)
                 {
-                    targetRoot = targetHealth.GetComponentInParent<VehicleRoot>();
-                    if (targetRoot == null)
-                    {
-                        targetRoot = hr.collider.GetComponentInParent<VehicleRoot>();
-                    }
+                    targetRoot = hr.armor.vehicleRoot;
                 }
                 else
                 {
-                    targetRoot = hr.collider.GetComponentInParent<VehicleRoot>();
-                    if (targetRoot != null)
-                    {
-                        targetHealth = targetRoot.health != null
-                            ? targetRoot.health
-                            : targetRoot.GetComponentInChildren<VehicleHealth>(true);
-                    }
+                    VehicleColliderRegistry.TryGetRoot(hr.collider, out targetRoot);
+                }
+
+                if (targetRoot != null)
+                {
+                    targetHealth = targetRoot.health;
                 }
             }
 
@@ -1186,7 +1180,7 @@ namespace Game.Scripts.Gameplay.Robots
             SpawnMuzzleFxPrefab(visualSettings.muzzleSmokePrefab, position, rotation, visualSettings.muzzleSmokeScale);
         }
 
-        private static void SpawnMuzzleFxPrefab(GameObject prefab, Vector3 position, Quaternion rotation, float scale)
+        private static void SpawnMuzzleFxPrefab(PooledImpactFx prefab, Vector3 position, Quaternion rotation, float scale)
         {
             if (prefab == null)
             {

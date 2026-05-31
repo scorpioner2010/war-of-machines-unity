@@ -163,10 +163,14 @@ public class Projectile : MonoBehaviour
     public LayerMask hitMask = ~0;
     public float hitRadius = 0.05f;
     public int damage = 40;
-    public GameObject explosionFX;
+    public PooledImpactFx explosionFX;
 
     [Header("Projectile Visuals")]
     [SerializeField] private ProjectileVisualSettings visualSettings = new ProjectileVisualSettings();
+    [SerializeField] private Rigidbody projectileRigidbody;
+    [SerializeField] private Renderer[] projectileRenderers = Array.Empty<Renderer>();
+    [SerializeField] private ParticleSystem[] projectileParticles = Array.Empty<ParticleSystem>();
+    [SerializeField] private Collider[] projectileColliders = Array.Empty<Collider>();
 
     [Header("Debug")]
     public bool debugDrawTrajectory;
@@ -375,7 +379,7 @@ public class Projectile : MonoBehaviour
             return;
         }
 
-        EnsureTrailRenderer(projectileVisuals);
+        EnsureTrailRendererReference(projectileVisuals);
         if (_trailRenderer == null)
         {
             _tracerConfigured = false;
@@ -400,33 +404,19 @@ public class Projectile : MonoBehaviour
         SetTracerVisible(_visualsEnabled && _initialized);
     }
 
-    private void EnsureTrailRenderer(ProjectileVisualSettings projectileVisuals)
+    private void EnsureTrailRendererReference(ProjectileVisualSettings projectileVisuals)
     {
-        if (projectileVisuals != null && projectileVisuals.tracerRenderer != null)
-        {
-            if (_trailRenderer != projectileVisuals.tracerRenderer)
-            {
-                _trailRenderer = projectileVisuals.tracerRenderer;
-                _componentCacheBuilt = false;
-                EnsureComponentCache();
-            }
-
-            return;
-        }
-
-        if (_trailRenderer != null)
+        if (projectileVisuals == null)
         {
             return;
         }
 
-        _trailRenderer = GetComponent<TrailRenderer>();
-        if (_trailRenderer == null)
+        if (_trailRenderer == projectileVisuals.tracerRenderer)
         {
-            _trailRenderer = gameObject.AddComponent<TrailRenderer>();
+            return;
         }
 
-        _componentCacheBuilt = false;
-        EnsureComponentCache();
+        _trailRenderer = projectileVisuals.tracerRenderer;
     }
 
     private Material ResolveTracerMaterial(ProjectileVisualSettings projectileVisuals, ClientProjectileVisualSettings clientSettings)
@@ -1035,10 +1025,11 @@ public class Projectile : MonoBehaviour
             return;
         }
 
-        _cachedRigidbody = GetComponent<Rigidbody>();
-        _cachedRenderers = GetComponentsInChildren<Renderer>(true);
-        _cachedParticles = GetComponentsInChildren<ParticleSystem>(true);
-        _cachedColliders = GetComponentsInChildren<Collider>(true);
+        _cachedRigidbody = projectileRigidbody;
+        _cachedRenderers = projectileRenderers ?? Array.Empty<Renderer>();
+        _cachedParticles = projectileParticles ?? Array.Empty<ParticleSystem>();
+        _cachedColliders = projectileColliders ?? Array.Empty<Collider>();
+        _trailRenderer = visualSettings != null ? visualSettings.tracerRenderer : null;
         _componentCacheBuilt = true;
     }
 

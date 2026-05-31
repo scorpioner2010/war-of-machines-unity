@@ -48,11 +48,6 @@ namespace Game.Scripts.Gameplay.Robots
         {
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
 
-            if (vehicleRoot == null)
-            {
-                vehicleRoot = GetComponentInParent<VehicleRoot>();
-            }
-
             Vector3 angles = transform.eulerAngles;
             _X = angles.y;
             _Y = angles.x;

@@ -120,12 +120,7 @@ namespace Game.Scripts.UI.Helpers
 
             if (canvasGroup == null)
             {
-                canvasGroup = screen.GetComponent<CanvasGroup>();
-            }
-
-            if (canvasGroup == null)
-            {
-                canvasGroup = screen.AddComponent<CanvasGroup>();
+                return;
             }
 
             canvasGroup.interactable = false;

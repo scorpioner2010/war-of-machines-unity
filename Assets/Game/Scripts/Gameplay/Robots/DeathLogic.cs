@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Game.Scripts.Gameplay.Robots;
 using NaughtyAttributes;
 using UnityEngine;
@@ -8,6 +7,10 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
     private const string DeathDebrisLayerName = "Chassis";
 
     public Collider[] colliders;
+    public Collider[] collidersToDisableOnDeath;
+    public Rigidbody[] debrisRigidbodies;
+    public Renderer[] debrisRenderers;
+    public MeshCollider[] debrisMeshColliders;
     public VehicleRoot vehicleRoot;
     public GameObject[] forTurnOff;
 
@@ -47,42 +50,6 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
     }
 
-    [Button]
-    private void FindArmorColliders()
-    {
-        List<Collider> list = new List<Collider>();
-        Collider[] all = GetComponentsInChildren<Collider>(true);
-        int armorLayer = LayerMask.NameToLayer("Armor");
-
-        foreach (Collider c in all)
-        {
-            if (c == null)
-            {
-                continue;
-            }
-
-            if (c.gameObject.layer != armorLayer)
-            {
-                continue;
-            }
-
-            bool isConvex = true;
-
-            if (c is MeshCollider mc)
-            {
-                isConvex = mc.convex;
-            }
-
-            if (isConvex)
-            {
-                list.Add(c);
-            }
-        }
-
-        colliders = list.ToArray();
-    }
-
-
     private void Death()
     {
         if (vehicleRoot != null && vehicleRoot.inputManager != null)
@@ -91,26 +58,48 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
 
         int debrisLayer = ResolveDeathDebrisLayer();
-        foreach (Collider coll in colliders)
+        if (colliders == null)
         {
+            return;
+        }
+
+        DisableConfiguredColliders(collidersToDisableOnDeath);
+
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider coll = colliders[i];
             if (coll == null)
             {
                 continue;
             }
 
+            Rigidbody rigidbody = debrisRigidbodies != null && i < debrisRigidbodies.Length
+                ? debrisRigidbodies[i]
+                : null;
+            if (rigidbody == null)
+            {
+                Debug.LogError($"{nameof(DeathLogic)} on {name} has no configured debris Rigidbody for {coll.name}.", this);
+                continue;
+            }
+
             coll.transform.parent = null;
             SetLayerRecursively(coll.transform, debrisLayer);
-            PrepareColliderForDynamicRigidbody(coll);
-
-            if (!coll.TryGetComponent(out Rigidbody rigidbody))
+            MeshCollider meshCollider = debrisMeshColliders != null && i < debrisMeshColliders.Length
+                ? debrisMeshColliders[i]
+                : null;
+            if (!IsConfiguredForDynamicRigidbody(coll, meshCollider))
             {
-                rigidbody = coll.gameObject.AddComponent<Rigidbody>();
+                Debug.LogError($"{nameof(DeathLogic)} on {name} has non-convex debris MeshCollider {coll.name}. Configure it as convex in the prefab before using it with a dynamic Rigidbody.", this);
+                continue;
             }
 
             rigidbody.isKinematic = false;
             coll.enabled = true;
 
-            if (coll.TryGetComponent(out MeshRenderer obj))
+            Renderer obj = debrisRenderers != null && i < debrisRenderers.Length
+                ? debrisRenderers[i]
+                : null;
+            if (obj != null)
             {
                 obj.enabled = true;
             }
@@ -121,6 +110,23 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             if (obj != null)
             {
                 obj.SetActive(false);
+            }
+        }
+    }
+
+    private static void DisableConfiguredColliders(Collider[] configuredColliders)
+    {
+        if (configuredColliders == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < configuredColliders.Length; i++)
+        {
+            Collider collider = configuredColliders[i];
+            if (collider != null)
+            {
+                collider.enabled = false;
             }
         }
     }
@@ -150,29 +156,19 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
     }
 
-    private static void PrepareColliderForDynamicRigidbody(Collider selectedCollider)
+    private static bool IsConfiguredForDynamicRigidbody(Collider collider, MeshCollider configuredMeshCollider)
     {
-        MeshCollider[] meshColliders = selectedCollider.GetComponents<MeshCollider>();
-
-        for (int i = 0; i < meshColliders.Length; i++)
+        MeshCollider meshCollider = configuredMeshCollider;
+        if (meshCollider == null)
         {
-            MeshCollider meshCollider = meshColliders[i];
-
-            if (meshCollider == null)
-            {
-                continue;
-            }
-
-            if (meshCollider != selectedCollider)
-            {
-                meshCollider.enabled = false;
-                continue;
-            }
-
-            if (!meshCollider.convex)
-            {
-                meshCollider.convex = true;
-            }
+            meshCollider = collider as MeshCollider;
         }
+
+        if (meshCollider == null)
+        {
+            return true;
+        }
+
+        return meshCollider.convex;
     }
 }

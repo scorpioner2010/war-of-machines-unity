@@ -32,11 +32,6 @@ namespace Game.Scripts.UI.HUD
 
         private void Awake()
         {
-            if (canvasGroup == null)
-            {
-                canvasGroup = GetComponent<CanvasGroup>();
-            }
-
             ConfigureHealthImage();
             Apply();
         }

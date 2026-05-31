@@ -7,8 +7,7 @@ namespace Game.Scripts.Gameplay.Robots
     public class VehicleBotBrain : MonoBehaviour, IVehicleRootAware
     {
         public VehicleRoot vehicleRoot;
-
-        private BotNavigator _navigator;
+        public BotNavigator navigator;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -23,20 +22,20 @@ namespace Game.Scripts.Gameplay.Robots
                 ? WaypointGraphRuntime.FindOrCreateForScene(root.gameObject.scene)
                 : null;
 
-            _navigator = GetComponent<BotNavigator>();
-            if (_navigator == null)
+            if (navigator == null)
             {
-                _navigator = gameObject.AddComponent<BotNavigator>();
+                Debug.LogError("[VehicleBotBrain] BotNavigator reference is not assigned on vehicle prefab.", this);
+                return;
             }
 
-            _navigator.Initialize(root, room, graph);
+            navigator.Initialize(root, room, graph);
         }
 
         private void OnDisable()
         {
-            if (_navigator != null)
+            if (navigator != null)
             {
-                _navigator.Stop();
+                navigator.Stop();
             }
         }
     }

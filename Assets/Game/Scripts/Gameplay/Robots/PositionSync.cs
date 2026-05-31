@@ -6,21 +6,19 @@ namespace Game.Scripts.Gameplay.Robots
     public class PositionSync : MonoBehaviour
     {
         public Transform target;
+        public VehicleRoot vehicleRoot;
 
-        private VehicleRoot _vehicleRoot;
         private Vector3 _targetSpaceOffset;
         private bool _hasTargetSpaceOffset;
         private bool _attachedToTarget;
 
         private void Awake()
         {
-            CacheVehicleRoot();
             CacheTargetSpaceOffset();
         }
 
         private void OnEnable()
         {
-            CacheVehicleRoot();
             CacheTargetSpaceOffset();
         }
 
@@ -48,16 +46,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private void CacheVehicleRoot()
-        {
-            if (_vehicleRoot != null)
-            {
-                return;
-            }
-
-            _vehicleRoot = GetComponentInParent<VehicleRoot>();
-        }
-
         private void CacheTargetSpaceOffset()
         {
             if (target == null || _hasTargetSpaceOffset)
@@ -71,8 +59,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private bool ShouldUseHierarchyFollow()
         {
-            CacheVehicleRoot();
-            return _vehicleRoot != null && _vehicleRoot.IsHostInitialized;
+            return vehicleRoot != null && vehicleRoot.IsHostInitialized;
         }
 
         private void AttachToTarget()

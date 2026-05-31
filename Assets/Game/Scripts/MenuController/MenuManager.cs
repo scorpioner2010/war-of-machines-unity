@@ -11,6 +11,7 @@ namespace Game.Scripts.MenuController
 
         [SerializeField] private List<MenuEntry> menus;
         [SerializeField] private List<PrefabMenuEntry> prefabMenus;
+        [SerializeField] private Transform defaultPrefabMenuParent;
         private Dictionary<MenuType, Menu> _map;
         public static Action<MenuType> OnDisable;
         public static Action<MenuType> OnEnable;
@@ -154,10 +155,9 @@ namespace Game.Scripts.MenuController
 
         private Transform FindDefaultPrefabMenuParent()
         {
-            Canvas canvas = GetComponentInParent<Canvas>();
-            if (canvas != null)
+            if (defaultPrefabMenuParent != null)
             {
-                return canvas.transform;
+                return defaultPrefabMenuParent;
             }
 
             return FindDefaultMenuParent();

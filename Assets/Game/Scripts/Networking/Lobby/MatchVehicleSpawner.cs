@@ -156,10 +156,11 @@ namespace Game.Scripts.Networking.Lobby
 
             player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Bot, player.loginName, player.team, additiveServerScene);
 
-            VehicleBotBrain brain = vehicleRoot.GetComponent<VehicleBotBrain>();
+            VehicleBotBrain brain = vehicleRoot.botBrain;
             if (brain == null)
             {
-                brain = vehicleRoot.gameObject.AddComponent<VehicleBotBrain>();
+                Debug.LogError("Cannot start bot brain: VehicleBotBrain reference is not assigned on vehicle prefab.");
+                return vehicleRoot;
             }
 
             brain.StartBrain(vehicleRoot, serverRoom);
