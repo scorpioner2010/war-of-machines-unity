@@ -188,6 +188,7 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyRootAware(colliderReferences);
 
             AddInitializable(characterInit);
+            AddInitializable(objectMover);
             AddInitializable(uiSenerd);
             AddInitializable(cameraController);
             AddInitializable(robotHullRotation);

@@ -1,10 +1,11 @@
+using FishNet.Managing.Timing;
 using UnityEngine;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Server;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class VehicleMovementController : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
+    public class VehicleMovementController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
         public CharacterController controller;
@@ -17,10 +18,21 @@ namespace Game.Scripts.Gameplay.Robots
         private float _vVel;
         private bool _useRuntimeTraverseSpeed;
         private float _runtimeTraverseSpeedDegPerSecond;
+        private TimeManager _timeManager;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+        }
+
+        public void OnVehicleInitialized(VehicleInitializationContext context)
+        {
+            if (!context.IsServer)
+            {
+                return;
+            }
+
+            SubscribeToNetworkTicks(context.Root);
         }
 
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
@@ -47,7 +59,64 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private void FixedUpdate()
+        private void OnEnable()
+        {
+            if (vehicleRoot != null && vehicleRoot.IsServerInitialized)
+            {
+                SubscribeToNetworkTicks(vehicleRoot);
+            }
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromNetworkTicks();
+            ResetMotionState();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromNetworkTicks();
+        }
+
+        private void SubscribeToNetworkTicks(VehicleRoot root)
+        {
+            TimeManager nextTimeManager = root != null && root.networkObject != null
+                ? root.networkObject.TimeManager
+                : null;
+
+            if (_timeManager == nextTimeManager)
+            {
+                return;
+            }
+
+            UnsubscribeFromNetworkTicks();
+            _timeManager = nextTimeManager;
+            if (_timeManager == null)
+            {
+                Debug.LogError($"{nameof(VehicleMovementController)} requires a configured FishNet TimeManager.", this);
+                return;
+            }
+
+            _timeManager.OnTick += TimeManager_OnTick;
+        }
+
+        private void UnsubscribeFromNetworkTicks()
+        {
+            if (_timeManager == null)
+            {
+                return;
+            }
+
+            _timeManager.OnTick -= TimeManager_OnTick;
+            _timeManager = null;
+        }
+
+        private void TimeManager_OnTick()
+        {
+            SimulateMovement((float)_timeManager.TickDelta);
+        }
+
+        private void SimulateMovement(float dt)
         {
             if (vehicleRoot == null || !vehicleRoot.IsServerInitialized || !CanMoveController())
             {
@@ -55,11 +124,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            using (ProfileScope.Measure("Server.VehicleMovement.FixedUpdate", DiagnosticsCategories.Physics))
+            using (ProfileScope.Measure("Server.VehicleMovement.Tick", DiagnosticsCategories.Physics))
             {
                 Vector2 mi = vehicleRoot.inputManager.Move;
                 RobotMovementGlobalSettings settings = ServerSettings.GetRobotMovement();
-                Rotate(mi, settings);
+                Rotate(mi, settings, dt);
 
                 bool isLegged = vehicleRoot.footAnimator != null;
                 float speedLimit = GetMaxSpeed(settings);
@@ -67,7 +136,6 @@ namespace Game.Scripts.Gameplay.Robots
 
                 Vector3 desired = transform.forward * (mi.y * speedLimit);
 
-                float dt = Time.fixedDeltaTime;
                 Vector3 delta = desired - _hVel;
                 float accelerationRate = baseAcceleration;
                 if (IsStoppingOrBraking(desired))
@@ -103,13 +171,13 @@ namespace Game.Scripts.Gameplay.Robots
             _vVel = 0f;
         }
 
-        private void Rotate(Vector2 mi, RobotMovementGlobalSettings settings)
+        private void Rotate(Vector2 mi, RobotMovementGlobalSettings settings, float dt)
         {
             if (mi.x != 0f)
             {
                 float rotationStep = _useRuntimeTraverseSpeed
-                    ? _runtimeTraverseSpeedDegPerSecond * Time.fixedDeltaTime
-                    : GetFallbackTraverseSpeed(settings) * Time.fixedDeltaTime;
+                    ? _runtimeTraverseSpeedDegPerSecond * dt
+                    : GetFallbackTraverseSpeed(settings) * dt;
 
                 transform.Rotate(Vector3.up * mi.x * rotationStep);
             }
