@@ -14,7 +14,7 @@ namespace Game.Scripts.Gameplay.Robots
         public float acceleration = 30f;
         public float maxSpeed = 10f;
 
-        private Vector3 _hVel;
+        private float _forwardSpeed;
         private float _vVel;
         private bool _useRuntimeTraverseSpeed;
         private float _runtimeTraverseSpeedDegPerSecond;
@@ -134,29 +134,30 @@ namespace Game.Scripts.Gameplay.Robots
                 float speedLimit = GetMaxSpeed(settings);
                 float baseAcceleration = GetAcceleration(settings) * settings.GetAccelerationMultiplier(isLegged);
 
-                Vector3 desired = transform.forward * (mi.y * speedLimit);
-
-                Vector3 delta = desired - _hVel;
+                float desiredSpeed = mi.y * speedLimit;
                 float accelerationRate = baseAcceleration;
-                if (IsStoppingOrBraking(desired))
+                if (IsStoppingOrBraking(desiredSpeed))
                 {
                     accelerationRate *= Mathf.Max(1f, settings.stoppingAccelerationMultiplier);
                     accelerationRate *= settings.GetBrakingMultiplier(isLegged);
                 }
 
-                Vector3 step = Vector3.ClampMagnitude(delta, accelerationRate * dt);
-                _hVel += step;
-
-                if (_hVel.magnitude > speedLimit)
-                {
-                    _hVel = _hVel.normalized * speedLimit;
-                }
+                _forwardSpeed = Mathf.MoveTowards(_forwardSpeed, desiredSpeed, accelerationRate * dt);
+                _forwardSpeed = Mathf.Clamp(_forwardSpeed, -speedLimit, speedLimit);
 
                 bool grounded = controller.isGrounded;
                 _vVel = grounded ? -GetGroundedSnap(settings) : _vVel - GetGravity(settings) * dt;
 
-                Vector3 move = new Vector3(_hVel.x, _vVel, _hVel.z) * dt;
-                controller.Move(move);
+                Vector3 horizontalVelocity = transform.forward * _forwardSpeed;
+                horizontalVelocity.y = 0f;
+
+                Vector3 positionBeforeMove = controller.transform.position;
+                Vector3 move = new Vector3(horizontalVelocity.x, _vVel, horizontalVelocity.z) * dt;
+                CollisionFlags collisionFlags = controller.Move(move);
+                if ((collisionFlags & CollisionFlags.Sides) != 0)
+                {
+                    ReconcileForwardSpeedAfterSideCollision(positionBeforeMove, horizontalVelocity, dt);
+                }
             }
         }
 
@@ -167,7 +168,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ResetMotionState()
         {
-            _hVel = Vector3.zero;
+            _forwardSpeed = 0f;
             _vVel = 0f;
         }
 
@@ -223,19 +224,44 @@ namespace Game.Scripts.Gameplay.Robots
             return settings.groundedSnap > 0f ? settings.groundedSnap : RobotMovementGlobalSettings.Default.groundedSnap;
         }
 
-        private bool IsStoppingOrBraking(Vector3 desired)
+        private void ReconcileForwardSpeedAfterSideCollision(
+            Vector3 positionBeforeMove,
+            Vector3 horizontalVelocity,
+            float dt)
         {
-            if (_hVel.sqrMagnitude <= 0.0001f)
+            float intendedHorizontalSpeed = horizontalVelocity.magnitude;
+            if (intendedHorizontalSpeed <= 0.0001f || dt <= 0.0001f)
+            {
+                return;
+            }
+
+            Vector3 horizontalDisplacement = controller.transform.position - positionBeforeMove;
+            horizontalDisplacement.y = 0f;
+
+            Vector3 movementDirection = horizontalVelocity / intendedHorizontalSpeed;
+            float actualHorizontalSpeed = Vector3.Dot(horizontalDisplacement, movementDirection) / dt;
+            if (actualHorizontalSpeed >= intendedHorizontalSpeed)
+            {
+                return;
+            }
+
+            float retainedSpeedRatio = Mathf.Clamp01(actualHorizontalSpeed / intendedHorizontalSpeed);
+            _forwardSpeed *= retainedSpeedRatio;
+        }
+
+        private bool IsStoppingOrBraking(float desiredSpeed)
+        {
+            if (Mathf.Abs(_forwardSpeed) <= 0.0001f)
             {
                 return false;
             }
 
-            if (desired.sqrMagnitude <= 0.0001f)
+            if (Mathf.Abs(desiredSpeed) <= 0.0001f)
             {
                 return true;
             }
 
-            return Vector3.Dot(_hVel, desired) <= 0f || desired.sqrMagnitude < _hVel.sqrMagnitude;
+            return _forwardSpeed * desiredSpeed <= 0f || Mathf.Abs(desiredSpeed) < Mathf.Abs(_forwardSpeed);
         }
     }
 }
