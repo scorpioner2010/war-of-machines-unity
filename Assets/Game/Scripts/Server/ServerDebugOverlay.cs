@@ -1,3 +1,4 @@
+using System.Text;
 using System.Collections.Generic;
 using FishNet.Managing;
 using Game.Scripts.Diagnostics;
@@ -10,20 +11,25 @@ namespace Game.Scripts.Server
 {
     public class ServerDebugOverlay : MonoBehaviour
     {
+#if UNITY_EDITOR
         private const int MaxRoomsShown = 8;
-        private const int MaxStatusLines = 20;
-        private const float StatusRefreshIntervalSeconds = 0.5f;
+        private const int MaxStatusLines = 24;
+        private const float StatusRefreshIntervalSeconds = 1f;
         private const float OverlayX = 10f;
         private const float OverlayY = 10f;
         private const float OverlayWidth = 430f;
         private const float TitleHeight = 24f;
         private const float LineHeight = 18f;
         private const float Padding = 8f;
+        private const KeyCode ToggleKey = KeyCode.BackQuote;
 
         private static ServerDebugOverlay _instance;
+        private static readonly GUIContent TitleContent = new GUIContent("Server Debug [`]");
 
-        private readonly string[] _statusLines = new string[MaxStatusLines];
-        private readonly bool[] _statusWarn = new bool[MaxStatusLines];
+        private readonly GUIContent[] _statusContents = new GUIContent[MaxStatusLines];
+        private readonly OverlayLineState[] _statusStates = new OverlayLineState[MaxStatusLines];
+        private readonly ServerRoom[] _roomsShown = new ServerRoom[MaxRoomsShown];
+        private readonly StringBuilder _lineBuilder = new StringBuilder(192);
 
         private bool _visible = true;
         private bool _lastServerEditorContext;
@@ -31,7 +37,17 @@ namespace Game.Scripts.Server
         private float _nextStatusRefreshTime;
         private GUIStyle _titleStyle;
         private GUIStyle _labelStyle;
-        private GUIStyle _warnStyle;
+        private GUIStyle _workingStyle;
+        private GUIStyle _notWorkingStyle;
+        private GUIStyle _notInitializedStyle;
+
+        private enum OverlayLineState
+        {
+            Info,
+            Working,
+            NotWorking,
+            NotInitialized
+        }
 
         private void Awake()
         {
@@ -43,37 +59,60 @@ namespace Game.Scripts.Server
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+
+            for (int i = 0; i < _statusContents.Length; i++)
+            {
+                _statusContents[i] = new GUIContent();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
         }
 
         private void Update()
         {
-            if (!Application.isEditor)
+            if (Input.GetKeyDown(ToggleKey))
+            {
+                bool serverEditorContext = IsServerEditorContext();
+                if (_visible || serverEditorContext)
+                {
+                    _visible = !_visible && serverEditorContext;
+                    _lastServerEditorContext = serverEditorContext;
+                    _nextStatusRefreshTime = 0f;
+                }
+            }
+
+            if (!_visible)
             {
                 return;
             }
 
+            float now = Time.unscaledTime;
+            if (now < _nextStatusRefreshTime)
+            {
+                return;
+            }
+
+            _nextStatusRefreshTime = now + StatusRefreshIntervalSeconds;
             _lastServerEditorContext = IsServerEditorContext();
-            if (Input.GetKeyDown(KeyCode.F10) && _lastServerEditorContext)
+            if (!_lastServerEditorContext)
             {
-                _visible = !_visible;
-                _nextStatusRefreshTime = 0f;
-            }
-
-            if (!_visible || !_lastServerEditorContext)
-            {
+                _visible = false;
+                ClearStatusLines();
                 return;
             }
 
-            if (Time.unscaledTime >= _nextStatusRefreshTime)
-            {
-                _nextStatusRefreshTime = Time.unscaledTime + StatusRefreshIntervalSeconds;
-                RefreshStatusLines();
-            }
+            RefreshStatusLines();
         }
 
         private void OnGUI()
         {
-            if (!Application.isEditor || !_visible || !_lastServerEditorContext)
+            if (!_visible || !_lastServerEditorContext)
             {
                 return;
             }
@@ -90,15 +129,15 @@ namespace Game.Scripts.Server
 
                 float height = Padding + TitleHeight + (_statusLineCount * LineHeight) + Padding;
                 GUI.Box(new Rect(OverlayX, OverlayY, OverlayWidth, height), GUIContent.none);
-                GUI.Label(new Rect(OverlayX + Padding, OverlayY + Padding, OverlayWidth - Padding * 2f, TitleHeight), "Server Debug", _titleStyle);
+                GUI.Label(new Rect(OverlayX + Padding, OverlayY + Padding, OverlayWidth - Padding * 2f, TitleHeight), TitleContent, _titleStyle);
 
                 float y = OverlayY + Padding + TitleHeight;
                 for (int i = 0; i < _statusLineCount; i++)
                 {
                     GUI.Label(
                         new Rect(OverlayX + Padding, y, OverlayWidth - Padding * 2f, LineHeight),
-                        _statusLines[i],
-                        _statusWarn[i] ? _warnStyle : _labelStyle);
+                        _statusContents[i],
+                        GetStyle(_statusStates[i]));
                     y += LineHeight;
                 }
             }
@@ -112,26 +151,51 @@ namespace Game.Scripts.Server
             bool serverStarted = networkManager != null && networkManager.IsServerStarted;
             bool clientStarted = networkManager != null && networkManager.IsClientStarted;
 
-            AddStatusLine("Scene: " + SceneManager.GetActiveScene().name, false);
-            AddStatusLine("Role: " + GetRoleText(serverStarted, clientStarted), false);
-            AddStatusLine("Server: " + GetStateText(serverStarted), !serverStarted);
-            AddStatusLine("Client: " + GetStateText(clientStarted), false);
-            AddStatusLine("Start status: " + StartServerButtons.LastServerStatus, !serverStarted);
+            AddValueLine("Scene", SceneManager.GetActiveScene().name, OverlayLineState.Info);
+            AddValueLine("Role", GetRoleText(serverStarted, clientStarted), OverlayLineState.Info);
 
             if (networkManager == null)
             {
-                AddStatusLine("NetworkManager: missing", true);
-                AddStatusLine("F10 - hide/show overlay", false);
+                AddStatusLine("NetworkManager: Not initialized", OverlayLineState.NotInitialized);
+                AddStatusLine("Server: Not initialized", OverlayLineState.NotInitialized);
+                AddStatusLine("Client: Not initialized", OverlayLineState.NotInitialized);
+                AddStatusLine("Transport: Not initialized", OverlayLineState.NotInitialized);
+                AddToggleHint();
                 return;
             }
 
-            AddStatusLine("Port: " + networkManager.TransportManager.Transport.GetPort(), false);
-            AddStatusLine("Connected clients: " + networkManager.ServerManager.Clients.Count, false);
+            AddStatusLine("NetworkManager: Initialized", OverlayLineState.Working);
+            AddValueLine("Server", GetStateText(serverStarted), GetRunningState(serverStarted));
+            AddValueLine("Client", GetStateText(clientStarted), GetRunningState(clientStarted));
+            AddValueLine("Start status", StartServerButtons.LastServerStatus, GetRunningState(serverStarted));
+
+            bool transportInitialized = networkManager.TransportManager != null
+                                        && networkManager.TransportManager.Transport != null;
+            if (transportInitialized)
+            {
+                AddStatusLine("Transport: Initialized", OverlayLineState.Working);
+                AddValueLine("Port", networkManager.TransportManager.Transport.GetPort(), OverlayLineState.Working);
+            }
+            else
+            {
+                AddStatusLine("Transport: Not initialized", OverlayLineState.NotInitialized);
+            }
+
+            int connectedClients = networkManager.ServerManager != null
+                ? networkManager.ServerManager.Clients.Count
+                : 0;
+            AddValueLine("Connected clients", connectedClients, GetRunningState(serverStarted));
 
             int totalRooms = 0;
             int matchmakingRooms = 0;
             int activeBattles = 0;
             int finishedBattles = 0;
+            int shownRooms = 0;
+
+            for (int i = 0; i < _roomsShown.Length; i++)
+            {
+                _roomsShown[i] = null;
+            }
 
             foreach (ServerRoom room in LobbyRooms.Rooms.Values)
             {
@@ -153,52 +217,84 @@ namespace Game.Scripts.Server
                 {
                     activeBattles++;
                 }
+
+                if (shownRooms < _roomsShown.Length)
+                {
+                    _roomsShown[shownRooms] = room;
+                    shownRooms++;
+                }
             }
 
-            AddStatusLine("Rooms: " + totalRooms, false);
-            AddStatusLine("Matchmaking: " + matchmakingRooms + " | Active battles: " + activeBattles + " | Finished: " + finishedBattles, false);
-            AddStatusLine("Pending results: " + PendingBattleResults.GetPendingResultCount() + " for " + PendingBattleResults.GetPendingUserCount() + " users", false);
+            OverlayLineState serverState = GetRunningState(serverStarted);
+            AddValueLine("Rooms", totalRooms, serverState);
 
-            int shown = 0;
-            foreach (ServerRoom room in LobbyRooms.Rooms.Values)
+            _lineBuilder.Clear();
+            _lineBuilder.Append("Matchmaking: ").Append(matchmakingRooms)
+                .Append(" | Active battles: ").Append(activeBattles)
+                .Append(" | Finished: ").Append(finishedBattles);
+            AddStatusLine(_lineBuilder.ToString(), serverState);
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append("Pending results: ").Append(PendingBattleResults.GetPendingResultCount())
+                .Append(" for ").Append(PendingBattleResults.GetPendingUserCount()).Append(" users");
+            AddStatusLine(_lineBuilder.ToString(), serverState);
+
+            for (int i = 0; i < shownRooms; i++)
             {
-                if (room == null)
-                {
-                    continue;
-                }
-
-                if (shown >= MaxRoomsShown)
-                {
-                    AddStatusLine("... more rooms not shown", false);
-                    break;
-                }
-
-                AddStatusLine(FormatRoom(room), false);
-                shown++;
+                AddRoomLine(_roomsShown[i]);
             }
 
-            AddStatusLine("F10 - hide/show overlay", false);
+            if (shownRooms < totalRooms)
+            {
+                AddStatusLine("... more rooms not shown", OverlayLineState.Info);
+            }
+
+            AddToggleHint();
         }
 
-        private void AddStatusLine(string line, bool warn)
+        private void ClearStatusLines()
+        {
+            for (int i = 0; i < _statusLineCount; i++)
+            {
+                _statusContents[i].text = string.Empty;
+            }
+
+            _statusLineCount = 0;
+        }
+
+        private void AddStatusLine(string line, OverlayLineState state)
         {
             if (_statusLineCount >= MaxStatusLines)
             {
                 return;
             }
 
-            _statusLines[_statusLineCount] = line;
-            _statusWarn[_statusLineCount] = warn;
+            _statusContents[_statusLineCount].text = line;
+            _statusStates[_statusLineCount] = state;
             _statusLineCount++;
+        }
+
+        private void AddValueLine(string label, string value, OverlayLineState state)
+        {
+            _lineBuilder.Clear();
+            _lineBuilder.Append(label).Append(": ").Append(value);
+            AddStatusLine(_lineBuilder.ToString(), state);
+        }
+
+        private void AddValueLine(string label, int value, OverlayLineState state)
+        {
+            _lineBuilder.Clear();
+            _lineBuilder.Append(label).Append(": ").Append(value);
+            AddStatusLine(_lineBuilder.ToString(), state);
+        }
+
+        private void AddToggleHint()
+        {
+            AddStatusLine("` - hide/show overlay", OverlayLineState.Info);
         }
 
         private static bool IsServerEditorContext()
         {
-            if (!Application.isEditor)
-            {
-                return false;
-            }
-
             string activeSceneName = SceneManager.GetActiveScene().name;
             if (activeSceneName == "VehicleTest")
             {
@@ -225,7 +321,7 @@ namespace Game.Scripts.Server
             return instances[0];
         }
 
-        private static string FormatRoom(ServerRoom room)
+        private void AddRoomLine(ServerRoom room)
         {
             string roomId = string.IsNullOrEmpty(room.roomId) ? "no-id" : room.roomId;
             if (roomId.Length > 8)
@@ -243,11 +339,13 @@ namespace Game.Scripts.Server
                 state = "InGame";
             }
 
-            return "Room " + roomId
-                   + " | " + state
-                   + " | players " + room.PlayersCount() + "/" + room.maxPlayers
-                   + " | map " + room.selectedLocation
-                   + " | match " + room.matchId;
+            _lineBuilder.Clear();
+            _lineBuilder.Append("Room ").Append(roomId)
+                .Append(" | ").Append(state)
+                .Append(" | players ").Append(room.PlayersCount()).Append('/').Append(room.maxPlayers)
+                .Append(" | map ").Append(room.selectedLocation)
+                .Append(" | match ").Append(room.matchId);
+            AddStatusLine(_lineBuilder.ToString(), OverlayLineState.Info);
         }
 
         private static string GetRoleText(bool serverStarted, bool clientStarted)
@@ -272,7 +370,32 @@ namespace Game.Scripts.Server
 
         private static string GetStateText(bool started)
         {
-            return started ? "Started" : "Stopped";
+            return started ? "Running" : "Stopped";
+        }
+
+        private static OverlayLineState GetRunningState(bool running)
+        {
+            return running ? OverlayLineState.Working : OverlayLineState.NotWorking;
+        }
+
+        private GUIStyle GetStyle(OverlayLineState state)
+        {
+            if (state == OverlayLineState.Working)
+            {
+                return _workingStyle;
+            }
+
+            if (state == OverlayLineState.NotWorking)
+            {
+                return _notWorkingStyle;
+            }
+
+            if (state == OverlayLineState.NotInitialized)
+            {
+                return _notInitializedStyle;
+            }
+
+            return _labelStyle;
         }
 
         private void EnsureStyles()
@@ -295,10 +418,21 @@ namespace Game.Scripts.Server
                 normal = { textColor = Color.white }
             };
 
-            _warnStyle = new GUIStyle(_labelStyle)
+            _workingStyle = new GUIStyle(_labelStyle)
+            {
+                normal = { textColor = new Color(0.35f, 1f, 0.45f) }
+            };
+
+            _notWorkingStyle = new GUIStyle(_labelStyle)
             {
                 normal = { textColor = new Color(1f, 0.75f, 0.25f) }
             };
+
+            _notInitializedStyle = new GUIStyle(_labelStyle)
+            {
+                normal = { textColor = new Color(0.6f, 0.6f, 0.6f) }
+            };
         }
+#endif
     }
 }

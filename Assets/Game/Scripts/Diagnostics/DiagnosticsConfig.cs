@@ -27,6 +27,7 @@ namespace Game.Scripts.Diagnostics
         public const int MinEditorTargetFrameRate = 30;
         public const int MaxEditorTargetFrameRate = 500;
         public const int DefaultEditorTargetFrameRate = 500;
+        public const int DefaultEditorServerTargetFrameRate = 60;
 #if UNITY_EDITOR
         public const string EditorPrefsPrefix = "WarOfMachines.Diagnostics.";
 #endif
@@ -51,7 +52,9 @@ namespace Game.Scripts.Diagnostics
         public string BindAddress = "127.0.0.1";
         public int HttpPort = 8765;
         public int EditorClientTargetFrameRate = DefaultEditorTargetFrameRate;
-        public int EditorServerTargetFrameRate = DefaultEditorTargetFrameRate;
+        // A 30 Hz standalone server does not need a 500 Hz background PlayerLoop. Keeping
+        // headroom between frames also lets Unity schedule its automatic incremental GC work.
+        public int EditorServerTargetFrameRate = DefaultEditorServerTargetFrameRate;
         public int EditorServerRenderFrameInterval = 60;
         public int EditorGcIncrementalBudgetNanoseconds = 500000;
         public int MaxPortFallbackAttempts = 10;

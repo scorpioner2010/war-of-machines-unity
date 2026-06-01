@@ -24,6 +24,8 @@ Useful optional settings:
 
 Editor manual GC smoothing is disabled by default. Unity already schedules incremental GC
 around `Application.targetFrameRate`; enable the diagnostics setting only for explicit A/B tests.
+The standalone server Editor defaults to `60 FPS`, which is sufficient for its `30 Hz` tick and
+leaves idle frame budget for Unity's automatic incremental GC scheduling.
 
 Disable diagnostics even in debug:
 
@@ -43,6 +45,7 @@ Main pieces:
 - `DiagnosticsHttpServer` exposes localhost JSON endpoints.
 - `DiagnosticsJsonlWriter` writes append-only JSONL logs.
 - `DiagnosticsOverlay` is toggled with F9.
+- `ServerDebugOverlay` is visible by default and toggled with Backquote (\`) in the server Editor.
 
 ## HTTP API
 
