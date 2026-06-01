@@ -15,6 +15,7 @@ Shader "Hidden/Game/HoverOutlineMask"
 
             Cull Back
             ZWrite Off
+            // Hover acquisition checks line of sight. The selected silhouette must render over scene occluders.
             ZTest Always
             ColorMask R
 
@@ -23,10 +24,6 @@ Shader "Hidden/Game/HoverOutlineMask"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-
-            #define MASK_DEPTH_BIAS 0.0001
-
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -53,22 +50,6 @@ Shader "Hidden/Game/HoverOutlineMask"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-
-                float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
-                float sceneDepth = SampleSceneDepth(screenUV);
-                float objectDepth = input.positionCS.z;
-
-#if UNITY_REVERSED_Z
-                if (objectDepth < sceneDepth - MASK_DEPTH_BIAS)
-                {
-                    discard;
-                }
-#else
-                if (objectDepth > sceneDepth + MASK_DEPTH_BIAS)
-                {
-                    discard;
-                }
-#endif
 
                 return half4(1, 0, 0, 1);
             }

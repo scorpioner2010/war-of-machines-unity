@@ -41,7 +41,9 @@ namespace Game.Scripts.Diagnostics
         public bool ApplyEditorClientFramePacingGuard = true;
         public bool ApplyEditorFocusedClientRefreshCap = true;
         public bool ApplyEditorBackgroundPlayerLoopKeepAlive = true;
-        public bool ApplyEditorGcSmoothing = true;
+        // Unity already schedules incremental GC around targetFrameRate. Manual slices are opt-in
+        // because forcing CollectIncremental every Editor frame can create periodic stalls.
+        public bool ApplyEditorGcSmoothing;
         public bool EditorClientDisableVSync = true;
         public bool EnableUnityProfilerRecorders = true;
         public bool EnableUnityGcAllocRecorder = false;

@@ -32,11 +32,12 @@ namespace Game.Scripts.Diagnostics
             List<DiagnosticsScopeSummary> topServer = buffer.GetTopScopes(DiagnosticsCategories.Server, seconds, 5);
             List<DiagnosticsScopeSummary> topEditor = buffer.GetTopScopes(DiagnosticsCategories.Editor, seconds, 5);
             List<DiagnosticsScopeSummary> topRpc = buffer.GetTopEvents(DiagnosticsCategories.Rpc, seconds, 5, TopSortMode.Count);
+            List<DiagnosticsFrameSpike> frameSpikes = buffer.GetFrameSpikes(seconds);
 
             bool clientBad = IsClientBad(client);
             bool serverBad = IsServerBad(server);
             bool networkBad = IsNetworkBad(network);
-            bool memoryBad = IsMemoryBad(buffer, snapshot.Spikes);
+            bool memoryBad = IsMemoryBad(buffer, snapshot.Spikes, frameSpikes);
             bool rpcStorm = IsRpcStorm(buffer, network, seconds, topRpc);
             bool entityScale = IsEntityScaleBound(buffer, server, topServer);
             bool terrainEditorBound = IsTerrainEditorBound(client, server);
@@ -59,7 +60,7 @@ namespace Game.Scripts.Diagnostics
 
             if (memoryBad)
             {
-                return BuildMemoryBound(sample, buffer, topClient, topServer);
+                return BuildMemoryBound(sample, buffer, topClient, topServer, frameSpikes);
             }
 
             if (entityScale)
@@ -183,12 +184,17 @@ namespace Game.Scripts.Diagnostics
             return highResolution && focused && terrainActive;
         }
 
-        private bool IsMemoryBad(RollingMetricsBuffer buffer, List<DiagnosticsSpike> spikes)
+        private bool IsMemoryBad(RollingMetricsBuffer buffer, List<DiagnosticsSpike> spikes, List<DiagnosticsFrameSpike> frameSpikes)
         {
             double? clientGrowth = buffer.GetMemoryGrowthMbPerMinute(DiagnosticsCategories.Client, 30);
             double? serverGrowth = buffer.GetMemoryGrowthMbPerMinute(DiagnosticsCategories.Server, 30);
             if ((clientGrowth.HasValue && clientGrowth.Value > _config.MemoryGrowthMbPerMinute)
                 || (serverGrowth.HasValue && serverGrowth.Value > _config.MemoryGrowthMbPerMinute))
+            {
+                return true;
+            }
+
+            if (CountGcCorrelatedFrameSpikes(frameSpikes, out _, out _) > 0)
             {
                 return true;
             }
@@ -331,11 +337,25 @@ namespace Game.Scripts.Diagnostics
             return analysis;
         }
 
-        private DiagnosticsAnalysis BuildMemoryBound(DiagnosticsMetricSample sample, RollingMetricsBuffer buffer, List<DiagnosticsScopeSummary> topClient, List<DiagnosticsScopeSummary> topServer)
+        private DiagnosticsAnalysis BuildMemoryBound(
+            DiagnosticsMetricSample sample,
+            RollingMetricsBuffer buffer,
+            List<DiagnosticsScopeSummary> topClient,
+            List<DiagnosticsScopeSummary> topServer,
+            List<DiagnosticsFrameSpike> frameSpikes)
         {
-            DiagnosticsAnalysis analysis = Base("MEMORY_GC_BOUND", 0.78d, "high", "Problem looks like memory allocation or GC pressure.");
+            int gcCorrelatedFrameSpikeCount = CountGcCorrelatedFrameSpikes(frameSpikes, out double maxGcCorrelatedFrameMs, out int maxCollectionDelta);
+            double confidence = gcCorrelatedFrameSpikeCount > 0 ? 0.92d : 0.78d;
+            DiagnosticsAnalysis analysis = Base("MEMORY_GC_BOUND", confidence, "high", "Problem looks like memory allocation or GC pressure.");
             AddClientEvidence(analysis, sample);
             AddServerEvidence(analysis, sample);
+            if (gcCorrelatedFrameSpikeCount > 0)
+            {
+                analysis.Evidence.Add("GC-correlated frame spikes is " + gcCorrelatedFrameSpikeCount);
+                analysis.Evidence.Add("worst GC-correlated frame spike is " + Format(maxGcCorrelatedFrameMs) + "ms");
+                analysis.Evidence.Add("max GC collection count delta in one frame is " + maxCollectionDelta);
+            }
+
             double? clientGrowth = buffer.GetMemoryGrowthMbPerMinute(DiagnosticsCategories.Client, 30);
             double? serverGrowth = buffer.GetMemoryGrowthMbPerMinute(DiagnosticsCategories.Server, 30);
             if (clientGrowth.HasValue)
@@ -351,6 +371,45 @@ namespace Game.Scripts.Diagnostics
             analysis.RecommendedNextSteps.Add("Look for allocations in the top suspect scopes and repeated Instantiate/Destroy or collection rebuilds.");
             analysis.RecommendedNextSteps.Add("Prefer pooling, cached buffers, and throttled UI/snapshot rebuilds.");
             return analysis;
+        }
+
+        private static int CountGcCorrelatedFrameSpikes(List<DiagnosticsFrameSpike> frameSpikes, out double maxFrameMs, out int maxCollectionDelta)
+        {
+            int count = 0;
+            maxFrameMs = 0d;
+            maxCollectionDelta = 0;
+            if (frameSpikes == null)
+            {
+                return count;
+            }
+
+            for (int i = 0; i < frameSpikes.Count; i++)
+            {
+                DiagnosticsFrameSpike spike = frameSpikes[i];
+                if (spike == null || !spike.GcCollectionCountBefore.HasValue || !spike.GcCollectionCountAfter.HasValue)
+                {
+                    continue;
+                }
+
+                int collectionDelta = spike.GcCollectionCountAfter.Value - spike.GcCollectionCountBefore.Value;
+                if (collectionDelta <= 0)
+                {
+                    continue;
+                }
+
+                count++;
+                if (spike.FrameMs > maxFrameMs)
+                {
+                    maxFrameMs = spike.FrameMs;
+                }
+
+                if (collectionDelta > maxCollectionDelta)
+                {
+                    maxCollectionDelta = collectionDelta;
+                }
+            }
+
+            return count;
         }
 
         private DiagnosticsAnalysis BuildEntityScale(DiagnosticsMetricSample sample, List<DiagnosticsScopeSummary> topServer)

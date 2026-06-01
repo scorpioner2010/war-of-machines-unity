@@ -54,6 +54,7 @@ public class WaypointPointSpawner : MonoBehaviour
 
     [Header("Debug")]
     public bool drawGizmos = true;
+    public bool drawGizmosInPlayMode;
     public Color contourColor = Color.yellow;
     public Color pointColor = Color.cyan;
     public Color connectionColor = Color.green;
@@ -717,13 +718,13 @@ public class WaypointPointSpawner : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (!drawGizmos || (Application.isPlaying && !drawGizmosInPlayMode))
+        {
+            return;
+        }
+
         using (ProfileScope.Measure("Gizmos.WaypointPointSpawner.OnDrawGizmos", DiagnosticsCategories.Editor))
         {
-            if (!drawGizmos)
-            {
-                return;
-            }
-
             DrawContourGizmos();
             DrawGeneratedPointGizmos();
             DrawConnectionGizmos();

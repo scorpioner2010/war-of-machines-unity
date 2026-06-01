@@ -48,6 +48,7 @@ namespace Game.Scripts.Diagnostics
         private bool _savedEditorClientFramePacing;
         private bool _loggedEditorClientFramePacing;
         private bool _loggedEditorGcSmoothing;
+        private bool _loggedEditorGcSmoothingUnavailable;
         private bool _editorBackgroundPlayerLoopSubscribed;
         private bool _loggedEditorBackgroundPlayerLoopKeepAlive;
         private double _lastEditorBackgroundPlayerLoopRequestTime;
@@ -867,6 +868,18 @@ namespace Game.Scripts.Diagnostics
                 return;
             }
 
+            if (!UnityEngine.Scripting.GarbageCollector.isIncremental)
+            {
+                if (!_loggedEditorGcSmoothingUnavailable)
+                {
+                    UnityEngine.Debug.LogWarning("[Diagnostics] Editor incremental GC smoothing requested, but incremental GC is disabled in Project Settings.");
+                    _loggedEditorGcSmoothingUnavailable = true;
+                }
+
+                return;
+            }
+
+            _loggedEditorGcSmoothingUnavailable = false;
             int budgetNanoseconds = Mathf.Max(100000, _config.EditorGcIncrementalBudgetNanoseconds);
             UnityEngine.Scripting.GarbageCollector.CollectIncremental((ulong)budgetNanoseconds);
             if (!_loggedEditorGcSmoothing)

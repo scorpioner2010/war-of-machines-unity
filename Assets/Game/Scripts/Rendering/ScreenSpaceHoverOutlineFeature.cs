@@ -131,7 +131,6 @@ namespace Game.Scripts.Rendering
                 return;
             }
 
-            _maskPass.ConfigureInput(ScriptableRenderPassInput.Depth);
             renderer.EnqueuePass(_maskPass);
             renderer.EnqueuePass(_compositePass);
         }

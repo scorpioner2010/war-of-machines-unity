@@ -22,6 +22,9 @@ Useful optional settings:
 - `-diagnosticsToken your-local-token`
 - `-diagnosticsBufferSeconds 60`
 
+Editor manual GC smoothing is disabled by default. Unity already schedules incremental GC
+around `Application.targetFrameRate`; enable the diagnostics setting only for explicit A/B tests.
+
 Disable diagnostics even in debug:
 
 - `DISABLE_DIAGNOSTICS=true`

@@ -31,8 +31,6 @@ Shader "Hidden/Game/ScreenSpaceHoverOutline"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-            #define MAX_OUTLINE_RADIUS 8
-
             TEXTURE2D_X(_WOM_HoverOutlineMask);
 
             CBUFFER_START(UnityPerMaterial)
@@ -58,26 +56,19 @@ Shader "Hidden/Game/ScreenSpaceHoverOutline"
 
                 half centerMask = SampleMask(uv);
                 half expandedMask = centerMask;
-                int radius = (int)ceil(clamp(_OutlineWidthPixels, 1.0, (float)MAX_OUTLINE_RADIUS));
-                float radiusSquared = (float)(radius * radius);
-                float2 texel = _OutlineTexelSize.xy;
+                float radius = clamp(_OutlineWidthPixels, 1.0, 8.0);
+                float2 axisOffset = _OutlineTexelSize.xy * radius;
+                float2 diagonalOffset = axisOffset * 0.70710678;
 
-                [loop]
-                for (int y = -radius; y <= radius; y++)
-                {
-                    [loop]
-                    for (int x = -radius; x <= radius; x++)
-                    {
-                        float distanceSquared = (float)(x * x + y * y);
-                        if (distanceSquared > radiusSquared)
-                        {
-                            continue;
-                        }
-
-                        float2 offset = float2((float)x, (float)y) * texel;
-                        expandedMask = max(expandedMask, SampleMask(uv + offset));
-                    }
-                }
+                // Fixed taps keep the fullscreen composite cheap while preserving a round outline.
+                expandedMask = max(expandedMask, SampleMask(uv + float2(axisOffset.x, 0.0)));
+                expandedMask = max(expandedMask, SampleMask(uv - float2(axisOffset.x, 0.0)));
+                expandedMask = max(expandedMask, SampleMask(uv + float2(0.0, axisOffset.y)));
+                expandedMask = max(expandedMask, SampleMask(uv - float2(0.0, axisOffset.y)));
+                expandedMask = max(expandedMask, SampleMask(uv + diagonalOffset));
+                expandedMask = max(expandedMask, SampleMask(uv - diagonalOffset));
+                expandedMask = max(expandedMask, SampleMask(uv + float2(diagonalOffset.x, -diagonalOffset.y)));
+                expandedMask = max(expandedMask, SampleMask(uv + float2(-diagonalOffset.x, diagonalOffset.y)));
 
                 half outlineMask = saturate(expandedMask - centerMask);
                 half alpha = outlineMask * _OutlineColor.a;

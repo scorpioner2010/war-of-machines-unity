@@ -190,7 +190,7 @@ namespace Game.Scripts.Editor
             _config.EditorClientTargetFrameRate = EditorGUILayout.IntSlider("Client target FPS", _config.EditorClientTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
             _config.EditorServerTargetFrameRate = EditorGUILayout.IntSlider("Server target FPS", _config.EditorServerTargetFrameRate, DiagnosticsConfig.MinEditorTargetFrameRate, DiagnosticsConfig.MaxEditorTargetFrameRate);
             _config.EditorServerRenderFrameInterval = EditorGUILayout.IntSlider("Server render interval", _config.EditorServerRenderFrameInterval, 1, 120);
-            _config.ApplyEditorGcSmoothing = EditorGUILayout.Toggle("GC smoothing", _config.ApplyEditorGcSmoothing);
+            _config.ApplyEditorGcSmoothing = EditorGUILayout.Toggle("Manual GC smoothing", _config.ApplyEditorGcSmoothing);
             int gcBudgetUs = Mathf.Clamp(_config.EditorGcIncrementalBudgetNanoseconds / 1000, 100, 5000);
             gcBudgetUs = EditorGUILayout.IntSlider("GC budget us", gcBudgetUs, 100, 5000);
             _config.EditorGcIncrementalBudgetNanoseconds = gcBudgetUs * 1000;
