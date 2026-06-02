@@ -13,6 +13,7 @@ using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Lobby;
 using Game.Scripts.UI.MainMenu;
+using Game.Scripts.World.Maps;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NetworkChannel = FishNet.Transporting.Channel;
@@ -234,6 +235,7 @@ namespace Game.Scripts.Networking.Lobby
 
             int offset = ReserveSceneSlot(serverRoom);
             serverRoom.AssignLoadedScene(scene);
+            MapScopedObjectRegistry.RegisterMapScene(scene);
 
             if (!_sceneSlotsByHandle.ContainsKey(scene.handle))
             {
@@ -287,6 +289,7 @@ namespace Game.Scripts.Networking.Lobby
                     continue;
                 }
                 
+                MapScopedObjectRegistry.RegisterMapScene(scene);
                 _sceneOffsetService.ApplyOffset(scene, offset);
             }
         }

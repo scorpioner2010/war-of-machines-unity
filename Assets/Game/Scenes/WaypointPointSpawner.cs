@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Scripts.Diagnostics;
+using Game.Scripts.World.Maps;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -91,6 +92,16 @@ public class WaypointPointSpawner : MonoBehaviour
         }
     }
 
+    private void Awake()
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        MapScopedObjectRegistry.RegisterMapScene(gameObject.scene);
+    }
+
     private void OnValidate()
     {
         EnsureLists();
@@ -105,6 +116,16 @@ public class WaypointPointSpawner : MonoBehaviour
         connectionCheckRadius = Mathf.Max(0.01f, connectionCheckRadius);
         connectionCheckHeight = Mathf.Max(0f, connectionCheckHeight);
         RemoveInvalidConnections();
+    }
+
+    private void OnDestroy()
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        MapScopedObjectRegistry.DestroyForScene(gameObject.scene);
     }
 
     [Button("Generate Waypoint Points")]

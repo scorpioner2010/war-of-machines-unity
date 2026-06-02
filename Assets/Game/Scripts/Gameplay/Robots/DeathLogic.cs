@@ -1,6 +1,8 @@
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.World.Maps;
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class DeathLogic : MonoBehaviour, IVehicleRootAware
 {
@@ -64,6 +66,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
 
         DisableConfiguredColliders(collidersToDisableOnDeath);
+        Scene mapScene = MapScopedObjectRegistry.ResolveMapScene(GetOwningScene());
 
         for (int i = 0; i < colliders.Length; i++)
         {
@@ -82,8 +85,6 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                 continue;
             }
 
-            coll.transform.parent = null;
-            SetLayerRecursively(coll.transform, debrisLayer);
             MeshCollider meshCollider = debrisMeshColliders != null && i < debrisMeshColliders.Length
                 ? debrisMeshColliders[i]
                 : null;
@@ -92,6 +93,12 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                 Debug.LogError($"{nameof(DeathLogic)} on {name} has non-convex debris MeshCollider {coll.name}. Configure it as convex in the prefab before using it with a dynamic Rigidbody.", this);
                 continue;
             }
+
+            GameObject debrisObject = coll.gameObject;
+            coll.transform.SetParent(null, true);
+            MapScopedObjectRegistry.Register(mapScene, debrisObject);
+            MapScopedObjectRegistry.MoveRootToScene(mapScene, debrisObject);
+            SetLayerRecursively(coll.transform, debrisLayer);
 
             rigidbody.isKinematic = false;
             coll.enabled = true;
@@ -112,6 +119,20 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                 obj.SetActive(false);
             }
         }
+    }
+
+    private Scene GetOwningScene()
+    {
+        if (vehicleRoot != null)
+        {
+            Scene vehicleScene = vehicleRoot.gameObject.scene;
+            if (vehicleScene.IsValid())
+            {
+                return vehicleScene;
+            }
+        }
+
+        return gameObject.scene;
     }
 
     private static void DisableConfiguredColliders(Collider[] configuredColliders)
