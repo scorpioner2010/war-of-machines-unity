@@ -4,6 +4,9 @@ namespace Game.Scripts.Gameplay.Robots.t2
 {
     public class CaterpillarTrack : MonoBehaviour, IVehicleRootAware
     {
+        private const float InputThreshold = 0.01f;
+        private const float MovingInnerTrackMinSpeedRatio = 1f / 3f;
+
         public VehicleRoot vehicleRoot;
         public Renderer[] mesh;
 
@@ -33,20 +36,21 @@ namespace Game.Scripts.Gameplay.Robots.t2
             float leftInputSpeed = 0f;
             float rightInputSpeed = 0f;
 
-            if (Mathf.Abs(forwardInput) > 0.01f && Mathf.Abs(turnInput) < 0.01f)
+            if (Mathf.Abs(forwardInput) > InputThreshold && Mathf.Abs(turnInput) < InputThreshold)
             {
                 leftInputSpeed = forwardInput * forwardBackwardSpeed;
                 rightInputSpeed = forwardInput * forwardBackwardSpeed;
             }
-            else if (Mathf.Abs(forwardInput) < 0.01f && Mathf.Abs(turnInput) > 0.01f)
+            else if (Mathf.Abs(forwardInput) < InputThreshold && Mathf.Abs(turnInput) > InputThreshold)
             {
                 leftInputSpeed = turnInput * turnInPlaceSpeed;
                 rightInputSpeed = -turnInput * turnInPlaceSpeed;
             }
-            else if (Mathf.Abs(forwardInput) > 0.01f && Mathf.Abs(turnInput) > 0.01f)
+            else if (Mathf.Abs(forwardInput) > InputThreshold && Mathf.Abs(turnInput) > InputThreshold)
             {
                 leftInputSpeed = (forwardInput + turnInput) * turnWhileMovingSpeed;
                 rightInputSpeed = (forwardInput - turnInput) * turnWhileMovingSpeed;
+                EnsureMovingInnerTrackSpeed(forwardInput, ref leftInputSpeed, ref rightInputSpeed);
             }
 
             float leftTrackSpeed = leftInputSpeed * -Time.deltaTime;
@@ -91,6 +95,34 @@ namespace Game.Scripts.Gameplay.Robots.t2
                     }
                 }
             }
+        }
+
+        private void EnsureMovingInnerTrackSpeed(
+            float forwardInput,
+            ref float leftInputSpeed,
+            ref float rightInputSpeed)
+        {
+            float leftMagnitude = Mathf.Abs(leftInputSpeed);
+            float rightMagnitude = Mathf.Abs(rightInputSpeed);
+
+            if (leftMagnitude >= rightMagnitude)
+            {
+                rightInputSpeed = GetMovingInnerTrackSpeed(forwardInput, rightInputSpeed, leftMagnitude);
+                return;
+            }
+
+            leftInputSpeed = GetMovingInnerTrackSpeed(forwardInput, leftInputSpeed, rightMagnitude);
+        }
+
+        private float GetMovingInnerTrackSpeed(float forwardInput, float innerTrackSpeed, float outerTrackMagnitude)
+        {
+            float minInnerTrackMagnitude = outerTrackMagnitude * MovingInnerTrackMinSpeedRatio;
+            if (Mathf.Abs(innerTrackSpeed) >= minInnerTrackMagnitude)
+            {
+                return innerTrackSpeed;
+            }
+
+            return Mathf.Sign(forwardInput) * minInnerTrackMagnitude;
         }
     }
 }
