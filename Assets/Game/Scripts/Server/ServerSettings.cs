@@ -342,6 +342,14 @@ namespace Game.Scripts.Server
         public float maxLeadSeconds = 1.25f;
         [Tooltip("How often target velocity is sampled.")]
         public float targetVelocitySampleInterval = 0.2f;
+        [Tooltip("Aim the turret along the bot's travel direction while no enemy is visible.")]
+        public bool aimAlongTravelDirectionWhenNoTarget = true;
+        [Tooltip("Fallback aim distance used when the bot looks where it is driving.")]
+        public float noTargetTravelAimDistance = 220f;
+        [Tooltip("Maximum age of navigator travel direction used for no-target turret aim.")]
+        public float noTargetTravelDirectionMaxAgeSeconds = 0.8f;
+        [Tooltip("Aim forward when no enemy is visible and the bot has no fresh movement direction.")]
+        public bool aimForwardWhenNoTargetIdle = true;
 
         [Header("Fire Gate")]
         [Tooltip("Maximum yaw error between current turret yaw and desired yaw before firing.")]
@@ -382,6 +390,8 @@ namespace Game.Scripts.Server
             leadPredictionMultiplier = ClampFinite(leadPredictionMultiplier, 0f, Default.leadPredictionMultiplier);
             maxLeadSeconds = ClampFinite(maxLeadSeconds, 0f, Default.maxLeadSeconds);
             targetVelocitySampleInterval = ClampFinite(targetVelocitySampleInterval, 0.03f, Default.targetVelocitySampleInterval);
+            noTargetTravelAimDistance = ClampFinite(noTargetTravelAimDistance, 1f, Default.noTargetTravelAimDistance);
+            noTargetTravelDirectionMaxAgeSeconds = ClampFinite(noTargetTravelDirectionMaxAgeSeconds, 0.03f, Default.noTargetTravelDirectionMaxAgeSeconds);
             maxAimYawErrorDeg = ClampFinite(maxAimYawErrorDeg, 0f, Default.maxAimYawErrorDeg);
             maxAimPitchErrorDeg = ClampFinite(maxAimPitchErrorDeg, 0f, Default.maxAimPitchErrorDeg);
             maxMuzzleAimErrorDeg = ClampFinite(maxMuzzleAimErrorDeg, 0f, Default.maxMuzzleAimErrorDeg);
@@ -417,6 +427,10 @@ namespace Game.Scripts.Server
             leadPredictionMultiplier = source.leadPredictionMultiplier;
             maxLeadSeconds = source.maxLeadSeconds;
             targetVelocitySampleInterval = source.targetVelocitySampleInterval;
+            aimAlongTravelDirectionWhenNoTarget = source.aimAlongTravelDirectionWhenNoTarget;
+            noTargetTravelAimDistance = source.noTargetTravelAimDistance;
+            noTargetTravelDirectionMaxAgeSeconds = source.noTargetTravelDirectionMaxAgeSeconds;
+            aimForwardWhenNoTargetIdle = source.aimForwardWhenNoTargetIdle;
             maxAimYawErrorDeg = source.maxAimYawErrorDeg;
             maxAimPitchErrorDeg = source.maxAimPitchErrorDeg;
             maxMuzzleAimErrorDeg = source.maxMuzzleAimErrorDeg;

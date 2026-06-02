@@ -32,7 +32,10 @@ namespace Game.Scripts.AI.WaypointGraph
         private float _unstickUntilTime;
         private float _nextFallbackInputChangeTime;
         private float _turnBias = 1f;
+        private Vector3 _desiredTravelDirection;
+        private float _lastDesiredTravelDirectionTime;
         private bool _hasExplicitTarget;
+        private bool _hasDesiredTravelDirection;
         private bool _isUnsticking;
         private bool _isInitialized;
         private bool _movementSuppressed;
@@ -84,13 +87,38 @@ namespace Game.Scripts.AI.WaypointGraph
             _movementSuppressed = suppressed;
             if (_movementSuppressed)
             {
+                ClearDesiredTravelDirection();
                 ApplyInput(0f, 0f);
             }
+        }
+
+        public bool TryGetDesiredTravelDirection(out Vector3 direction, float maxAgeSeconds)
+        {
+            direction = _desiredTravelDirection;
+            if (!_hasDesiredTravelDirection)
+            {
+                return false;
+            }
+
+            if (maxAgeSeconds > 0f && Time.time - _lastDesiredTravelDirectionTime > maxAgeSeconds)
+            {
+                return false;
+            }
+
+            direction.y = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            direction.Normalize();
+            return true;
         }
 
         public void Stop()
         {
             _movementSuppressed = false;
+            ClearDesiredTravelDirection();
             ApplyInput(0f, 0f);
             ClearPath();
             enabled = false;
@@ -255,6 +283,7 @@ namespace Game.Scripts.AI.WaypointGraph
         {
             if (_path.Count == 0 || _pathIndex >= _path.Count)
             {
+                ClearDesiredTravelDirection();
                 ApplyInput(0f, 0f);
                 return;
             }
@@ -275,6 +304,7 @@ namespace Game.Scripts.AI.WaypointGraph
             desiredDirection.y = 0f;
             if (desiredDirection.sqrMagnitude <= 0.0001f)
             {
+                ClearDesiredTravelDirection();
                 ApplyInput(0f, 0f);
                 return;
             }
@@ -287,6 +317,7 @@ namespace Game.Scripts.AI.WaypointGraph
                 desiredDirection = (desiredDirection + avoidance * settings.dynamicAvoidanceWeight).normalized;
             }
 
+            SetDesiredTravelDirection(desiredDirection);
             ApplyDirectionInput(desiredDirection, settings);
         }
 
@@ -380,6 +411,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _unstickUntilTime = now + settings.unstickDuration;
             _turnBias = -_turnBias;
             ClearPath();
+            SetDesiredTravelDirection(BuildInputTravelDirection(settings.unstickReverseInput, _turnBias * settings.unstickTurnInput));
             ApplyInput(settings.unstickReverseInput, _turnBias * settings.unstickTurnInput);
             return true;
         }
@@ -429,6 +461,7 @@ namespace Game.Scripts.AI.WaypointGraph
                 turn = (Random.value < 0.5f ? -1f : 1f) * settings.strongTurnInput;
             }
 
+            SetDesiredTravelDirection(BuildInputTravelDirection(forward, turn));
             ApplyInput(forward, turn);
             _nextFallbackInputChangeTime = now + Random.Range(settings.minMoveDuration, settings.maxMoveDuration);
         }
@@ -473,6 +506,60 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             return _vehicleRoot != null ? _vehicleRoot.transform : transform;
+        }
+
+        private Vector3 BuildInputTravelDirection(float forward, float turn)
+        {
+            Transform moveTransform = GetMoveTransform();
+            if (moveTransform == null)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 direction = Vector3.zero;
+            if (Mathf.Abs(forward) > 0.025f)
+            {
+                direction += moveTransform.forward * Mathf.Sign(forward);
+            }
+
+            if (Mathf.Abs(turn) > 0.025f)
+            {
+                direction += moveTransform.right * Mathf.Sign(turn) * 0.35f;
+            }
+
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                direction = moveTransform.forward;
+            }
+
+            direction.y = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return Vector3.zero;
+            }
+
+            return direction.normalized;
+        }
+
+        private void SetDesiredTravelDirection(Vector3 direction)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                ClearDesiredTravelDirection();
+                return;
+            }
+
+            _desiredTravelDirection = direction.normalized;
+            _lastDesiredTravelDirectionTime = Time.time;
+            _hasDesiredTravelDirection = true;
+        }
+
+        private void ClearDesiredTravelDirection()
+        {
+            _desiredTravelDirection = Vector3.zero;
+            _lastDesiredTravelDirectionTime = 0f;
+            _hasDesiredTravelDirection = false;
         }
 
         private float ClampInput(float value)

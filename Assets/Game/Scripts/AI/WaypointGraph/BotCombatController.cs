@@ -99,8 +99,8 @@ namespace Game.Scripts.AI.WaypointGraph
 
                 if (_targetRoot == null)
                 {
-                    ClearCombatInput();
                     ReleaseNavigationControl();
+                    ApplyNoTargetTravelAim(settings);
                     return;
                 }
 
@@ -381,6 +381,77 @@ namespace Game.Scripts.AI.WaypointGraph
 
             VehicleServerInput input = VehicleServerInput.Movement(_vehicleRoot.inputManager.Move);
             _vehicleRoot.inputManager.ServerSetExternalInput(input, true);
+        }
+
+        private void ApplyNoTargetTravelAim(BotCombatSettings settings)
+        {
+            if (!settings.aimAlongTravelDirectionWhenNoTarget)
+            {
+                ClearCombatInput();
+                return;
+            }
+
+            if (!TryResolveNoTargetAimDirection(settings, out Vector3 aimDirection))
+            {
+                ClearCombatInput();
+                return;
+            }
+
+            Vector3 aimPoint = GetAimOrigin() + aimDirection * settings.noTargetTravelAimDistance;
+            VehicleAimInputResult aimResult = SolveAim(aimPoint, aimDirection);
+            if (!aimResult.HasState)
+            {
+                ClearCombatInput();
+                return;
+            }
+
+            ApplyCombatInput(aimResult, false, _vehicleRoot.inputManager.Move);
+        }
+
+        private bool TryResolveNoTargetAimDirection(BotCombatSettings settings, out Vector3 direction)
+        {
+            direction = Vector3.zero;
+            if (_navigator != null
+                && _navigator.TryGetDesiredTravelDirection(out direction, settings.noTargetTravelDirectionMaxAgeSeconds))
+            {
+                return true;
+            }
+
+            if (_vehicleRoot == null || _vehicleRoot.inputManager == null)
+            {
+                return false;
+            }
+
+            Transform moveTransform = GetMoveTransform(_vehicleRoot);
+            if (moveTransform == null)
+            {
+                return false;
+            }
+
+            Vector2 move = _vehicleRoot.inputManager.Move;
+            if (Mathf.Abs(move.y) > 0.025f)
+            {
+                direction += moveTransform.forward * Mathf.Sign(move.y);
+            }
+
+            if (Mathf.Abs(move.x) > 0.025f)
+            {
+                direction += moveTransform.right * Mathf.Sign(move.x) * 0.35f;
+            }
+
+            if (direction.sqrMagnitude <= 0.0001f && settings.aimForwardWhenNoTargetIdle)
+            {
+                direction = moveTransform.forward;
+            }
+
+            direction.y = 0f;
+            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            direction.Normalize();
+            return true;
         }
 
         private bool CanShootAtTarget(
