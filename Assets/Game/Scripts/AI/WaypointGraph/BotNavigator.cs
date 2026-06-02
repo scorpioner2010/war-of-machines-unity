@@ -36,6 +36,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private float _lastDesiredTravelDirectionTime;
         private bool _hasExplicitTarget;
         private bool _hasDesiredTravelDirection;
+        private bool _isPivotTurning;
         private bool _isUnsticking;
         private bool _isInitialized;
         private bool _movementSuppressed;
@@ -87,6 +88,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _movementSuppressed = suppressed;
             if (_movementSuppressed)
             {
+                _isPivotTurning = false;
                 ClearDesiredTravelDirection();
                 ApplyInput(0f, 0f);
             }
@@ -118,6 +120,7 @@ namespace Game.Scripts.AI.WaypointGraph
         public void Stop()
         {
             _movementSuppressed = false;
+            _isPivotTurning = false;
             ClearDesiredTravelDirection();
             ApplyInput(0f, 0f);
             ClearPath();
@@ -300,42 +303,113 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             Vector3 waypointPosition = _graph.GetNodePosition(_path[_pathIndex]);
-            Vector3 desiredDirection = waypointPosition - position;
-            desiredDirection.y = 0f;
-            if (desiredDirection.sqrMagnitude <= 0.0001f)
+            Vector3 toWaypoint = waypointPosition - position;
+            toWaypoint.y = 0f;
+            float waypointDistance = toWaypoint.magnitude;
+            if (waypointDistance <= 0.001f)
             {
                 ClearDesiredTravelDirection();
                 ApplyInput(0f, 0f);
                 return;
             }
 
-            desiredDirection.Normalize();
+            Vector3 desiredDirection = toWaypoint / waypointDistance;
 
             Vector3 avoidance = CalculateDynamicAvoidance(position, settings);
             if (avoidance.sqrMagnitude > 0.0001f)
             {
-                desiredDirection = (desiredDirection + avoidance * settings.dynamicAvoidanceWeight).normalized;
+                Vector3 adjustedDirection = desiredDirection + avoidance * settings.dynamicAvoidanceWeight;
+                adjustedDirection.y = 0f;
+                if (adjustedDirection.sqrMagnitude > 0.0001f)
+                {
+                    desiredDirection = adjustedDirection.normalized;
+                }
             }
 
             SetDesiredTravelDirection(desiredDirection);
-            ApplyDirectionInput(desiredDirection, settings);
+            ApplyDirectionInput(desiredDirection, waypointDistance, settings);
         }
 
         private void AdvancePathIndex(Vector3 position, BotWanderSettings settings)
         {
             float reachDistanceSqr = settings.waypointReachDistance * settings.waypointReachDistance;
+            float passDistance = Mathf.Max(settings.waypointReachDistance, settings.waypointPassDistance);
+            float passDistanceSqr = passDistance * passDistance;
 
             while (_pathIndex < _path.Count)
             {
-                Vector3 delta = _graph.GetNodePosition(_path[_pathIndex]) - position;
-                delta.y = 0f;
-                if (delta.sqrMagnitude > reachDistanceSqr)
+                Vector3 waypointPosition = _graph.GetNodePosition(_path[_pathIndex]);
+                if (!ShouldAdvanceWaypoint(position, waypointPosition, reachDistanceSqr, passDistanceSqr, settings))
                 {
                     return;
                 }
 
                 _pathIndex++;
+                _isPivotTurning = false;
             }
+        }
+
+        private bool ShouldAdvanceWaypoint(
+            Vector3 position,
+            Vector3 waypointPosition,
+            float reachDistanceSqr,
+            float passDistanceSqr,
+            BotWanderSettings settings)
+        {
+            Vector3 delta = waypointPosition - position;
+            delta.y = 0f;
+            float distanceSqr = delta.sqrMagnitude;
+            if (distanceSqr <= reachDistanceSqr)
+            {
+                return true;
+            }
+
+            if (distanceSqr > passDistanceSqr)
+            {
+                return false;
+            }
+
+            if (HasMovedPastPathSegment(position, waypointPosition))
+            {
+                return true;
+            }
+
+            Transform moveTransform = GetMoveTransform();
+            if (moveTransform == null || delta.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            Vector3 forward = moveTransform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            float angle = Mathf.Abs(Vector3.SignedAngle(forward.normalized, delta.normalized, Vector3.up));
+            return angle >= settings.waypointPassedAngle;
+        }
+
+        private bool HasMovedPastPathSegment(Vector3 position, Vector3 waypointPosition)
+        {
+            if (_pathIndex <= 0 || _pathIndex >= _path.Count)
+            {
+                return false;
+            }
+
+            Vector3 previousPosition = _graph.GetNodePosition(_path[_pathIndex - 1]);
+            Vector3 segment = waypointPosition - previousPosition;
+            segment.y = 0f;
+            float segmentSqr = segment.sqrMagnitude;
+            if (segmentSqr <= 0.0001f)
+            {
+                return false;
+            }
+
+            Vector3 fromPrevious = position - previousPosition;
+            fromPrevious.y = 0f;
+            return Vector3.Dot(fromPrevious, segment) > segmentSqr;
         }
 
         private Vector3 CalculateDynamicAvoidance(Vector3 position, BotWanderSettings settings)
@@ -416,7 +490,7 @@ namespace Game.Scripts.AI.WaypointGraph
             return true;
         }
 
-        private void ApplyDirectionInput(Vector3 desiredDirection, BotWanderSettings settings)
+        private void ApplyDirectionInput(Vector3 desiredDirection, float waypointDistance, BotWanderSettings settings)
         {
             Transform moveTransform = GetMoveTransform();
             if (moveTransform == null)
@@ -430,13 +504,35 @@ namespace Game.Scripts.AI.WaypointGraph
             float turn = Mathf.Clamp(angle / settings.turnFullInputAngle, -1f, 1f);
             float forward = settings.forwardInput;
 
-            if (absAngle >= settings.stopTurnAngle)
+            if (_isPivotTurning)
+            {
+                if (absAngle <= settings.turnInPlaceExitAngle)
+                {
+                    _isPivotTurning = false;
+                }
+            }
+            else if (absAngle >= settings.turnInPlaceEnterAngle)
+            {
+                _isPivotTurning = true;
+            }
+
+            if (_isPivotTurning || absAngle >= settings.stopTurnAngle)
             {
                 forward = 0f;
             }
             else if (absAngle >= settings.slowTurnAngle)
             {
                 forward = settings.slowForwardInput;
+            }
+
+            if (forward > 0f
+                && settings.waypointApproachSlowDistance > settings.waypointReachDistance
+                && waypointDistance <= settings.waypointApproachSlowDistance)
+            {
+                float span = settings.waypointApproachSlowDistance - settings.waypointReachDistance;
+                float t = Mathf.Clamp01((waypointDistance - settings.waypointReachDistance) / span);
+                float approachForward = Mathf.Lerp(settings.slowForwardInput, settings.forwardInput, t);
+                forward = Mathf.Min(forward, approachForward);
             }
 
             ApplyInput(forward, turn);
@@ -578,6 +674,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _path.Clear();
             _pathIndex = 0;
             _destinationNodeId = -1;
+            _isPivotTurning = false;
         }
 
         private void OnDrawGizmosSelected()

@@ -66,9 +66,14 @@ MonoBehaviour:
     repathCooldown: 0.75
     targetRepathDistance: 5
     turnFullInputAngle: 90
+    turnInPlaceEnterAngle: 48
+    turnInPlaceExitAngle: 18
     slowTurnAngle: 55
     stopTurnAngle: 115
     slowForwardInput: 0.35
+    waypointApproachSlowDistance: 8
+    waypointPassDistance: 5
+    waypointPassedAngle: 125
     stuckCheckInterval: 1.25
     stuckDistance: 0.45
     unstickDuration: 0.8

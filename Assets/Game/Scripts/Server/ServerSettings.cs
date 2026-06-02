@@ -178,12 +178,22 @@ namespace Game.Scripts.Server
         public float targetRepathDistance = 5f;
         [Tooltip("Кут до цілі, при якому бот дає повний ввід повороту.")]
         public float turnFullInputAngle = 90f;
+        [Tooltip("Angle where the bot stops forward movement and rotates in place toward the waypoint.")]
+        public float turnInPlaceEnterAngle = 48f;
+        [Tooltip("Angle where the bot exits in-place turning and starts moving again.")]
+        public float turnInPlaceExitAngle = 18f;
         [Tooltip("Кут до цілі, після якого бот починає зменшувати рух вперед під час повороту.")]
         public float slowTurnAngle = 55f;
         [Tooltip("Кут до цілі, після якого бот майже зупиняється для розвороту.")]
         public float stopTurnAngle = 115f;
         [Tooltip("Ввід руху вперед під час повільного повороту.")]
         public float slowForwardInput = 0.35f;
+        [Tooltip("Distance before a waypoint where the bot starts slowing down for a tighter arrival.")]
+        public float waypointApproachSlowDistance = 8f;
+        [Tooltip("Waypoint is accepted if the bot passed it within this distance, even without hitting the exact reach radius.")]
+        public float waypointPassDistance = 5f;
+        [Tooltip("Waypoint is accepted within pass distance if it is this far behind the chassis.")]
+        public float waypointPassedAngle = 125f;
 
         [Header("Вихід із застрягання")]
         [Tooltip("Як часто бот перевіряє, чи застряг.")]
@@ -227,9 +237,19 @@ namespace Game.Scripts.Server
             repathCooldown = ClampFinite(repathCooldown, 0.1f, Default.repathCooldown);
             targetRepathDistance = ClampFinite(targetRepathDistance, 0.1f, Default.targetRepathDistance);
             turnFullInputAngle = ClampFinite(turnFullInputAngle, 1f, Default.turnFullInputAngle);
+            turnInPlaceEnterAngle = ClampFinite(turnInPlaceEnterAngle, 1f, Default.turnInPlaceEnterAngle);
+            turnInPlaceExitAngle = ClampFinite(turnInPlaceExitAngle, 0f, Default.turnInPlaceExitAngle);
+            if (turnInPlaceExitAngle > turnInPlaceEnterAngle)
+            {
+                turnInPlaceExitAngle = turnInPlaceEnterAngle;
+            }
+
             slowTurnAngle = ClampFinite(slowTurnAngle, 0f, Default.slowTurnAngle);
             stopTurnAngle = ClampFinite(stopTurnAngle, slowTurnAngle, Default.stopTurnAngle);
             slowForwardInput = ClampInput(slowForwardInput, Default.slowForwardInput);
+            waypointApproachSlowDistance = ClampFinite(waypointApproachSlowDistance, waypointReachDistance, Default.waypointApproachSlowDistance);
+            waypointPassDistance = ClampFinite(waypointPassDistance, waypointReachDistance, Default.waypointPassDistance);
+            waypointPassedAngle = Mathf.Clamp(ClampFinite(waypointPassedAngle, 1f, Default.waypointPassedAngle), 1f, 179f);
             stuckCheckInterval = ClampFinite(stuckCheckInterval, 0.25f, Default.stuckCheckInterval);
             stuckDistance = ClampFinite(stuckDistance, 0.05f, Default.stuckDistance);
             unstickDuration = ClampFinite(unstickDuration, 0.1f, Default.unstickDuration);
@@ -260,9 +280,14 @@ namespace Game.Scripts.Server
             repathCooldown = source.repathCooldown;
             targetRepathDistance = source.targetRepathDistance;
             turnFullInputAngle = source.turnFullInputAngle;
+            turnInPlaceEnterAngle = source.turnInPlaceEnterAngle;
+            turnInPlaceExitAngle = source.turnInPlaceExitAngle;
             slowTurnAngle = source.slowTurnAngle;
             stopTurnAngle = source.stopTurnAngle;
             slowForwardInput = source.slowForwardInput;
+            waypointApproachSlowDistance = source.waypointApproachSlowDistance;
+            waypointPassDistance = source.waypointPassDistance;
+            waypointPassedAngle = source.waypointPassedAngle;
             stuckCheckInterval = source.stuckCheckInterval;
             stuckDistance = source.stuckDistance;
             unstickDuration = source.unstickDuration;
