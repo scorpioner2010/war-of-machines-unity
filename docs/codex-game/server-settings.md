@@ -14,6 +14,12 @@ Current owner files:
   - Remote/server settings support.
 - `Assets/Game/Scripts/Server/ServerDebugOverlay.cs`
   - Debug overlay for server-side settings/diagnostics.
+- `Assets/Editor/ServerSettingsEditor.cs`
+  - Custom Unity inspector for `ServerSettings`.
+  - Keeps technical serialized field names visible and shows a Ukrainian explanation with a practical example as a tooltip when hovering every root and nested setting.
+- `Assets/Editor/DocumentedSettingsInspector.cs`
+  - Shared editor-only renderer used by settings inspectors.
+  - Draws nested serialized settings recursively and provides tooltip documentation without adding description rows below fields.
 
 Important settings classes currently used by recent gameplay work:
 - `BotWanderSettings`
@@ -33,6 +39,7 @@ Rules when editing settings:
 - Add copy support in `CopyFrom` when the settings class has one.
 - Check `Assets/Game/Prefabs/ServerSettings.prefab` for serialized values.
 - If the settings affect a documented mechanic, update that mechanic doc too.
+- Add a Ukrainian explanation with a practical example to `Assets/Editor/ServerSettingsEditor.cs` for every new serialized `ServerSettings` field, including nested settings.
 - Keep runtime settings lightweight and avoid per-frame allocations.
 
 Current bot settings added recently:

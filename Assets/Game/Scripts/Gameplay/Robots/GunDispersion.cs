@@ -14,13 +14,13 @@ namespace Game.Scripts.Gameplay.Robots
 
         [Header("Розширення розкиду")]
         public float movingDispersionDeg = 1.5f;
-        [Tooltip("World movement speed that applies the full moving dispersion penalty.")]
+        [Tooltip("Швидкість руху у світі, при якій застосовується повний штраф розкиду від руху.")]
         public float referenceMovementSpeed = 8f;
         public float hullTraverseDispersionDeg = 1.25f;
         public float turretTraverseDispersionDeg = 1.5f;
         public float gunTraverseDispersionDeg = 1f;
         public float shotDispersionDeg = 2f;
-        [Tooltip("Shot bloom multiplier. 1.3 means the aiming circle grows by 30% after a shot.")]
+        [Tooltip("Множник bloom після пострілу. 1.3 означає, що коло прицілу збільшується на 30% після пострілу.")]
         public float shotDispersionMultiplier = 1.3f;
 
         public float MinDispersion

@@ -26,6 +26,14 @@ Current owner scripts:
   - Vehicle research/progression data support.
 - `Assets/Game/Scripts/UI/Settings/*.cs`
   - Settings tabs and settings model/view/controller.
+- `Assets/Game/Scripts/Client/ClientSettings.cs`
+  - Local client runtime settings for frame pacing, projectile visuals, HUD, map, camera, reticle, auto-aim, and hover outline behavior.
+- `Assets/Editor/ClientSettingsEditor.cs`
+  - Custom Unity inspector for `ClientSettings`.
+  - Keeps technical serialized field names visible and shows a Ukrainian explanation with a practical example as a tooltip when hovering every root and nested setting.
+- `Assets/Editor/DocumentedSettingsInspector.cs`
+  - Shared editor-only renderer used by settings inspectors.
+  - Draws nested serialized settings recursively and provides tooltip documentation without adding description rows below fields.
 - `Assets/Game/Scripts/UI/Loading/*.cs`
   - Loading screen and shared spinner.
 - `Assets/Game/Scripts/UI/Screens/*.cs`
@@ -41,3 +49,4 @@ Rules when editing menus:
 - Do not let menu-only code affect server-authoritative gameplay.
 - If profile fields or vehicle selection changes, update `api-resources.md` too.
 - If gameplay HUD behavior changes, update `ui-hud.md`.
+- Add a Ukrainian explanation with a practical example to `Assets/Editor/ClientSettingsEditor.cs` whenever `ClientSettings` gains a serialized field, including nested settings.

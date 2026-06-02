@@ -6,17 +6,17 @@ namespace Game.Scripts.Testing
 {
     public class VehicleTestRuntimeSettings : MonoBehaviour
     {
-        [Header("Combat Overrides")]
+        [Header("Тестові бойові параметри")]
         public bool activateTestParameters;
         [Min(0.01f)] public float reloadTime = 0.25f;
         [Min(1)] public int shellsCount = 999;
 
-        [Header("Accuracy Debug")]
-        [Tooltip("Keeps the gun fully aimed in VehicleTest. Robot accuracy still controls the ring size and shot spread.")]
+        [Header("Debug точності")]
+        [Tooltip("Тримає гармату повністю зведеною у VehicleTest. Точність машини все ще визначає розмір кола і розкид пострілу.")]
         [FormerlySerializedAs("disableDispersionAndForceFullyAimedReticle")]
         public bool forceFullyAimedAccuracyOnly;
 
-        [Header("Hit Markers")]
+        [Header("Маркери влучань")]
         public bool createHitMarkerSphere;
         [Min(0.01f)] public float hitMarkerRadius = 0.18f;
         public Color hitMarkerColor = new Color(1f, 0.85f, 0.05f, 1f);

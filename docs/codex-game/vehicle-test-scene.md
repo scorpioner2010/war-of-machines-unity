@@ -17,6 +17,12 @@ Current owner scripts:
   - Builds test runtime stats for reload/ammo overrides.
   - Applies test-only weapon accuracy debug mode to the spawned vehicle.
   - Creates optional hit marker spheres in `VehicleTest`.
+- `Assets/Editor/VehicleTestRuntimeSettingsEditor.cs`
+  - Custom Unity inspector for `VehicleTestRuntimeSettings`.
+  - Shows a Ukrainian explanation with a practical example as a tooltip when hovering every test parameter.
+- `Assets/Editor/DocumentedSettingsInspector.cs`
+  - Shared editor-only renderer used by the VehicleTest settings inspector.
+  - Provides tooltip documentation without adding description rows below fields.
 
 VehicleTest spawn flow:
 1. `VehicleTestSceneController` starts a local FishNet host and waits for a ready local owner connection.
@@ -33,3 +39,4 @@ Important constraints:
 - Do not add gameplay hot-path scene searches to vehicle movement to fix VehicleTest-only issues; fix the test bootstrap instead.
 - VehicleTest is a local host, so server-authoritative movement is visible directly on the host object. Keep the test tick rate high enough for smooth local inspection instead of changing shared vehicle movement semantics.
 - `Assets/Game/Scenes/VehicleTest.unity` owns the serialized `localTestTickRate` value; keep it at `120` unless the test harness deliberately needs a different local-host simulation rate.
+- Add a Ukrainian explanation with a practical example to `Assets/Editor/VehicleTestRuntimeSettingsEditor.cs` whenever `VehicleTestRuntimeSettings` gains a serialized field.

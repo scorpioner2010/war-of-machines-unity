@@ -16,16 +16,16 @@ namespace Game.Scripts.Client
         public float hpTeamColorRefreshInterval = 0.25f;
         [Tooltip("Швидкість згладження основної смуги HP локального гравця на GameplayHUD.")]
         public float ownerHealthBarSmoothSpeed = 10f;
-        [Header("World-space HP scale")]
-        [Tooltip("Enable distance based scaling for robot HP bars in world-space UI.")]
+        [Header("Масштаб world-space HP")]
+        [Tooltip("Увімкнути масштабування world-space смуг HP роботів залежно від дистанції.")]
         public bool worldHpBarDistanceScaleEnabled = true;
-        [Tooltip("Distance where robot HP bars use the near scale.")]
+        [Tooltip("Дистанція, на якій смуги HP роботів використовують ближній масштаб.")]
         public float worldHpBarScaleMinDistance = 5f;
-        [Tooltip("Distance where robot HP bars reach the far scale.")]
+        [Tooltip("Дистанція, на якій смуги HP роботів досягають дальнього масштабу.")]
         public float worldHpBarScaleMaxDistance = 90f;
-        [Tooltip("HP bar scale multiplier near the camera.")]
+        [Tooltip("Множник масштабу смуги HP біля камери.")]
         public float worldHpBarMinDistanceScale = 1f;
-        [Tooltip("HP bar scale multiplier far from the camera.")]
+        [Tooltip("Множник масштабу смуги HP далеко від камери.")]
         public float worldHpBarMaxDistanceScale = 5f;
 
         [Header("Карта")]
@@ -108,7 +108,7 @@ namespace Game.Scripts.Client
         [Tooltip("Показувати серверний приціл, якщо гравець увімкнув його в налаштуваннях.")]
         public bool reticleShowServerReticle = true;
 
-        [Header("Hover outline")]
+        [Header("Outline під прицілом")]
         [Tooltip("Максимальна дистанція пошуку цілі для підсвічування під прицілом.")]
         public float hoverOutlineMaxDistance = 2000f;
         [Tooltip("Товщина outline підсвічування техніки під прицілом.")]
@@ -352,59 +352,59 @@ namespace Game.Scripts.Client
     {
         private static readonly ClientProjectileVisualSettings DefaultSettings = new ClientProjectileVisualSettings();
 
-        [Header("Projectile references")]
-        [Tooltip("Client-only projectile prefab override. Leave empty to use the weapon prefab.")]
+        [Header("Посилання візуального снаряда")]
+        [Tooltip("Клієнтська заміна prefab снаряда. Залиште порожнім, щоб використовувати prefab зброї.")]
         public Projectile projectilePrefab;
-        [Tooltip("Material applied to the projectile mesh on the client.")]
+        [Tooltip("Матеріал, який застосовується до mesh снаряда на клієнті.")]
         public Material projectileMaterial;
-        [Tooltip("Material used by the projectile tracer trail.")]
+        [Tooltip("Матеріал хвоста-трасера снаряда.")]
         public Material tracerMaterial;
-        [Tooltip("One-shot fire effect spawned at the muzzle.")]
+        [Tooltip("Одноразовий ефект спалаху пострілу біля дула.")]
         public PooledImpactFx muzzleFlashPrefab;
-        [Tooltip("One-shot smoke effect spawned at the muzzle.")]
+        [Tooltip("Одноразовий ефект диму біля дула.")]
         public PooledImpactFx muzzleSmokePrefab;
 
-        [Header("Projectile glow")]
+        [Header("Світіння снаряда")]
         public bool overrideProjectileMaterial = true;
         [ColorUsage(false, true)] public Color projectileBaseColor = new Color(1f, 0.58f, 0.16f, 1f);
         [ColorUsage(false, true)] public Color projectileEmissionColor = new Color(1f, 0.38f, 0.06f, 1f);
         [Min(0f)] public float projectileEmissionIntensity = 4f;
 
-        [Header("Tracer")]
+        [Header("Трасер")]
         public bool tracerEnabled = true;
-        [Tooltip("How long the tracer stays visible, in seconds. Lower values make the tracer shorter.")]
-        [InspectorName("Tracer Length Seconds")]
+        [Tooltip("Скільки секунд трасер залишається видимим. Менше значення робить трасер коротшим.")]
+        [InspectorName("Тривалість трасера, с")]
         [Min(0.01f)] public float tracerLifetime = 0.06f;
-        [Tooltip("Width at the projectile/head side of the tracer.")]
+        [Tooltip("Товщина трасера біля голови снаряда.")]
         [Min(0.001f)] public float tracerStartWidth = 0.07f;
-        [Tooltip("Width at the fading tail side of the tracer.")]
+        [Tooltip("Товщина трасера на згасаючому кінці хвоста.")]
         [Min(0f)] public float tracerEndWidth = 0.012f;
-        [Tooltip("Distance between trail points. Higher values are cheaper and less detailed.")]
+        [Tooltip("Дистанція між точками хвоста. Більше значення дешевше, але дає менше деталей.")]
         [Min(0.001f)] public float tracerMinVertexDistance = 0.08f;
         [Range(0, 8)] public int tracerCornerVertices;
         [Range(0, 8)] public int tracerCapVertices;
-        [Tooltip("Global opacity multiplier for the tracer gradient.")]
+        [Tooltip("Глобальний множник прозорості градієнта трасера.")]
         [Range(0f, 1f)] public float tracerOpacity = 1f;
-        [Tooltip("Alpha applied to the tracer material. Keep high if using tracerOpacity for tuning.")]
+        [Tooltip("Alpha матеріалу трасера. Залишайте високим, якщо основне налаштування прозорості виконує tracerOpacity.")]
         [Range(0f, 1f)] public float tracerMaterialAlpha = 0.75f;
-        [Tooltip("Where the tracer reaches its middle fade value. 0 is projectile/head, 1 is tail.")]
+        [Tooltip("Позиція середньої точки згасання трасера. 0 біля голови снаряда, 1 біля хвоста.")]
         [Range(0.01f, 0.99f)] public float tracerFadeMidpoint = 0.55f;
-        [Tooltip("Opacity multiplier at tracerFadeMidpoint relative to tracerHeadColor alpha.")]
+        [Tooltip("Множник прозорості в tracerFadeMidpoint відносно alpha tracerHeadColor.")]
         [Range(0f, 1f)] public float tracerMidOpacityMultiplier = 0.45f;
         [ColorUsage(false, true)] public Color tracerHeadColor = new Color(1f, 0.82f, 0.35f, 0.42f);
         [ColorUsage(false, true)] public Color tracerTailColor = new Color(1f, 0.45f, 0.1f, 0f);
         [ColorUsage(false, true)] public Color tracerEmissionColor = new Color(1f, 0.55f, 0.16f, 1f);
         [Min(0f)] public float tracerEmissionIntensity = 1.35f;
 
-        [Header("Muzzle FX")]
+        [Header("Ефекти дула")]
         public bool muzzleFxEnabled = true;
-        [Tooltip("Do not spawn local muzzle flash/smoke while the owning player is in full sniper mode.")]
+        [Tooltip("Не створювати локальні спалах і дим біля дула, поки власник перебуває в повному снайперському режимі.")]
         public bool hideMuzzleFxInSniperMode = true;
         [Min(0f)] public float muzzleForwardOffset = 0.25f;
         [Min(0.01f)] public float muzzleFlashScale = 0.55f;
         [Min(0.01f)] public float muzzleSmokeScale = 0.65f;
 
-        [Header("Visual pools")]
+        [Header("Пули візуальних ефектів")]
         [Min(0)] public int clientProjectilePoolPrewarmCount = 16;
         [Min(1)] public int clientProjectilePoolMaxInactive = 64;
         [Min(0)] public int clientImpactFxPoolPrewarmCount = 16;
@@ -548,10 +548,10 @@ namespace Game.Scripts.Client
             240
         };
 
-        [Tooltip("Enable vertical synchronization. When enabled, Unity controls pacing from the display refresh rate.")]
+        [Tooltip("Увімкнути вертикальну синхронізацію. Коли вона активна, Unity визначає темп кадрів за частотою оновлення дисплея.")]
         public bool verticalSyncEnabled = DefaultVerticalSyncEnabled;
 
-        [Tooltip("Client target frame rate used when vertical synchronization is disabled.")]
+        [Tooltip("Цільова частота кадрів клієнта, яка використовується коли вертикальну синхронізацію вимкнено.")]
         [Range(MinTargetFrameRate, MaxTargetFrameRate)]
         public int targetFrameRate = DefaultTargetFrameRate;
 
@@ -637,10 +637,10 @@ namespace Game.Scripts.Client
     {
         public static ClientSettings In;
 
-        [Tooltip("Client frame pacing settings for production client builds.")]
+        [Tooltip("Клієнтські налаштування темпу кадрів для production-збірок.")]
         public ClientFramePacingSettings framePacing = new ClientFramePacingSettings();
 
-        [Tooltip("Client-only projectile, tracer and muzzle visual settings. The server does not read or synchronize these.")]
+        [Tooltip("Клієнтські візуальні налаштування снаряда, трасера та ефектів дула. Сервер їх не читає і не синхронізує.")]
         public ClientProjectileVisualSettings projectileVisuals = new ClientProjectileVisualSettings();
 
         [Tooltip("Локальні клієнтські runtime-налаштування HUD, карти та автоприцілу. Сервер їх не читає і не синхронізує.")]
