@@ -28,15 +28,15 @@ public class ProjectileVisualSettings
     public bool tracerEnabled = true;
     public TrailRenderer tracerRenderer;
     public Material tracerMaterial;
-    [Min(0.01f)] public float tracerLifetime = 0.5f;
-    [Min(0.001f)] public float tracerStartWidth = 0.32f;
-    [Min(0f)] public float tracerEndWidth = 0.035f;
+    [Min(0.01f)] public float tracerLifetime = 0.06f;
+    [Min(0.001f)] public float tracerStartWidth = 0.07f;
+    [Min(0f)] public float tracerEndWidth = 0.012f;
     public bool useTracerWidthCurve = true;
-    [Min(0.001f)] public float tracerWidthMultiplier = 0.32f;
+    [Min(0.001f)] public float tracerWidthMultiplier = 0.07f;
     public AnimationCurve tracerWidthCurve = CreateDefaultWidthCurve();
-    [Min(0.001f)] public float tracerMinVertexDistance = 0.025f;
-    [Range(0, 8)] public int tracerCornerVertices = 6;
-    [Range(0, 8)] public int tracerCapVertices = 4;
+    [Min(0.001f)] public float tracerMinVertexDistance = 0.08f;
+    [Range(0, 8)] public int tracerCornerVertices;
+    [Range(0, 8)] public int tracerCapVertices;
     public LineAlignment tracerAlignment = LineAlignment.View;
     public LineTextureMode tracerTextureMode = LineTextureMode.Stretch;
     public ShadowCastingMode tracerShadowCastingMode = ShadowCastingMode.Off;
@@ -50,16 +50,16 @@ public class ProjectileVisualSettings
         projectileBaseColor = ClampHdrColor(projectileBaseColor, new Color(1f, 0.58f, 0.16f, 1f));
         projectileEmissionColor = ClampHdrColor(projectileEmissionColor, new Color(1f, 0.35f, 0.04f, 1f));
         projectileEmissionIntensity = ClampFinite(projectileEmissionIntensity, 0f, 5f);
-        tracerLifetime = ClampFinite(tracerLifetime, 0.01f, 0.5f);
-        tracerStartWidth = ClampFinite(tracerStartWidth, 0.001f, 0.32f);
-        tracerEndWidth = ClampFinite(tracerEndWidth, 0f, 0.035f);
+        tracerLifetime = ClampFinite(tracerLifetime, 0.01f, 0.06f);
+        tracerStartWidth = ClampFinite(tracerStartWidth, 0.001f, 0.07f);
+        tracerEndWidth = ClampFinite(tracerEndWidth, 0f, 0.012f);
         if (tracerEndWidth > tracerStartWidth)
         {
             tracerEndWidth = tracerStartWidth;
         }
 
         tracerWidthMultiplier = ClampFinite(tracerWidthMultiplier, 0.001f, tracerStartWidth);
-        tracerMinVertexDistance = ClampFinite(tracerMinVertexDistance, 0.001f, 0.025f);
+        tracerMinVertexDistance = ClampFinite(tracerMinVertexDistance, 0.001f, 0.08f);
         tracerCornerVertices = Mathf.Clamp(tracerCornerVertices, 0, 8);
         tracerCapVertices = Mathf.Clamp(tracerCapVertices, 0, 8);
 
@@ -79,15 +79,15 @@ public class ProjectileVisualSettings
         Gradient gradient = new Gradient();
         GradientColorKey[] colors =
         {
-            new GradientColorKey(new Color(1f, 0.18f, 0.02f, 1f), 0f),
-            new GradientColorKey(new Color(1f, 0.55f, 0.08f, 1f), 0.55f),
-            new GradientColorKey(new Color(1f, 1f, 0.72f, 1f), 1f)
+            new GradientColorKey(new Color(1f, 0.92f, 0.55f, 1f), 0f),
+            new GradientColorKey(new Color(1f, 0.7f, 0.28f, 1f), 0.55f),
+            new GradientColorKey(new Color(1f, 0.48f, 0.12f, 1f), 1f)
         };
         GradientAlphaKey[] alphas =
         {
-            new GradientAlphaKey(0f, 0f),
-            new GradientAlphaKey(0.45f, 0.22f),
-            new GradientAlphaKey(0.95f, 1f)
+            new GradientAlphaKey(0.42f, 0f),
+            new GradientAlphaKey(0.18f, 0.55f),
+            new GradientAlphaKey(0f, 1f)
         };
         gradient.SetKeys(colors, alphas);
         return gradient;
@@ -96,9 +96,9 @@ public class ProjectileVisualSettings
     private static AnimationCurve CreateDefaultWidthCurve()
     {
         return new AnimationCurve(
-            new Keyframe(0f, 0.08f),
-            new Keyframe(0.28f, 0.35f),
-            new Keyframe(1f, 1f));
+            new Keyframe(0f, 1f),
+            new Keyframe(0.35f, 0.35f),
+            new Keyframe(1f, 0.12f));
     }
 
     private static Color ClampHdrColor(Color value, Color fallback)
@@ -221,10 +221,22 @@ public class Projectile : MonoBehaviour
     private ParticleSystem[] _cachedParticles;
     private Collider[] _cachedColliders;
     private TrailRenderer _trailRenderer;
+    private AnimationCurve _clientTracerWidthCurve;
+    private Gradient _clientTracerGradient;
     private MaterialPropertyBlock _projectilePropertyBlock;
+    private MaterialPropertyBlock _tracerPropertyBlock;
+    private float _clientTracerStartWidth;
+    private float _clientTracerEndWidth;
+    private Color _clientTracerTailColor;
+    private Color _clientTracerHeadColor;
+    private float _clientTracerOpacity;
+    private float _clientTracerFadeMidpoint;
+    private float _clientTracerMidOpacityMultiplier;
     private bool _componentCacheBuilt;
     private bool _tracerConfigured;
     private bool _waitingForTrailFade;
+    private bool _clientTracerWidthConfigured;
+    private bool _clientTracerGradientConfigured;
     private float _trailReleaseTime;
 
     public Vector3 Origin => _origin;
@@ -388,11 +400,11 @@ public class Projectile : MonoBehaviour
 
         _tracerConfigured = true;
         _trailRenderer.sharedMaterial = ResolveTracerMaterial(projectileVisuals, clientSettings);
-        _trailRenderer.time = projectileVisuals.tracerLifetime;
-        ApplyTracerWidth(projectileVisuals);
-        _trailRenderer.minVertexDistance = projectileVisuals.tracerMinVertexDistance;
-        _trailRenderer.numCornerVertices = projectileVisuals.tracerCornerVertices;
-        _trailRenderer.numCapVertices = projectileVisuals.tracerCapVertices;
+        _trailRenderer.time = clientSettings != null ? clientSettings.tracerLifetime : projectileVisuals.tracerLifetime;
+        ApplyTracerWidth(projectileVisuals, clientSettings);
+        _trailRenderer.minVertexDistance = clientSettings != null ? clientSettings.tracerMinVertexDistance : projectileVisuals.tracerMinVertexDistance;
+        _trailRenderer.numCornerVertices = clientSettings != null ? clientSettings.tracerCornerVertices : projectileVisuals.tracerCornerVertices;
+        _trailRenderer.numCapVertices = clientSettings != null ? clientSettings.tracerCapVertices : projectileVisuals.tracerCapVertices;
         _trailRenderer.alignment = projectileVisuals.tracerAlignment;
         _trailRenderer.textureMode = projectileVisuals.tracerTextureMode;
         _trailRenderer.shadowCastingMode = projectileVisuals.tracerShadowCastingMode;
@@ -400,7 +412,8 @@ public class Projectile : MonoBehaviour
         _trailRenderer.generateLightingData = projectileVisuals.tracerGenerateLightingData;
         _trailRenderer.allowOcclusionWhenDynamic = projectileVisuals.tracerAllowOcclusionWhenDynamic;
         _trailRenderer.autodestruct = false;
-        _trailRenderer.colorGradient = projectileVisuals.tracerGradient;
+        _trailRenderer.colorGradient = ResolveTracerGradient(projectileVisuals, clientSettings);
+        ApplyTracerMaterialProperties(clientSettings);
         SetTracerVisible(_visualsEnabled && _initialized);
     }
 
@@ -439,8 +452,14 @@ public class Projectile : MonoBehaviour
         return clientSettings != null ? clientSettings.projectileMaterial : null;
     }
 
-    private void ApplyTracerWidth(ProjectileVisualSettings projectileVisuals)
+    private void ApplyTracerWidth(ProjectileVisualSettings projectileVisuals, ClientProjectileVisualSettings clientSettings)
     {
+        if (clientSettings != null)
+        {
+            ApplyClientTracerWidth(clientSettings);
+            return;
+        }
+
         if (projectileVisuals.useTracerWidthCurve
             && projectileVisuals.tracerWidthCurve != null
             && projectileVisuals.tracerWidthCurve.length > 0)
@@ -453,6 +472,122 @@ public class Projectile : MonoBehaviour
         _trailRenderer.widthMultiplier = 1f;
         _trailRenderer.startWidth = projectileVisuals.tracerStartWidth;
         _trailRenderer.endWidth = projectileVisuals.tracerEndWidth;
+    }
+
+    private void ApplyClientTracerWidth(ClientProjectileVisualSettings clientSettings)
+    {
+        float headWidth = clientSettings.tracerStartWidth;
+        float tailWidth = clientSettings.tracerEndWidth;
+
+        if (_clientTracerWidthCurve == null)
+        {
+            _clientTracerWidthCurve = new AnimationCurve();
+        }
+
+        if (!_clientTracerWidthConfigured
+            || _clientTracerStartWidth != headWidth
+            || _clientTracerEndWidth != tailWidth)
+        {
+            Keyframe[] widthKeys =
+            {
+                new Keyframe(0f, headWidth),
+                new Keyframe(1f, tailWidth)
+            };
+
+            _clientTracerWidthCurve.keys = widthKeys;
+            _clientTracerStartWidth = headWidth;
+            _clientTracerEndWidth = tailWidth;
+            _clientTracerWidthConfigured = true;
+        }
+
+        _trailRenderer.widthMultiplier = 1f;
+        _trailRenderer.widthCurve = _clientTracerWidthCurve;
+    }
+
+    private Gradient ResolveTracerGradient(ProjectileVisualSettings projectileVisuals, ClientProjectileVisualSettings clientSettings)
+    {
+        if (clientSettings == null)
+        {
+            return projectileVisuals.tracerGradient;
+        }
+
+        if (_clientTracerGradient == null)
+        {
+            _clientTracerGradient = new Gradient();
+        }
+
+        if (!_clientTracerGradientConfigured
+            || _clientTracerTailColor != clientSettings.tracerTailColor
+            || _clientTracerHeadColor != clientSettings.tracerHeadColor
+            || _clientTracerOpacity != clientSettings.tracerOpacity
+            || _clientTracerFadeMidpoint != clientSettings.tracerFadeMidpoint
+            || _clientTracerMidOpacityMultiplier != clientSettings.tracerMidOpacityMultiplier)
+        {
+            Color tailColor = clientSettings.tracerTailColor;
+            Color headColor = clientSettings.tracerHeadColor;
+            float opacity = clientSettings.tracerOpacity;
+            float fadeMidpoint = clientSettings.tracerFadeMidpoint;
+            float midOpacityMultiplier = clientSettings.tracerMidOpacityMultiplier;
+            Color midColor = Color.Lerp(headColor, tailColor, fadeMidpoint);
+
+            GradientColorKey[] colors =
+            {
+                new GradientColorKey(headColor, 0f),
+                new GradientColorKey(midColor, fadeMidpoint),
+                new GradientColorKey(tailColor, 1f)
+            };
+            GradientAlphaKey[] alphas =
+            {
+                new GradientAlphaKey(headColor.a * opacity, 0f),
+                new GradientAlphaKey(headColor.a * opacity * midOpacityMultiplier, fadeMidpoint),
+                new GradientAlphaKey(tailColor.a * opacity, 1f)
+            };
+
+            _clientTracerGradient.SetKeys(colors, alphas);
+            _clientTracerTailColor = tailColor;
+            _clientTracerHeadColor = headColor;
+            _clientTracerOpacity = opacity;
+            _clientTracerFadeMidpoint = fadeMidpoint;
+            _clientTracerMidOpacityMultiplier = midOpacityMultiplier;
+            _clientTracerGradientConfigured = true;
+        }
+
+        return _clientTracerGradient;
+    }
+
+    private void ApplyTracerMaterialProperties(ClientProjectileVisualSettings clientSettings)
+    {
+        if (_trailRenderer == null)
+        {
+            return;
+        }
+
+        if (clientSettings == null)
+        {
+            if (_tracerPropertyBlock != null)
+            {
+                _trailRenderer.SetPropertyBlock(null);
+            }
+
+            return;
+        }
+
+        if (_tracerPropertyBlock == null)
+        {
+            _tracerPropertyBlock = new MaterialPropertyBlock();
+        }
+
+        Color materialColor = clientSettings.tracerHeadColor;
+        materialColor.a = clientSettings.tracerMaterialAlpha;
+
+        Color emission = clientSettings.tracerEmissionColor * Mathf.Max(0f, clientSettings.tracerEmissionIntensity);
+        emission.a = clientSettings.tracerEmissionColor.a;
+
+        _tracerPropertyBlock.Clear();
+        _tracerPropertyBlock.SetColor(BaseColorPropertyId, materialColor);
+        _tracerPropertyBlock.SetColor(ColorPropertyId, materialColor);
+        _tracerPropertyBlock.SetColor(EmissionColorPropertyId, emission);
+        _trailRenderer.SetPropertyBlock(_tracerPropertyBlock);
     }
 
     private void SetTracerVisible(bool visible)

@@ -1113,15 +1113,22 @@ MonoBehaviour:
     projectileEmissionColor: {r: 1, g: 0.38, b: 0.06, a: 1}
     projectileEmissionIntensity: 4
     tracerEnabled: 1
-    tracerLifetime: 0.35
-    tracerStartWidth: 0.18
-    tracerEndWidth: 0.02
+    tracerLifetime: 0.06
+    tracerStartWidth: 0.07
+    tracerEndWidth: 0.012
     tracerMinVertexDistance: 0.08
-    tracerCornerVertices: 2
-    tracerCapVertices: 1
-    tracerHeadColor: {r: 1, g: 0.72, b: 0.2, a: 0.95}
-    tracerTailColor: {r: 1, g: 0.18, b: 0.02, a: 0}
+    tracerCornerVertices: 0
+    tracerCapVertices: 0
+    tracerOpacity: 1
+    tracerMaterialAlpha: 0.75
+    tracerFadeMidpoint: 0.55
+    tracerMidOpacityMultiplier: 0.45
+    tracerHeadColor: {r: 1, g: 0.82, b: 0.35, a: 0.42}
+    tracerTailColor: {r: 1, g: 0.45, b: 0.1, a: 0}
+    tracerEmissionColor: {r: 1, g: 0.55, b: 0.16, a: 1}
+    tracerEmissionIntensity: 1.35
     muzzleFxEnabled: 1
+    hideMuzzleFxInSniperMode: 1
     muzzleForwardOffset: 0.25
     muzzleFlashScale: 0.55
     muzzleSmokeScale: 0.65

@@ -372,17 +372,34 @@ namespace Game.Scripts.Client
 
         [Header("Tracer")]
         public bool tracerEnabled = true;
-        [Min(0.01f)] public float tracerLifetime = 0.35f;
-        [Min(0.001f)] public float tracerStartWidth = 0.18f;
-        [Min(0f)] public float tracerEndWidth = 0.02f;
+        [Tooltip("How long the tracer stays visible, in seconds. Lower values make the tracer shorter.")]
+        [InspectorName("Tracer Length Seconds")]
+        [Min(0.01f)] public float tracerLifetime = 0.06f;
+        [Tooltip("Width at the projectile/head side of the tracer.")]
+        [Min(0.001f)] public float tracerStartWidth = 0.07f;
+        [Tooltip("Width at the fading tail side of the tracer.")]
+        [Min(0f)] public float tracerEndWidth = 0.012f;
+        [Tooltip("Distance between trail points. Higher values are cheaper and less detailed.")]
         [Min(0.001f)] public float tracerMinVertexDistance = 0.08f;
-        [Range(0, 8)] public int tracerCornerVertices = 2;
-        [Range(0, 8)] public int tracerCapVertices = 1;
-        [ColorUsage(false, true)] public Color tracerHeadColor = new Color(1f, 0.72f, 0.2f, 0.95f);
-        [ColorUsage(false, true)] public Color tracerTailColor = new Color(1f, 0.18f, 0.02f, 0f);
+        [Range(0, 8)] public int tracerCornerVertices;
+        [Range(0, 8)] public int tracerCapVertices;
+        [Tooltip("Global opacity multiplier for the tracer gradient.")]
+        [Range(0f, 1f)] public float tracerOpacity = 1f;
+        [Tooltip("Alpha applied to the tracer material. Keep high if using tracerOpacity for tuning.")]
+        [Range(0f, 1f)] public float tracerMaterialAlpha = 0.75f;
+        [Tooltip("Where the tracer reaches its middle fade value. 0 is projectile/head, 1 is tail.")]
+        [Range(0.01f, 0.99f)] public float tracerFadeMidpoint = 0.55f;
+        [Tooltip("Opacity multiplier at tracerFadeMidpoint relative to tracerHeadColor alpha.")]
+        [Range(0f, 1f)] public float tracerMidOpacityMultiplier = 0.45f;
+        [ColorUsage(false, true)] public Color tracerHeadColor = new Color(1f, 0.82f, 0.35f, 0.42f);
+        [ColorUsage(false, true)] public Color tracerTailColor = new Color(1f, 0.45f, 0.1f, 0f);
+        [ColorUsage(false, true)] public Color tracerEmissionColor = new Color(1f, 0.55f, 0.16f, 1f);
+        [Min(0f)] public float tracerEmissionIntensity = 1.35f;
 
         [Header("Muzzle FX")]
         public bool muzzleFxEnabled = true;
+        [Tooltip("Do not spawn local muzzle flash/smoke while the owning player is in full sniper mode.")]
+        public bool hideMuzzleFxInSniperMode = true;
         [Min(0f)] public float muzzleForwardOffset = 0.25f;
         [Min(0.01f)] public float muzzleFlashScale = 0.55f;
         [Min(0.01f)] public float muzzleSmokeScale = 0.65f;
@@ -419,8 +436,14 @@ namespace Game.Scripts.Client
             tracerMinVertexDistance = ClampFinite(tracerMinVertexDistance, 0.001f, Default.tracerMinVertexDistance);
             tracerCornerVertices = Mathf.Clamp(tracerCornerVertices, 0, 8);
             tracerCapVertices = Mathf.Clamp(tracerCapVertices, 0, 8);
+            tracerOpacity = Mathf.Clamp01(ClampFinite(tracerOpacity, 0f, Default.tracerOpacity));
+            tracerMaterialAlpha = Mathf.Clamp01(ClampFinite(tracerMaterialAlpha, 0f, Default.tracerMaterialAlpha));
+            tracerFadeMidpoint = Mathf.Clamp(ClampFinite(tracerFadeMidpoint, 0.01f, Default.tracerFadeMidpoint), 0.01f, 0.99f);
+            tracerMidOpacityMultiplier = Mathf.Clamp01(ClampFinite(tracerMidOpacityMultiplier, 0f, Default.tracerMidOpacityMultiplier));
             tracerHeadColor = ClampHdrColor(tracerHeadColor, Default.tracerHeadColor);
             tracerTailColor = ClampHdrColor(tracerTailColor, Default.tracerTailColor);
+            tracerEmissionColor = ClampHdrColor(tracerEmissionColor, Default.tracerEmissionColor);
+            tracerEmissionIntensity = ClampFinite(tracerEmissionIntensity, 0f, Default.tracerEmissionIntensity);
             muzzleForwardOffset = ClampFinite(muzzleForwardOffset, 0f, Default.muzzleForwardOffset);
             muzzleFlashScale = ClampFinite(muzzleFlashScale, 0.01f, Default.muzzleFlashScale);
             muzzleSmokeScale = ClampFinite(muzzleSmokeScale, 0.01f, Default.muzzleSmokeScale);
@@ -455,9 +478,16 @@ namespace Game.Scripts.Client
             tracerMinVertexDistance = source.tracerMinVertexDistance;
             tracerCornerVertices = source.tracerCornerVertices;
             tracerCapVertices = source.tracerCapVertices;
+            tracerOpacity = source.tracerOpacity;
+            tracerMaterialAlpha = source.tracerMaterialAlpha;
+            tracerFadeMidpoint = source.tracerFadeMidpoint;
+            tracerMidOpacityMultiplier = source.tracerMidOpacityMultiplier;
             tracerHeadColor = source.tracerHeadColor;
             tracerTailColor = source.tracerTailColor;
+            tracerEmissionColor = source.tracerEmissionColor;
+            tracerEmissionIntensity = source.tracerEmissionIntensity;
             muzzleFxEnabled = source.muzzleFxEnabled;
+            hideMuzzleFxInSniperMode = source.hideMuzzleFxInSniperMode;
             muzzleForwardOffset = source.muzzleForwardOffset;
             muzzleFlashScale = source.muzzleFlashScale;
             muzzleSmokeScale = source.muzzleSmokeScale;

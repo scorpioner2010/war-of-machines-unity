@@ -1156,6 +1156,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            if (ShouldHideMuzzleFxForSniperMode(visualSettings))
+            {
+                return;
+            }
+
             if (visualSettings.muzzleFlashPrefab == null && visualSettings.muzzleSmokePrefab == null)
             {
                 return;
@@ -1178,6 +1183,19 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 position = startPos + direction * visualSettings.muzzleForwardOffset;
             SpawnMuzzleFxPrefab(visualSettings.muzzleFlashPrefab, position, rotation, visualSettings.muzzleFlashScale);
             SpawnMuzzleFxPrefab(visualSettings.muzzleSmokePrefab, position, rotation, visualSettings.muzzleSmokeScale);
+        }
+
+        private bool ShouldHideMuzzleFxForSniperMode(ClientProjectileVisualSettings visualSettings)
+        {
+            if (visualSettings == null || !visualSettings.hideMuzzleFxInSniperMode)
+            {
+                return false;
+            }
+
+            return vehicleRoot != null
+                   && vehicleRoot.IsOwner
+                   && vehicleRoot.cameraController != null
+                   && vehicleRoot.cameraController.IsSniperModeActive;
         }
 
         private static void SpawnMuzzleFxPrefab(PooledImpactFx prefab, Vector3 position, Quaternion rotation, float scale)
