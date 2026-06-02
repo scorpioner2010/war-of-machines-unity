@@ -1,5 +1,20 @@
 # Project Agent Rules
 
+## Required orientation before coding
+- Before editing gameplay, networking, UI, server, bot, weapon, map, or settings code, read `docs/codex-game/README.md`.
+- After reading the index, read every mechanic file in `docs/codex-game/` that matches the user task.
+- Use the mechanic files as the first map of where to inspect code, then verify details in the actual scripts before changing anything.
+- If the user references a file but describes behavior owned elsewhere, follow the mechanic docs and inspect the real owner scripts before editing. Example: `WaypointPointSpawner.cs` is waypoint authoring; runtime bot behavior is mostly `BotNavigator`, `BotCombatController`, and vehicle input/weapon scripts.
+- If no mechanic file exists for the touched system, create one in `docs/codex-game/` and add it to `docs/codex-game/README.md`.
+
+## Documentation maintenance
+- Every gameplay/behavior change must update the relevant file under `docs/codex-game/` in the same task.
+- If a code change moves responsibility between scripts, update the script responsibility map in the relevant mechanic file.
+- If a settings field is added, renamed, removed, or its meaning changes, update `docs/codex-game/server-settings.md` and the affected mechanic file.
+- If a serialized prefab/scene value is required for the behavior, document the prefab/scene file that owns it.
+- Documentation must be concrete: state the current behavior, owner scripts, important settings, and dependencies. Avoid vague notes such as "improved AI".
+- Keep mechanic docs short enough to scan, but complete enough that a future Codex can find the right scripts before coding.
+
 ## Git workflow
 - Never run `git commit`, `git revert`, `git reset`, or discard changes automatically.
 - The user handles all commit/revert/discard actions manually.

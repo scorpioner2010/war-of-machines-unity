@@ -25,6 +25,9 @@ Current owner scripts:
   - Spawn point selection by scene/team.
 - `Assets/Game/Scripts/World/Spawns/AutomaticPositionSpawnpoints.cs`
   - Spawnpoint setup support.
+- `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
+  - Test-only local host spawn harness for `VehicleTest`.
+  - Loads the configured gameplay scene through FishNet with automatic unload disabled and waits for the local owner connection to be present in that scene through FishNet's client-loaded acknowledgement before calling `MatchVehicleSpawner`.
 
 Spawn flow:
 1. Room is created and players/bots are assigned.
@@ -41,5 +44,6 @@ Rules when editing match/spawn:
 - Keep room state authoritative on server.
 - Do not use global scene searches for runtime player/bot lookup; use room/player references.
 - Preserve additive scene slot/offset behavior for multiple concurrent matches.
+- In VehicleTest, do not spawn into an additive map scene until the local owner connection is authenticated, start scenes are loaded, the map has a `SpawnPoint`, and `ownerConnection.Scenes` contains the map scene because FishNet acknowledged that the client loaded it. Do not manually add the connection to the additive map to bypass that acknowledgement.
 - If bots are affected, update `ai-bots.md`.
 - If vehicle prefab contracts change, update `robot-control.md`.

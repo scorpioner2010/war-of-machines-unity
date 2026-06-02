@@ -16,6 +16,7 @@ Current owner scripts:
   - Applies resolved damage to vehicle health.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHealth.cs`
   - Networked health state and death handling integration.
+  - Raises `OnDamaged` on observers after authoritative damage is applied; the local HUD `DamageScreen` uses this event for the red hit indicator.
 - `Assets/Game/Scripts/Gameplay/Robots/ArmorMap.cs`
   - Armor zone/collider data and line-of-sight armor sampling.
 - `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`
@@ -37,6 +38,7 @@ Fire flow:
 - Server validates reload/ammo in `WeaponReloadController`.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Damage should be applied only through authoritative server hit resolution, not directly from bot AI.
+- Local damage feedback is client-side UI only: `VehicleHealth.OnDamaged` drives `DamageScreen` without affecting damage calculation.
 
 Dispersion and aim:
 - `NetworkWeaponShooter` updates server and owner dispersion in `Update`.

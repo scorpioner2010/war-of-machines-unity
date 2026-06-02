@@ -175,6 +175,7 @@ MonoBehaviour:
   replaceSceneGameplayHud: 1
   autoStartHost: 1
   localTestPort: 7780
+  localTestTickRate: 120
   autoSelectAvailablePort: 1
   maxPortSearchAttempts: 20
   showTestGui: 1
@@ -1104,13 +1105,13 @@ MonoBehaviour:
     projectileMaterial: {fileID: 2100000, guid: f444cc14fffa4044bfbe275d1b0c19e1,
       type: 2}
     tracerMaterial: {fileID: 2100000, guid: e09e8aed58e546b29ca4b569e18788c9, type: 2}
-    muzzleFlashPrefab: {fileID: 5905915499906754057, guid: 99bc28c0d45f51c4fbac01080b73edc7,
+    muzzleFlashPrefab: {fileID: 7923806859326443355, guid: 83ad43f5a5d82d842a61442d91a04ab8,
       type: 3}
     muzzleSmokePrefab: {fileID: 4783985020516635287, guid: 4bda94453d2ca7444a0fff05b2d425f5,
       type: 3}
     overrideProjectileMaterial: 1
-    projectileBaseColor: {r: 1, g: 0.58, b: 0.16, a: 1}
-    projectileEmissionColor: {r: 1, g: 0.38, b: 0.06, a: 1}
+    projectileBaseColor: {r: 2.297397, g: 1.3324902, b: 0.36758348, a: 1}
+    projectileEmissionColor: {r: 4.9245777, g: 1.8713396, b: 0.29547465, a: 1}
     projectileEmissionIntensity: 4
     tracerEnabled: 1
     tracerLifetime: 0.06
@@ -1144,10 +1145,10 @@ MonoBehaviour:
     hpTeamColorRefreshInterval: 0.25
     ownerHealthBarSmoothSpeed: 10
     worldHpBarDistanceScaleEnabled: 1
-    worldHpBarScaleMinDistance: 5
-    worldHpBarScaleMaxDistance: 90
-    worldHpBarMinDistanceScale: 1
-    worldHpBarMaxDistanceScale: 5
+    worldHpBarScaleMinDistance: 7
+    worldHpBarScaleMaxDistance: 130
+    worldHpBarMinDistanceScale: 0.75
+    worldHpBarMaxDistanceScale: 3
     mapAllyIconColor: {r: 0.1, g: 0.35, b: 1, a: 1}
     mapEnemyIconColor: {r: 1, g: 0.08, b: 0.04, a: 1}
     mapDestroyedIconColor: {r: 0, g: 0, b: 0, a: 1}
@@ -1196,10 +1197,10 @@ MonoBehaviour:
     speedHudSmoothRate: 8
     speedHudStopSnapThreshold: 0.05
     shotResultVisibleTime: 4
-    floatingDamageTextDuration: 0.8
-    floatingDamageTextMoveUp: 1.5
-    floatingDamageTextEndScale: 1.3
-    sniperScopeOverlayFadeDuration: 0.18
+    floatingDamageTextDuration: 4
+    floatingDamageTextMoveUp: 2
+    floatingDamageTextEndScale: 1.5
+    sniperScopeOverlayFadeDuration: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

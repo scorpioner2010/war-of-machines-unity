@@ -26,6 +26,7 @@ Mechanic files:
 - `ui-hud.md` - gameplay HUD, crosshair, reload/ammo, player list, map visibility.
 - `api-resources.md` - backend API managers, profile data, robot registry, vehicle prefab/icon lookup.
 - `world-maps-spawns.md` - map metadata, scene-scoped spawn points, team spawn selection.
+- `vehicle-test-scene.md` - VehicleTest bootstrap, test spawn flow, HUD setup, test runtime overrides.
 - `menus-settings-progression.md` - main menu, settings screens, development tree, vehicle selection UI.
 - `diagnostics.md` - existing diagnostics workflow and tools.
 

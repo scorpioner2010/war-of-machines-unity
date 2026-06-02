@@ -2217,10 +2217,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2019792787}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 19000, y: 19000}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: -28.54248}
+  m_SizeDelta: {x: 8080, y: 8862.905}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1198449477
 CanvasRenderer:
@@ -2985,6 +2985,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   screen: {fileID: 1757963468}
+  canvasGroup: {fileID: 1757963473}
+  fadeOutDuration: 1
 --- !u!1 &1728742901
 GameObject:
   m_ObjectHideFlags: 0
@@ -3133,7 +3135,8 @@ GameObject:
   - component: {fileID: 1757963469}
   - component: {fileID: 1757963472}
   - component: {fileID: 1757963471}
-  m_Layer: 0
+  - component: {fileID: 1757963473}
+  m_Layer: 5
   m_Name: DamageScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3180,8 +3183,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -3197,6 +3200,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!225 &1757963473
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1757963468}
+  m_Enabled: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1908206111
 GameObject:
   m_ObjectHideFlags: 0

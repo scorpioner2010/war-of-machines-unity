@@ -10,6 +10,7 @@ using Game.Scripts.API.Models;
 using Game.Scripts.Core.Resources;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
@@ -35,6 +36,7 @@ namespace Game.Scripts.Testing
         public bool replaceSceneGameplayHud = true;
         public bool autoStartHost = true;
         public ushort localTestPort = 7780;
+        public ushort localTestTickRate = 120;
         public bool autoSelectAvailablePort = true;
         public int maxPortSearchAttempts = 20;
         public bool showTestGui = true;
@@ -106,19 +108,23 @@ namespace Game.Scripts.Testing
 
             if (networkManager != null)
             {
-                networkManager.ServerManager.OnServerConnectionState -= OnServerConnectionState;
-                networkManager.ClientManager.OnClientConnectionState -= OnClientConnectionState;
-
-                if (_startedTestClient && networkManager.IsClientStarted)
+                if (networkManager.ServerManager != null)
                 {
-                    networkManager.ClientManager.StopConnection();
+                    networkManager.ServerManager.OnServerConnectionState -= OnServerConnectionState;
                 }
 
-                if (_startedTestServer && networkManager.IsServerStarted)
+                if (networkManager.ClientManager != null)
                 {
-                    networkManager.ServerManager.StopConnection(true);
+                    networkManager.ClientManager.OnClientConnectionState -= OnClientConnectionState;
                 }
             }
+
+            StopStartedTestNetwork();
+        }
+
+        private void OnApplicationQuit()
+        {
+            StopStartedTestNetwork();
         }
 
         private void Update()
@@ -141,8 +147,9 @@ namespace Game.Scripts.Testing
 
         private void OnGUI()
         {
-            if (!showTestGui)
+            if (!ShouldDrawTestGui())
             {
+                _testGuiArea = Rect.zero;
                 return;
             }
 
@@ -188,6 +195,16 @@ namespace Game.Scripts.Testing
 
                 GUILayout.EndArea();
             }
+        }
+
+        private bool ShouldDrawTestGui()
+        {
+            if (!showTestGui)
+            {
+                return false;
+            }
+
+            return _testCursorMode || _spawnedVehicle == null || _spawnInProgress;
         }
 
         private bool IsMouseOverTestGui()
@@ -472,6 +489,13 @@ namespace Game.Scripts.Testing
                 return;
             }
 
+            if (!await WaitForConnectionReadyForSceneLoadAsync(ownerConnection))
+            {
+                _status = "Cannot spawn selected vehicle: local owner is not ready for scene load.";
+                _spawnInProgress = false;
+                return;
+            }
+
             if (useDirectLocalSpawn)
             {
                 bool spawned = SpawnVehicleDirect(prefab, runtimeStats, ownerConnection, gameObject.scene, runtimeStats.Name);
@@ -639,10 +663,11 @@ namespace Game.Scripts.Testing
         {
             if (!loadGameplaySceneForSpawns)
             {
+                EnsureConnectionInScene(ownerConnection, gameObject.scene);
                 return gameObject.scene;
             }
 
-            if (TryGetLoadedGameplayScene(out Scene loadedScene))
+            if (TryGetLoadedGameplayScene(ownerConnection, out Scene loadedScene))
             {
                 _gameplayScene = loadedScene;
                 return _gameplayScene;
@@ -650,7 +675,7 @@ namespace Game.Scripts.Testing
 
             if (_gameplaySceneLoadInProgress)
             {
-                return await WaitForGameplaySceneLoadedAsync();
+                return await WaitForGameplaySceneLoadedAsync(ownerConnection);
             }
 
             if (networkManager == null || networkManager.SceneManager == null || string.IsNullOrWhiteSpace(gameplaySceneName))
@@ -662,35 +687,38 @@ namespace Game.Scripts.Testing
             _status = "Loading gameplay scene " + gameplaySceneName + "...";
 
             RegisterTestProfile(ownerConnection, stats);
+            ServerRoom roomForLoad = PrepareTestRoom(ownerConnection, stats, gameObject.scene);
+            roomForLoad.selectedLocation = gameplaySceneName;
+            roomForLoad.loadedSceneName = string.Empty;
+            roomForLoad.handle = 0;
 
-            SceneLoadData sceneLoadData = new SceneLoadData(gameplaySceneName)
+            SceneLoadData sceneLoadData = TryGetLoadedGameplayScene(out Scene loadedSceneWithoutConnection)
+                ? new SceneLoadData(loadedSceneWithoutConnection)
+                : new SceneLoadData(gameplaySceneName);
+
+            sceneLoadData.Options.AllowStacking = true;
+            sceneLoadData.Options.AutomaticallyUnload = false;
+            sceneLoadData.Params.ServerParams = new object[]
             {
-                Options =
-                {
-                    AllowStacking = true,
-                    AutomaticallyUnload = true,
-                },
-                Params =
-                {
-                    ClientParams = System.BitConverter.GetBytes(0)
-                }
+                roomForLoad
             };
+            sceneLoadData.Params.ClientParams = System.BitConverter.GetBytes(0);
 
             NetworkConnection[] connections = { ownerConnection };
             networkManager.SceneManager.LoadConnectionScenes(connections, sceneLoadData);
 
-            _gameplayScene = await WaitForGameplaySceneLoadedAsync();
+            _gameplayScene = await WaitForGameplaySceneLoadedAsync(ownerConnection);
             _gameplaySceneLoadInProgress = false;
             return _gameplayScene;
         }
 
-        private async UniTask<Scene> WaitForGameplaySceneLoadedAsync()
+        private async UniTask<Scene> WaitForGameplaySceneLoadedAsync(NetworkConnection ownerConnection)
         {
             float timeout = Mathf.Max(0.1f, gameplaySceneLoadTimeout);
             float endTime = Time.realtimeSinceStartup + timeout;
             while (Time.realtimeSinceStartup < endTime)
             {
-                if (TryGetLoadedGameplayScene(out Scene loadedScene))
+                if (TryGetLoadedGameplayScene(ownerConnection, out Scene loadedScene))
                 {
                     return loadedScene;
                 }
@@ -699,6 +727,31 @@ namespace Game.Scripts.Testing
             }
 
             return default;
+        }
+
+        private bool TryGetLoadedGameplayScene(NetworkConnection ownerConnection, out Scene loadedScene)
+        {
+            loadedScene = default;
+            if (string.IsNullOrWhiteSpace(gameplaySceneName))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (scene.IsValid()
+                    && scene.isLoaded
+                    && scene.name == gameplaySceneName
+                    && HasSpawnPoint(scene)
+                    && IsConnectionInScene(ownerConnection, scene))
+                {
+                    loadedScene = scene;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool TryGetLoadedGameplayScene(out Scene loadedScene)
@@ -712,7 +765,10 @@ namespace Game.Scripts.Testing
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
-                if (scene.IsValid() && scene.isLoaded && scene.name == gameplaySceneName && HasSpawnPoint(scene))
+                if (scene.IsValid()
+                    && scene.isLoaded
+                    && scene.name == gameplaySceneName
+                    && HasSpawnPoint(scene))
                 {
                     loadedScene = scene;
                     return true;
@@ -922,6 +978,7 @@ namespace Game.Scripts.Testing
             _spawnedGameplayHud.transform.SetSiblingIndex(Mathf.Clamp(siblingIndex, 0, canvas.transform.childCount - 1));
 
             ConfigureGameplayHud(_spawnedGameplayHud, canvas);
+            OpenGameplayHudForTest(_spawnedGameplayHud);
 
             if (replaceSceneGameplayHud && sceneHud != null && sceneHud != _spawnedGameplayHud)
             {
@@ -1017,6 +1074,41 @@ namespace Game.Scripts.Testing
             }
         }
 
+        private static void OpenGameplayHudForTest(GameObject hudRoot)
+        {
+            if (hudRoot == null)
+            {
+                return;
+            }
+
+            hudRoot.SetActive(true);
+
+            Menu hudMenu = hudRoot.GetComponent<Menu>();
+            if (hudMenu != null)
+            {
+                if (MenuManager.IsReady && MenuManager.RegisterMenu(MenuType.GameplayHUD, hudMenu))
+                {
+                    MenuManager.OpenMenu(MenuType.GameplayHUD);
+                }
+                else
+                {
+                    hudMenu.Open();
+                }
+
+                return;
+            }
+
+            CanvasGroup canvasGroup = hudRoot.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                return;
+            }
+
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+        }
+
         private void ResolveNetworkManager()
         {
             if (networkManager == null)
@@ -1054,6 +1146,7 @@ namespace Game.Scripts.Testing
 
             _networkStartInProgress = true;
             _status = "Starting local FishNet host...";
+            ConfigureLocalTestTickRate();
 
             if (!networkManager.IsServerStarted)
             {
@@ -1193,23 +1286,44 @@ namespace Game.Scripts.Testing
 
         private void StopStartedTestNetwork()
         {
-            if (networkManager == null)
+            if (!CanStopNetworkManager())
             {
+                _startedTestClient = false;
+                _startedTestServer = false;
                 return;
             }
 
-            if (_startedTestClient && networkManager.IsClientStarted)
+            if (_startedTestClient && networkManager.ClientManager != null && networkManager.IsClientStarted)
             {
                 networkManager.ClientManager.StopConnection();
             }
 
-            if (_startedTestServer && networkManager.IsServerStarted)
+            if (_startedTestServer && networkManager.ServerManager != null && networkManager.IsServerStarted)
             {
                 networkManager.ServerManager.StopConnection(true);
             }
 
             _startedTestClient = false;
             _startedTestServer = false;
+        }
+
+        private bool CanStopNetworkManager()
+        {
+            return networkManager != null
+                   && networkManager.gameObject != null
+                   && networkManager.gameObject.activeInHierarchy
+                   && networkManager.enabled;
+        }
+
+        private void ConfigureLocalTestTickRate()
+        {
+            if (networkManager == null || networkManager.TimeManager == null)
+            {
+                return;
+            }
+
+            ushort tickRate = localTestTickRate > 0 ? localTestTickRate : (ushort)60;
+            networkManager.TimeManager.SetTickRate(tickRate);
         }
 
         private async UniTask WaitForServerStartedAsync()
@@ -1253,6 +1367,23 @@ namespace Game.Scripts.Testing
             }
 
             return IsNetworkReady();
+        }
+
+        private async UniTask<bool> WaitForConnectionReadyForSceneLoadAsync(NetworkConnection connection)
+        {
+            float timeout = Mathf.Max(0.1f, gameplaySceneLoadTimeout);
+            float endTime = Time.realtimeSinceStartup + timeout;
+            while (Time.realtimeSinceStartup < endTime)
+            {
+                if (IsConnectionReadyForSceneLoad(connection))
+                {
+                    return true;
+                }
+
+                await UniTask.Yield();
+            }
+
+            return IsConnectionReadyForSceneLoad(connection);
         }
 
         private void OnServerConnectionState(ServerConnectionStateArgs args)
@@ -1308,12 +1439,16 @@ namespace Game.Scripts.Testing
 
         private bool EnsureLocalConnectionInTestScene(NetworkConnection connection)
         {
+            return EnsureConnectionInScene(connection, gameObject.scene);
+        }
+
+        private bool EnsureConnectionInScene(NetworkConnection connection, Scene scene)
+        {
             if (!IsConnectionReady(connection) || networkManager == null || networkManager.SceneManager == null)
             {
                 return false;
             }
 
-            Scene scene = gameObject.scene;
             if (!scene.IsValid() || !scene.isLoaded)
             {
                 return false;
@@ -1328,9 +1463,26 @@ namespace Game.Scripts.Testing
             return connection.Scenes != null && connection.Scenes.Contains(scene);
         }
 
+        private static bool IsConnectionInScene(NetworkConnection connection, Scene scene)
+        {
+            if (!IsConnectionReady(connection) || !scene.IsValid())
+            {
+                return false;
+            }
+
+            return connection.Scenes != null && connection.Scenes.Contains(scene);
+        }
+
+        private static bool IsConnectionReadyForSceneLoad(NetworkConnection connection)
+        {
+            return IsConnectionReady(connection)
+                   && connection.IsAuthenticated
+                   && connection.LoadedStartScenes(true);
+        }
+
         private static bool IsConnectionReady(NetworkConnection connection)
         {
-            return connection != null && connection.IsValid;
+            return connection != null && connection.IsActive;
         }
 
         private Vector3 GetSpawnPosition()
