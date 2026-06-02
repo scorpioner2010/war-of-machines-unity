@@ -9,6 +9,11 @@ namespace Game.Scripts.Gameplay.Robots
         public VehicleRoot vehicleRoot;
         public BotNavigator navigator;
 
+        private readonly BotCombatController _combatController = new BotCombatController();
+        private bool _isRunning;
+
+        public bool IsRunning => _isRunning;
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
@@ -29,10 +34,25 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             navigator.Initialize(root, room, graph);
+            _combatController.Initialize(root, room, navigator);
+            _isRunning = true;
+        }
+
+        private void FixedUpdate()
+        {
+            if (!_isRunning)
+            {
+                return;
+            }
+
+            _combatController.Tick(Time.time);
         }
 
         private void OnDisable()
         {
+            _combatController.Stop();
+            _isRunning = false;
+
             if (navigator != null)
             {
                 navigator.Stop();

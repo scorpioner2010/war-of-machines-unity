@@ -68,7 +68,10 @@ namespace Game.Scripts.Gameplay.Robots
         [Server]
         public void ApplyBotInput(float forward, float turn)
         {
-            ServerSetExternalInput(VehicleServerInput.Movement(new Vector2(turn, forward)), true);
+            VehicleServerInput input = VehicleServerInput.Movement(new Vector2(turn, forward));
+            input.Shoot = _shootServer;
+            input.Action = _actionServer;
+            ServerSetExternalInput(input, true);
         }
 
         [Server]
@@ -85,6 +88,22 @@ namespace Game.Scripts.Gameplay.Robots
             move.y = Mathf.Clamp(move.y, -1f, 1f);
 
             ApplyServerInput(move, input.Shoot, input.Action, syncAnimation);
+
+            if (!input.HasAim || vehicleRoot == null)
+            {
+                return;
+            }
+
+            if (vehicleRoot.weaponAimAtCamera != null)
+            {
+                vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(input.AimPoint, input.AimForward);
+                vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(input.TargetPitchDeg);
+            }
+
+            if (vehicleRoot.robotHullRotation != null)
+            {
+                vehicleRoot.robotHullRotation.SetTargetYawServer(input.TargetYawDeg);
+            }
         }
 
         [Server]

@@ -299,6 +299,151 @@ namespace Game.Scripts.Server
     }
 
     [System.Serializable]
+    public class BotCombatSettings
+    {
+        private static readonly BotCombatSettings DefaultSettings = new BotCombatSettings();
+
+        [Header("Targeting")]
+        [Tooltip("Enable server-side target acquisition, aiming, and shooting for bots.")]
+        public bool enabled = true;
+        [Tooltip("How often a bot updates combat decisions.")]
+        public float thinkInterval = 0.12f;
+        [Tooltip("How often a bot scans the room for a better enemy target.")]
+        public float targetScanInterval = 0.45f;
+        [Tooltip("Hard cap for target acquisition distance.")]
+        public float maxAcquireDistance = 800f;
+        [Tooltip("Runtime view range multiplier used before maxAcquireDistance is applied.")]
+        public float viewRangeMultiplier = 6f;
+        [Tooltip("Current target is forgotten past acquire distance multiplied by this value.")]
+        public float forgetTargetDistanceMultiplier = 1.5f;
+        [Tooltip("How long a bot remembers a target after line of sight is lost.")]
+        public float lostSightForgetSeconds = 2.5f;
+        [Tooltip("Require a clear ray to acquire new targets.")]
+        public bool requireLineOfSightToAcquire = true;
+        [Tooltip("Layers checked by bot line-of-sight and line-of-fire raycasts.")]
+        public LayerMask lineOfSightMask = ~0;
+        [Tooltip("Retarget the navigator toward the selected enemy instead of only wandering.")]
+        public bool moveTowardTarget = true;
+        [Tooltip("Stop moving and fire from the current position while the selected target is visible.")]
+        public bool holdPositionWithLineOfFire = true;
+
+        [Header("Aim")]
+        [Tooltip("Prefer turret bounds as the aim point when target prefab exposes them.")]
+        public bool preferTurretAimPoint = true;
+        [Tooltip("Fallback vertical target offset when no collider bounds are available.")]
+        public float fallbackTargetHeight = 1.2f;
+        [Tooltip("Small per-target aim offset so bots do not hit the exact center every time.")]
+        public float randomAimRadius = 0.25f;
+        [Tooltip("Predict moving target position using shell speed.")]
+        public bool leadMovingTargets = true;
+        [Tooltip("Multiplier for target velocity lead. 1 means full physical lead.")]
+        public float leadPredictionMultiplier = 0.75f;
+        [Tooltip("Maximum seconds of target motion prediction.")]
+        public float maxLeadSeconds = 1.25f;
+        [Tooltip("How often target velocity is sampled.")]
+        public float targetVelocitySampleInterval = 0.2f;
+
+        [Header("Fire Gate")]
+        [Tooltip("Maximum yaw error between current turret yaw and desired yaw before firing.")]
+        public float maxAimYawErrorDeg = 4f;
+        [Tooltip("Maximum pitch error between current gun pitch and desired pitch before firing.")]
+        public float maxAimPitchErrorDeg = 4f;
+        [Tooltip("Maximum angle between muzzle forward and selected aim point before firing.")]
+        public float maxMuzzleAimErrorDeg = 5f;
+        [Tooltip("Bot may fire when current dispersion is within min dispersion multiplied by this value.")]
+        public float maxFireDispersionMultiplier = 6f;
+        [Tooltip("Additional absolute dispersion tolerance in degrees.")]
+        public float maxFireDispersionAddDeg = 1.75f;
+        [Tooltip("Minimum time a bot keeps the same target before it may shoot.")]
+        public float minTargetHoldBeforeFire = 0.2f;
+        [Tooltip("Minimum human-like reaction delay after target acquisition.")]
+        public float reactionDelayMin = 0.15f;
+        [Tooltip("Maximum human-like reaction delay after target acquisition.")]
+        public float reactionDelayMax = 0.35f;
+
+        public static BotCombatSettings Default
+        {
+            get
+            {
+                return DefaultSettings;
+            }
+        }
+
+        public void Validate()
+        {
+            thinkInterval = ClampFinite(thinkInterval, 0.03f, Default.thinkInterval);
+            targetScanInterval = ClampFinite(targetScanInterval, thinkInterval, Default.targetScanInterval);
+            maxAcquireDistance = ClampFinite(maxAcquireDistance, 1f, Default.maxAcquireDistance);
+            viewRangeMultiplier = ClampFinite(viewRangeMultiplier, 0.1f, Default.viewRangeMultiplier);
+            forgetTargetDistanceMultiplier = ClampFinite(forgetTargetDistanceMultiplier, 1f, Default.forgetTargetDistanceMultiplier);
+            lostSightForgetSeconds = ClampFinite(lostSightForgetSeconds, 0f, Default.lostSightForgetSeconds);
+            fallbackTargetHeight = ClampFinite(fallbackTargetHeight, 0f, Default.fallbackTargetHeight);
+            randomAimRadius = ClampFinite(randomAimRadius, 0f, Default.randomAimRadius);
+            leadPredictionMultiplier = ClampFinite(leadPredictionMultiplier, 0f, Default.leadPredictionMultiplier);
+            maxLeadSeconds = ClampFinite(maxLeadSeconds, 0f, Default.maxLeadSeconds);
+            targetVelocitySampleInterval = ClampFinite(targetVelocitySampleInterval, 0.03f, Default.targetVelocitySampleInterval);
+            maxAimYawErrorDeg = ClampFinite(maxAimYawErrorDeg, 0f, Default.maxAimYawErrorDeg);
+            maxAimPitchErrorDeg = ClampFinite(maxAimPitchErrorDeg, 0f, Default.maxAimPitchErrorDeg);
+            maxMuzzleAimErrorDeg = ClampFinite(maxMuzzleAimErrorDeg, 0f, Default.maxMuzzleAimErrorDeg);
+            maxFireDispersionMultiplier = ClampFinite(maxFireDispersionMultiplier, 1f, Default.maxFireDispersionMultiplier);
+            maxFireDispersionAddDeg = ClampFinite(maxFireDispersionAddDeg, 0f, Default.maxFireDispersionAddDeg);
+            minTargetHoldBeforeFire = ClampFinite(minTargetHoldBeforeFire, 0f, Default.minTargetHoldBeforeFire);
+            reactionDelayMin = ClampFinite(reactionDelayMin, 0f, Default.reactionDelayMin);
+            reactionDelayMax = ClampFinite(reactionDelayMax, reactionDelayMin, Default.reactionDelayMax);
+        }
+
+        public void CopyFrom(BotCombatSettings source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            enabled = source.enabled;
+            thinkInterval = source.thinkInterval;
+            targetScanInterval = source.targetScanInterval;
+            maxAcquireDistance = source.maxAcquireDistance;
+            viewRangeMultiplier = source.viewRangeMultiplier;
+            forgetTargetDistanceMultiplier = source.forgetTargetDistanceMultiplier;
+            lostSightForgetSeconds = source.lostSightForgetSeconds;
+            requireLineOfSightToAcquire = source.requireLineOfSightToAcquire;
+            lineOfSightMask = source.lineOfSightMask;
+            moveTowardTarget = source.moveTowardTarget;
+            holdPositionWithLineOfFire = source.holdPositionWithLineOfFire;
+            preferTurretAimPoint = source.preferTurretAimPoint;
+            fallbackTargetHeight = source.fallbackTargetHeight;
+            randomAimRadius = source.randomAimRadius;
+            leadMovingTargets = source.leadMovingTargets;
+            leadPredictionMultiplier = source.leadPredictionMultiplier;
+            maxLeadSeconds = source.maxLeadSeconds;
+            targetVelocitySampleInterval = source.targetVelocitySampleInterval;
+            maxAimYawErrorDeg = source.maxAimYawErrorDeg;
+            maxAimPitchErrorDeg = source.maxAimPitchErrorDeg;
+            maxMuzzleAimErrorDeg = source.maxMuzzleAimErrorDeg;
+            maxFireDispersionMultiplier = source.maxFireDispersionMultiplier;
+            maxFireDispersionAddDeg = source.maxFireDispersionAddDeg;
+            minTargetHoldBeforeFire = source.minTargetHoldBeforeFire;
+            reactionDelayMin = source.reactionDelayMin;
+            reactionDelayMax = source.reactionDelayMax;
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                if (float.IsNaN(fallback) || float.IsInfinity(fallback))
+                {
+                    return minValue;
+                }
+
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+    }
+
+    [System.Serializable]
     public class ProjectileBallisticsGlobalSettings
     {
         private static readonly ProjectileBallisticsGlobalSettings DefaultSettings = new ProjectileBallisticsGlobalSettings();
@@ -621,6 +766,8 @@ namespace Game.Scripts.Server
         public string botNamePrefix = "Bot ";
         [Tooltip("Налаштування поведінки ботів під час руху по карті.")]
         public BotWanderSettings botWander = new BotWanderSettings();
+        [Tooltip("Server-side target acquisition, aiming, and shooting behavior for bots.")]
+        public BotCombatSettings botCombat = new BotCombatSettings();
         [Tooltip("Глобальні серверні налаштування руху машин.")]
         public RobotMovementGlobalSettings robotMovement = new RobotMovementGlobalSettings();
         [Tooltip("Глобальні серверні налаштування розкиду, зведення і UI-кола прицілу.")]
@@ -721,6 +868,17 @@ namespace Game.Scripts.Server
             return In.botWander;
         }
 
+        public static BotCombatSettings GetBotCombat()
+        {
+            if (In == null || In.botCombat == null)
+            {
+                return BotCombatSettings.Default;
+            }
+
+            In.botCombat.Validate();
+            return In.botCombat;
+        }
+
         public static GunDispersionGlobalSettings GetGunDispersion()
         {
             if (In == null || In.gunDispersion == null)
@@ -817,6 +975,11 @@ namespace Game.Scripts.Server
             if (botWander != null)
             {
                 botWander.Validate();
+            }
+
+            if (botCombat != null)
+            {
+                botCombat.Validate();
             }
 
             if (robotMovement != null)

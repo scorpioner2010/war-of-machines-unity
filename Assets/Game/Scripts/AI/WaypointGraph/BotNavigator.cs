@@ -35,6 +35,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private bool _hasExplicitTarget;
         private bool _isUnsticking;
         private bool _isInitialized;
+        private bool _movementSuppressed;
 
         private void Awake()
         {
@@ -73,8 +74,23 @@ namespace Game.Scripts.AI.WaypointGraph
             ClearPath();
         }
 
+        public void SetMovementSuppressed(bool suppressed)
+        {
+            if (_movementSuppressed == suppressed)
+            {
+                return;
+            }
+
+            _movementSuppressed = suppressed;
+            if (_movementSuppressed)
+            {
+                ApplyInput(0f, 0f);
+            }
+        }
+
         public void Stop()
         {
+            _movementSuppressed = false;
             ApplyInput(0f, 0f);
             ClearPath();
             enabled = false;
@@ -92,6 +108,12 @@ namespace Game.Scripts.AI.WaypointGraph
                 if (_vehicleRoot.health != null && _vehicleRoot.health.IsDead)
                 {
                     Stop();
+                    return;
+                }
+
+                if (_movementSuppressed)
+                {
+                    ApplyInput(0f, 0f);
                     return;
                 }
 

@@ -39,6 +39,18 @@ namespace Game.Scripts.Gameplay.Robots
             Empty = 3
         }
 
+        public bool ServerCanFire
+        {
+            get
+            {
+                return IsServerInitialized && !_isReloading.Value && _ammoLeft.Value > 0;
+            }
+        }
+
+        public int ServerAmmoLeft => _ammoLeft.Value;
+        public bool ServerIsReloading => _isReloading.Value;
+        public float ServerReloadRemain => _reloadRemain.Value;
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
@@ -116,6 +128,11 @@ namespace Game.Scripts.Gameplay.Robots
                     _reloadRemain.Value = 0f;
                 }
             }
+
+            if (ShouldProcessServerBotFire())
+            {
+                ServerTryFireAuthoritative();
+            }
         }
 
         public void Init()
@@ -162,7 +179,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (_isReloading.Value || _ammoLeft.Value <= 0)
+            if (!ServerCanFire)
             {
                 return;
             }
@@ -185,6 +202,37 @@ namespace Game.Scripts.Gameplay.Robots
             _isReloading.Value = true;
             _serverTimer = Mathf.Max(0.01f, reloadTime);
             _reloadRemain.Value = _serverTimer;
+        }
+
+        private bool ShouldProcessServerBotFire()
+        {
+            return IsServerInitialized
+                   && vehicleRoot != null
+                   && vehicleRoot.botBrain != null
+                   && vehicleRoot.botBrain.IsRunning
+                   && vehicleRoot.inputManager != null
+                   && vehicleRoot.inputManager.Shoot;
+        }
+
+        [Server]
+        public bool ServerTryFireAuthoritative()
+        {
+            if (!ServerCanFire)
+            {
+                return false;
+            }
+
+            if (vehicleRoot == null || vehicleRoot.shooterNet == null)
+            {
+                return false;
+            }
+
+            _ammoLeft.Value = Mathf.Max(0, _ammoLeft.Value - 1);
+            StartServerReloadTimer();
+
+            vehicleRoot.shooterNet.ServerFireAuthoritative();
+            onShot?.Invoke();
+            return true;
         }
 
         private void ApplyHud()

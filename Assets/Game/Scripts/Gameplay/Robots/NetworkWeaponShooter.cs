@@ -103,6 +103,27 @@ namespace Game.Scripts.Gameplay.Robots
             _testAccuracyDebugMode = enabled;
         }
 
+        public float ServerCurrentDispersionDeg
+        {
+            get
+            {
+                if (!_serverDispersionInitialized)
+                {
+                    return dispersion != null ? dispersion.MaxDispersion : 0f;
+                }
+
+                return _serverDispersion.CurrentDeg;
+            }
+        }
+
+        public float MinDispersionDeg
+        {
+            get
+            {
+                return dispersion != null ? dispersion.MinDispersion : 0f;
+            }
+        }
+
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
         {
             if (stats == null)
@@ -287,6 +308,31 @@ namespace Game.Scripts.Gameplay.Robots
                 ProfileScope.RecordEvent("RPC.FireRequest", DiagnosticsCategories.Rpc);
                 DiagnosticsManager.RecordOutgoing("RPC.FireRequest", 64);
                 FireRequestServerRpc(shotId, startPos, baseAimPoint, base.TimeManager.Tick);
+            }
+        }
+
+        [Server]
+        public void ServerFireAuthoritative()
+        {
+            using (ProfileScope.Measure("Server.Weapon.BotFire", DiagnosticsCategories.Server))
+            {
+                if (!IsServerInitialized || muzzleTransform == null)
+                {
+                    return;
+                }
+
+                int shotId = ++_shotSeq;
+                if (_processedShots.Contains(shotId))
+                {
+                    return;
+                }
+
+                _processedShots.Add(shotId);
+
+                Vector3 startPos = muzzleTransform.position;
+                Vector3 aimPoint = GetShotAimPoint(startPos);
+                uint serverTick = base.TimeManager != null ? base.TimeManager.Tick : 0;
+                ProcessServerFire(null, shotId, startPos, aimPoint, serverTick, 0f, false);
             }
         }
 
@@ -524,57 +570,76 @@ namespace Game.Scripts.Gameplay.Robots
 
                 float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
                 passed = Mathf.Min(MAX_PASSED_TIME * 0.5f, passed);
+                ProcessServerFire(sender, shotId, startPos, aimPoint, clientTick, passed, true);
+            }
+        }
 
-                if (!_serverDispersionInitialized)
-                {
-                    InitServerDispersion();
-                }
+        private void ProcessServerFire(
+            NetworkConnection sender,
+            int shotId,
+            Vector3 startPos,
+            Vector3 aimPoint,
+            uint clientTick,
+            float passed,
+            bool configureOwnerPrediction)
+        {
+            if (!IsServerInitialized)
+            {
+                return;
+            }
 
-                GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-                float shotDispersionDeg = _serverDispersion.CurrentDeg;
-                if (_testAccuracyDebugMode)
-                {
-                    _serverDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: false);
-                    shotDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
-                }
+            if (!_serverDispersionInitialized)
+            {
+                InitServerDispersion();
+            }
 
-                DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, shotDispersionDeg, globalDispersion);
-                AddServerShotBloom();
+            GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+            float shotDispersionDeg = _serverDispersion.CurrentDeg;
+            if (_testAccuracyDebugMode)
+            {
+                _serverDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: false);
+                shotDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
+            }
+
+            DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, shotDispersionDeg, globalDispersion);
+            AddServerShotBloom();
+
+            if (sender != null && configureOwnerPrediction)
+            {
                 ProfileScope.RecordEvent("RPC.ConfigureOwnerProjectileTrajectory", DiagnosticsCategories.Rpc);
                 DiagnosticsManager.RecordOutgoing("RPC.ConfigureOwnerProjectileTrajectory", 32, sender.ClientId);
                 ConfigureOwnerProjectileTrajectoryTargetRpc(sender, shotId, dispersedRay.TargetPoint);
-
-                bool serverVisualVisible = !(sender.IsLocalClient && IsClientInitialized);
-                Projectile serverProjectile = null;
-                serverProjectile = SpawnLocal(
-                    startPos,
-                    dispersedRay.TargetPoint,
-                    passed,
-                    true,
-                    false,
-                    Vector3.up,
-                    serverVisualVisible,
-                    null,
-                    configureResolvedTarget: false
-                );
-
-                if (serverProjectile != null)
-                {
-                    serverProjectile.ConfigureLiveCollision(
-                        vehicleRoot != null ? vehicleRoot.transform : null,
-                        (hit, direction) => HandleAuthoritativeProjectileHit(sender, shotId, hit, direction),
-                        () => HandleAuthoritativeProjectileMiss(
-                            sender,
-                            shotId,
-                            serverProjectile != null ? serverProjectile.transform.position : dispersedRay.TargetPoint),
-                        GetMaxShotDistance()
-                    );
-                }
-
-                ProfileScope.RecordEvent("RPC.FireObservers", DiagnosticsCategories.Rpc);
-                DiagnosticsManager.RecordOutgoing("RPC.FireObservers", 64);
-                FireObserversRpc(shotId, startPos, dispersedRay.TargetPoint, clientTick);
             }
+
+            bool serverVisualVisible = !IsClientInitialized || (sender != null && !sender.IsLocalClient);
+            Projectile serverProjectile = SpawnLocal(
+                startPos,
+                dispersedRay.TargetPoint,
+                passed,
+                true,
+                false,
+                Vector3.up,
+                serverVisualVisible,
+                null,
+                configureResolvedTarget: false
+            );
+
+            if (serverProjectile != null)
+            {
+                serverProjectile.ConfigureLiveCollision(
+                    vehicleRoot != null ? vehicleRoot.transform : null,
+                    (hit, direction) => HandleAuthoritativeProjectileHit(sender, shotId, hit, direction),
+                    () => HandleAuthoritativeProjectileMiss(
+                        sender,
+                        shotId,
+                        serverProjectile != null ? serverProjectile.transform.position : dispersedRay.TargetPoint),
+                    GetMaxShotDistance()
+                );
+            }
+
+            ProfileScope.RecordEvent("RPC.FireObservers", DiagnosticsCategories.Rpc);
+            DiagnosticsManager.RecordOutgoing("RPC.FireObservers", 64);
+            FireObserversRpc(shotId, startPos, dispersedRay.TargetPoint, clientTick);
         }
 
         private void InitOwnerDispersion()
@@ -856,9 +921,13 @@ namespace Game.Scripts.Gameplay.Robots
 
                 ResolvedShot shot = ResolveProjectileHit(hit, shotDirection);
                 AuthoritativeProjectileHit?.Invoke(hit.point, hit.normal);
-                ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
-                DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 40, shooterConnection != null ? shooterConnection.ClientId : -1);
-                ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, shot.Point, shot.Normal, shot.Hit);
+                if (shooterConnection != null)
+                {
+                    ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
+                    DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 40, shooterConnection.ClientId);
+                    ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, shot.Point, shot.Normal, shot.Hit);
+                }
+
                 ProfileScope.RecordEvent("RPC.ResolveObserversProjectileTarget", DiagnosticsCategories.Rpc);
                 DiagnosticsManager.RecordOutgoing("RPC.ResolveObserversProjectileTarget", 40);
                 ResolveObserversProjectileTargetRpc(shotId, shot.Point, shot.Normal, shot.Hit);
@@ -875,15 +944,19 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
-                DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 40, shooterConnection != null ? shooterConnection.ClientId : -1);
-                ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, missPoint, Vector3.up, false);
+                if (shooterConnection != null)
+                {
+                    ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
+                    DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 40, shooterConnection.ClientId);
+                    ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, missPoint, Vector3.up, false);
+                    ProfileScope.RecordEvent("RPC.ShowShotResult", DiagnosticsCategories.Rpc);
+                    DiagnosticsManager.RecordOutgoing("RPC.ShowShotResult", 8, shooterConnection.ClientId);
+                    ShowShotResultTargetRpc(shooterConnection, (byte)ShotHudStatus.Miss);
+                }
+
                 ProfileScope.RecordEvent("RPC.ResolveObserversProjectileTarget", DiagnosticsCategories.Rpc);
                 DiagnosticsManager.RecordOutgoing("RPC.ResolveObserversProjectileTarget", 40);
                 ResolveObserversProjectileTargetRpc(shotId, missPoint, Vector3.up, false);
-                ProfileScope.RecordEvent("RPC.ShowShotResult", DiagnosticsCategories.Rpc);
-                DiagnosticsManager.RecordOutgoing("RPC.ShowShotResult", 8, shooterConnection != null ? shooterConnection.ClientId : -1);
-                ShowShotResultTargetRpc(shooterConnection, (byte)ShotHudStatus.Miss);
             }
         }
 
@@ -979,9 +1052,12 @@ namespace Game.Scripts.Gameplay.Robots
                     DamageService.ApplyVehicleShotDamage(vehicleRoot, shot.TargetRoot, shot.TargetHealth, shot.Damage);
                 }
 
-                ProfileScope.RecordEvent("RPC.ShowShotResult", DiagnosticsCategories.Rpc);
-                DiagnosticsManager.RecordOutgoing("RPC.ShowShotResult", 8, shooterConnection != null ? shooterConnection.ClientId : -1);
-                ShowShotResultTargetRpc(shooterConnection, (byte)shot.HudStatus);
+                if (shooterConnection != null)
+                {
+                    ProfileScope.RecordEvent("RPC.ShowShotResult", DiagnosticsCategories.Rpc);
+                    DiagnosticsManager.RecordOutgoing("RPC.ShowShotResult", 8, shooterConnection.ClientId);
+                    ShowShotResultTargetRpc(shooterConnection, (byte)shot.HudStatus);
+                }
             }
         }
 
