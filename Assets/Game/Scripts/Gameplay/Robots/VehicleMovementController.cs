@@ -174,13 +174,14 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Rotate(Vector2 mi, RobotMovementGlobalSettings settings, float dt)
         {
-            if (mi.x != 0f)
+            float turnInput = mi.y < 0f ? -mi.x : mi.x;
+            if (turnInput != 0f)
             {
                 float rotationStep = _useRuntimeTraverseSpeed
                     ? _runtimeTraverseSpeedDegPerSecond * dt
                     : GetFallbackTraverseSpeed(settings) * dt;
 
-                transform.Rotate(Vector3.up * mi.x * rotationStep);
+                transform.Rotate(Vector3.up * turnInput * rotationStep);
             }
         }
 

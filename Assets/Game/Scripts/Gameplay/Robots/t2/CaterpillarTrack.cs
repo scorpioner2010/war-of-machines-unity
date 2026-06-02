@@ -31,7 +31,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
 
             Vector2 mv = vehicleRoot.inputManager.AnimMove;
             float forwardInput = mv.y;
-            float turnInput = mv.x;
+            float turnInput = forwardInput < 0f ? -mv.x : mv.x;
 
             float leftInputSpeed = 0f;
             float rightInputSpeed = 0f;
