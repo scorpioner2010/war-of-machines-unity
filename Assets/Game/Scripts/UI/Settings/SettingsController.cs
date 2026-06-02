@@ -18,6 +18,7 @@ namespace Game.Scripts.UI.Settings
             _model = model;
             _model.Load();
             ClientGameplaySettings.SetServerCrosshairEnabled(_model.ServerCrosshairEnabled, false);
+            ClientGameplaySettings.SetCameraShakeEnabled(_model.CameraShakeEnabled, false);
             ClientGameplaySettings.SetMouseSensitivities(
                 _model.GameplayMouseSensitivity,
                 _model.SniperMouseSensitivity,
@@ -116,6 +117,12 @@ namespace Game.Scripts.UI.Settings
         {
             _model.ServerCrosshairEnabled = isOn;
             ClientGameplaySettings.SetServerCrosshairEnabled(isOn);
+        }
+
+        public void HandleCameraShakeChanged(bool isOn)
+        {
+            _model.CameraShakeEnabled = isOn;
+            ClientGameplaySettings.SetCameraShakeEnabled(isOn);
         }
 
         public void HandleWalkKeyChanged(string newKey)

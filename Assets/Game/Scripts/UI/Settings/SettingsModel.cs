@@ -29,6 +29,7 @@ namespace Game.Scripts.UI.Settings
         public string WalkKey = "WASD";
         public string AttackKey = "RMB";
         public bool ServerCrosshairEnabled = false;
+        public bool CameraShakeEnabled = true;
 
         private static string configFileName = "settings.config";
 

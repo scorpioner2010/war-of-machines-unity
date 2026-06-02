@@ -11,19 +11,28 @@ namespace Game.Scripts.UI.Settings
         public Button FeedbackButton;
         public Button CreditsButton;
         public Toggle ServerCrosshairToggle;
+        public Toggle CameraShakeToggle;
 
         private SettingsController _controller;
         private bool _suppressServerCrosshairEvent;
+        private bool _suppressCameraShakeEvent;
         
         public void Initialize(SettingsController controller)
         {
             _controller = controller;
             EnsureServerCrosshairToggle();
+            EnsureCameraShakeToggle();
 
             if (ServerCrosshairToggle != null)
             {
                 ServerCrosshairToggle.onValueChanged.RemoveListener(OnServerCrosshairToggleChanged);
                 ServerCrosshairToggle.onValueChanged.AddListener(OnServerCrosshairToggleChanged);
+            }
+
+            if (CameraShakeToggle != null)
+            {
+                CameraShakeToggle.onValueChanged.RemoveListener(OnCameraShakeToggleChanged);
+                CameraShakeToggle.onValueChanged.AddListener(OnCameraShakeToggleChanged);
             }
         }
 
@@ -40,14 +49,21 @@ namespace Game.Scripts.UI.Settings
         public void SetData(SettingsModel model)
         {
             EnsureServerCrosshairToggle();
-            if (ServerCrosshairToggle == null)
+            EnsureCameraShakeToggle();
+
+            if (ServerCrosshairToggle != null)
             {
-                return;
+                _suppressServerCrosshairEvent = true;
+                ServerCrosshairToggle.isOn = model != null && model.ServerCrosshairEnabled;
+                _suppressServerCrosshairEvent = false;
             }
 
-            _suppressServerCrosshairEvent = true;
-            ServerCrosshairToggle.isOn = model != null && model.ServerCrosshairEnabled;
-            _suppressServerCrosshairEvent = false;
+            if (CameraShakeToggle != null)
+            {
+                _suppressCameraShakeEvent = true;
+                CameraShakeToggle.isOn = model == null || model.CameraShakeEnabled;
+                _suppressCameraShakeEvent = false;
+            }
         }
 
         private void OnLanguageDropdownChanged(int index)
@@ -63,6 +79,16 @@ namespace Game.Scripts.UI.Settings
             }
 
             _controller.HandleServerCrosshairChanged(isOn);
+        }
+
+        private void OnCameraShakeToggleChanged(bool isOn)
+        {
+            if (_suppressCameraShakeEvent || _controller == null)
+            {
+                return;
+            }
+
+            _controller.HandleCameraShakeChanged(isOn);
         }
 
         private void EnsureServerCrosshairToggle()
@@ -82,13 +108,46 @@ namespace Game.Scripts.UI.Settings
                 }
             }
 
-            GameObject root = new GameObject("ServerCrosshairToggle", typeof(RectTransform), typeof(Toggle), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            ServerCrosshairToggle = CreateToggle(
+                "ServerCrosshairToggle",
+                "Server crosshair",
+                -90f,
+                ClientGameplaySettings.ServerCrosshairEnabled);
+        }
+
+        private void EnsureCameraShakeToggle()
+        {
+            if (CameraShakeToggle != null)
+            {
+                return;
+            }
+
+            Transform existing = transform.Find("CameraShakeToggle");
+            if (existing != null)
+            {
+                CameraShakeToggle = existing.GetComponent<Toggle>();
+                if (CameraShakeToggle != null)
+                {
+                    return;
+                }
+            }
+
+            CameraShakeToggle = CreateToggle(
+                "CameraShakeToggle",
+                "Camera shake",
+                -130f,
+                ClientGameplaySettings.CameraShakeEnabled);
+        }
+
+        private Toggle CreateToggle(string objectName, string label, float anchoredY, bool initialValue)
+        {
+            GameObject root = new GameObject(objectName, typeof(RectTransform), typeof(Toggle), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             RectTransform rootRect = root.GetComponent<RectTransform>();
             rootRect.SetParent(transform, false);
             rootRect.anchorMin = new Vector2(0f, 1f);
             rootRect.anchorMax = new Vector2(0f, 1f);
             rootRect.pivot = new Vector2(0f, 1f);
-            rootRect.anchoredPosition = new Vector2(20f, -90f);
+            rootRect.anchoredPosition = new Vector2(20f, anchoredY);
             rootRect.sizeDelta = new Vector2(360f, 32f);
 
             LayoutElement layoutElement = root.GetComponent<LayoutElement>();
@@ -124,24 +183,24 @@ namespace Game.Scripts.UI.Settings
             Image checkmarkImage = checkmark.GetComponent<Image>();
             checkmarkImage.color = new Color(0.25f, 0.62f, 1f, 1f);
 
-            GameObject label = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
-            RectTransform labelRect = label.GetComponent<RectTransform>();
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
             labelRect.SetParent(rootRect, false);
             labelRect.sizeDelta = new Vector2(300f, 28f);
-            LayoutElement labelLayout = label.GetComponent<LayoutElement>();
+            LayoutElement labelLayout = labelObject.GetComponent<LayoutElement>();
             labelLayout.minWidth = 280f;
             labelLayout.preferredWidth = 300f;
 
-            TextMeshProUGUI labelText = label.GetComponent<TextMeshProUGUI>();
-            labelText.text = "Server crosshair";
+            TextMeshProUGUI labelText = labelObject.GetComponent<TextMeshProUGUI>();
+            labelText.text = label;
             labelText.fontSize = 20f;
             labelText.color = Color.white;
             labelText.alignment = TextAlignmentOptions.MidlineLeft;
 
             toggle.targetGraphic = backgroundImage;
             toggle.graphic = checkmarkImage;
-            toggle.isOn = ClientGameplaySettings.ServerCrosshairEnabled;
-            ServerCrosshairToggle = toggle;
+            toggle.isOn = initialValue;
+            return toggle;
         }
 
         private int GetLanguageIndex(string language)

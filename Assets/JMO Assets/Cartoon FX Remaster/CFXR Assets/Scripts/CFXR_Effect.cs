@@ -589,8 +589,18 @@ namespace CartoonFX
 #endif
 
 #if !DISABLE_CAMERA_SHAKE
-			if (cameraShake != null && cameraShake.enabled && !GlobalDisableCameraShake)
+			if (cameraShake != null && cameraShake.enabled)
 			{
+				if (GlobalDisableCameraShake)
+				{
+					if (cameraShake.isShaking)
+					{
+						cameraShake.StopShake();
+					}
+
+					return;
+				}
+
 #if UNITY_EDITOR
 				if (!cameraShake.isShaking)
 				{

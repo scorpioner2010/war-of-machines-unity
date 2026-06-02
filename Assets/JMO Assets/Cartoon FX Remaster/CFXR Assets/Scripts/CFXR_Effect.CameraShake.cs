@@ -39,6 +39,8 @@ namespace CartoonFX
 			Dictionary<Camera, Vector3> camerasPreRenderPosition = new Dictionary<Camera, Vector3>();
 			Vector3 shakeVector;
 			float delaysTimer;
+			float strengthMultiplier = 1f;
+			Camera cameraOverride;
 
 			//--------------------------------------------------------------------------------------------------------------------------------
 			// STATIC
@@ -196,7 +198,11 @@ namespace CartoonFX
 
 				cameras.Clear();
 
-				if (useMainCamera && Camera.main != null)
+				if (cameraOverride != null)
+				{
+					cameras.Add(cameraOverride);
+				}
+				else if (useMainCamera && Camera.main != null)
 				{
 					cameras.Add(Camera.main);
 				}
@@ -230,6 +236,21 @@ namespace CartoonFX
 				UnregisterStaticCallback(this);
 			}
 
+			public void SetCamera(Camera camera)
+			{
+				cameraOverride = camera;
+				fetchCameras();
+			}
+
+			public void SetStrengthMultiplier(float multiplier)
+			{
+				strengthMultiplier = Mathf.Max(0f, multiplier);
+				if (strengthMultiplier <= 0f && isShaking)
+				{
+					StopShake();
+				}
+			}
+
 			public void animate(float time)
 			{
 #if UNITY_EDITOR
@@ -239,6 +260,12 @@ namespace CartoonFX
 					return;
 				}
 #endif
+
+				if (strengthMultiplier <= 0f)
+				{
+					shakeVector = Vector3.zero;
+					return;
+				}
 
 				float totalDuration = duration + delay;
 				if (time < totalDuration)
@@ -275,7 +302,7 @@ namespace CartoonFX
 
 					var randomVec = new Vector3(Random.value, Random.value, Random.value);
 					var shakeVec = Vector3.Scale(randomVec, shakeStrength) * (Random.value > 0.5f ? -1 : 1);
-					shakeVector = shakeVec * shakeCurve.Evaluate(delta) * GLOBAL_CAMERA_SHAKE_MULTIPLIER;
+					shakeVector = shakeVec * shakeCurve.Evaluate(delta) * GLOBAL_CAMERA_SHAKE_MULTIPLIER * strengthMultiplier;
 				}
 				else if (isShaking)
 				{

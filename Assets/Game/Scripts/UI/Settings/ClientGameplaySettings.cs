@@ -1,4 +1,5 @@
 using System;
+using CartoonFX;
 using UnityEngine;
 
 namespace Game.Scripts.UI.Settings
@@ -6,6 +7,7 @@ namespace Game.Scripts.UI.Settings
     public static class ClientGameplaySettings
     {
         private const string ServerCrosshairKey = "Gameplay.ServerCrosshairEnabled";
+        private const string CameraShakeKey = "Gameplay.CameraShakeEnabled";
         private const string GameplayMouseSensitivityKey = "Gameplay.MouseSensitivity";
         private const string SniperMouseSensitivityKey = "Gameplay.SniperMouseSensitivity";
 
@@ -15,12 +17,21 @@ namespace Game.Scripts.UI.Settings
         public const float MaxMouseSensitivity = 2f;
 
         public static event Action<bool> ServerCrosshairChanged;
+        public static event Action<bool> CameraShakeChanged;
 
         public static bool ServerCrosshairEnabled
         {
             get
             {
                 return PlayerPrefs.GetInt(ServerCrosshairKey, 0) == 1;
+            }
+        }
+
+        public static bool CameraShakeEnabled
+        {
+            get
+            {
+                return PlayerPrefs.GetInt(CameraShakeKey, 1) == 1;
             }
         }
 
@@ -44,6 +55,12 @@ namespace Game.Scripts.UI.Settings
             }
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void ApplyStoredCameraShakePreference()
+        {
+            ApplyCameraShakePreference(CameraShakeEnabled);
+        }
+
         public static void SetServerCrosshairEnabled(bool enabled)
         {
             SetServerCrosshairEnabled(enabled, true);
@@ -63,6 +80,29 @@ namespace Game.Scripts.UI.Settings
             if (notify)
             {
                 ServerCrosshairChanged?.Invoke(enabled);
+            }
+        }
+
+        public static void SetCameraShakeEnabled(bool enabled)
+        {
+            SetCameraShakeEnabled(enabled, true);
+        }
+
+        public static void SetCameraShakeEnabled(bool enabled, bool notify)
+        {
+            int value = enabled ? 1 : 0;
+            bool changed = PlayerPrefs.GetInt(CameraShakeKey, 1) != value;
+            if (changed)
+            {
+                PlayerPrefs.SetInt(CameraShakeKey, value);
+                PlayerPrefs.Save();
+            }
+
+            ApplyCameraShakePreference(enabled);
+
+            if (changed && notify)
+            {
+                CameraShakeChanged?.Invoke(enabled);
             }
         }
 
@@ -110,6 +150,11 @@ namespace Game.Scripts.UI.Settings
             }
 
             return Mathf.Clamp(value, MinMouseSensitivity, MaxMouseSensitivity);
+        }
+
+        private static void ApplyCameraShakePreference(bool enabled)
+        {
+            CFXR_Effect.GlobalDisableCameraShake = !enabled;
         }
     }
 }
