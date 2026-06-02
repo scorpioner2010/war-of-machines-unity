@@ -13452,6 +13452,7 @@ MonoBehaviour:
   FeedbackButton: {fileID: 0}
   CreditsButton: {fileID: 0}
   ServerCrosshairToggle: {fileID: 0}
+  CameraShakeToggle: {fileID: 0}
 --- !u!1 &1697883643
 GameObject:
   m_ObjectHideFlags: 0
@@ -19294,7 +19295,7 @@ MonoBehaviour:
     projectileMaterial: {fileID: 2100000, guid: f444cc14fffa4044bfbe275d1b0c19e1,
       type: 2}
     tracerMaterial: {fileID: 2100000, guid: e09e8aed58e546b29ca4b569e18788c9, type: 2}
-    muzzleFlashPrefab: {fileID: 7237755223669755426, guid: 5d41ecd2f05b8e8438370d790768e264,
+    muzzleFlashPrefab: {fileID: 7923806859326443355, guid: 83ad43f5a5d82d842a61442d91a04ab8,
       type: 3}
     muzzleSmokePrefab: {fileID: 4783985020516635287, guid: 4bda94453d2ca7444a0fff05b2d425f5,
       type: 3}
