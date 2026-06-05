@@ -72,6 +72,7 @@ namespace Game.Scripts.UI.HUD
         private void OnDisable()
         {
             VehicleRoot.LocalPlayerVehicleChanged -= OnLocalPlayerVehicleChanged;
+            Clear();
         }
 
         private void OnDestroy()
@@ -158,18 +159,44 @@ namespace Game.Scripts.UI.HUD
         {
             for (int i = 0; i < _rows.Count; i++)
             {
-                PlayerListRow row = _rows[i];
-                if (row != null && row.Item != null)
-                {
-                    Destroy(row.Item.gameObject);
-                }
-
-                UnbindRow(row);
+                DisposeRow(_rows[i]);
             }
 
             _rows.Clear();
+            _nextVehicleScanTime = 0f;
+            _nextRowRefreshTime = 0f;
             SetContainerVisible(alliesContainer, false);
             SetContainerVisible(enemiesContainer, false);
+        }
+
+        private void RemoveRowAt(int index)
+        {
+            if (index < 0 || index >= _rows.Count)
+            {
+                return;
+            }
+
+            DisposeRow(_rows[index]);
+            _rows.RemoveAt(index);
+        }
+
+        private void DisposeRow(PlayerListRow row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            UnbindRow(row);
+
+            if (row.Item != null)
+            {
+                Destroy(row.Item.gameObject);
+            }
+
+            row.Item = null;
+            row.VehicleRoot = null;
+            row.Seen = false;
         }
 
         public void RefreshFromSpawnedVehicles()
@@ -222,15 +249,9 @@ namespace Game.Scripts.UI.HUD
             for (int i = _rows.Count - 1; i >= 0; i--)
             {
                 PlayerListRow row = _rows[i];
-                if (row.VehicleRoot != null && !row.Seen)
+                if (row == null || !row.Seen)
                 {
-                    if (row.Item != null)
-                    {
-                        Destroy(row.Item.gameObject);
-                    }
-
-                    UnbindRow(row);
-                    _rows.RemoveAt(i);
+                    RemoveRowAt(i);
                 }
             }
 
@@ -672,7 +693,18 @@ namespace Game.Scripts.UI.HUD
         {
             _nextVehicleScanTime = 0f;
 
-            if (autoTrackSpawnedVehicles)
+            if (!autoTrackSpawnedVehicles)
+            {
+                return;
+            }
+
+            if (vehicleRoot == null)
+            {
+                Clear();
+                return;
+            }
+
+            if (isActiveAndEnabled)
             {
                 RefreshFromSpawnedVehicles();
             }

@@ -37,7 +37,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/GameplayMapVisibilityState.cs`
   - Map visibility state.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListHud.cs`
-  - Player list HUD.
+  - Player list HUD for ally/enemy rows under the `GameplayHUD` prefab containers.
+  - Auto-tracks active non-menu `VehicleRoot` instances, binds each row to `VehicleHealth`, and refreshes names, vehicle type, HP, death state, and team relation.
+  - Clears instantiated row items when the HUD is disabled or the local player vehicle becomes null. Its vehicle scan removes every row not seen in the current active-vehicle pass, including rows whose Unity `VehicleRoot` was destroyed during battle scene unload, so stale ally/enemy rows do not persist into the next battle.
 - `Assets/Game/Scripts/UI/HUD/GameplayTimerDisplay.cs`
   - Match timer display.
 - `Assets/Game/Scripts/UI/HUD/PauseMenu.cs`
