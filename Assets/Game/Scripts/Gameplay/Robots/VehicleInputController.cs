@@ -12,6 +12,8 @@ namespace Game.Scripts.Gameplay.Robots
     public class VehicleInputController : NetworkBehaviour, IVehicleRootAware, IBotInputReceiver
     {
         private const float RightMouseAutoAimTapSeconds = 0.18f;
+        private const int MaxCruiseSpeedLevel = 3;
+        private const float CruiseSpeedStep = 1f / MaxCruiseSpeedLevel;
 
         public VehicleRoot vehicleRoot;
         public VehicleAutoAimController autoAimController;
@@ -49,6 +51,7 @@ namespace Game.Scripts.Gameplay.Robots
         private float _lockedGunPitchLocal;
         private Vector3 _lockedAimPointLocal;
         private Vector3 _lockedAimForwardLocal;
+        private int _cruiseSpeedLevel;
 
         private bool _controlsBlocked;
 
@@ -239,29 +242,8 @@ namespace Game.Scripts.Gameplay.Robots
 
             using (ProfileScope.Measure("Client.VehicleInput.Update", DiagnosticsCategories.Client))
             {
-                float x = 0f;
-                float y = 0f;
                 bool blocked = IsLocalInputBlocked;
-                if (!blocked)
-                {
-                    if (Input.GetKey(KeyCode.A))
-                    {
-                        x = -1f;
-                    }
-                    else if (Input.GetKey(KeyCode.D))
-                    {
-                        x = 1f;
-                    }
-
-                    if (Input.GetKey(KeyCode.W))
-                    {
-                        y = 1f;
-                    }
-                    else if (Input.GetKey(KeyCode.S))
-                    {
-                        y = -1f;
-                    }
-                }
+                ReadMovementInput(blocked, out float x, out float y);
 
                 bool newShoot = !blocked && Input.GetMouseButton(0);
                 bool newAction = !blocked && Input.GetKey(KeyCode.Space);
@@ -446,6 +428,116 @@ namespace Game.Scripts.Gameplay.Robots
                 _animShoot.Value = _shootServer;
                 _animAction.Value = _actionServer;
             }
+        }
+
+        private void ReadMovementInput(bool blocked, out float x, out float y)
+        {
+            x = 0f;
+            y = 0f;
+
+            if (blocked)
+            {
+                ResetCruiseControl();
+                return;
+            }
+
+            if (Input.GetKey(KeyCode.A))
+            {
+                x = -1f;
+            }
+            else if (Input.GetKey(KeyCode.D))
+            {
+                x = 1f;
+            }
+
+            bool manualForward = Input.GetKey(KeyCode.W);
+            bool manualReverse = Input.GetKey(KeyCode.S);
+            if (manualForward || manualReverse)
+            {
+                ResetCruiseControl();
+
+                if (manualForward)
+                {
+                    y = 1f;
+                }
+                else
+                {
+                    y = -1f;
+                }
+
+                return;
+            }
+
+            if (Input.GetKey(KeyCode.Space))
+            {
+                ResetCruiseControl();
+                return;
+            }
+
+            ApplyCruiseControlKeyPresses();
+            y = GetCruiseControlInput();
+        }
+
+        private void ApplyCruiseControlKeyPresses()
+        {
+            bool forwardPressed = Input.GetKeyDown(KeyCode.R);
+            bool reversePressed = Input.GetKeyDown(KeyCode.F);
+
+            if (forwardPressed && reversePressed)
+            {
+                ResetCruiseControl();
+                return;
+            }
+
+            if (forwardPressed)
+            {
+                IncreaseCruiseControl(1);
+            }
+            else if (reversePressed)
+            {
+                IncreaseCruiseControl(-1);
+            }
+        }
+
+        private void IncreaseCruiseControl(int direction)
+        {
+            if (direction > 0)
+            {
+                if (_cruiseSpeedLevel < 0)
+                {
+                    _cruiseSpeedLevel = 1;
+                }
+                else
+                {
+                    _cruiseSpeedLevel = Mathf.Min(_cruiseSpeedLevel + 1, MaxCruiseSpeedLevel);
+                }
+            }
+            else if (direction < 0)
+            {
+                if (_cruiseSpeedLevel > 0)
+                {
+                    _cruiseSpeedLevel = -1;
+                }
+                else
+                {
+                    _cruiseSpeedLevel = Mathf.Max(_cruiseSpeedLevel - 1, -MaxCruiseSpeedLevel);
+                }
+            }
+        }
+
+        private float GetCruiseControlInput()
+        {
+            if (_cruiseSpeedLevel == 0)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp(_cruiseSpeedLevel * CruiseSpeedStep, -1f, 1f);
+        }
+
+        private void ResetCruiseControl()
+        {
+            _cruiseSpeedLevel = 0;
         }
 
         private bool HandleRightMouseAimLock(bool blocked, out bool changed)

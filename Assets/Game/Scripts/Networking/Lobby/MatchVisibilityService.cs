@@ -44,6 +44,7 @@ namespace Game.Scripts.Networking.Lobby
 
         private ServerRoom _room;
         private float _nextTickTime;
+        private float _lastStateRefreshTime;
         private int _version;
 
         public bool IsRunning => _room != null;
@@ -52,6 +53,7 @@ namespace Game.Scripts.Networking.Lobby
         {
             _room = room;
             _nextTickTime = 0f;
+            _lastStateRefreshTime = float.NegativeInfinity;
             _version = 0;
             _teamA.Clear();
             _teamB.Clear();
@@ -65,6 +67,7 @@ namespace Game.Scripts.Networking.Lobby
         {
             _room = null;
             _nextTickTime = 0f;
+            _lastStateRefreshTime = float.NegativeInfinity;
             _teamA.Clear();
             _teamB.Clear();
             _participants.Clear();
@@ -94,6 +97,40 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             _nextTickTime = now + Mathf.Max(0.05f, settings.tickInterval);
+            RefreshState(now, settings);
+
+            using (ProfileScope.Measure("Server.Visibility.SendSnapshots", DiagnosticsCategories.Network))
+            {
+                SendSnapshots(updateSink);
+            }
+        }
+
+        public void RefreshForBotQueries(float now)
+        {
+            if (_room == null)
+            {
+                return;
+            }
+
+            MatchVisibilityGlobalSettings settings = ServerSettings.GetMatchVisibility();
+            float interval = Mathf.Max(0.05f, settings.tickInterval);
+            if (now - _lastStateRefreshTime < interval)
+            {
+                return;
+            }
+
+            if (!settings.enabled)
+            {
+                ClearVisibilityState();
+                _lastStateRefreshTime = now;
+                return;
+            }
+
+            RefreshState(now, settings);
+        }
+
+        private void RefreshState(float now, MatchVisibilityGlobalSettings settings)
+        {
             _version++;
 
             using (ProfileScope.Measure("Server.Visibility.RebuildParticipants", DiagnosticsCategories.Server))
@@ -112,10 +149,17 @@ namespace Game.Scripts.Networking.Lobby
                 BuildSnapshotForTeam(_teamB, now);
             }
 
-            using (ProfileScope.Measure("Server.Visibility.SendSnapshots", DiagnosticsCategories.Network))
-            {
-                SendSnapshots(updateSink);
-            }
+            _lastStateRefreshTime = now;
+        }
+
+        private void ClearVisibilityState()
+        {
+            _teamA.Clear();
+            _teamB.Clear();
+            _participants.Clear();
+            _entries.Clear();
+            _lineOfSightCache.Clear();
+            _expiredLineOfSightKeys.Clear();
         }
 
         public bool IsVisibleForTeam(MatchTeam viewerTeam, VehicleRoot targetRoot)
@@ -138,6 +182,62 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             return teamState.IsVisible(targetRoot.networkObject.ObjectId, Time.time);
+        }
+
+        public bool TryGetVisibleEnemyFor(VehicleRoot viewerRoot, VehicleRoot targetRoot, out MatchVisibleEnemy visibleEnemy)
+        {
+            visibleEnemy = default;
+            if (viewerRoot == null || viewerRoot.characterInit == null || targetRoot == null)
+            {
+                return false;
+            }
+
+            MatchTeam viewerTeam = viewerRoot.characterInit.Team.Value;
+            if (!MatchTeamUtility.IsAssigned(viewerTeam))
+            {
+                return false;
+            }
+
+            TeamVisibilityState teamState = GetTeamState(viewerTeam);
+            if (teamState == null)
+            {
+                return false;
+            }
+
+            float now = Time.time;
+            for (int i = 0; i < _participants.Count; i++)
+            {
+                VisibilityParticipant participant = _participants[i];
+                if (participant.Root != targetRoot
+                    || participant.Root == viewerRoot
+                    || participant.IsDead
+                    || participant.Player == null
+                    || participant.Player.leftBattle
+                    || !MatchTeamUtility.AreOpposingAssignedTeams(viewerTeam, participant.Team))
+                {
+                    continue;
+                }
+
+                if (teamState.TryGetEnemyVisibility(
+                        participant.ObjectId,
+                        now,
+                        participant.Position,
+                        participant.Yaw,
+                        out Vector3 position,
+                        out float yaw))
+                {
+                    visibleEnemy = new MatchVisibleEnemy
+                    {
+                        Root = participant.Root,
+                        Position = position,
+                        Yaw = yaw,
+                        IsDirectlySpotted = teamState.IsDirectlySpotted(participant.ObjectId)
+                    };
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void FillVisibleEnemiesFor(VehicleRoot viewerRoot, List<VehicleRoot> results)
@@ -172,6 +272,8 @@ namespace Game.Scripts.Networking.Lobby
                 if (participant.Root == null
                     || participant.Root == viewerRoot
                     || participant.IsDead
+                    || participant.Player == null
+                    || participant.Player.leftBattle
                     || !MatchTeamUtility.AreOpposingAssignedTeams(viewerTeam, participant.Team))
                 {
                     continue;
@@ -181,6 +283,66 @@ namespace Game.Scripts.Networking.Lobby
                 {
                     results.Add(participant.Root);
                 }
+            }
+        }
+
+        public void FillVisibleEnemiesFor(VehicleRoot viewerRoot, List<MatchVisibleEnemy> results)
+        {
+            if (results == null)
+            {
+                return;
+            }
+
+            results.Clear();
+            if (viewerRoot == null || viewerRoot.characterInit == null)
+            {
+                return;
+            }
+
+            MatchTeam viewerTeam = viewerRoot.characterInit.Team.Value;
+            if (!MatchTeamUtility.IsAssigned(viewerTeam))
+            {
+                return;
+            }
+
+            TeamVisibilityState teamState = GetTeamState(viewerTeam);
+            if (teamState == null)
+            {
+                return;
+            }
+
+            float now = Time.time;
+            for (int i = 0; i < _participants.Count; i++)
+            {
+                VisibilityParticipant participant = _participants[i];
+                if (participant.Root == null
+                    || participant.Root == viewerRoot
+                    || participant.IsDead
+                    || participant.Player == null
+                    || participant.Player.leftBattle
+                    || !MatchTeamUtility.AreOpposingAssignedTeams(viewerTeam, participant.Team))
+                {
+                    continue;
+                }
+
+                if (!teamState.TryGetEnemyVisibility(
+                        participant.ObjectId,
+                        now,
+                        participant.Position,
+                        participant.Yaw,
+                        out Vector3 position,
+                        out float yaw))
+                {
+                    continue;
+                }
+
+                results.Add(new MatchVisibleEnemy
+                {
+                    Root = participant.Root,
+                    Position = position,
+                    Yaw = yaw,
+                    IsDirectlySpotted = teamState.IsDirectlySpotted(participant.ObjectId)
+                });
             }
         }
 
@@ -196,7 +358,7 @@ namespace Game.Scripts.Networking.Lobby
             for (int i = 0; i < players.Count; i++)
             {
                 Player player = players[i];
-                if (player == null || player.playerRoot == null)
+                if (player == null || player.leftBattle || player.playerRoot == null)
                 {
                     continue;
                 }
@@ -775,5 +937,13 @@ namespace Game.Scripts.Networking.Lobby
                 Yaws = new float[count];
             }
         }
+    }
+
+    public struct MatchVisibleEnemy
+    {
+        public VehicleRoot Root;
+        public Vector3 Position;
+        public float Yaw;
+        public bool IsDirectlySpotted;
     }
 }

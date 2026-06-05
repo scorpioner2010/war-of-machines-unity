@@ -9,11 +9,16 @@ Current owner scripts:
   - Static room registry and room lookup helpers.
 - `Assets/Game/Scripts/Networking/Lobby/ServerRoom.cs`
   - Runtime room state: players, selected map, additive scene handle, scene slot offset, match flags, timer, visibility service.
-  - Provides `GetPlayers()` used by bot target acquisition.
+  - Provides room state for bot target acquisition through `Visibility`; raw `GetPlayers()` is no longer the bot combat target source.
 - `Assets/Game/Scripts/Networking/Lobby/Player.cs`
   - Per-room player state including connection, name, bot flag, team, active vehicle, and spawned `VehicleRoot`.
 - `Assets/Game/Scripts/Networking/Lobby/GameplaySpawner.cs`
   - Server/client additive scene load flow, scene slot reservation, spawn lifecycle, visibility ticking, disconnect handling.
+  - Ticks `ServerRoom.Visibility` for active matches so player map HUDs and bots share the same logical map spotting state.
+- `Assets/Game/Scripts/Networking/Lobby/MatchVisibilityService.cs`
+  - Builds team visibility from room participants, view range, line of sight, and spotted memory.
+  - Sends snapshots to real players only, but also exposes server-side `MatchVisibleEnemy` results for bot target acquisition and last-known-position navigation.
+  - Marks whether a visible enemy is directly spotted or memory-only so bots do not shoot using hidden live transforms.
 - `Assets/Game/Scripts/Networking/Lobby/MatchVehicleSpawner.cs`
   - Spawns player and bot vehicles in loaded match scenes.
   - Applies runtime stats, assigns `player.playerRoot`, initializes teams/identity, and starts bot brain.

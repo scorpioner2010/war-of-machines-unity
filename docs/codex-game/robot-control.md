@@ -14,6 +14,8 @@ Current owner scripts:
   - Refreshes HP fill immediately during root binding/spawn and on `VehicleHealth.OnHealthChanged`/damage events.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleInputController.cs`
   - Handles owner local input and server external input.
+  - Owner local input supports World of Tanks-style cruise control: `R` steps forward cruise speed through `1/3`, `2/3`, and full `Move.y`, while `F` does the same in reverse.
+  - Manual `W`/`S`, `Space`, or blocked UI/gameplay input clears cruise control before movement is sent to the server.
   - Implements `IBotInputReceiver` for bot movement.
   - Applies server input to movement, shoot/action state, turret yaw, gun pitch, and desired aim point.
 - `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`
@@ -44,6 +46,7 @@ Current owner scripts:
 
 Input flow:
 - Human owner input is read by `VehicleInputController.Update` and sent to server RPCs.
+- For human owner movement, `W`/`S` still send full forward/reverse input; cruise control sends fractional `Move.y` values from local `R`/`F` state without changing the server input struct.
 - Server authoritative movement reads `VehicleInputController.Move` from `VehicleMovementController`.
 - Bots use the same input channel through `VehicleInputController.ApplyBotInput` and `ServerSetExternalInput`.
 - Combat/idle aim uses `VehicleServerInput.Combat` with `HasAim = true`.

@@ -25,7 +25,8 @@ Important settings classes currently used by recent gameplay work:
 - `BotWanderSettings`
   - Bot movement cadence, waypoint arrival, pivot turning, stuck handling, dynamic avoidance.
 - `BotCombatSettings`
-  - Bot target scan, acquire distance, line of sight, aim, fire gate, no-target turret aim.
+  - Bot combat scan cadence, line-of-fire target scoring, aim, fire gate, no-target turret aim.
+  - Target visibility range is now owned by `MatchVisibilityGlobalSettings`; bots select only enemies visible in logical map visibility.
 - `RobotMovementGlobalSettings`
   - Movement fallback speed/acceleration, braking, gravity, grounded snap.
 - `GunDispersionGlobalSettings`
@@ -34,6 +35,9 @@ Important settings classes currently used by recent gameplay work:
   - Weapon prefabs keep the per-weapon range through `minDispersionDeg`, `maxDispersionDeg`, and `aimTime`; the server settings prefab no longer serializes hull/gun/camera reference traverse fields.
 - `ProjectileBallisticsSettings`
   - Projectile gravity/ballistic settings.
+- `MatchVisibilityGlobalSettings`
+  - Logical map spotting for teams, including tick interval, fallback/max view range, guaranteed detection range, line-of-sight mask, and spotted-memory duration.
+  - Bot target acquisition uses this visibility state through `MatchVisibilityService`, not an omniscient room player scan.
 
 Rules when editing settings:
 - Add fields to the correct nested settings class.
@@ -54,3 +58,8 @@ Current bot settings added recently:
 - `BotCombatSettings.noTargetTravelAimDistance`
 - `BotCombatSettings.noTargetTravelDirectionMaxAgeSeconds`
 - `BotCombatSettings.aimForwardWhenNoTargetIdle`
+
+Current bot combat visibility notes:
+- `BotCombatSettings.targetScanInterval` still controls how often combat re-scores visible targets.
+- `BotCombatSettings.requireLineOfSightToAcquire` now makes line-of-fire candidates win target scoring when available; it does not block movement toward an obstructed target that is still visible on the logical map.
+- `BotCombatSettings.maxAcquireDistance`, `BotCombatSettings.viewRangeMultiplier`, and `BotCombatSettings.lostSightForgetSeconds` are legacy fields from the old direct room-scan acquisition path. Current bot target visibility and forgetting are controlled by `MatchVisibilityGlobalSettings` and spotted-memory state.
