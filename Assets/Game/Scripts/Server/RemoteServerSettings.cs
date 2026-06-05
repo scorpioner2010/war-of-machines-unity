@@ -36,10 +36,6 @@ namespace Game.Scripts.Server
             float robotGroundedSnap,
             bool gunDispersionEnabled,
             float gunDispersionExpandTime,
-            float gunDispersionReferenceHullTraverse,
-            float gunDispersionReferenceTurretTraverse,
-            float gunDispersionReferenceGunTraverse,
-            float gunDispersionReferenceCameraAim,
             float gunDispersionAccuracyReferenceDistanceMeters,
             float gunDispersionUiMinDiameter,
             float gunDispersionUiMaxDiameter,
@@ -90,10 +86,6 @@ namespace Game.Scripts.Server
 
             GunDispersion.enabled = gunDispersionEnabled;
             GunDispersion.expandTime = gunDispersionExpandTime > 0f ? gunDispersionExpandTime : GunDispersionGlobalSettings.Default.expandTime;
-            GunDispersion.referenceHullTraverseDegPerSec = gunDispersionReferenceHullTraverse > 0f ? gunDispersionReferenceHullTraverse : GunDispersionGlobalSettings.Default.referenceHullTraverseDegPerSec;
-            GunDispersion.referenceTurretTraverseDegPerSec = gunDispersionReferenceTurretTraverse > 0f ? gunDispersionReferenceTurretTraverse : GunDispersionGlobalSettings.Default.referenceTurretTraverseDegPerSec;
-            GunDispersion.referenceGunTraverseDegPerSec = gunDispersionReferenceGunTraverse > 0f ? gunDispersionReferenceGunTraverse : GunDispersionGlobalSettings.Default.referenceGunTraverseDegPerSec;
-            GunDispersion.referenceCameraAimDegPerSec = gunDispersionReferenceCameraAim > 0f ? gunDispersionReferenceCameraAim : GunDispersionGlobalSettings.Default.referenceCameraAimDegPerSec;
             GunDispersion.accuracyReferenceDistanceMeters = gunDispersionAccuracyReferenceDistanceMeters > 0f ? gunDispersionAccuracyReferenceDistanceMeters : GunDispersionGlobalSettings.Default.accuracyReferenceDistanceMeters;
             GunDispersion.uiMinDiameter = gunDispersionUiMinDiameter > 0f ? gunDispersionUiMinDiameter : GunDispersionGlobalSettings.Default.uiMinDiameter;
             GunDispersion.uiMaxDiameter = gunDispersionUiMaxDiameter > GunDispersion.uiMinDiameter ? gunDispersionUiMaxDiameter : GunDispersionGlobalSettings.Default.uiMaxDiameter;

@@ -813,13 +813,6 @@ MonoBehaviour:
     minDispersionDeg: 0.35
     maxDispersionDeg: 6
     aimTime: 2
-    movingDispersionDeg: 1.5
-    referenceMovementSpeed: 8
-    hullTraverseDispersionDeg: 1.25
-    turretTraverseDispersionDeg: 1.5
-    gunTraverseDispersionDeg: 1
-    shotDispersionDeg: 2
-    shotDispersionMultiplier: 1.3
   projectileSpeed: 70
   projectileLifeTime: 8
   maxShotDistance: 2000

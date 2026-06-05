@@ -298,7 +298,7 @@ namespace Game.Scripts.Gameplay.Robots
                     _predictedProjectiles[shotId] = predicted;
                 }
                 SpawnMuzzleFx(startPos, predictedRay.TargetPoint);
-                AddOwnerShotBloom();
+                AddOwnerShotDispersion();
 
                 if (!IsSpawned)
                 {
@@ -594,15 +594,15 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-            float shotDispersionDeg = _serverDispersion.CurrentDeg;
+            float currentDispersionDeg = _serverDispersion.CurrentDeg;
             if (_testAccuracyDebugMode)
             {
                 _serverDispersion.ForceFullyAimed(vehicleRoot, dispersion, includeCameraAimMotion: false);
-                shotDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
+                currentDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
             }
 
-            DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, shotDispersionDeg, globalDispersion);
-            AddServerShotBloom();
+            DispersedShotRay dispersedRay = BuildDispersedShotRay(startPos, aimPoint, shotId, currentDispersionDeg, globalDispersion);
+            AddServerShotDispersion(globalDispersion);
 
             if (sender != null && configureOwnerPrediction)
             {
@@ -657,7 +657,7 @@ namespace Game.Scripts.Gameplay.Robots
             SyncServerDispersion(_serverDispersion.CurrentDeg, GetGlobalDispersion(), force: true);
         }
 
-        private void AddOwnerShotBloom()
+        private void AddOwnerShotDispersion()
         {
             if (_testAccuracyDebugMode)
             {
@@ -669,11 +669,11 @@ namespace Game.Scripts.Gameplay.Robots
                 InitOwnerDispersion();
             }
 
-            _ownerDispersion.AddShotBloom(dispersion, GetGlobalDispersion());
+            _ownerDispersion.AddShotDispersion(dispersion, GetGlobalDispersion());
             ApplyCrosshairDispersion();
         }
 
-        private void AddServerShotBloom()
+        private void AddServerShotDispersion(GunDispersionGlobalSettings globalDispersion)
         {
             if (_testAccuracyDebugMode)
             {
@@ -685,8 +685,8 @@ namespace Game.Scripts.Gameplay.Robots
                 InitServerDispersion();
             }
 
-            GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-            _serverDispersion.AddShotBloom(dispersion, globalDispersion);
+            globalDispersion ??= GetGlobalDispersion();
+            _serverDispersion.AddShotDispersion(dispersion, globalDispersion);
             SyncServerDispersion(_serverDispersion.CurrentDeg, globalDispersion, force: true);
         }
 

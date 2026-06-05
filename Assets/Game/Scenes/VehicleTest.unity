@@ -936,7 +936,7 @@ MonoBehaviour:
   activateTestParameters: 1
   reloadTime: 0.1
   shellsCount: 999
-  forceFullyAimedAccuracyOnly: 1
+  forceFullyAimedAccuracyOnly: 0
   createHitMarkerSphere: 1
   hitMarkerRadius: 0.18
   hitMarkerColor: {r: 1, g: 0.052777845, b: 0.05098039, a: 1}

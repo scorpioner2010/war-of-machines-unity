@@ -103,10 +103,6 @@ MonoBehaviour:
   gunDispersion:
     enabled: 1
     expandTime: 0.12
-    referenceHullTraverseDegPerSec: 90
-    referenceTurretTraverseDegPerSec: 45
-    referenceGunTraverseDegPerSec: 35
-    referenceCameraAimDegPerSec: 120
     accuracyReferenceDistanceMeters: 100
     uiMinDiameter: 20
     uiMaxDiameter: 340

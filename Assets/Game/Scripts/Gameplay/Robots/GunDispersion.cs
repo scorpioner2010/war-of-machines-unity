@@ -12,17 +12,6 @@ namespace Game.Scripts.Gameplay.Robots
         public float maxDispersionDeg = 6f;
         public float aimTime = 2f;
 
-        [Header("Розширення розкиду")]
-        public float movingDispersionDeg = 1.5f;
-        [Tooltip("Швидкість руху у світі, при якій застосовується повний штраф розкиду від руху.")]
-        public float referenceMovementSpeed = 8f;
-        public float hullTraverseDispersionDeg = 1.25f;
-        public float turretTraverseDispersionDeg = 1.5f;
-        public float gunTraverseDispersionDeg = 1f;
-        public float shotDispersionDeg = 2f;
-        [Tooltip("Множник bloom після пострілу. 1.3 означає, що коло прицілу збільшується на 30% після пострілу.")]
-        public float shotDispersionMultiplier = 1.3f;
-
         public float MinDispersion
         {
             get
@@ -45,20 +34,10 @@ namespace Game.Scripts.Gameplay.Robots
     {
         private static readonly GunDispersionGlobalSettings DefaultSettings = new GunDispersionGlobalSettings();
 
-        [Tooltip("Увімкнути серверну систему розкиду, зведення та bloom для пострілів.")]
+        [Tooltip("Вмикає серверну систему розкиду за швидкістю руху танка, фактичним рухом башти і пострілами.")]
         public bool enabled = true;
-        [Tooltip("Час, за який коло зведення швидко розширюється після руху, повороту або пострілу. Менше значення = різкіше розширення.")]
+        [Tooltip("Час, за який коло зведення швидко розширюється після початку руху танка, повороту башти або пострілу. Менше значення = різкіше розширення.")]
         public float expandTime = 0.12f;
-
-        [Header("Еталонні швидкості")]
-        [Tooltip("Еталонна швидкість повороту корпусу в градусах за секунду, при якій додається повний штраф розкиду від повороту корпусу.")]
-        public float referenceHullTraverseDegPerSec = 90f;
-        [Tooltip("Еталонна швидкість повороту башти в градусах за секунду, при якій додається повний штраф розкиду від повороту башти.")]
-        public float referenceTurretTraverseDegPerSec = 45f;
-        [Tooltip("Еталонна швидкість вертикального руху гармати в градусах за секунду, при якій додається повний штраф розкиду від руху гармати.")]
-        public float referenceGunTraverseDegPerSec = 35f;
-        [Tooltip("Еталонна швидкість руху камери/прицілу в градусах за секунду, при якій UI коло отримує штраф розкиду від різкого наведення.")]
-        public float referenceCameraAimDegPerSec = 120f;
 
         [Header("Точність із бази даних")]
         [Tooltip("Дистанція, на якій інтерпретується точність з бази даних. Стиль World of Tanks: метри максимального радіального розкиду на 100 метрах.")]
@@ -74,10 +53,10 @@ namespace Game.Scripts.Gameplay.Robots
         public float uiFullyAimedPixelsPerDegreeAtMaxZoom = 85f;
         [Tooltip("Скільки пікселів на градус точності додається до повністю зведеного кола на максимальній дистанції камери від третьої особи.")]
         public float uiFullyAimedPixelsPerDegreeAtMaxDistance = 34f;
-        [Tooltip("Скільки пікселів на градус bloom додається до кола від руху/повороту/пострілу в максимальному зумі/снайперському режимі.")]
+        [Tooltip("Скільки пікселів на градус поточного розкиду понад мінімальний додається в максимальному зумі/снайперському режимі.")]
         [FormerlySerializedAs("uiPixelsPerDegree")]
         public float uiBloomPixelsPerDegreeAtMaxZoom = 42f;
-        [Tooltip("Скільки пікселів на градус bloom додається до кола від руху/повороту/пострілу на максимальній дистанції камери від третьої особи.")]
+        [Tooltip("Скільки пікселів на градус поточного розкиду понад мінімальний додається на максимальній дистанції камери від третьої особи.")]
         public float uiBloomPixelsPerDegreeAtMaxDistance = 17f;
         [Tooltip("Швидкість згладжування діаметра UI-кола зведення. 0 = діаметр змінюється миттєво.")]
         public float uiDiameterLerpSpeed = 18f;
@@ -166,10 +145,6 @@ namespace Game.Scripts.Gameplay.Robots
             uiSniperReticleHorizontalLerpSpeed = ClampFinite(uiSniperReticleHorizontalLerpSpeed, 0f, Default.uiSniperReticleHorizontalLerpSpeed);
             uiSniperReticleVerticalLerpSpeed = ClampFinite(uiSniperReticleVerticalLerpSpeed, 0f, Default.uiSniperReticleVerticalLerpSpeed);
             expandTime = ClampFinite(expandTime, 0.001f, Default.expandTime);
-            referenceHullTraverseDegPerSec = ClampFinite(referenceHullTraverseDegPerSec, 0.001f, Default.referenceHullTraverseDegPerSec);
-            referenceTurretTraverseDegPerSec = ClampFinite(referenceTurretTraverseDegPerSec, 0.001f, Default.referenceTurretTraverseDegPerSec);
-            referenceGunTraverseDegPerSec = ClampFinite(referenceGunTraverseDegPerSec, 0.001f, Default.referenceGunTraverseDegPerSec);
-            referenceCameraAimDegPerSec = ClampFinite(referenceCameraAimDegPerSec, 0.001f, Default.referenceCameraAimDegPerSec);
             serverSyncInterval = ClampFinite(serverSyncInterval, 0.001f, Default.serverSyncInterval);
             serverSyncDeadZoneDeg = ClampFinite(serverSyncDeadZoneDeg, 0f, Default.serverSyncDeadZoneDeg);
         }
@@ -183,10 +158,6 @@ namespace Game.Scripts.Gameplay.Robots
 
             enabled = source.enabled;
             expandTime = source.expandTime;
-            referenceHullTraverseDegPerSec = source.referenceHullTraverseDegPerSec;
-            referenceTurretTraverseDegPerSec = source.referenceTurretTraverseDegPerSec;
-            referenceGunTraverseDegPerSec = source.referenceGunTraverseDegPerSec;
-            referenceCameraAimDegPerSec = source.referenceCameraAimDegPerSec;
             accuracyReferenceDistanceMeters = source.accuracyReferenceDistanceMeters;
             uiMinDiameter = source.uiMinDiameter;
             uiMaxDiameter = source.uiMaxDiameter;
@@ -231,19 +202,23 @@ namespace Game.Scripts.Gameplay.Robots
 
     public sealed class GunDispersionModel
     {
+        private const float MaxTurretMovementDispersion01 = 0.5f;
+        private const float MaxVehicleMovementDispersion01 = 0.5f;
+        private const float ShotDispersion01 = 0.5f;
+        private const float TurretSpeedDeadZone01 = 0.05f;
+
         private bool _hasLastSample;
-        private Quaternion _lastHullRotation;
-        private Quaternion _lastTurretRotation;
+        private float _lastTurretLocalYaw;
         private Vector3 _lastMovePosition;
         private bool _hasLastMovePosition;
-        private float _forcedExpandTargetDeg;
+        private float _shotDispersion01;
 
         public float CurrentDeg { get; private set; }
 
         public void Reset(VehicleRoot root, GunDispersionSettings settings)
         {
             CurrentDeg = settings != null ? settings.MinDispersion : 0f;
-            _forcedExpandTargetDeg = 0f;
+            _shotDispersion01 = 0f;
             _hasLastMovePosition = false;
             Sample(root);
         }
@@ -251,7 +226,7 @@ namespace Game.Scripts.Gameplay.Robots
         public void ForceFullyAimed(VehicleRoot root, GunDispersionSettings settings, bool includeCameraAimMotion)
         {
             CurrentDeg = settings != null ? settings.MinDispersion : 0f;
-            _forcedExpandTargetDeg = 0f;
+            _shotDispersion01 = 0f;
             _hasLastMovePosition = false;
             Sample(root);
         }
@@ -288,19 +263,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return CurrentDeg;
             }
 
-            float targetDeg = settings.MinDispersion;
-            targetDeg += GetMovementPenalty(root, settings, dt);
-
-            float hullPenalty = GetRotationPenalty(GetHullRotation(root), _lastHullRotation, dt, globalSettings.referenceHullTraverseDegPerSec, settings.hullTraverseDispersionDeg);
-            float aimRotationPenalty = GetRotationPenalty(GetTurretRotation(root), _lastTurretRotation, dt, globalSettings.referenceTurretTraverseDegPerSec, settings.turretTraverseDispersionDeg);
-
-            targetDeg += hullPenalty + aimRotationPenalty;
-            if (_forcedExpandTargetDeg > 0f)
-            {
-                targetDeg = Mathf.Max(targetDeg, _forcedExpandTargetDeg);
-            }
-
-            targetDeg = Mathf.Clamp(targetDeg, settings.MinDispersion, settings.MaxDispersion);
+            float dispersion01 = GetMovementSpeed01(root, dt) * MaxVehicleMovementDispersion01;
+            dispersion01 += GetTurretSpeed01(root, dt) * MaxTurretMovementDispersion01;
+            dispersion01 += _shotDispersion01;
+            dispersion01 = Mathf.Clamp01(dispersion01);
+            float targetDeg = Mathf.Lerp(settings.MinDispersion, settings.MaxDispersion, dispersion01);
 
             if (targetDeg > CurrentDeg)
             {
@@ -316,16 +283,16 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             CurrentDeg = Mathf.Clamp(CurrentDeg, settings.MinDispersion, settings.MaxDispersion);
-            if (_forcedExpandTargetDeg > 0f && CurrentDeg >= _forcedExpandTargetDeg - 0.02f)
+            if (_shotDispersion01 > 0f && CurrentDeg >= targetDeg - 0.02f)
             {
-                _forcedExpandTargetDeg = 0f;
+                _shotDispersion01 = 0f;
             }
 
             Sample(root);
             return CurrentDeg;
         }
 
-        public void AddShotBloom(GunDispersionSettings settings, GunDispersionGlobalSettings globalSettings)
+        public void AddShotDispersion(GunDispersionSettings settings, GunDispersionGlobalSettings globalSettings)
         {
             globalSettings ??= GunDispersionGlobalSettings.Default;
             if (settings == null || !globalSettings.enabled)
@@ -333,21 +300,14 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            float shotMultiplier = settings.shotDispersionMultiplier;
-            if (float.IsNaN(shotMultiplier) || float.IsInfinity(shotMultiplier) || shotMultiplier <= 0f)
-            {
-                shotMultiplier = 1.3f;
-            }
-
-            shotMultiplier = Mathf.Max(1f, shotMultiplier);
-            float target = Mathf.Max(CurrentDeg, settings.MinDispersion) * shotMultiplier;
-            _forcedExpandTargetDeg = Mathf.Clamp(target, settings.MinDispersion, settings.MaxDispersion);
-            CurrentDeg = Mathf.Clamp(Mathf.Max(CurrentDeg, _forcedExpandTargetDeg), settings.MinDispersion, settings.MaxDispersion);
+            _shotDispersion01 = Mathf.Max(_shotDispersion01, ShotDispersion01);
+            float shotTargetDeg = Mathf.Lerp(settings.MinDispersion, settings.MaxDispersion, ShotDispersion01);
+            CurrentDeg = Mathf.Clamp(Mathf.Max(CurrentDeg, shotTargetDeg), settings.MinDispersion, settings.MaxDispersion);
         }
 
-        private float GetMovementPenalty(VehicleRoot root, GunDispersionSettings settings, float dt)
+        private float GetMovementSpeed01(VehicleRoot root, float dt)
         {
-            if (settings.movingDispersionDeg <= 0f || dt <= 0f)
+            if (dt <= 0f)
             {
                 return 0f;
             }
@@ -363,56 +323,76 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 delta = currentPosition - _lastMovePosition;
             delta.y = 0f;
 
-            float referenceSpeed = settings.referenceMovementSpeed;
-            if (float.IsNaN(referenceSpeed) || float.IsInfinity(referenceSpeed) || referenceSpeed <= 0.001f)
-            {
-                referenceSpeed = 8f;
-            }
-
             float speed = delta.magnitude / dt;
-            float factor = Mathf.Clamp01(speed / referenceSpeed);
-            return settings.movingDispersionDeg * factor;
-        }
-
-        private static float GetRotationPenalty(Quaternion current, Quaternion last, float dt, float referenceDegPerSec, float maxPenaltyDeg)
-        {
-            if (referenceDegPerSec <= 0.001f || maxPenaltyDeg <= 0f)
+            float maxSpeed = GetMaxMovementSpeed(root);
+            if (maxSpeed <= 0.001f)
             {
                 return 0f;
             }
 
-            float degPerSec = Quaternion.Angle(last, current) / dt;
-            float factor = Mathf.Clamp01(degPerSec / referenceDegPerSec);
-            return maxPenaltyDeg * factor;
+            return Mathf.Clamp01(speed / maxSpeed);
+        }
+
+        private float GetTurretSpeed01(VehicleRoot root, float dt)
+        {
+            if (dt <= 0f || root == null || root.robotHullRotation == null)
+            {
+                return 0f;
+            }
+
+            float current = GetTurretLocalYaw(root);
+            float degPerSecond = Mathf.Abs(Mathf.DeltaAngle(_lastTurretLocalYaw, current)) / dt;
+            float referenceDegPerSecond = root.robotHullRotation.rotationSpeed;
+            if (referenceDegPerSecond <= 0.001f)
+            {
+                return 0f;
+            }
+
+            float speed01 = Mathf.Clamp01(degPerSecond / referenceDegPerSecond);
+            if (speed01 <= TurretSpeedDeadZone01)
+            {
+                return 0f;
+            }
+
+            return Mathf.InverseLerp(TurretSpeedDeadZone01, 1f, speed01);
+        }
+
+        private static float GetMaxMovementSpeed(VehicleRoot root)
+        {
+            if (root == null)
+            {
+                return 0f;
+            }
+
+            if (root.HasRuntimeStats && root.RuntimeStats.Speed > 0f)
+            {
+                return root.RuntimeStats.Speed;
+            }
+
+            if (root.objectMover != null && root.objectMover.maxSpeed > 0f)
+            {
+                return root.objectMover.maxSpeed;
+            }
+
+            return 0f;
         }
 
         private void Sample(VehicleRoot root)
         {
-            _lastHullRotation = GetHullRotation(root);
-            _lastTurretRotation = GetTurretRotation(root);
+            _lastTurretLocalYaw = GetTurretLocalYaw(root);
             _lastMovePosition = GetMovementPosition(root);
             _hasLastMovePosition = true;
             _hasLastSample = true;
         }
 
-        private static Quaternion GetHullRotation(VehicleRoot root)
-        {
-            if (root != null && root.objectMover != null)
-            {
-                return root.objectMover.transform.rotation;
-            }
-
-            return root != null ? root.transform.rotation : Quaternion.identity;
-        }
-
-        private static Quaternion GetTurretRotation(VehicleRoot root)
+        private static float GetTurretLocalYaw(VehicleRoot root)
         {
             if (root != null && root.robotHullRotation != null)
             {
-                return root.robotHullRotation.transform.rotation;
+                return root.robotHullRotation.CurrentLocalYaw;
             }
 
-            return GetHullRotation(root);
+            return 0f;
         }
 
         private static Vector3 GetMovementPosition(VehicleRoot root)

@@ -44,6 +44,13 @@ Dispersion and aim:
 - `NetworkWeaponShooter` updates server and owner dispersion in `Update`.
 - Crosshair/HUD reads owner/server state through existing components.
 - Bots currently decide when to press fire based on line of fire, reload state, and aim alignment; shot spread is still applied by weapon systems.
+- `GunDispersionModel` now uses three runtime inputs for spread: horizontal vehicle speed, actual turret-local yaw speed, and recent shots.
+- Vehicle speed contributes up to 50% of the weapon's `minDispersionDeg` to `maxDispersionDeg` range: 50% max speed = +25% spread, 100% max speed = +50% spread.
+- Turret movement contributes proportionally up to 50% spread: actual `VehicleTurretRotationController.CurrentLocalYaw` speed is divided by `VehicleTurretRotationController.rotationSpeed`, with a small deadzone so very slow turret tracking stays at minimum spread.
+- A shot adds a temporary +50% spread after the shot ray is built; it affects the next aiming state, not the already-fired projectile.
+- The final target factor is `clamp01(vehicleSpeed01 * 0.5 + turretSpeed01 * 0.5 + shotDispersion01)`, then lerped between `minDispersionDeg` and `maxDispersionDeg`.
+- Hull rotation, gun pitch motion, and camera aim motion no longer add dispersion.
+- Max speed for normalization comes from `VehicleRoot.RuntimeStats.Speed` when available, otherwise `VehicleMovementController.maxSpeed`.
 
 Rules when editing weapons:
 - Do not bypass reload/ammo gating.
