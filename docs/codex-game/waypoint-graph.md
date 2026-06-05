@@ -30,6 +30,7 @@ Runtime graph flow:
 2. `WaypointGraphRuntime.Awake` registers the graph by scene handle and builds it when `buildOnAwake` is true.
 3. `VehicleBotBrain.StartBrain` calls `WaypointGraphRuntime.FindOrCreateForScene(root.gameObject.scene)`.
 4. `BotNavigator` uses the graph and `WaypointAStarPathfinder` to choose and follow a path.
+5. For explicit transform or position targets, the graph path routes the bot to the nearest graph node first; after the path is exhausted, `BotNavigator` keeps the explicit target active and drives the final segment directly to the requested target position instead of switching back to random wander.
 
 Important constraints:
 - Runtime graph lookup uses a static dictionary by scene handle. Do not replace it with scene-wide searches.

@@ -35,6 +35,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private Vector3 _desiredTravelDirection;
         private float _lastDesiredTravelDirectionTime;
         private bool _hasExplicitTarget;
+        private bool _hasExplicitPositionTarget;
         private bool _hasDesiredTravelDirection;
         private bool _isPivotTurning;
         private bool _isUnsticking;
@@ -66,16 +67,20 @@ namespace Game.Scripts.AI.WaypointGraph
         public void SetTarget(Transform newTarget)
         {
             target = newTarget;
+            _hasExplicitPositionTarget = false;
             _hasExplicitTarget = target != null;
             ClearPath();
+            _nextRepathTime = 0f;
         }
 
         public void SetTargetPosition(Vector3 position)
         {
             target = null;
             _targetPosition = position;
+            _hasExplicitPositionTarget = true;
             _hasExplicitTarget = true;
             ClearPath();
+            _nextRepathTime = 0f;
         }
 
         public void SetMovementSuppressed(bool suppressed)
@@ -184,6 +189,10 @@ namespace Game.Scripts.AI.WaypointGraph
                     _targetPosition = target.position;
                     _hasExplicitTarget = true;
                 }
+                else if (!_hasExplicitPositionTarget)
+                {
+                    _hasExplicitTarget = false;
+                }
 
                 if (_hasExplicitTarget && _path.Count > 0 && HasTargetMovedEnough(settings))
                 {
@@ -284,7 +293,7 @@ namespace Game.Scripts.AI.WaypointGraph
 
         private void FollowPath(BotWanderSettings settings, float now)
         {
-            if (_path.Count == 0 || _pathIndex >= _path.Count)
+            if (_path.Count == 0)
             {
                 ClearDesiredTravelDirection();
                 ApplyInput(0f, 0f);
@@ -292,11 +301,27 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             Vector3 position = GetMovePosition();
+            if (_pathIndex >= _path.Count)
+            {
+                if (TryFollowExplicitTargetPosition(position, settings))
+                {
+                    return;
+                }
+
+                ClearDesiredTravelDirection();
+                ApplyInput(0f, 0f);
+                return;
+            }
+
             AdvancePathIndex(position, settings);
 
             if (_pathIndex >= _path.Count)
             {
-                _hasExplicitTarget = target != null;
+                if (TryFollowExplicitTargetPosition(position, settings))
+                {
+                    return;
+                }
+
                 ClearPath();
                 Repath(settings, now);
                 return;
@@ -328,6 +353,40 @@ namespace Game.Scripts.AI.WaypointGraph
 
             SetDesiredTravelDirection(desiredDirection);
             ApplyDirectionInput(desiredDirection, waypointDistance, settings);
+        }
+
+        private bool TryFollowExplicitTargetPosition(Vector3 position, BotWanderSettings settings)
+        {
+            if (!_hasExplicitTarget)
+            {
+                return false;
+            }
+
+            Vector3 toTarget = _targetPosition - position;
+            toTarget.y = 0f;
+            float targetDistance = toTarget.magnitude;
+            if (targetDistance <= Mathf.Max(settings.waypointReachDistance, 0.05f))
+            {
+                ClearDesiredTravelDirection();
+                ApplyInput(0f, 0f);
+                return true;
+            }
+
+            Vector3 desiredDirection = toTarget / targetDistance;
+            Vector3 avoidance = CalculateDynamicAvoidance(position, settings);
+            if (avoidance.sqrMagnitude > 0.0001f)
+            {
+                Vector3 adjustedDirection = desiredDirection + avoidance * settings.dynamicAvoidanceWeight;
+                adjustedDirection.y = 0f;
+                if (adjustedDirection.sqrMagnitude > 0.0001f)
+                {
+                    desiredDirection = adjustedDirection.normalized;
+                }
+            }
+
+            SetDesiredTravelDirection(desiredDirection);
+            ApplyDirectionInput(desiredDirection, targetDistance, settings);
+            return true;
         }
 
         private void AdvancePathIndex(Vector3 position, BotWanderSettings settings)

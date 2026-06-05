@@ -71,6 +71,8 @@ Bot movement behavior:
 - Reverse bot input is still sent as normal negative movement input, but `VehicleMovementController` caps all reverse movement to 50% of the vehicle's forward max speed.
 - Navigator publishes a desired travel direction through `TryGetDesiredTravelDirection` so combat/idle aim can point the turret where the bot is driving.
 - Movement can be suppressed by combat via `SetMovementSuppressed(true)`. When suppressed, navigator sends zero movement input and clears travel direction.
+- Combat navigation uses `BotNavigator.SetTargetPosition` for tactical/map positions. The navigator treats those position targets separately from transform targets, keeps them active after reaching the last waypoint node, and drives the final segment directly to the requested tactical position until combat clears or changes it.
+- `SetTarget` and `SetTargetPosition` clear the current path and allow an immediate repath so bots do not wait on `repathCooldown` before reacting to a new combat navigation command.
 
 Current waypoint arrival behavior:
 - `waypointReachDistance` accepts a waypoint if the bot enters the reach radius.
@@ -78,6 +80,7 @@ Current waypoint arrival behavior:
 - `waypointApproachSlowDistance` reduces forward input near the waypoint for tighter arrival.
 - `waypointPassDistance` and `waypointPassedAngle` let the navigator accept a waypoint if the bot passed it nearby instead of circling forever.
 - `HasMovedPastPathSegment` also advances a waypoint if the bot has crossed beyond the segment from the previous waypoint to the current one.
+- When an explicit position target is active and the waypoint path is exhausted, the navigator no longer falls back to random wander. It continues steering toward the explicit target position, with dynamic avoidance still applied, and stops only when it reaches the waypoint reach radius around that position.
 
 Bot combat behavior:
 - Target scan reads map-visible enemies from `ServerRoom.Visibility`, not raw `ServerRoom.GetPlayers()` and not the waypoint graph.
@@ -98,7 +101,7 @@ Bot combat behavior:
   - `FlankDistractedTarget`: when the target is looking away, routes to side/rear positions and delays firing until it has a side/rear or close shot.
   - `FinishWeakTarget`: prioritizes finishing low-HP targets and accepts lower aim-readiness when the shot can likely kill.
   - `DefensiveAnchor`: when low HP or under pressure, prefers holding distance and fires only at 95%+ aim readiness.
-- While a tactic decides to hold and `holdPositionWithLineOfFire` is true, combat suppresses navigation so the bot can aim/fire from the current position instead of circling the target.
+- While a tactic decides to hold and `holdPositionWithLineOfFire` is true, combat suppresses navigation so the bot can aim/fire from the current position instead of circling the target. Hold is limited to the tactic selector's far combat range; beyond that range, bots keep moving toward the target even if they have line of fire.
 - Tactical fire gates use `NetworkWeaponShooter.ServerCurrentDispersionDeg` and `MinDispersionDeg` to estimate aim readiness. Position/defense tactics require 95%+ readiness; close/mobile/finisher tactics can fire earlier when their tactic allows it.
 - Tactical navigation candidates are now adjusted for nearby robots before being sent to `BotNavigator`. The selector checks fixed side/back/forward candidates around the desired tactical point, penalizes positions too close to any active robot, and strongly rejects candidates where a same-team robot sits in the firing segment to the target.
 - If a same-team robot blocks the bot's current firing lane, the bot will not keep `holdPosition`; it disables firing through that ally and drives to a side-step candidate so it can get a cleaner angle instead of sitting behind the ally.

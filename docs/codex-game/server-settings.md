@@ -62,4 +62,5 @@ Current bot settings added recently:
 Current bot combat visibility notes:
 - `BotCombatSettings.targetScanInterval` still controls how often combat re-scores visible targets.
 - `BotCombatSettings.requireLineOfSightToAcquire` now makes line-of-fire candidates win target scoring when available; it does not block movement toward an obstructed target that is still visible on the logical map.
+- `BotCombatSettings.holdPositionWithLineOfFire` suppresses bot navigation only when the current tactic allows holding, line of fire is clean, and the target is within the tactic selector's far combat range. Targets beyond that range still pull bots forward so distant bots do not idle at long sight lines.
 - `BotCombatSettings.maxAcquireDistance`, `BotCombatSettings.viewRangeMultiplier`, and `BotCombatSettings.lostSightForgetSeconds` are legacy fields from the old direct room-scan acquisition path. Current bot target visibility and forgetting are controlled by `MatchVisibilityGlobalSettings` and spotted-memory state.

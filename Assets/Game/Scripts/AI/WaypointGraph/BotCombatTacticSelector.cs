@@ -883,7 +883,8 @@ namespace Game.Scripts.AI.WaypointGraph
         {
             return context.Settings != null
                    && context.Settings.holdPositionWithLineOfFire
-                   && context.HasLineOfFire;
+                   && context.HasLineOfFire
+                   && context.Distance <= FarRange;
         }
 
         private Vector3 BuildRearSidePosition(BotCombatTacticContext context, float rearDistance, float sideDistance)

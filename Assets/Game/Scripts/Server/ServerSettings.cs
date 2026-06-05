@@ -349,7 +349,7 @@ namespace Game.Scripts.Server
         public LayerMask lineOfSightMask = ~0;
         [Tooltip("Перенаправляти навігатор до вибраного ворога замість звичайного wander-руху.")]
         public bool moveTowardTarget = true;
-        [Tooltip("Зупиняти рух і стріляти з поточної позиції, поки вибрана ціль видима.")]
+        [Tooltip("Зупиняти рух і стріляти з поточної позиції, коли вибрана ціль видима, доступна для пострілу і не далі за тактичну дальню дистанцію бота.")]
         public bool holdPositionWithLineOfFire = true;
 
         [Header("Наведення")]
