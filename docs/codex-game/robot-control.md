@@ -16,6 +16,10 @@ Current owner scripts:
   - Handles owner local input and server external input.
   - Implements `IBotInputReceiver` for bot movement.
   - Applies server input to movement, shoot/action state, turret yaw, gun pitch, and desired aim point.
+- `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`
+  - Owns local gameplay camera orbit, zoom steps, and sniper camera placement.
+  - When entering sniper mode, aligns the camera yaw/pitch from the sniper anchor to the current gun aim point before moving the camera, so Shift/scroll zoom does not retarget the gun lower because of camera-origin parallax.
+  - When exiting sniper mode, aligns the camera yaw/pitch from the normal orbit pivot (`rig.position`) to the current gun aim point before restoring the third-person zoom, so the gun does not climb upward when the camera origin changes back.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleServerInput.cs`
   - Small struct for server-side movement/combat input.
   - `Movement` carries movement only.

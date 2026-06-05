@@ -332,9 +332,116 @@ namespace Game.Scripts.Gameplay.Robots
             if (!IsSniperStep(_currentZoomStep))
             {
                 _lastNonSniperZoomStep = _currentZoomStep;
+                AlignSniperCameraToCurrentGunAim();
             }
 
             ApplyZoomStep(GetSniperZoomStep(), false);
+        }
+
+        private void AlignSniperCameraToCurrentGunAim()
+        {
+            if (!TryGetCurrentGunAimPoint(out Vector3 aimPoint))
+            {
+                return;
+            }
+
+            Transform anchor = GetSniperCameraAnchor();
+            if (anchor == null)
+            {
+                return;
+            }
+
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            Vector3 origin = anchor.position;
+            float yaw = _X;
+            float pitch = _Y;
+
+            for (int i = 0; i < 2; i++)
+            {
+                Vector3 direction = aimPoint - origin;
+                if (!TryGetCameraAngles(direction, out yaw, out pitch))
+                {
+                    return;
+                }
+
+                Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+                Vector3 forward = rotation * Vector3.forward;
+                Vector3 up = rotation * Vector3.up;
+                origin = anchor.position
+                         + forward * Mathf.Max(0f, _runtimeSettings.cameraSniperForwardOffset)
+                         + up * _runtimeSettings.cameraSniperVerticalOffset;
+            }
+
+            _X = yaw;
+            _Y = pitch;
+        }
+
+        private bool TryGetCurrentGunAimPoint(out Vector3 aimPoint)
+        {
+            aimPoint = default;
+
+            WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
+            if (weaponAim == null)
+            {
+                return false;
+            }
+
+            Vector3 origin = weaponAim.gun != null ? weaponAim.gun.position : transform.position;
+            if (IsUsableAimPoint(weaponAim.CurrentAimPoint, origin))
+            {
+                aimPoint = weaponAim.CurrentAimPoint;
+                return true;
+            }
+
+            if (IsUsableAimPoint(weaponAim.DesiredAimPoint, origin))
+            {
+                aimPoint = weaponAim.DesiredAimPoint;
+                return true;
+            }
+
+            if (weaponAim.gun == null)
+            {
+                return false;
+            }
+
+            Vector3 forward = weaponAim.GetLogicalAimForwardWorld();
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                return false;
+            }
+
+            forward.Normalize();
+            aimPoint = weaponAim.gun.position + forward * Mathf.Max(0.25f, weaponAim.maxAimDistance);
+            return IsFinite(aimPoint);
+        }
+
+        private static bool IsUsableAimPoint(Vector3 aimPoint, Vector3 origin)
+        {
+            return IsFinite(aimPoint) && (aimPoint - origin).sqrMagnitude > 0.000001f;
+        }
+
+        private bool TryGetCameraAngles(Vector3 direction, out float yaw, out float pitch)
+        {
+            yaw = _X;
+            pitch = _Y;
+
+            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.000001f)
+            {
+                return false;
+            }
+
+            direction.Normalize();
+            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
+            Vector3 euler = rotation.eulerAngles;
+
+            yaw = euler.y;
+            pitch = Mathf.Clamp(NormalizeSignedAngle(euler.x), _runtimeSettings.cameraMinPitch, _runtimeSettings.cameraMaxPitch);
+            return true;
+        }
+
+        private static float NormalizeSignedAngle(float angle)
+        {
+            return Mathf.Repeat(angle + 180f, 360f) - 180f;
         }
 
         private void ExitSniper()
@@ -345,7 +452,23 @@ namespace Game.Scripts.Gameplay.Robots
                 returnStep = NormalZoomStep;
             }
 
+            AlignOrbitCameraToCurrentGunAim();
             ApplyZoomStep(returnStep, false);
+        }
+
+        private void AlignOrbitCameraToCurrentGunAim()
+        {
+            if (rig == null || !TryGetCurrentGunAimPoint(out Vector3 aimPoint))
+            {
+                return;
+            }
+
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            if (TryGetCameraAngles(aimPoint - rig.position, out float yaw, out float pitch))
+            {
+                _X = yaw;
+                _Y = pitch;
+            }
         }
 
         private void ApplyZoomStep(int zoomStep, bool immediate)
