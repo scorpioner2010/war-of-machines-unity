@@ -63,6 +63,7 @@ Bot movement behavior:
 - If a graph is built, navigator finds a path from nearest node to either an explicit target or a random destination node.
 - If no graph exists, navigator uses fallback random wander input.
 - Movement input is always sent as player-like input: forward and turn through `VehicleInputController.ApplyBotInput`.
+- Reverse bot input is still sent as normal negative movement input, but `VehicleMovementController` caps all reverse movement to 50% of the vehicle's forward max speed.
 - Navigator publishes a desired travel direction through `TryGetDesiredTravelDirection` so combat/idle aim can point the turret where the bot is driving.
 - Movement can be suppressed by combat via `SetMovementSuppressed(true)`. When suppressed, navigator sends zero movement input and clears travel direction.
 

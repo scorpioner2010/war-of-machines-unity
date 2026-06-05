@@ -7,6 +7,8 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public class VehicleMovementController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
+        private const float ReverseSpeedMultiplier = 0.5f;
+
         public VehicleRoot vehicleRoot;
         public CharacterController controller;
 
@@ -132,9 +134,10 @@ namespace Game.Scripts.Gameplay.Robots
 
                 bool isLegged = vehicleRoot.footAnimator != null;
                 float speedLimit = GetMaxSpeed(settings);
+                float reverseSpeedLimit = GetReverseSpeedLimit(speedLimit);
                 float baseAcceleration = GetAcceleration(settings) * settings.GetAccelerationMultiplier(isLegged);
 
-                float desiredSpeed = mi.y * speedLimit;
+                float desiredSpeed = GetDesiredForwardSpeed(mi.y, speedLimit);
                 float accelerationRate = baseAcceleration;
                 if (IsStoppingOrBraking(desiredSpeed))
                 {
@@ -143,7 +146,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 _forwardSpeed = Mathf.MoveTowards(_forwardSpeed, desiredSpeed, accelerationRate * dt);
-                _forwardSpeed = Mathf.Clamp(_forwardSpeed, -speedLimit, speedLimit);
+                _forwardSpeed = Mathf.Clamp(_forwardSpeed, -reverseSpeedLimit, speedLimit);
 
                 bool grounded = controller.isGrounded;
                 _vVel = grounded ? -GetGroundedSnap(settings) : _vVel - GetGravity(settings) * dt;
@@ -213,6 +216,22 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return rotateSpeed / Mathf.Max(Time.fixedDeltaTime, 0.0001f);
+        }
+
+        private static float GetDesiredForwardSpeed(float forwardInput, float speedLimit)
+        {
+            forwardInput = Mathf.Clamp(forwardInput, -1f, 1f);
+            if (forwardInput < 0f)
+            {
+                return forwardInput * GetReverseSpeedLimit(speedLimit);
+            }
+
+            return forwardInput * speedLimit;
+        }
+
+        private static float GetReverseSpeedLimit(float speedLimit)
+        {
+            return Mathf.Max(0f, speedLimit) * ReverseSpeedMultiplier;
         }
 
         private float GetGravity(RobotMovementGlobalSettings settings)

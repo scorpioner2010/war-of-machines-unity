@@ -14,7 +14,7 @@ Current owner scripts:
   - Refreshes HP fill immediately during root binding/spawn and on `VehicleHealth.OnHealthChanged`/damage events.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleInputController.cs`
   - Handles owner local input and server external input.
-  - Owner local input supports World of Tanks-style cruise control: `R` steps forward cruise speed through `1/3`, `2/3`, and full `Move.y`, while `F` does the same in reverse.
+  - Owner local input supports World of Tanks-style cruise control as one signed speed level from `-3` to `3`: `R` adds one forward step, `F` adds one reverse step, and each step maps to `1/3` of `Move.y`.
   - Manual `W`/`S`, `Space`, or blocked UI/gameplay input clears cruise control before movement is sent to the server.
   - Implements `IBotInputReceiver` for bot movement.
   - Applies server input to movement, shoot/action state, turret yaw, gun pitch, and desired aim point.
@@ -29,6 +29,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleMovementController.cs`
   - Server-side movement simulation on FishNet ticks.
   - Reads `vehicleRoot.inputManager.Move` and drives a `CharacterController`.
+  - Caps reverse movement at 50% of forward max speed for all vehicles, including human input, cruise control, and bot input.
   - Applies runtime stats for speed, acceleration, and traverse speed.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleTurretRotationController.cs`
   - Turret yaw controller.
@@ -47,7 +48,7 @@ Current owner scripts:
 Input flow:
 - Human owner input is read by `VehicleInputController.Update` and sent to server RPCs.
 - For human owner movement, `W`/`S` still send full forward/reverse input; cruise control sends fractional `Move.y` values from local `R`/`F` state without changing the server input struct.
-- Server authoritative movement reads `VehicleInputController.Move` from `VehicleMovementController`.
+- Server authoritative movement reads `VehicleInputController.Move` from `VehicleMovementController`; negative `Move.y` is always simulated with the 50% reverse speed cap.
 - Bots use the same input channel through `VehicleInputController.ApplyBotInput` and `ServerSetExternalInput`.
 - Combat/idle aim uses `VehicleServerInput.Combat` with `HasAim = true`.
 - Movement-only bot input preserves current shoot/action state and does not clear aim when `HasAim = false`.

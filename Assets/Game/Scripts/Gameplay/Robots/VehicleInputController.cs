@@ -501,28 +501,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void IncreaseCruiseControl(int direction)
         {
-            if (direction > 0)
-            {
-                if (_cruiseSpeedLevel < 0)
-                {
-                    _cruiseSpeedLevel = 1;
-                }
-                else
-                {
-                    _cruiseSpeedLevel = Mathf.Min(_cruiseSpeedLevel + 1, MaxCruiseSpeedLevel);
-                }
-            }
-            else if (direction < 0)
-            {
-                if (_cruiseSpeedLevel > 0)
-                {
-                    _cruiseSpeedLevel = -1;
-                }
-                else
-                {
-                    _cruiseSpeedLevel = Mathf.Max(_cruiseSpeedLevel - 1, -MaxCruiseSpeedLevel);
-                }
-            }
+            _cruiseSpeedLevel = Mathf.Clamp(_cruiseSpeedLevel + direction, -MaxCruiseSpeedLevel, MaxCruiseSpeedLevel);
         }
 
         private float GetCruiseControlInput()
