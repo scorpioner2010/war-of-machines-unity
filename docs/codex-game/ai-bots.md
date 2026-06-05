@@ -18,6 +18,11 @@ Current owner scripts:
   - Plain C# server-side combat coordinator owned by `VehicleBotBrain`.
   - Runs the high-level combat tick only: settings gate, map-visible target refresh/scan, navigation command, aim/fire command.
   - Delegates target scanning, validation, aim points, line-of-fire raycasts, lead prediction, fire gates, navigation control, input writing, and idle aim to focused helper classes in the same folder.
+- `Assets/Game/Scripts/AI/WaypointGraph/BotCombatTacticSelector.cs`
+  - Plain C# server-side tactical layer used by `BotCombatController`.
+  - Chooses the current combat tactic, keeps it stable, and outputs a navigation position, hold/move decision, fire permission, and minimum aim-readiness requirement.
+  - Re-evaluates tactic choice every 3 seconds, keeps a tactic for at least 6 seconds unless a much better emergency option appears, and caches tactical navigation points briefly so bots do not repath every combat tick.
+  - Uses the current `ServerRoom.GetPlayers()` list to score tactical positions against other active robots. It avoids occupied positions and refuses to hold/fire through same-team robots that are between the bot and its target.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotTargetScanner.cs`
   - Acquires candidates from `ServerRoom.Visibility` through `MatchVisibilityService.FillVisibleEnemiesFor(..., List<MatchVisibleEnemy>)`.
   - Starts/refreshes match visibility for server-side bot queries when needed; it does not send map RPCs to bots.
@@ -85,7 +90,18 @@ Bot combat behavior:
 - Aim points prefer turret bounds, then health colliders/armor maps, then turret transform, then root fallback height.
 - Bot aim is solved with `VehicleAimInputSolver.SolveForAimPoint` so turret/gun constraints are respected.
 - Bot firing goes through reload and shooter systems, not direct damage calls.
-- While target is visible and `holdPositionWithLineOfFire` is true, combat suppresses navigation so the bot fires from distance instead of circling the target.
+- Bot combat is now tactic-driven after target selection:
+  - `CloseMobileAssault`: at close range, drives toward side/rear orbit points and may fire in motion with lower aim-readiness.
+  - `FiringPosition`: at medium/far range, holds a clean firing position when allowed and fires only at 95%+ aim readiness.
+  - `PeekFromCover`: at medium range, holds to fire when loaded, but backs/side-steps while reloading before peeking again; this is geometric fallback behavior, not full cover-object discovery.
+  - `KiteStrongTarget`: when a stronger or healthier target is close, drives away diagonally while keeping the gun on target.
+  - `FlankDistractedTarget`: when the target is looking away, routes to side/rear positions and delays firing until it has a side/rear or close shot.
+  - `FinishWeakTarget`: prioritizes finishing low-HP targets and accepts lower aim-readiness when the shot can likely kill.
+  - `DefensiveAnchor`: when low HP or under pressure, prefers holding distance and fires only at 95%+ aim readiness.
+- While a tactic decides to hold and `holdPositionWithLineOfFire` is true, combat suppresses navigation so the bot can aim/fire from the current position instead of circling the target.
+- Tactical fire gates use `NetworkWeaponShooter.ServerCurrentDispersionDeg` and `MinDispersionDeg` to estimate aim readiness. Position/defense tactics require 95%+ readiness; close/mobile/finisher tactics can fire earlier when their tactic allows it.
+- Tactical navigation candidates are now adjusted for nearby robots before being sent to `BotNavigator`. The selector checks fixed side/back/forward candidates around the desired tactical point, penalizes positions too close to any active robot, and strongly rejects candidates where a same-team robot sits in the firing segment to the target.
+- If a same-team robot blocks the bot's current firing lane, the bot will not keep `holdPosition`; it disables firing through that ally and drives to a side-step candidate so it can get a cleaner angle instead of sitting behind the ally.
 - If the current target disappears from logical map visibility, the target is cleared. Target forgetting is now driven by match visibility/spotted-memory settings instead of direct line-of-fire loss alone.
 - VehicleTest-created bots use the same combat scan. Enemy test bots are assigned to the opposing team from the test player; ally test bots use the same team and are ignored by same-team target filtering.
 

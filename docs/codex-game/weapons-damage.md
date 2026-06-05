@@ -29,6 +29,7 @@ Current owner scripts:
   - Runtime pooling for projectiles.
 - `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`
   - Impact FX pooling.
+  - Applies local impact camera shake through CFXR effects with the gameplay camera, distance falloff, the client camera-shake setting, and a runtime strength scale of `0.3` so pooled impact shake is 70% weaker than prefab-authored CFXR strength.
 - `Assets/Game/Scripts/Gameplay/Robots/ProjectileVisualSpawner.cs`
   - Visual projectile spawning support.
 
@@ -43,7 +44,7 @@ Fire flow:
 Dispersion and aim:
 - `NetworkWeaponShooter` updates server and owner dispersion in `Update`.
 - Crosshair/HUD reads owner/server state through existing components.
-- Bots currently decide when to press fire based on line of fire, reload state, and aim alignment; shot spread is still applied by weapon systems.
+- Bots decide when to press fire based on line of fire, reload state, aim alignment, and the current `BotCombatTacticSelector` aim-readiness requirement; shot spread is still applied by weapon systems.
 - `GunDispersionModel` now uses three runtime inputs for spread: horizontal vehicle speed, actual turret-local yaw speed, and recent shots.
 - Vehicle speed contributes up to 50% of the weapon's `minDispersionDeg` to `maxDispersionDeg` range: 50% max speed = +25% spread, 100% max speed = +50% spread.
 - Turret movement contributes proportionally up to 50% spread: actual `VehicleTurretRotationController.CurrentLocalYaw` speed is divided by `VehicleTurretRotationController.rotationSpeed`, with a small deadzone so very slow turret tracking stays at minimum spread.

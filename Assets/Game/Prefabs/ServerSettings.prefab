@@ -47,7 +47,7 @@ MonoBehaviour:
   maxPlayersForFindRoom: 20
   findRoomSeconds: 1
   botsEnabled: 1
-  botsPerMatch: 3
+  botsPerMatch: 20
   defaultBotVehicleCode: ia_l1_starter
   botMmr: 1000
   botNamePrefix: 'Bot '
@@ -81,6 +81,39 @@ MonoBehaviour:
     unstickTurnInput: 1
     dynamicAvoidanceRadius: 4
     dynamicAvoidanceWeight: 0.65
+  botCombat:
+    enabled: 1
+    thinkInterval: 0.12
+    targetScanInterval: 0.45
+    maxAcquireDistance: 800
+    viewRangeMultiplier: 6
+    forgetTargetDistanceMultiplier: 1.5
+    lostSightForgetSeconds: 2.5
+    requireLineOfSightToAcquire: 1
+    lineOfSightMask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    moveTowardTarget: 1
+    holdPositionWithLineOfFire: 1
+    preferTurretAimPoint: 1
+    fallbackTargetHeight: 1.2
+    randomAimRadius: 0.25
+    leadMovingTargets: 1
+    leadPredictionMultiplier: 0.75
+    maxLeadSeconds: 1.25
+    targetVelocitySampleInterval: 0.2
+    aimAlongTravelDirectionWhenNoTarget: 1
+    noTargetTravelAimDistance: 220
+    noTargetTravelDirectionMaxAgeSeconds: 0.8
+    aimForwardWhenNoTargetIdle: 1
+    maxAimYawErrorDeg: 4
+    maxAimPitchErrorDeg: 4
+    maxMuzzleAimErrorDeg: 5
+    maxFireDispersionMultiplier: 6
+    maxFireDispersionAddDeg: 1.75
+    minTargetHoldBeforeFire: 0.2
+    reactionDelayMin: 0.15
+    reactionDelayMax: 0.35
   robotMovement:
     fallbackMaxSpeed: 10
     fallbackAcceleration: 30

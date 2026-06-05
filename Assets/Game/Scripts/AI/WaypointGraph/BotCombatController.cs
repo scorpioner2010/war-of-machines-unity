@@ -16,6 +16,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private readonly BotTargetMotionTracker _motionTracker = new BotTargetMotionTracker();
         private readonly BotCombatInputWriter _inputWriter = new BotCombatInputWriter();
         private readonly BotCombatNavigationController _navigationController = new BotCombatNavigationController();
+        private readonly BotCombatTacticSelector _tacticSelector = new BotCombatTacticSelector();
         private readonly BotFireDecision _fireDecision;
         private readonly BotIdleAimController _idleAimController;
         private readonly BotTargetScanner _targetScanner;
@@ -42,6 +43,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _navigationController.Initialize(navigator);
             _state.ClearTarget();
             _motionTracker.Reset();
+            _tacticSelector.Reset();
             _isInitialized = true;
 
             float now = Time.time;
@@ -55,6 +57,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _navigationController.ReleaseControl();
             _state.ClearTarget();
             _motionTracker.Reset();
+            _tacticSelector.Reset();
             _isInitialized = false;
         }
 
@@ -80,6 +83,7 @@ namespace Game.Scripts.AI.WaypointGraph
                     _navigationController.ReleaseControl();
                     _state.ClearTarget();
                     _motionTracker.Reset();
+                    _tacticSelector.Reset();
                     return;
                 }
 
@@ -186,22 +190,42 @@ namespace Game.Scripts.AI.WaypointGraph
                 : _state.TargetMapPosition + Vector3.up * settings.fallbackTargetHeight;
             bool hasLineOfFire = _state.TargetIsDirectlySpotted
                                  && _lineOfFireChecker.HasLineOfFire(_vehicleRoot, visibleAimPoint, _state.TargetRoot, settings);
-            bool shouldHoldPosition = settings.holdPositionWithLineOfFire && hasLineOfFire;
-            _navigationController.UpdateForTarget(settings, _state.TargetRoot, _state.TargetMapPosition, shouldHoldPosition);
 
             Vector3 aimPoint = _state.TargetIsDirectlySpotted
                 ? _motionTracker.ApplyTargetLead(_vehicleRoot, visibleAimPoint, settings)
                 : visibleAimPoint;
             Vector3 aimForward = _aimController.ResolveAimForward(_vehicleRoot, aimPoint);
             VehicleAimInputResult aimResult = _aimController.SolveAim(_vehicleRoot, aimPoint, aimForward);
+            float aimReadiness01 = BotCombatTacticSelector.GetAimReadiness01(_vehicleRoot);
+            BotCombatTacticContext tacticContext = BotCombatTacticSelector.BuildContext(
+                _vehicleRoot,
+                _state.TargetRoot,
+                _room,
+                settings,
+                _state.TargetMapPosition,
+                _state.TargetIsDirectlySpotted,
+                hasLineOfFire,
+                aimResult.HasState,
+                aimReadiness01,
+                now);
+            BotCombatTacticDecision tacticDecision = _tacticSelector.Tick(tacticContext);
+            _navigationController.UpdateForTarget(
+                settings,
+                _state.TargetRoot,
+                tacticDecision.NavigationPosition,
+                tacticDecision.HoldPosition);
+
             if (!aimResult.HasState)
             {
                 _inputWriter.ClearCombatInput(_vehicleRoot);
                 return;
             }
 
-            bool shoot = hasLineOfFire && _fireDecision.CanShootAtTarget(_vehicleRoot, _state, aimResult, aimPoint, settings, now);
-            Vector2 move = shouldHoldPosition ? Vector2.zero : _vehicleRoot.inputManager.Move;
+            bool shoot = tacticDecision.AllowFire
+                         && hasLineOfFire
+                         && aimReadiness01 >= tacticDecision.RequiredAimReadiness01
+                         && _fireDecision.CanShootAtTarget(_vehicleRoot, _state, aimResult, aimPoint, settings, now);
+            Vector2 move = tacticDecision.HoldPosition ? Vector2.zero : _vehicleRoot.inputManager.Move;
             _inputWriter.ApplyCombatInput(_vehicleRoot, aimResult, shoot, move);
 
             if (shoot && _vehicleRoot.weaponReloadController != null)
@@ -214,6 +238,7 @@ namespace Game.Scripts.AI.WaypointGraph
         {
             _state.ClearTarget();
             _motionTracker.Reset();
+            _tacticSelector.Reset();
             _navigationController.ReleaseControl();
             _inputWriter.ClearCombatInput(_vehicleRoot);
         }

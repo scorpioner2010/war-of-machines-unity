@@ -7,6 +7,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 {
     private const float CameraShakeFullStrengthDistance = 10f;
     private const float CameraShakeMaxDistance = 90f;
+    private const float CameraShakeStrengthScale = 0.3f;
     private const float CameraShakeFullStrengthDistanceSqr =
         CameraShakeFullStrengthDistance * CameraShakeFullStrengthDistance;
     private const float CameraShakeMaxDistanceSqr = CameraShakeMaxDistance * CameraShakeMaxDistance;
@@ -57,7 +58,7 @@ public sealed class PooledImpactFx : MonoBehaviour
             bool cameraShakeEnabled = ClientGameplaySettings.CameraShakeEnabled;
             Camera gameplayCamera = cameraShakeEnabled ? GetGameplayCamera() : null;
             float cameraShakeStrengthMultiplier = cameraShakeEnabled
-                ? GetCameraShakeStrengthMultiplier(gameplayCamera)
+                ? GetCameraShakeStrengthMultiplier(gameplayCamera) * CameraShakeStrengthScale
                 : 0f;
             for (int i = 0; i < cartoonFxEffects.Length; i++)
             {
