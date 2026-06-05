@@ -786,7 +786,7 @@ namespace Game.Scripts.Diagnostics
             }
             if (scopeName.Contains("VehicleHUD"))
             {
-                return "Assets/Game/Scripts/UI/HUD/VehicleHUD.cs";
+                return "Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs";
             }
             if (scopeName.Contains("PositionSync") || scopeName.Contains("Interpolation"))
             {

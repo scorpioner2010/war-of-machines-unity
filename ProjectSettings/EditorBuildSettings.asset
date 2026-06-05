@@ -17,10 +17,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Game/Scenes/MapTest.unity
     guid: 22941451f35a88b48b2cd9af4e675f8c
-  - enabled: 1
+  - enabled: 0
     path: Assets/Game/Scenes/VehicleAutoSpawnTest.unity
     guid: a8834db937f14eb895a4d95555f7d0d3
-  - enabled: 1
+  - enabled: 0
     path: Assets/Game/Scenes/VehicleAutoSpawnTestServer.unity
     guid: d89422c48b6c45f8a4090625ca8a8454
   m_configObjects: {}

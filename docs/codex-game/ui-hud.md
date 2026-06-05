@@ -3,8 +3,10 @@
 Read this file before changing gameplay HUD, crosshair, reload/ammo display, map/player list HUD, pause HUD, or menu UI wiring.
 
 Current owner scripts:
-- `Assets/Game/Scripts/UI/HUD/VehicleHUD.cs`
-  - Vehicle-specific HUD root and root-aware binding.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`
+  - Robot-prefab world HP/nickname HUD root and root-aware binding.
+  - Owns rotating the world HP bar toward the gameplay camera and scaling it by camera distance.
+  - Subscribes to `VehicleHealth.OnHealthChanged` and `OnDamaged`, so the HP fill is initialized on spawn and updates on later health changes.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`
   - Initializes HUD for a vehicle owner.
 - `Assets/Game/Scripts/UI/HUD/DamageScreen.cs`
@@ -27,7 +29,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - VehicleTest bootstrap that instantiates `Assets/Game/Prefabs/UI/GameplayHUD.prefab` under the scene Canvas.
   - Registers and opens the HUD through `MenuManager` when present; otherwise opens the HUD `Menu` directly because VehicleTest has no scene `MenuManager`.
+  - Hides the instantiated `GameplayHUD` while the centered expanded VehicleTest panel is open, then reopens it when the panel is collapsed or vehicle control resumes.
   - Rebinds `GunCrosshair` canvas references after instantiation.
+  - When VehicleTest spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`
   - Gameplay map HUD.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapVisibilityState.cs`
@@ -38,8 +42,12 @@ Current owner scripts:
   - Match timer display.
 - `Assets/Game/Scripts/UI/HUD/PauseMenu.cs`
   - Pause menu behavior.
+  - Suppresses normal gameplay pause handling whenever the `VehicleTest` scene is loaded, not only when it is the active scene, so additive test maps do not open centered pause UI or hide `GameplayHUD`.
 - `Assets/Game/Scripts/MenuController/MenuManager.cs`
   - Global menu state; also affects gameplay input blocking.
+- `Assets/Game/Scripts/MenuController/Menu.cs`
+  - Menu animation controller used by HUD/pause/settings menus.
+  - Provides `CloseImmediate()` for VehicleTest to hide `GameplayHUD` instantly without a DOTween close animation fighting the test overlay visibility.
 
 Rules when editing HUD/UI:
 - Keep gameplay input blocking behavior in sync with `VehicleInputController.IsGameplayInputBlockedByUi`.

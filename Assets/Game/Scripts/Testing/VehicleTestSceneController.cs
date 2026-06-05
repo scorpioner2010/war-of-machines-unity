@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -25,6 +26,18 @@ namespace Game.Scripts.Testing
 {
     public class VehicleTestSceneController : MonoBehaviour
     {
+        private enum TestPanelTab
+        {
+            Vehicle = 0,
+            Bots = 1,
+            Runtime = 2
+        }
+
+        private const string TestPlayerName = "VehicleTest";
+        private const float ExpandedPanelMaxWidth = 520f;
+        private const float ExpandedPanelMaxHeight = 680f;
+        private const float PanelScreenPadding = 12f;
+
         public RobotRegistry registry;
         public Vector3 spawnPosition = new Vector3(0f, 1.2f, 0f);
         public Vector3 spawnRotationEuler = Vector3.zero;
@@ -50,12 +63,20 @@ namespace Game.Scripts.Testing
 
         private VehicleRuntimeStats[] _vehicles = new VehicleRuntimeStats[0];
         private VehicleRoot _spawnedVehicle;
+        private VehicleRuntimeStats _spawnedPlayerStats;
         private int _selectedIndex;
         private bool _loading;
         private string _status = "Press Reload API vehicles.";
         private Vector2 _vehicleScroll;
         private Vector2 _statsScroll;
+        private Vector2 _botsScroll;
         private readonly StringBuilder _builder = new StringBuilder(512);
+        private readonly string[] _testPanelTabs =
+        {
+            "Vehicle",
+            "Bots",
+            "Runtime"
+        };
         private LocalConnectionState _serverState = LocalConnectionState.Stopped;
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
         private bool _startedNetwork;
@@ -63,9 +84,14 @@ namespace Game.Scripts.Testing
         private bool _startedTestClient;
         private bool _networkStartInProgress;
         private bool _testCursorMode = true;
+        private bool _testPanelExpanded = true;
+        private TestPanelTab _activeTab = TestPanelTab.Vehicle;
         private Rect _testGuiArea;
         private GameObject _spawnedGameplayHud;
+        private bool _gameplayHudHiddenForTest;
+        private bool _gameplayHudOpenedForTest;
         private bool _spawnInProgress;
+        private bool _botSpawnInProgress;
         private bool _gameplaySceneLoadInProgress;
         private Scene _gameplayScene;
         private ServerRoom _testRoom;
@@ -149,62 +175,258 @@ namespace Game.Scripts.Testing
         {
             if (!ShouldDrawTestGui())
             {
+                RefreshGameplayHudVisibilityForTest();
                 _testGuiArea = Rect.zero;
                 return;
             }
 
+            RefreshGameplayHudVisibilityForTest();
+
             using (ProfileScope.Measure("OnGUI.VehicleTestSceneController", DiagnosticsCategories.Editor))
             {
-                _testGuiArea = new Rect(12f, 12f, 390f, Screen.height - 24f);
+                if (!_testPanelExpanded)
+                {
+                    DrawCollapsedTestPanel();
+                    return;
+                }
+
+                _testGuiArea = GetExpandedTestPanelRect();
                 GUILayout.BeginArea(_testGuiArea, GUI.skin.box);
 
-                GUILayout.Label("Vehicle Parameter Test");
-                GUILayout.Label(_status);
+                DrawTestPanelHeader();
+                GUILayout.Space(6f);
+                DrawTestPanelTabs();
+                GUILayout.Space(8f);
 
-                GUI.enabled = !_loading;
-                if (GUILayout.Button("Reload API vehicles", GUILayout.Height(30f)))
+                if (_activeTab == TestPanelTab.Vehicle)
                 {
-                    LoadVehiclesAsync().Forget();
+                    DrawVehicleTab();
                 }
-
-                GUILayout.Space(8f);
-                DrawVehicleList();
-                GUILayout.Space(8f);
-                DrawSelectedStats();
-                GUILayout.Space(8f);
-                DrawTestSettingsSummary();
-                GUILayout.Space(8f);
-
-                VehicleRuntimeStats selected = GetSelected();
-                VehicleRoot prefab = GetSelectedPrefab(selected);
-                GUI.enabled = !_loading && !_spawnInProgress && IsNetworkReady() && selected != null && prefab != null;
-                if (GUILayout.Button("Spawn selected robot", GUILayout.Height(34f)))
+                else if (_activeTab == TestPanelTab.Bots)
                 {
-                    SpawnSelectedAsync().Forget();
+                    DrawBotsTab();
                 }
-
-                GUI.enabled = _spawnedVehicle != null;
-                if (GUILayout.Button("Despawn robot", GUILayout.Height(28f)))
+                else
                 {
-                    DespawnCurrent();
+                    DrawRuntimeTab();
                 }
-
-                GUI.enabled = true;
-                GUILayout.Space(8f);
-                GUILayout.Label("Controls: WASD move, mouse aim, LMB fire, Space action.");
 
                 GUILayout.EndArea();
             }
         }
 
-        private bool ShouldDrawTestGui()
+        private void DrawCollapsedTestPanel()
         {
-            if (!showTestGui)
+            _testGuiArea = new Rect(12f, 12f, 190f, 44f);
+            GUILayout.BeginArea(_testGuiArea, GUI.skin.box);
+
+            if (GUILayout.Button("Open Vehicle Test", GUILayout.Height(28f)))
             {
-                return false;
+                _testPanelExpanded = true;
+                SetTestCursorMode(true);
+                RefreshGameplayHudVisibilityForTest();
             }
 
-            return _testCursorMode || _spawnedVehicle == null || _spawnInProgress;
+            GUILayout.EndArea();
+        }
+
+        private void DrawTestPanelHeader()
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Vehicle Test", GUILayout.Width(230f));
+
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Collapse", GUILayout.Width(92f), GUILayout.Height(24f)))
+            {
+                _testPanelExpanded = false;
+                RefreshGameplayHudVisibilityForTest();
+            }
+
+            GUILayout.EndHorizontal();
+            GUILayout.Label(_status);
+        }
+
+        private void DrawTestPanelTabs()
+        {
+            GUI.enabled = true;
+            int selectedTab = GUILayout.Toolbar((int)_activeTab, _testPanelTabs, GUILayout.Height(28f));
+            _activeTab = (TestPanelTab)Mathf.Clamp(selectedTab, 0, _testPanelTabs.Length - 1);
+        }
+
+        private void DrawVehicleTab()
+        {
+            GUI.enabled = !_loading;
+            if (GUILayout.Button("Reload API vehicles", GUILayout.Height(30f)))
+            {
+                LoadVehiclesAsync().Forget();
+            }
+
+            GUI.enabled = true;
+            GUILayout.Space(8f);
+            DrawVehicleList();
+            GUILayout.Space(8f);
+            DrawSelectedStats();
+            GUILayout.Space(8f);
+
+            VehicleRuntimeStats selected = GetSelected();
+            VehicleRoot prefab = GetSelectedPrefab(selected);
+            GUI.enabled = !_loading && !_spawnInProgress && IsNetworkReady() && selected != null && prefab != null;
+            if (GUILayout.Button("Spawn selected robot", GUILayout.Height(34f)))
+            {
+                SpawnSelectedAsync().Forget();
+            }
+
+            GUI.enabled = _spawnedVehicle != null;
+            if (GUILayout.Button("Despawn robot", GUILayout.Height(28f)))
+            {
+                DespawnCurrent();
+            }
+
+            GUI.enabled = true;
+            GUILayout.Space(8f);
+            GUILayout.Label("Controls: WASD move, mouse aim, LMB fire, Space action.");
+        }
+
+        private void DrawBotsTab()
+        {
+            GUILayout.Label("Test bots");
+            GUILayout.Label("Player vehicle: " + (_spawnedVehicle != null ? _spawnedVehicle.name : "not spawned"));
+            GUILayout.Label("Bots in room: " + CountSpawnedBots());
+
+            Scene playerScene = _spawnedVehicle != null ? _spawnedVehicle.gameObject.scene : default;
+            string sceneName = playerScene.IsValid() ? playerScene.name : "none";
+            GUILayout.Label("Bot spawn scene: " + sceneName);
+
+            bool canSpawnBot = !_loading
+                               && !_spawnInProgress
+                               && !_botSpawnInProgress
+                               && IsNetworkReady()
+                               && _spawnedVehicle != null
+                               && playerScene.IsValid()
+                               && playerScene.isLoaded
+                               && HasSpawnPoint(playerScene);
+
+            GUI.enabled = canSpawnBot;
+            if (GUILayout.Button("Add random enemy bot", GUILayout.Height(34f)))
+            {
+                SpawnRandomBotAsync(false).Forget();
+            }
+
+            if (GUILayout.Button("Add random ally bot", GUILayout.Height(34f)))
+            {
+                SpawnRandomBotAsync(true).Forget();
+            }
+
+            GUI.enabled = true;
+            if (!canSpawnBot)
+            {
+                GUILayout.Space(6f);
+                GUILayout.Label(BuildBotSpawnBlockReason(playerScene));
+            }
+
+            GUILayout.Space(8f);
+            DrawBotList();
+        }
+
+        private void DrawRuntimeTab()
+        {
+            GUILayout.Label("Runtime status");
+            GUILayout.Label(IsNetworkReady() ? "Network: ready" : "Network: not ready");
+            GUILayout.Label("Server: " + _serverState);
+            GUILayout.Label("Client: " + _clientState);
+            GUILayout.Label("Cursor/UI mode: " + (_testCursorMode ? "test UI" : "vehicle control"));
+            GUILayout.Space(8f);
+            DrawTestSettingsSummary();
+        }
+
+        private string BuildBotSpawnBlockReason(Scene playerScene)
+        {
+            if (_loading)
+            {
+                return "Bot spawn blocked: vehicles are still loading.";
+            }
+
+            if (_spawnInProgress)
+            {
+                return "Bot spawn blocked: player vehicle spawn is in progress.";
+            }
+
+            if (_botSpawnInProgress)
+            {
+                return "Bot spawn blocked: bot spawn is in progress.";
+            }
+
+            if (!IsNetworkReady())
+            {
+                return "Bot spawn blocked: local FishNet host is not ready.";
+            }
+
+            if (_spawnedVehicle == null)
+            {
+                return "Bot spawn blocked: spawn the player vehicle first.";
+            }
+
+            if (!playerScene.IsValid() || !playerScene.isLoaded)
+            {
+                return "Bot spawn blocked: player vehicle scene is not loaded.";
+            }
+
+            if (!HasSpawnPoint(playerScene))
+            {
+                return "Bot spawn blocked: current player scene has no SpawnPoint.";
+            }
+
+            return "Bot spawn blocked.";
+        }
+
+        private void DrawBotList()
+        {
+            GUILayout.Label("Room bots");
+            _botsScroll = GUILayout.BeginScrollView(_botsScroll, GUILayout.Height(210f));
+
+            if (_testRoom == null || _testRoom.players == null)
+            {
+                GUILayout.Label("No room yet.");
+                GUILayout.EndScrollView();
+                return;
+            }
+
+            bool hasBots = false;
+            for (int i = 0; i < _testRoom.players.Count; i++)
+            {
+                LobbyPlayer player = _testRoom.players[i];
+                if (player == null || !player.isBot)
+                {
+                    continue;
+                }
+
+                hasBots = true;
+                string rootState = player.playerRoot != null ? "spawned" : "missing root";
+                if (player.playerRoot != null && player.playerRoot.health != null && player.playerRoot.health.IsDead)
+                {
+                    rootState = "dead";
+                }
+
+                GUILayout.Label(player.loginName
+                                + " | "
+                                + player.team
+                                + " | "
+                                + player.activeVehicleCode
+                                + " | "
+                                + rootState);
+            }
+
+            if (!hasBots)
+            {
+                GUILayout.Label("No bots spawned.");
+            }
+
+            GUILayout.EndScrollView();
+        }
+
+        private bool ShouldDrawTestGui()
+        {
+            return showTestGui;
         }
 
         private bool IsMouseOverTestGui()
@@ -544,11 +766,14 @@ namespace Game.Scripts.Testing
             }
 
             _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: true);
+            _spawnedPlayerStats = stats.Clone();
             if (testRuntimeSettings != null)
             {
                 testRuntimeSettings.ApplyToVehicle(_spawnedVehicle);
             }
 
+            ConfigureTestCameraForPlayerVehicle(_spawnedVehicle);
+            ConfigureWorldHudForTestVehicle(_spawnedVehicle, TestPlayerName);
             SetTestCursorMode(false);
 
             _status = "Spawned " + runtimeStats.Name + ".";
@@ -558,6 +783,333 @@ namespace Game.Scripts.Testing
             }
 
             _spawnInProgress = false;
+        }
+
+        private async UniTaskVoid SpawnRandomBotAsync(bool ally)
+        {
+            if (_botSpawnInProgress)
+            {
+                return;
+            }
+
+            if (!IsNetworkReady())
+            {
+                _status = "Cannot spawn bot: local FishNet host is not ready.";
+                if (autoStartHost)
+                {
+                    StartHostAsync().Forget();
+                }
+
+                return;
+            }
+
+            if (_spawnedVehicle == null)
+            {
+                _status = "Cannot spawn bot: spawn the player vehicle first.";
+                return;
+            }
+
+            Scene spawnScene = _spawnedVehicle.gameObject.scene;
+            if (!spawnScene.IsValid() || !spawnScene.isLoaded)
+            {
+                _status = "Cannot spawn bot: player vehicle scene is not loaded.";
+                return;
+            }
+
+            if (!HasSpawnPoint(spawnScene))
+            {
+                _status = "Cannot spawn bot: current player scene has no SpawnPoint.";
+                return;
+            }
+
+            NetworkConnection ownerConnection = GetLocalOwnerConnection();
+            if (!IsConnectionReady(ownerConnection))
+            {
+                _status = "Cannot spawn bot: local owner connection missing.";
+                return;
+            }
+
+            _botSpawnInProgress = true;
+            try
+            {
+                EnsureGameResourceManager();
+
+                VehicleRuntimeStats playerStats = _spawnedPlayerStats != null ? _spawnedPlayerStats : GetSelected();
+                ServerRoom room = PrepareTestRoom(ownerConnection, playerStats, spawnScene);
+                LobbyPlayer testPlayer = room.GetPlayerByConnection(ownerConnection);
+                if (testPlayer != null)
+                {
+                    testPlayer.playerRoot = _spawnedVehicle;
+                }
+
+                string vehicleCode = PickRandomBotVehicleCode();
+                if (string.IsNullOrEmpty(vehicleCode))
+                {
+                    _status = "Cannot spawn bot: no valid vehicle prefab was found.";
+                    return;
+                }
+
+                MatchTeam playerTeam = GetSpawnedPlayerTeam();
+                LobbyPlayer bot = CreateTestBotPlayer(room, ally, playerTeam, vehicleCode);
+                room.AddPlayer(bot);
+                UpdateTestRoomMaxPlayers(room);
+
+                VehicleRoot botRoot = await _matchVehicleSpawner.SpawnBotAsync(
+                    room,
+                    bot,
+                    spawnScene,
+                    Mathf.Max(0.1f, gameplaySceneLoadTimeout),
+                    networkManager.ServerManager,
+                    null);
+
+                if (botRoot == null)
+                {
+                    room.RemovePlayer(bot);
+                    UpdateTestRoomMaxPlayers(room);
+                    _status = "Cannot spawn bot: MatchVehicleSpawner failed.";
+                    return;
+                }
+
+                ConfigureWorldHudForTestVehicle(botRoot, bot.loginName);
+                _status = "Spawned " + (ally ? "ally" : "enemy") + " bot "
+                          + bot.loginName
+                          + " ["
+                          + vehicleCode
+                          + "].";
+            }
+            finally
+            {
+                _botSpawnInProgress = false;
+            }
+        }
+
+        private void ConfigureWorldHudForTestVehicle(VehicleRoot vehicleRoot, string nickname)
+        {
+            if (vehicleRoot == null || vehicleRoot.vehicleHUD == null)
+            {
+                return;
+            }
+
+            vehicleRoot.vehicleHUD.SetVehicleRoot(vehicleRoot);
+
+            Camera camera = ResolveGameplayCameraForWorldHud();
+            if (camera != null)
+            {
+                vehicleRoot.vehicleHUD.SetCamera(camera);
+            }
+
+            if (string.IsNullOrEmpty(nickname) && vehicleRoot.characterInit != null)
+            {
+                nickname = vehicleRoot.characterInit.LoginName.Value;
+            }
+
+            if (!string.IsNullOrEmpty(nickname))
+            {
+                vehicleRoot.vehicleHUD.SetNick(nickname);
+            }
+        }
+
+        private void ConfigureTestCameraForPlayerVehicle(VehicleRoot vehicleRoot)
+        {
+            CameraSync cameraSync = RefreshTestCameraSync();
+            if (cameraSync == null || vehicleRoot == null || vehicleRoot.cameraController == null)
+            {
+                return;
+            }
+
+            vehicleRoot.cameraController.Init();
+            cameraSync.target = vehicleRoot.cameraController.transform;
+            cameraSync.SyncToTarget();
+        }
+
+        private Camera ResolveGameplayCameraForWorldHud()
+        {
+            RefreshTestCameraSync();
+
+            if (testCamera != null)
+            {
+                return testCamera;
+            }
+
+            if (CameraSync.In != null && CameraSync.In.gameplayCamera != null)
+            {
+                return CameraSync.In.gameplayCamera;
+            }
+
+            return null;
+        }
+
+        private string PickRandomBotVehicleCode()
+        {
+            List<string> candidates = new List<string>(16);
+
+            if (_vehicles != null)
+            {
+                for (int i = 0; i < _vehicles.Length; i++)
+                {
+                    VehicleRuntimeStats stats = _vehicles[i];
+                    if (stats != null)
+                    {
+                        AddValidVehicleCode(candidates, stats.Code);
+                    }
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                AddValidVehicleCode(candidates, ServerSettings.GetDefaultBotVehicleCode());
+            }
+
+            if (candidates.Count == 0)
+            {
+                List<string> registryCodes = new List<string>(16);
+                GameResourceManager.FillVehicleCodes(registryCodes);
+                for (int i = 0; i < registryCodes.Count; i++)
+                {
+                    AddValidVehicleCode(candidates, registryCodes[i]);
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                AddValidVehicleCode(candidates, GameResourceManager.GetFirstVehicleCode());
+            }
+
+            if (candidates.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return candidates[Random.Range(0, candidates.Count)];
+        }
+
+        private void AddValidVehicleCode(List<string> candidates, string vehicleCode)
+        {
+            if (candidates == null || string.IsNullOrEmpty(vehicleCode) || !HasVehiclePrefab(vehicleCode))
+            {
+                return;
+            }
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                if (candidates[i] == vehicleCode)
+                {
+                    return;
+                }
+            }
+
+            candidates.Add(vehicleCode);
+        }
+
+        private bool HasVehiclePrefab(string vehicleCode)
+        {
+            if (string.IsNullOrEmpty(vehicleCode))
+            {
+                return false;
+            }
+
+            if (registry != null && registry.GetPrefab(vehicleCode) != null)
+            {
+                return true;
+            }
+
+            return GameResourceManager.GetPrefab(vehicleCode) != null;
+        }
+
+        private LobbyPlayer CreateTestBotPlayer(ServerRoom room, bool ally, MatchTeam playerTeam, string vehicleCode)
+        {
+            MatchTeam botTeam = ally ? playerTeam : GetOpposingTeam(playerTeam);
+            return new LobbyPlayer
+            {
+                loginName = BuildTestBotName(room, ally),
+                Connection = null,
+                token = string.Empty,
+                userId = 0,
+                mmr = ServerSettings.GetBotMmr(),
+                activeVehicleId = 0,
+                activeVehicleCode = vehicleCode,
+                team = botTeam,
+                isBot = true,
+                randomPlayerConnected = true
+            };
+        }
+
+        private string BuildTestBotName(ServerRoom room, bool ally)
+        {
+            string basePrefix = ally ? "Ally " : "Enemy ";
+            basePrefix += ServerSettings.GetBotNamePrefix();
+
+            int index = 1;
+            while (index < 10000)
+            {
+                string candidate = basePrefix + index;
+                if (room == null || room.GetPlayerByName(candidate) == null)
+                {
+                    return candidate;
+                }
+
+                index++;
+            }
+
+            return basePrefix + Random.Range(10000, 99999);
+        }
+
+        private MatchTeam GetSpawnedPlayerTeam()
+        {
+            if (_spawnedVehicle != null && _spawnedVehicle.characterInit != null)
+            {
+                MatchTeam team = _spawnedVehicle.characterInit.Team.Value;
+                if (MatchTeamUtility.IsAssigned(team))
+                {
+                    return team;
+                }
+            }
+
+            return MatchTeam.TeamA;
+        }
+
+        private static MatchTeam GetOpposingTeam(MatchTeam team)
+        {
+            return team == MatchTeam.TeamB ? MatchTeam.TeamA : MatchTeam.TeamB;
+        }
+
+        private int CountSpawnedBots()
+        {
+            if (_testRoom == null || _testRoom.players == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = 0; i < _testRoom.players.Count; i++)
+            {
+                LobbyPlayer player = _testRoom.players[i];
+                if (player != null && player.isBot && player.playerRoot != null)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static void UpdateTestRoomMaxPlayers(ServerRoom room)
+        {
+            if (room == null || room.players == null)
+            {
+                return;
+            }
+
+            int count = 0;
+            for (int i = 0; i < room.players.Count; i++)
+            {
+                if (room.players[i] != null)
+                {
+                    count++;
+                }
+            }
+
+            room.maxPlayers = Mathf.Max(1, count);
         }
 
         private bool SpawnVehicleDirect(
@@ -607,6 +1159,11 @@ namespace Game.Scripts.Testing
             if (runtimeStats != null)
             {
                 _spawnedVehicle.ServerApplyRuntimeStats(runtimeStats, syncObservers: true);
+                _spawnedPlayerStats = runtimeStats.Clone();
+            }
+            else
+            {
+                _spawnedPlayerStats = null;
             }
 
             if (testRuntimeSettings != null)
@@ -616,9 +1173,11 @@ namespace Game.Scripts.Testing
 
             if (_spawnedVehicle.characterInit != null)
             {
-                _spawnedVehicle.characterInit.ServerInit(1, PlayerType.Player, "VehicleTest", MatchTeam.TeamA, spawnScene);
+                _spawnedVehicle.characterInit.ServerInit(1, PlayerType.Player, TestPlayerName, MatchTeam.TeamA, spawnScene);
             }
 
+            ConfigureTestCameraForPlayerVehicle(_spawnedVehicle);
+            ConfigureWorldHudForTestVehicle(_spawnedVehicle, TestPlayerName);
             SetTestCursorMode(false);
 
             string displayName = !string.IsNullOrEmpty(vehicleName)
@@ -811,27 +1370,42 @@ namespace Game.Scripts.Testing
 
             _testRoom.roomId = "VehicleTest";
             _testRoom.roomName = "VehicleTest";
-            _testRoom.maxPlayers = 1;
             _testRoom.selectedLocation = spawnScene.IsValid() ? spawnScene.name : gameplaySceneName;
             _testRoom.isInGame = true;
             _testRoom.loadedSceneName = spawnScene.IsValid() ? spawnScene.name : string.Empty;
             _testRoom.handle = spawnScene.IsValid() ? spawnScene.handle : 0;
             _testRoom.sceneSlotIndex = ServerRoom.NoSceneSlot;
             _testRoom.sceneOffsetX = 0;
-            _testRoom.players.Clear();
-            _testRoom.AddPlayer(new LobbyPlayer
-            {
-                loginName = "VehicleTest",
-                Connection = ownerConnection,
-                userId = 0,
-                mmr = 1000,
-                activeVehicleId = stats != null ? stats.VehicleId : 0,
-                activeVehicleCode = stats != null ? stats.Code : string.Empty,
-                team = MatchTeam.TeamA,
-                randomPlayerConnected = true
-            });
+            UpsertTestPlayer(ownerConnection, stats);
+            UpdateTestRoomMaxPlayers(_testRoom);
 
             return _testRoom;
+        }
+
+        private void UpsertTestPlayer(NetworkConnection ownerConnection, VehicleRuntimeStats stats)
+        {
+            if (_testRoom == null)
+            {
+                return;
+            }
+
+            LobbyPlayer player = _testRoom.GetPlayerByConnection(ownerConnection);
+            if (player == null)
+            {
+                player = new LobbyPlayer();
+                _testRoom.AddPlayer(player);
+            }
+
+            player.loginName = TestPlayerName;
+            player.Connection = ownerConnection;
+            player.userId = 0;
+            player.mmr = 1000;
+            player.activeVehicleId = stats != null ? stats.VehicleId : 0;
+            player.activeVehicleCode = stats != null ? stats.Code : string.Empty;
+            player.team = MatchTeam.TeamA;
+            player.isBot = false;
+            player.randomPlayerConnected = true;
+            player.leftBattle = false;
         }
 
         private static void RegisterTestProfile(NetworkConnection ownerConnection, VehicleRuntimeStats stats)
@@ -847,7 +1421,7 @@ namespace Game.Scripts.Testing
                 profile = new PlayerProfile
                 {
                     id = 0,
-                    username = "VehicleTest",
+                    username = TestPlayerName,
                     mmr = 1000
                 };
             }
@@ -858,7 +1432,7 @@ namespace Game.Scripts.Testing
             ServerPlayerSessions.SetProfile(ownerConnection, profile);
         }
 
-        private void ClearTestRoomVehicle()
+        private void ClearTestPlayerVehicle()
         {
             if (_testRoom == null || _testRoom.players == null)
             {
@@ -868,7 +1442,7 @@ namespace Game.Scripts.Testing
             for (int i = 0; i < _testRoom.players.Count; i++)
             {
                 LobbyPlayer player = _testRoom.players[i];
-                if (player != null)
+                if (player != null && !player.isBot)
                 {
                     player.playerRoot = null;
                 }
@@ -896,13 +1470,19 @@ namespace Game.Scripts.Testing
             }
 
             _spawnedVehicle = null;
-            ClearTestRoomVehicle();
+            _spawnedPlayerStats = null;
+            ClearTestPlayerVehicle();
             SetTestCursorMode(true);
         }
 
         private void SetTestCursorMode(bool enabled)
         {
             _testCursorMode = enabled;
+            if (!enabled)
+            {
+                _testPanelExpanded = false;
+            }
+
             Cursor.visible = enabled;
             Cursor.lockState = enabled ? CursorLockMode.None : CursorLockMode.Locked;
 
@@ -910,6 +1490,48 @@ namespace Game.Scripts.Testing
             {
                 _spawnedVehicle.inputManager.SetControlsBlocked(enabled);
             }
+
+            RefreshGameplayHudVisibilityForTest();
+        }
+
+        private void RefreshGameplayHudVisibilityForTest()
+        {
+            if (_spawnedGameplayHud == null)
+            {
+                return;
+            }
+
+            if (ShouldHideGameplayHudForTest())
+            {
+                HideGameplayHudForTest(_spawnedGameplayHud);
+                _gameplayHudHiddenForTest = true;
+                _gameplayHudOpenedForTest = false;
+                return;
+            }
+
+            if (!_gameplayHudOpenedForTest || _gameplayHudHiddenForTest)
+            {
+                OpenGameplayHudForTest(_spawnedGameplayHud);
+                _gameplayHudOpenedForTest = true;
+            }
+
+            _gameplayHudHiddenForTest = false;
+        }
+
+        private bool ShouldHideGameplayHudForTest()
+        {
+            return showTestGui && _testCursorMode && _testPanelExpanded;
+        }
+
+        private Rect GetExpandedTestPanelRect()
+        {
+            float availableWidth = Mathf.Max(320f, Screen.width - PanelScreenPadding * 2f);
+            float availableHeight = Mathf.Max(320f, Screen.height - PanelScreenPadding * 2f);
+            float width = Mathf.Min(ExpandedPanelMaxWidth, availableWidth);
+            float height = Mathf.Min(ExpandedPanelMaxHeight, availableHeight);
+            float x = (Screen.width - width) * 0.5f;
+            float y = (Screen.height - height) * 0.5f;
+            return new Rect(x, y, width, height);
         }
 
         private void ResolveSceneReferences()
@@ -932,7 +1554,55 @@ namespace Game.Scripts.Testing
                 return;
             }
 
+            RefreshTestCameraSync();
+        }
+
+        private CameraSync RefreshTestCameraSync()
+        {
+            if (testCamera == null)
+            {
+                return null;
+            }
+
+            CameraSync cameraSync = testCamera.GetComponent<CameraSync>();
+            if (cameraSync == null)
+            {
+                return null;
+            }
+
+            CameraSync.In = cameraSync;
             cameraSync.gameplayCamera = testCamera;
+            ConfigureTestCameraAsPrimary(cameraSync);
+            return cameraSync;
+        }
+
+        private void ConfigureTestCameraAsPrimary(CameraSync testCameraSync)
+        {
+            if (testCamera == null)
+            {
+                return;
+            }
+
+            testCamera.gameObject.SetActive(true);
+            testCamera.enabled = true;
+            testCamera.depth = 100f;
+
+            CameraSync[] cameraSyncs = FindObjectsByType<CameraSync>(FindObjectsSortMode.None);
+            for (int i = 0; i < cameraSyncs.Length; i++)
+            {
+                CameraSync candidate = cameraSyncs[i];
+                if (candidate == null || candidate == testCameraSync)
+                {
+                    continue;
+                }
+
+                if (candidate.gameplayCamera != null && candidate.gameplayCamera != testCamera)
+                {
+                    candidate.gameplayCamera.enabled = false;
+                }
+
+                candidate.enabled = false;
+            }
         }
 
         private void ResolveTestRuntimeSettings()
@@ -978,7 +1648,7 @@ namespace Game.Scripts.Testing
             _spawnedGameplayHud.transform.SetSiblingIndex(Mathf.Clamp(siblingIndex, 0, canvas.transform.childCount - 1));
 
             ConfigureGameplayHud(_spawnedGameplayHud, canvas);
-            OpenGameplayHudForTest(_spawnedGameplayHud);
+            RefreshGameplayHudVisibilityForTest();
 
             if (replaceSceneGameplayHud && sceneHud != null && sceneHud != _spawnedGameplayHud)
             {
@@ -1107,6 +1777,32 @@ namespace Game.Scripts.Testing
             canvasGroup.alpha = 1f;
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
+        }
+
+        private static void HideGameplayHudForTest(GameObject hudRoot)
+        {
+            if (hudRoot == null)
+            {
+                return;
+            }
+
+            Menu hudMenu = hudRoot.GetComponent<Menu>();
+            if (hudMenu != null)
+            {
+                hudMenu.CloseImmediate();
+                return;
+            }
+
+            CanvasGroup canvasGroup = hudRoot.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+                return;
+            }
+
+            hudRoot.SetActive(false);
         }
 
         private void ResolveNetworkManager()

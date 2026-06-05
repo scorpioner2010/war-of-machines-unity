@@ -28,6 +28,8 @@ Current owner scripts:
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - Test-only local host spawn harness for `VehicleTest`.
   - Loads the configured gameplay scene through FishNet with automatic unload disabled and waits for the local owner connection to be present in that scene through FishNet's client-loaded acknowledgement before calling `MatchVehicleSpawner`.
+  - Maintains a test `ServerRoom` with the local test player plus any VehicleTest-created bots, preserving bot entries when the player vehicle is respawned.
+  - The VehicleTest `Bots` tab adds random ally/enemy bot `Player` records and uses `MatchVehicleSpawner.SpawnBotAsync` instead of custom bot instantiation.
 
 Spawn flow:
 1. Room is created and players/bots are assigned.
@@ -39,6 +41,7 @@ Spawn flow:
 7. Player vehicles are spawned with owner connection; bots are spawned with null owner connection.
 8. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
 9. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
+10. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team.
 
 Rules when editing match/spawn:
 - Keep room state authoritative on server.

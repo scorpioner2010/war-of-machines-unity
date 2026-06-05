@@ -113,6 +113,21 @@ namespace Game.Scripts.MenuController
             SetActive(false);
         }
 
+        public void CloseImmediate()
+        {
+            if (!IsConfigured())
+            {
+                return;
+            }
+
+            _sequence?.Kill();
+            _state = MenuState.Idle;
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+            SetActive(false);
+        }
+
         private bool IsConfigured()
         {
             return menuRect != null && animationPanel != null && canvasGroup != null;

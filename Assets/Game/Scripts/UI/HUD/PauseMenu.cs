@@ -56,7 +56,7 @@ namespace Game.Scripts.UI.HUD
         
         public void DisconnectButtonPressed()
         {
-            if (IsVehicleTestScene())
+            if (IsVehicleTestLoaded())
             {
                 return;
             }
@@ -79,7 +79,7 @@ namespace Game.Scripts.UI.HUD
         
         private void ResumeButtonPressed()
         {
-            if (IsVehicleTestScene())
+            if (IsVehicleTestLoaded())
             {
                 return;
             }
@@ -91,7 +91,7 @@ namespace Game.Scripts.UI.HUD
 
         private void SettingsButtonPressed()
         {
-            if (IsVehicleTestScene())
+            if (IsVehicleTestLoaded())
             {
                 return;
             }
@@ -103,7 +103,7 @@ namespace Game.Scripts.UI.HUD
         
         public void OpenPause()
         {
-            if (IsVehicleTestScene() || !TryRegister())
+            if (IsVehicleTestLoaded() || !TryRegister())
             {
                 return;
             }
@@ -115,7 +115,7 @@ namespace Game.Scripts.UI.HUD
         
         private void Update()
         {
-            if (IsVehicleTestScene())
+            if (IsVehicleTestLoaded())
             {
                 return;
             }
@@ -149,7 +149,7 @@ namespace Game.Scripts.UI.HUD
                 return true;
             }
 
-            if (IsVehicleTestScene())
+            if (IsVehicleTestLoaded())
             {
                 return false;
             }
@@ -158,9 +158,10 @@ namespace Game.Scripts.UI.HUD
             return _registered;
         }
 
-        private static bool IsVehicleTestScene()
+        private static bool IsVehicleTestLoaded()
         {
-            return SceneManager.GetActiveScene().name == "VehicleTest";
+            Scene vehicleTestScene = SceneManager.GetSceneByName("VehicleTest");
+            return vehicleTestScene.IsValid() && vehicleTestScene.isLoaded;
         }
     }
 }

@@ -8,6 +8,10 @@ Current owner scripts:
   - Holds inspector-wired references to input, movement, health, turret, weapon, HUD, bot brain, colliders, armor maps, and configured component lists.
   - Applies `IVehicleRootAware`, `IVehicleInitializable`, and `IVehicleStatsConsumer` to configured components.
   - Tracks `LocalPlayerVehicle` and active vehicles.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`
+  - Robot-owned world HP/nickname HUD component referenced by `VehicleRoot.vehicleHUD`.
+  - Rotates the world HP bar to face the gameplay camera and applies distance scaling from `GameplayRuntimeSettings`.
+  - Refreshes HP fill immediately during root binding/spawn and on `VehicleHealth.OnHealthChanged`/damage events.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleInputController.cs`
   - Handles owner local input and server external input.
   - Implements `IBotInputReceiver` for bot movement.

@@ -20,6 +20,8 @@
 - The user handles all commit/revert/discard actions manually.
 - If rollback/revert/discard is needed, explain what should be done and wait for the user to do it.
 - In most cases, the user decides what to do with git state and staging.
+- If the user explicitly confirms that their current side changes are expected, continue work around those dirty files and do not stop only because they remain modified.
+- Stop and ask only when those approved side changes conflict with the requested work, break important logic, or make verification unreliable.
 
 ## Code style
 - Always use braces for code blocks (`{}`), even for single-line `if`/loops.

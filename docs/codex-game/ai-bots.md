@@ -21,6 +21,9 @@ Current owner scripts:
   - Sends aim/shoot input through `VehicleServerInput` and `VehicleInputController.ServerSetExternalInput`.
 - `Assets/Game/Scripts/AI/WaypointGraph/IBotInputReceiver.cs`
   - Small interface used by navigator to avoid coupling to a specific input controller class.
+- `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
+  - Test-only UI can add a random enemy bot or random ally bot into the spawned test player's current scene.
+  - It creates bot `Player` entries in the test `ServerRoom` and spawns them through `MatchVehicleSpawner.SpawnBotAsync`; it does not implement movement, combat, or waypoint behavior itself.
 - `Assets/Game/Scripts/Server/ServerSettings.cs`
   - Contains `BotWanderSettings` and `BotCombatSettings`.
 - `Assets/Game/Prefabs/ServerSettings.prefab`
@@ -49,6 +52,7 @@ Bot combat behavior:
 - Bot aim is solved with `VehicleAimInputSolver.SolveForAimPoint` so turret/gun constraints are respected.
 - Bot firing goes through reload and shooter systems, not direct damage calls.
 - While target is visible and `holdPositionWithLineOfFire` is true, combat suppresses navigation so the bot fires from distance instead of circling the target.
+- VehicleTest-created bots use the same combat scan. Enemy test bots are assigned to the opposing team from the test player; ally test bots use the same team and are ignored by same-team target filtering.
 
 No-target turret behavior:
 - If no enemy target is selected, `BotCombatController.ApplyNoTargetTravelAim` points the turret along navigator travel direction.

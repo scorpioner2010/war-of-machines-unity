@@ -1,12 +1,12 @@
-using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.Client;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Client;
+using Game.Scripts.UI.HUD;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.HUD
+namespace Game.Scripts.Gameplay.Robots
 {
     public class VehicleHUD : MonoBehaviour, IVehicleRootAware
     {
@@ -27,9 +27,15 @@ namespace Game.Scripts.UI.HUD
 
         public void SetVehicleRoot(VehicleRoot root)
         {
+            if (vehicleRoot != root)
+            {
+                UnsubscribeFromHealth();
+            }
+
             vehicleRoot = root;
             _nextTeamColorRefreshTime = 0f;
             TrySubscribeHealth();
+            RefreshHpView();
             ApplyHpColor();
         }
 
@@ -45,6 +51,7 @@ namespace Game.Scripts.UI.HUD
             SubscribeToLocalPlayerChange();
             PrewarmFloatingTextPool();
             _nextTeamColorRefreshTime = 0f;
+            RefreshHpView();
             ApplyHpColor();
         }
 
@@ -57,6 +64,7 @@ namespace Game.Scripts.UI.HUD
         private void Start()
         {
             TrySubscribeHealth();
+            RefreshHpView();
             ApplyHpColor();
         }
 
@@ -79,8 +87,10 @@ namespace Game.Scripts.UI.HUD
             }
 
             vehicleRoot.health.OnDamaged += OnDamaged;
+            vehicleRoot.health.OnHealthChanged += OnHealthChanged;
             vehicleRoot.health.onDeath.AddListener(OnDeath);
             _subscribedToHealth = true;
+            RefreshHpView();
         }
 
         private void UnsubscribeFromHealth()
@@ -93,6 +103,7 @@ namespace Game.Scripts.UI.HUD
             if (vehicleRoot != null && vehicleRoot.health != null)
             {
                 vehicleRoot.health.OnDamaged -= OnDamaged;
+                vehicleRoot.health.OnHealthChanged -= OnHealthChanged;
                 vehicleRoot.health.onDeath.RemoveListener(OnDeath);
             }
 
@@ -101,13 +112,34 @@ namespace Game.Scripts.UI.HUD
 
         private void OnDamaged(float damageAmount, float currentHealth, float maxHealth)
         {
-            float cur01 = Mathf.Clamp01(currentHealth / Mathf.Max(1f, maxHealth));
-            if (hpView != null)
+            OnHealthChanged(currentHealth, maxHealth);
+            ShowFloatingText(damageAmount);
+        }
+
+        private void OnHealthChanged(float currentHealth, float maxHealth)
+        {
+            SetHpFill(currentHealth, maxHealth);
+        }
+
+        private void RefreshHpView()
+        {
+            if (vehicleRoot == null || vehicleRoot.health == null)
             {
-                hpView.fillAmount = cur01;
+                SetHpFill(1f, 1f);
+                return;
             }
 
-            ShowFloatingText(damageAmount);
+            SetHpFill(vehicleRoot.health.Current, vehicleRoot.health.MaxHealth);
+        }
+
+        private void SetHpFill(float currentHealth, float maxHealth)
+        {
+            if (hpView == null)
+            {
+                return;
+            }
+
+            hpView.fillAmount = Mathf.Clamp01(currentHealth / Mathf.Max(1f, maxHealth));
         }
 
         private void OnDeath()
@@ -148,6 +180,7 @@ namespace Game.Scripts.UI.HUD
         public void SetCamera(Camera cam)
         {
             _mainCamera = cam;
+            AlignToCamera(cam);
         }
 
         public void SetActiveView(bool active)
@@ -165,13 +198,18 @@ namespace Game.Scripts.UI.HUD
                 RefreshHpColorIfNeeded();
 
                 Camera camera = ResolveCamera();
-                if (camera != null)
-                {
-                    transform.forward = camera.transform.forward;
-                }
-
-                ApplyDistanceScale(camera);
+                AlignToCamera(camera);
             }
+        }
+
+        private void AlignToCamera(Camera camera)
+        {
+            if (camera != null)
+            {
+                transform.forward = camera.transform.forward;
+            }
+
+            ApplyDistanceScale(camera);
         }
 
         private void ApplyDistanceScale(Camera camera)
