@@ -15,6 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _active;
         private int _lastLabelCurrent = int.MinValue;
         private int _lastLabelMax = int.MinValue;
+        private string _lastVehicleName;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -84,6 +85,7 @@ namespace Game.Scripts.Gameplay.Robots
             _fillImage = _healthBar.fillImage;
             ApplyHealthColor();
             RefreshLabel();
+            RefreshVehicleName();
 
             _active = true;
             vehicleRoot.health.OnHealthChanged -= OnHealthChanged;
@@ -121,6 +123,7 @@ namespace Game.Scripts.Gameplay.Robots
             _healthBar.slider.value = _display01;
             ApplyHealthColor();
             RefreshLabel();
+            RefreshVehicleName();
         }
 
         private void OnHealthChanged(float currentHealth, float maxHealth)
@@ -157,6 +160,42 @@ namespace Game.Scripts.Gameplay.Robots
             _lastLabelCurrent = cur;
             _lastLabelMax = max;
             _healthBar.label.text = $"{cur} / {max}";
+        }
+
+        private void RefreshVehicleName()
+        {
+            if (_healthBar == null || _healthBar.vehicleNameLabel == null || vehicleRoot == null)
+            {
+                return;
+            }
+
+            string vehicleName = ResolveVehicleName();
+            if (_lastVehicleName == vehicleName)
+            {
+                return;
+            }
+
+            _lastVehicleName = vehicleName;
+            _healthBar.vehicleNameLabel.text = vehicleName;
+        }
+
+        private string ResolveVehicleName()
+        {
+            VehicleRuntimeStats stats = vehicleRoot.RuntimeStats;
+            if (stats != null)
+            {
+                if (!string.IsNullOrEmpty(stats.Name))
+                {
+                    return stats.Name;
+                }
+
+                if (!string.IsNullOrEmpty(stats.Code))
+                {
+                    return stats.Code;
+                }
+            }
+
+            return vehicleRoot.name;
         }
 
         private void ApplyHealthColor()

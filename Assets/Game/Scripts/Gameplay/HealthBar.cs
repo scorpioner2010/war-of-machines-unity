@@ -10,6 +10,7 @@ public class HealthBar : MonoBehaviour
     public Slider slider;
     public Image fillImage;
     public TMP_Text label;
+    public TMP_Text vehicleNameLabel;
 
     private void OnEnable()
     {

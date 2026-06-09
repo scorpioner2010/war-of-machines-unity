@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Gameplay.Robots
 {
-    public class VehicleHUD : MonoBehaviour, IVehicleRootAware
+    public class VehicleHUD : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
     {
         public VehicleRoot vehicleRoot;
         private Camera _mainCamera;
@@ -23,9 +23,10 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _subscribedToHealth;
         private Vector3 _baseLocalScale;
         private bool _hasBaseLocalScale;
-        private bool _spottingVisible = true;
+        private bool _mapVisible = true;
         private bool _isDead;
         private GameplayRuntimeSettings _runtimeSettings;
+        private string _fallbackDisplayName;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -38,8 +39,14 @@ namespace Game.Scripts.Gameplay.Robots
             _nextTeamColorRefreshTime = 0f;
             TrySubscribeHealth();
             RefreshHpView();
+            RefreshDisplayName();
             ApplyHpColor();
             ApplyRootVisibility();
+        }
+
+        public void ApplyVehicleStats(VehicleRuntimeStats stats)
+        {
+            RefreshDisplayName(stats);
         }
 
         private void Awake()
@@ -173,18 +180,16 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void SetNick(string nick)
         {
-            if (nickName != null)
-            {
-                nickName.text = nick;
-            }
+            _fallbackDisplayName = nick;
+            RefreshDisplayName();
 
             ApplyHpColor();
             ApplyRootVisibility();
         }
 
-        public void SetSpottingVisible(bool visible)
+        public void SetMapVisible(bool visible)
         {
-            _spottingVisible = visible;
+            _mapVisible = visible;
             ApplyRootVisibility();
         }
 
@@ -338,6 +343,43 @@ namespace Game.Scripts.Gameplay.Robots
             hpView.color = relation == VehicleHudRelation.Ally ? settings.alliedHpColor : settings.enemyHpColor;
         }
 
+        private void RefreshDisplayName(VehicleRuntimeStats stats = null)
+        {
+            if (nickName == null)
+            {
+                return;
+            }
+
+            VehicleRuntimeStats resolvedStats = stats;
+            if (resolvedStats == null && vehicleRoot != null)
+            {
+                resolvedStats = vehicleRoot.RuntimeStats;
+            }
+
+            if (resolvedStats != null)
+            {
+                if (!string.IsNullOrEmpty(resolvedStats.Name))
+                {
+                    nickName.text = resolvedStats.Name;
+                    return;
+                }
+
+                if (!string.IsNullOrEmpty(resolvedStats.Code))
+                {
+                    nickName.text = resolvedStats.Code;
+                    return;
+                }
+            }
+
+            if (vehicleRoot != null && !string.IsNullOrEmpty(vehicleRoot.name))
+            {
+                nickName.text = vehicleRoot.name;
+                return;
+            }
+
+            nickName.text = _fallbackDisplayName ?? string.Empty;
+        }
+
         private GameplayRuntimeSettings GetRuntimeSettings()
         {
             if (_runtimeSettings == null)
@@ -415,7 +457,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private bool ShouldDisplayRoot()
         {
-            if (!_spottingVisible || _isDead)
+            if (!_mapVisible || _isDead)
             {
                 return false;
             }

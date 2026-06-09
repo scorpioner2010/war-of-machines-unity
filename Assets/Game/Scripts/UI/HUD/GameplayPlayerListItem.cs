@@ -9,6 +9,7 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private TMP_Text nicknameText;
         [SerializeField] private TMP_Text vehicleTypeText;
         [SerializeField] private TMP_Text hpText;
+        [SerializeField] private TMP_Text killsText;
         [SerializeField] private Image healthFill;
         [SerializeField] private Image healthBack;
         [SerializeField] private CanvasGroup canvasGroup;
@@ -24,6 +25,7 @@ namespace Game.Scripts.UI.HUD
         private string _vehicleType;
         private float _currentHealth;
         private float _maxHealth = 1f;
+        private int _kills;
         private bool _isDead;
         private Color _aliveHealthColor = Color.white;
         private RectTransform _healthFillRect;
@@ -36,15 +38,17 @@ namespace Game.Scripts.UI.HUD
             Apply();
         }
 
-        public void SetData(string nickname, string vehicleType, float currentHealth, float maxHealth, bool isDead, Color healthColor)
+        public void SetData(string nickname, string vehicleType, int kills, float currentHealth, float maxHealth, bool isDead, Color healthColor)
         {
             string nextNickname = string.IsNullOrEmpty(nickname) ? "-" : nickname;
             string nextVehicleType = string.IsNullOrEmpty(vehicleType) ? "-" : vehicleType;
+            int nextKills = Mathf.Max(0, kills);
             float nextCurrentHealth = Mathf.Max(0f, currentHealth);
             float nextMaxHealth = Mathf.Max(1f, maxHealth);
             bool nextIsDead = isDead || nextCurrentHealth <= 0f;
             if (_nickname == nextNickname
                 && _vehicleType == nextVehicleType
+                && _kills == nextKills
                 && Mathf.Approximately(_currentHealth, nextCurrentHealth)
                 && Mathf.Approximately(_maxHealth, nextMaxHealth)
                 && _isDead == nextIsDead
@@ -55,6 +59,7 @@ namespace Game.Scripts.UI.HUD
 
             _nickname = nextNickname;
             _vehicleType = nextVehicleType;
+            _kills = nextKills;
             _currentHealth = nextCurrentHealth;
             _maxHealth = nextMaxHealth;
             _isDead = nextIsDead;
@@ -130,6 +135,11 @@ namespace Game.Scripts.UI.HUD
                 vehicleTypeText.text = string.IsNullOrEmpty(_vehicleType) ? "-" : _vehicleType;
             }
 
+            if (killsText != null)
+            {
+                killsText.SetText("K:{0}", _kills);
+            }
+
             ApplyVisualState();
             ApplyHealth();
         }
@@ -154,6 +164,11 @@ namespace Game.Scripts.UI.HUD
             if (hpText != null)
             {
                 hpText.color = _isDead ? deadTextColor : aliveVehicleTypeColor;
+            }
+
+            if (killsText != null)
+            {
+                killsText.color = _isDead ? deadTextColor : aliveNicknameColor;
             }
 
             if (healthBack != null)

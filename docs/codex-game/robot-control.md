@@ -9,9 +9,12 @@ Current owner scripts:
   - Applies `IVehicleRootAware`, `IVehicleInitializable`, and `IVehicleStatsConsumer` to configured components.
   - Tracks `LocalPlayerVehicle` and active vehicles.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`
-  - Robot-owned world HP/nickname HUD component referenced by `VehicleRoot.vehicleHUD`.
+  - Robot-owned world HP/vehicle-name HUD component referenced by `VehicleRoot.vehicleHUD`.
   - Rotates the world HP bar to face the gameplay camera and applies distance scaling from `GameplayRuntimeSettings`.
   - Refreshes HP fill immediately during root binding/spawn and on `VehicleHealth.OnHealthChanged`/damage events.
+  - Consumes runtime vehicle stats to display the robot name, with code and prefab instance name as fallbacks.
+  - Uses overlay materials assigned by `Assets/Game/NameCanvas.prefab`, so its name and HP images render through walls.
+  - Uses `VehicleClientVisibility` for activation: it disappears with the robot's map marker, but while active its overlay materials render through walls.
   - Suppresses its complete world-space presentation on the local owner's gameplay vehicle, independently of spotting updates and nickname initialization.
   - Suppresses the same world-space presentation for menu-preview vehicles after `VehicleRoot.Init(true)`.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleClientVisibility.cs`
@@ -56,6 +59,7 @@ Current owner scripts:
   - Async stat lookup for spawned vehicles.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleNetworkInitializer.cs`
   - Initializes player/bot identity, team, scene, and owner/menu setup.
+  - Carries the server-authored synchronized kill count used by gameplay player-list HUD rows.
   - Publishes a client team-change notification so vehicle visibility refreshes after post-spawn FishNet `Team` SyncVar updates.
 
 Input flow:

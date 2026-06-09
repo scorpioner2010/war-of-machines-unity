@@ -153,7 +153,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (vehicleRoot != null && vehicleRoot.vehicleHUD != null)
             {
-                vehicleRoot.vehicleHUD.SetSpottingVisible(visible);
+                vehicleRoot.vehicleHUD.SetMapVisible(visible);
             }
 
             if (!visible && vehicleRoot != null && vehicleRoot.hoverOutline != null)

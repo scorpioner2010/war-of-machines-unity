@@ -211,6 +211,7 @@ namespace Game.Scripts.Gameplay.Robots
             AddInitializable(initializableBehaviours);
 
             AddStatsConsumer(health);
+            AddStatsConsumer(vehicleHUD);
             AddStatsConsumer(objectMover);
             AddStatsConsumer(robotHullRotation);
             AddStatsConsumer(shooterNet);

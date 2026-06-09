@@ -24,6 +24,7 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly SyncVar<int> _amountPlayersInRoom = new ();
         public readonly SyncVar<string> LoginName = new ("");
         public readonly SyncVar<PlayerType> PlayerType = new(Robots.PlayerType.None);
+        public readonly SyncVar<int> Kills = new();
 
         public void SetVehicleRoot(VehicleRoot vehicleRoot)
         {
@@ -42,6 +43,13 @@ namespace Game.Scripts.Gameplay.Robots
             PlayerType.Value = playerType;
             LoginName.Value = loginName;
             Team.Value = team;
+            Kills.Value = 0;
+        }
+
+        [Server]
+        public void ServerSetKills(int kills)
+        {
+            Kills.Value = Mathf.Max(0, kills);
         }
 
         public override void OnStartServer()

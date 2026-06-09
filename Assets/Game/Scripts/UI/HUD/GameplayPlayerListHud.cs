@@ -277,6 +277,7 @@ namespace Game.Scripts.UI.HUD
 
                 row.Nickname = data.nickname;
                 row.VehicleType = data.vehicleType;
+                row.Kills = Mathf.Max(0, data.kills);
                 row.CurrentHealth = Mathf.Max(0f, data.currentHealth);
                 row.MaxHealth = Mathf.Max(1f, data.maxHealth);
                 row.IsDead = data.isDead || row.CurrentHealth <= 0f;
@@ -367,6 +368,9 @@ namespace Game.Scripts.UI.HUD
 
             row.Nickname = ResolveNickname(vehicleRoot, row);
             row.VehicleType = ResolveVehicleType(vehicleRoot);
+            row.Kills = vehicleRoot.characterInit != null
+                ? Mathf.Max(0, vehicleRoot.characterInit.Kills.Value)
+                : 0;
 
             if (vehicleRoot.health != null)
             {
@@ -485,6 +489,7 @@ namespace Game.Scripts.UI.HUD
             row.Item.SetData(
                 row.Nickname,
                 row.VehicleType,
+                row.Kills,
                 row.CurrentHealth,
                 row.MaxHealth,
                 row.IsDead,
@@ -716,6 +721,7 @@ namespace Game.Scripts.UI.HUD
             public string playerId;
             public string nickname;
             public string vehicleType;
+            public int kills;
             public float currentHealth;
             public float maxHealth;
             public bool isDead;
@@ -736,6 +742,7 @@ namespace Game.Scripts.UI.HUD
             public bool Seen;
             public string Nickname;
             public string VehicleType;
+            public int Kills;
             public float CurrentHealth;
             public float MaxHealth = 1f;
             public bool IsDead;

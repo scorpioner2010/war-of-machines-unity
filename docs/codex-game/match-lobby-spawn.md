@@ -31,6 +31,9 @@ Current owner scripts:
   - Adds bot players to matches according to settings.
 - `Assets/Game/Scripts/Networking/Lobby/MatchTeam.cs`
   - Team identity and same-team checks.
+- `Assets/Game/Scripts/Networking/Lobby/BattleStatisticsService.cs`
+  - Authoritatively records damage and kills in the room `Player` state.
+  - After a confirmed enemy kill, updates the attacker's `VehicleNetworkInitializer.Kills` SyncVar so all clients receive the current frag count for the gameplay player list.
 - `Assets/Game/Scripts/World/Spawns/SpawnPoint.cs`
   - Spawn point selection by scene/team.
 - `Assets/Game/Scripts/World/Spawns/AutomaticPositionSpawnpoints.cs`

@@ -35,6 +35,11 @@ namespace Game.Scripts.Networking.Lobby
             if (target != null)
             {
                 attacker.kills = Mathf.Clamp(attacker.kills + 1, 0, 20);
+
+                if (attackerRoot.characterInit != null)
+                {
+                    attackerRoot.characterInit.ServerSetKills(attacker.kills);
+                }
             }
         }
     }
