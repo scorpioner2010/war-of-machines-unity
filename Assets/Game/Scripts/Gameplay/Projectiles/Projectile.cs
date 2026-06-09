@@ -235,6 +235,7 @@ public class Projectile : MonoBehaviour
     private bool _componentCacheBuilt;
     private bool _tracerConfigured;
     private bool _waitingForTrailFade;
+    private bool _waitingForAuthoritativeResolution;
     private bool _clientTracerWidthConfigured;
     private bool _clientTracerGradientConfigured;
     private float _trailReleaseTime;
@@ -642,6 +643,7 @@ public class Projectile : MonoBehaviour
         _resolvedTargetHandled = false;
         _hasLastHitPoint = false;
         _waitingForTrailFade = false;
+        _waitingForAuthoritativeResolution = false;
         _trailReleaseTime = 0f;
 
         _elapsedTime = authoritative ? 0f : Mathf.Max(0f, passedTime);
@@ -729,6 +731,7 @@ public class Projectile : MonoBehaviour
 
     public void ResolveImpactNow(Vector3 impactPoint, Vector3 impactNormal)
     {
+        _waitingForAuthoritativeResolution = false;
         _hasLastHitPoint = true;
         _lastHitPoint = impactPoint;
         _lastHitNormal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal.normalized : Vector3.up;
@@ -737,6 +740,18 @@ public class Projectile : MonoBehaviour
         DrawDebugHit(impactPoint, _lastHitNormal);
         Explode(impactPoint, _lastHitNormal);
         CompleteFlight();
+    }
+
+    public void ResolveMiss(float maxDistance)
+    {
+        if (_waitingForAuthoritativeResolution)
+        {
+            _waitingForAuthoritativeResolution = false;
+            CompleteFlight();
+            return;
+        }
+
+        SetMaxDistance(maxDistance);
     }
 
     public void ConfigureResolvedMiss(Vector3 targetPoint, Action onAuthoritativeMiss = null)
@@ -781,6 +796,18 @@ public class Projectile : MonoBehaviour
         SetMissContinuationMaxDistance(missContinuationMaxDistance);
     }
 
+    public void ConfigureClientVisualCollision(Transform ignoredRoot)
+    {
+        if (_authoritative)
+        {
+            return;
+        }
+
+        _ignoredRoot = ignoredRoot;
+        _liveCollisionEnabled = true;
+        _resolvedTargetHandled = false;
+    }
+
     private void Update()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -788,6 +815,11 @@ public class Projectile : MonoBehaviour
 #endif
         using (ProfileScope.Measure(_authoritative ? "Server.Projectile.Update" : "Client.Projectile.Update", _authoritative ? DiagnosticsCategories.Physics : DiagnosticsCategories.Client))
         {
+            if (_waitingForAuthoritativeResolution)
+            {
+                return;
+            }
+
             if (_waitingForTrailFade)
             {
                 if (Time.time >= _trailReleaseTime)
@@ -867,7 +899,13 @@ public class Projectile : MonoBehaviour
         transform.position = hit.point;
         _previousPosition = hit.point;
 
-        if (_authoritative && !_resolvedTargetHandled)
+        if (!_authoritative)
+        {
+            StopClientVisualAtCollision();
+            return;
+        }
+
+        if (!_resolvedTargetHandled)
         {
             _resolvedTargetHandled = true;
             _onAuthoritativeLiveHit?.Invoke(hit, travelDirection);
@@ -876,6 +914,21 @@ public class Projectile : MonoBehaviour
         DrawDebugHit(hit.point, _lastHitNormal);
         Explode(hit.point, _lastHitNormal);
         CompleteFlight();
+    }
+
+    private void StopClientVisualAtCollision()
+    {
+        _initialized = false;
+        _liveCollisionEnabled = false;
+        _pendingAuthoritativeCatchupTime = 0f;
+        _waitingForAuthoritativeResolution = true;
+
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.emitting = false;
+        }
+
+        HideNonTracerVisuals();
     }
 
     private bool HasExceededLimits()
@@ -1065,6 +1118,7 @@ public class Projectile : MonoBehaviour
         _initialized = false;
         _liveCollisionEnabled = false;
         _pendingAuthoritativeCatchupTime = 0f;
+        _waitingForAuthoritativeResolution = false;
 
         if (BeginTrailFade())
         {
@@ -1125,6 +1179,7 @@ public class Projectile : MonoBehaviour
         _hasLastHitPoint = false;
         _pendingAuthoritativeCatchupTime = 0f;
         _waitingForTrailFade = false;
+        _waitingForAuthoritativeResolution = false;
         _trailReleaseTime = 0f;
         _ignoredRoot = null;
         _onAuthoritativeLiveHit = null;

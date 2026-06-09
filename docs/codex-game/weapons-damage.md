@@ -25,6 +25,8 @@ Current owner scripts:
   - Ballistic math helpers.
 - `Assets/Game/Scripts/Gameplay/Projectiles/Projectile.cs`
   - Projectile visual/simulation component.
+  - Authoritative projectiles own hit callbacks and damage-resolution timing.
+  - Client visual projectiles sweep against the configured hit mask while flying. A local collision immediately stops and hides the shell/tracer head without applying damage or spawning impact FX; the hidden projectile waits for the authoritative result.
 - `Assets/Game/Scripts/Gameplay/Projectiles/ProjectileRuntimePool.cs`
   - Runtime pooling for projectiles.
 - `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`
@@ -36,6 +38,8 @@ Current owner scripts:
 Fire flow:
 - Human fire input is owned by `VehicleInputController` and consumed by `WeaponReloadController` on the owner.
 - Owner path uses client prediction plus server RPC validation.
+- Predicted owner and observer projectiles use client-only collision to prevent visible wall/target overshoot caused by RPC latency.
+- Impact FX remains authoritative: a confirmed hit resolves at the server point, while a server miss releases any client visual that was waiting after a local collision.
 - Server validates reload/ammo in `WeaponReloadController`.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Damage should be applied only through authoritative server hit resolution, not directly from bot AI.

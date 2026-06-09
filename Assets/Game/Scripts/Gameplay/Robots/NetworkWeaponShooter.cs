@@ -389,7 +389,13 @@ namespace Game.Scripts.Gameplay.Robots
                 visible,
                 onAuthoritativeImpact,
                 configureResolvedTarget);
-            return ProjectileVisualSpawner.Spawn(spawnParams);
+            Projectile projectile = ProjectileVisualSpawner.Spawn(spawnParams);
+            if (projectile != null && !authoritative)
+            {
+                projectile.ConfigureClientVisualCollision(vehicleRoot != null ? vehicleRoot.transform : null);
+            }
+
+            return projectile;
         }
 
         private ProjectileVisualSpawnParams CreateProjectileSpawnParams(
@@ -1177,7 +1183,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             else
             {
-                projectile.SetMaxDistance(GetMaxShotDistance());
+                projectile.ResolveMiss(GetMaxShotDistance());
             }
 
             _predictedProjectiles.Remove(shotId);
@@ -1213,7 +1219,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             else
             {
-                projectile.SetMaxDistance(GetMaxShotDistance());
+                projectile.ResolveMiss(GetMaxShotDistance());
             }
 
             _observedProjectiles.Remove(shotId);
