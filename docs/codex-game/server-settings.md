@@ -38,6 +38,8 @@ Important settings classes currently used by recent gameplay work:
 - `MatchVisibilityGlobalSettings`
   - Logical map spotting for teams, including tick interval, fallback/max view range, guaranteed detection range, line-of-sight mask, and spotted-memory duration.
   - Bot target acquisition uses this visibility state through `MatchVisibilityService`, not an omniscient room player scan.
+  - `spottedMemorySeconds` starts at the server-confirmed transition from direct spotting to hidden and keeps the `EnemyLastKnown` map entry and the enemy's 3D presentation visible for that duration.
+  - `guaranteedDetectionRange` bypasses only the normal view-range statistic. It does not bypass terrain or walls while `requireLineOfSight` is enabled.
 
 Rules when editing settings:
 - Add fields to the correct nested settings class.

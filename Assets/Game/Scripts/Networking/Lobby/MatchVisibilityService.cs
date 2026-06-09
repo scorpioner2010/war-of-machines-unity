@@ -13,7 +13,8 @@ namespace Game.Scripts.Networking.Lobby
         Hidden = 0,
         Ally = 1,
         Enemy = 2,
-        Destroyed = 3
+        Destroyed = 3,
+        EnemyLastKnown = 4
     }
 
     public interface IMatchVisibilityUpdateSink
@@ -25,7 +26,8 @@ namespace Game.Scripts.Networking.Lobby
             int[] objectIds,
             byte[] relations,
             Vector3[] positions,
-            float[] yaws);
+            float[] yaws,
+            float[] remainingVisibilitySeconds);
     }
 
     public sealed class MatchVisibilityService
@@ -145,8 +147,8 @@ namespace Game.Scripts.Networking.Lobby
 
             using (ProfileScope.Measure("Server.Visibility.BuildSnapshots", DiagnosticsCategories.Server))
             {
-                BuildSnapshotForTeam(_teamA, now);
-                BuildSnapshotForTeam(_teamB, now);
+                BuildSnapshotForTeam(_teamA, now, settings);
+                BuildSnapshotForTeam(_teamB, now, settings);
             }
 
             _lastStateRefreshTime = now;
@@ -404,6 +406,23 @@ namespace Game.Scripts.Networking.Lobby
             _teamB.BeginFrame();
 
             int lineOfSightChecksRemaining = Mathf.Max(1, settings.maxLineOfSightChecksPerTick);
+            UpdateTeamSpottingPass(now, settings, true, ref lineOfSightChecksRemaining);
+            UpdateTeamSpottingPass(now, settings, false, ref lineOfSightChecksRemaining);
+
+            float memorySeconds = Mathf.Max(0f, settings.spottedMemorySeconds);
+            _teamA.EndFrame(now, memorySeconds);
+            _teamB.EndFrame(now, memorySeconds);
+            _teamA.RemoveExpired(now);
+            _teamB.RemoveExpired(now);
+            RemoveStaleLineOfSightCache(now, settings);
+        }
+
+        private void UpdateTeamSpottingPass(
+            float now,
+            MatchVisibilityGlobalSettings settings,
+            bool previouslySpottedTargets,
+            ref int lineOfSightChecksRemaining)
+        {
             for (int i = 0; i < _participants.Count; i++)
             {
                 VisibilityParticipant spotter = _participants[i];
@@ -431,6 +450,11 @@ namespace Game.Scripts.Networking.Lobby
                         continue;
                     }
 
+                    if (spotterTeam.WasDirectlySpotted(target.ObjectId) != previouslySpottedTargets)
+                    {
+                        continue;
+                    }
+
                     if (spotterTeam.IsDirectlySpotted(target.ObjectId))
                     {
                         continue;
@@ -438,18 +462,10 @@ namespace Game.Scripts.Networking.Lobby
 
                     if (CanSpot(spotter, target, settings, now, ref lineOfSightChecksRemaining))
                     {
-                        spotterTeam.MarkSpotted(
-                            target.ObjectId,
-                            now + Mathf.Max(0f, settings.spottedMemorySeconds),
-                            target.Position,
-                            target.Yaw);
+                        spotterTeam.MarkSpotted(target.ObjectId, target.Position, target.Yaw);
                     }
                 }
             }
-
-            _teamA.RemoveExpired(now);
-            _teamB.RemoveExpired(now);
-            RemoveStaleLineOfSightCache(now, settings);
         }
 
         private bool CanSpot(
@@ -462,13 +478,11 @@ namespace Game.Scripts.Networking.Lobby
             Vector3 delta = target.Position - spotter.Position;
             float distanceSqr = delta.sqrMagnitude;
             float guaranteedRange = Mathf.Max(0f, settings.guaranteedDetectionRange);
-            if (guaranteedRange > 0f && distanceSqr <= guaranteedRange * guaranteedRange)
-            {
-                return true;
-            }
-
+            bool withinGuaranteedRange = guaranteedRange > 0f
+                                         && distanceSqr <= guaranteedRange * guaranteedRange;
             float range = Mathf.Max(0f, spotter.ViewRange);
-            if (range <= 0f || distanceSqr > range * range)
+            bool withinViewRange = range > 0f && distanceSqr <= range * range;
+            if (!withinGuaranteedRange && !withinViewRange)
             {
                 return false;
             }
@@ -509,7 +523,7 @@ namespace Game.Scripts.Networking.Lobby
 
             if (lineOfSightChecksRemaining <= 0)
             {
-                return false;
+                return hasCached && cached.Visible;
             }
 
             lineOfSightChecksRemaining--;
@@ -597,9 +611,14 @@ namespace Game.Scripts.Networking.Lobby
             return layer == ArmorLayer || layer == ChassisLayer;
         }
 
-        private void BuildSnapshotForTeam(TeamVisibilityState teamState, float now)
+        private void BuildSnapshotForTeam(
+            TeamVisibilityState teamState,
+            float now,
+            MatchVisibilityGlobalSettings settings)
         {
             _entries.Clear();
+            float directFallbackSeconds = Mathf.Max(0f, settings.spottedMemorySeconds)
+                                          + Mathf.Max(0.05f, settings.tickInterval);
 
             for (int i = 0; i < _participants.Count; i++)
             {
@@ -615,12 +634,22 @@ namespace Game.Scripts.Networking.Lobby
                     continue;
                 }
 
+                float remainingVisibilitySeconds = -1f;
+                if (MatchTeamUtility.AreOpposingAssignedTeams(teamState.Team, participant.Team))
+                {
+                    remainingVisibilitySeconds = teamState.GetRemainingVisibilitySeconds(
+                        participant.ObjectId,
+                        now,
+                        directFallbackSeconds);
+                }
+
                 _entries.Add(new MapVisibilityEntry
                 {
                     ObjectId = participant.ObjectId,
                     Relation = relation,
                     Position = position,
-                    Yaw = yaw
+                    Yaw = yaw,
+                    RemainingVisibilitySeconds = remainingVisibilitySeconds
                 });
             }
 
@@ -647,9 +676,14 @@ namespace Game.Scripts.Networking.Lobby
             if (MatchTeamUtility.AreOpposingAssignedTeams(viewerTeam, participant.Team)
                 && teamState.TryGetEnemyVisibility(participant.ObjectId, now, participant.Position, participant.Yaw, out position, out yaw))
             {
-                return participant.IsDead
-                    ? MapVehicleVisibilityRelation.Destroyed
-                    : MapVehicleVisibilityRelation.Enemy;
+                if (participant.IsDead)
+                {
+                    return MapVehicleVisibilityRelation.Destroyed;
+                }
+
+                return teamState.IsDirectlySpotted(participant.ObjectId)
+                    ? MapVehicleVisibilityRelation.Enemy
+                    : MapVehicleVisibilityRelation.EnemyLastKnown;
             }
 
             return MapVehicleVisibilityRelation.Hidden;
@@ -682,7 +716,8 @@ namespace Game.Scripts.Networking.Lobby
                     teamState.ObjectIds,
                     teamState.Relations,
                     teamState.Positions,
-                    teamState.Yaws);
+                    teamState.Yaws,
+                    teamState.RemainingVisibilitySeconds);
             }
         }
 
@@ -714,6 +749,7 @@ namespace Game.Scripts.Networking.Lobby
                     Array.Empty<int>(),
                     Array.Empty<byte>(),
                     Array.Empty<Vector3>(),
+                    Array.Empty<float>(),
                     Array.Empty<float>());
             }
         }
@@ -778,6 +814,7 @@ namespace Game.Scripts.Networking.Lobby
             public MapVehicleVisibilityRelation Relation;
             public Vector3 Position;
             public float Yaw;
+            public float RemainingVisibilitySeconds;
         }
 
         private struct CachedLineOfSight
@@ -796,6 +833,7 @@ namespace Game.Scripts.Networking.Lobby
         private sealed class TeamVisibilityState
         {
             private readonly HashSet<int> _directlySpottedObjectIds = new HashSet<int>();
+            private readonly HashSet<int> _previouslyDirectlySpottedObjectIds = new HashSet<int>();
             private readonly Dictionary<int, SpottedMemoryState> _spottedMemory = new Dictionary<int, SpottedMemoryState>(16);
             private readonly List<int> _expiredObjectIds = new List<int>(16);
 
@@ -806,6 +844,7 @@ namespace Game.Scripts.Networking.Lobby
             public byte[] Relations = Array.Empty<byte>();
             public Vector3[] Positions = Array.Empty<Vector3>();
             public float[] Yaws = Array.Empty<float>();
+            public float[] RemainingVisibilitySeconds = Array.Empty<float>();
 
             public TeamVisibilityState(MatchTeam team)
             {
@@ -814,23 +853,64 @@ namespace Game.Scripts.Networking.Lobby
 
             public void BeginFrame()
             {
+                _previouslyDirectlySpottedObjectIds.Clear();
+                foreach (int objectId in _directlySpottedObjectIds)
+                {
+                    _previouslyDirectlySpottedObjectIds.Add(objectId);
+                }
+
                 _directlySpottedObjectIds.Clear();
             }
 
-            public void MarkSpotted(int objectId, float visibleUntil, Vector3 position, float yaw)
+            public void MarkSpotted(int objectId, Vector3 position, float yaw)
             {
                 _directlySpottedObjectIds.Add(objectId);
                 _spottedMemory[objectId] = new SpottedMemoryState
                 {
-                    VisibleUntil = visibleUntil,
+                    VisibleUntil = float.PositiveInfinity,
                     LastKnownPosition = position,
                     LastKnownYaw = yaw
                 };
             }
 
+            public void EndFrame(float now, float memorySeconds)
+            {
+                foreach (int objectId in _previouslyDirectlySpottedObjectIds)
+                {
+                    if (_directlySpottedObjectIds.Contains(objectId)
+                        || !_spottedMemory.TryGetValue(objectId, out SpottedMemoryState state))
+                    {
+                        continue;
+                    }
+
+                    state.VisibleUntil = now + memorySeconds;
+                    _spottedMemory[objectId] = state;
+                }
+            }
+
+            public bool WasDirectlySpotted(int objectId)
+            {
+                return _previouslyDirectlySpottedObjectIds.Contains(objectId);
+            }
+
             public bool IsDirectlySpotted(int objectId)
             {
                 return _directlySpottedObjectIds.Contains(objectId);
+            }
+
+            public float GetRemainingVisibilitySeconds(int objectId, float now, float directFallbackSeconds)
+            {
+                if (_directlySpottedObjectIds.Contains(objectId))
+                {
+                    return directFallbackSeconds;
+                }
+
+                if (_spottedMemory.TryGetValue(objectId, out SpottedMemoryState state))
+                {
+                    return Mathf.Max(0f, state.VisibleUntil - now);
+                }
+
+                return 0f;
             }
 
             public bool IsVisible(int objectId, float now)
@@ -908,6 +988,7 @@ namespace Game.Scripts.Networking.Lobby
                     Relations[i] = (byte)entry.Relation;
                     Positions[i] = entry.Position;
                     Yaws[i] = entry.Yaw;
+                    RemainingVisibilitySeconds[i] = entry.RemainingVisibilitySeconds;
                 }
             }
 
@@ -916,12 +997,14 @@ namespace Game.Scripts.Networking.Lobby
                 Version = 0;
                 Count = 0;
                 _directlySpottedObjectIds.Clear();
+                _previouslyDirectlySpottedObjectIds.Clear();
                 _spottedMemory.Clear();
                 _expiredObjectIds.Clear();
                 ObjectIds = Array.Empty<int>();
                 Relations = Array.Empty<byte>();
                 Positions = Array.Empty<Vector3>();
                 Yaws = Array.Empty<float>();
+                RemainingVisibilitySeconds = Array.Empty<float>();
             }
 
             private void EnsureSnapshotCapacity(int count)
@@ -935,6 +1018,7 @@ namespace Game.Scripts.Networking.Lobby
                 Relations = new byte[count];
                 Positions = new Vector3[count];
                 Yaws = new float[count];
+                RemainingVisibilitySeconds = new float[count];
             }
         }
     }

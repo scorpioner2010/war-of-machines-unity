@@ -5,13 +5,25 @@ Read this file before changing vehicle input, movement, turret rotation, gun pit
 Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleRoot.cs`
   - Central reference hub for a vehicle prefab.
-  - Holds inspector-wired references to input, movement, health, turret, weapon, HUD, bot brain, colliders, armor maps, and configured component lists.
+  - Holds inspector-wired references to input, movement, health, turret, weapon, HUD, client visibility, bot brain, colliders, armor maps, and configured component lists.
   - Applies `IVehicleRootAware`, `IVehicleInitializable`, and `IVehicleStatsConsumer` to configured components.
   - Tracks `LocalPlayerVehicle` and active vehicles.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`
   - Robot-owned world HP/nickname HUD component referenced by `VehicleRoot.vehicleHUD`.
   - Rotates the world HP bar to face the gameplay camera and applies distance scaling from `GameplayRuntimeSettings`.
   - Refreshes HP fill immediately during root binding/spawn and on `VehicleHealth.OnHealthChanged`/damage events.
+  - Suppresses its complete world-space presentation on the local owner's gameplay vehicle, independently of spotting updates and nickname initialization.
+  - Suppresses the same world-space presentation for menu-preview vehicles after `VehicleRoot.Init(true)`.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleClientVisibility.cs`
+  - Owns client-side rendering visibility for a spawned vehicle without changing network/gameplay activation.
+  - Treats direct enemy spotting and spotted-memory map presence as visible, so the model disappears exactly when the map marker disappears.
+  - Requires every visual `Renderer` to be assigned in `visualRenderers`; hidden enemies are suppressed with `forceRenderingOff`.
+  - `Assets/Game/Prefabs/parentT1Hunter.prefab` and `Assets/Game/Prefabs/parentT2.prefab` own the serialized component, `VehicleRoot.clientVisibility` reference, and complete renderer lists.
+  - Applies its first client visibility result immediately from `OnStartClient`, preventing an unconfirmed remote vehicle from rendering for an initial frame.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleAutoAimController.cs`
+  - Rejects enemies hidden by `VehicleClientVisibility`, including an already locked target after its direct spotting expires.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleHoverOutline.cs`
+  - Rejects hidden enemies and clears an active outline when the visibility presenter hides its vehicle.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleInputController.cs`
   - Handles owner local input and server external input.
   - Owner local input supports World of Tanks-style cruise control as one signed speed level from `-3` to `3`: `R` adds one forward step, `F` adds one reverse step, and each step maps to `1/3` of `Move.y`.
@@ -44,6 +56,7 @@ Current owner scripts:
   - Async stat lookup for spawned vehicles.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleNetworkInitializer.cs`
   - Initializes player/bot identity, team, scene, and owner/menu setup.
+  - Publishes a client team-change notification so vehicle visibility refreshes after post-spawn FishNet `Team` SyncVar updates.
 
 Input flow:
 - Human owner input is read by `VehicleInputController.Update` and sent to server RPCs.
@@ -60,6 +73,7 @@ Aiming flow:
 
 Prefab/reference rule:
 - `VehicleRoot` references should be assigned in prefab/scene inspector.
+- Battle vehicle prefabs must assign `VehicleRoot.clientVisibility` and every model renderer in `VehicleClientVisibility.visualRenderers`; missing renderer entries can leak hidden geometry.
 - Do not add runtime component discovery for required vehicle parts.
 - If a new vehicle subsystem is needed, add serialized/configured references and validate missing configuration with clear errors.
 

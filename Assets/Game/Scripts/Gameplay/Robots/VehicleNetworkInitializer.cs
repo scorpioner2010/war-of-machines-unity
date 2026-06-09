@@ -17,6 +17,8 @@ namespace Game.Scripts.Gameplay.Robots
 
     public class VehicleNetworkInitializer : NetworkBehaviour, IVehicleRootAware
     {
+        public static event System.Action ClientTeamChanged;
+
         public VehicleRoot playerRoot;
 
         private readonly SyncVar<int> _amountPlayersInRoom = new ();
@@ -48,11 +50,24 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartClient()
         {
+            Team.OnChange += HandleTeamChanged;
+
             if (IsOwner)
             {
                 playerRoot.Init();
                 SetNickNameProcessAsync().Forget();
             }
+        }
+
+        public override void OnStopClient()
+        {
+            Team.OnChange -= HandleTeamChanged;
+            base.OnStopClient();
+        }
+
+        private void HandleTeamChanged(MatchTeam previous, MatchTeam next, bool asServer)
+        {
+            ClientTeamChanged?.Invoke();
         }
 
         private async UniTask SetNickNameProcessAsync()

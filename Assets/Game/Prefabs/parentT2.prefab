@@ -2390,6 +2390,7 @@ GameObject:
   - component: {fileID: -5797703676881531830}
   - component: {fileID: 4814927226351074180}
   - component: {fileID: -7510844428716302861}
+  - component: {fileID: 8312345678901234567}
   - component: {fileID: 1939820047033769441}
   - component: {fileID: 3957680207120508506}
   - component: {fileID: 5129350956868591253}
@@ -2526,6 +2527,7 @@ MonoBehaviour:
   caterpillarTrack: {fileID: 4526065669619433319}
   footAnimator: {fileID: 0}
   vehicleHUD: {fileID: 3572072622275958224}
+  clientVisibility: {fileID: 8312345678901234567}
   botBrain: {fileID: 3957680207120508506}
   hoverOutline: {fileID: -7510844428716302861}
   armorMaps:
@@ -2677,6 +2679,7 @@ MonoBehaviour:
   - {fileID: 7735890674649805522}
   - {fileID: 7546239790013466749}
   - {fileID: 3572072622275958224}
+  - {fileID: 8312345678901234567}
   initializableBehaviours:
   - {fileID: -5797703676881531830}
   - {fileID: -7510844428716302861}
@@ -3019,6 +3022,52 @@ MonoBehaviour:
   - 1
   - 1
   - 1
+--- !u!114 &8312345678901234567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7389821364265542770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3207898f5a3e405591d0ad2f8fa17045, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleClientVisibility
+  vehicleRoot: {fileID: 2321927772602250882}
+  visualRenderers:
+  - {fileID: 289438138855730721}
+  - {fileID: 3655962489009411274}
+  - {fileID: 8523720953123429277}
+  - {fileID: 7235807716430704803}
+  - {fileID: 7732302324856301273}
+  - {fileID: 7734310989905840844}
+  - {fileID: 6949986546154459379}
+  - {fileID: 6912964702376936708}
+  - {fileID: 1555827111961769813}
+  - {fileID: 1477647890441582799}
+  - {fileID: 168570279194689379}
+  - {fileID: 1102687385187770973}
+  - {fileID: 950911291569337553}
+  - {fileID: 4239520631160917030}
+  - {fileID: 2656569932305844428}
+  - {fileID: 2597816787719140956}
+  - {fileID: 2560373952717783505}
+  - {fileID: 3406334132482994147}
+  - {fileID: 3357523369330404511}
+  - {fileID: 6110592906021938728}
+  - {fileID: 6061741085965685850}
+  - {fileID: 6496770756439244697}
+  - {fileID: 5718443990045437208}
+  - {fileID: 5218753307078625189}
+  - {fileID: 8226922678867685305}
+  - {fileID: 8084499935846880498}
+  - {fileID: 1813136458937377862}
+  - {fileID: 1915172692120381114}
+  - {fileID: 7195050903145077432}
+  - {fileID: 7834738412763003006}
+  - {fileID: 7758043629985128861}
+  - {fileID: 7607111400229007610}
 --- !u!114 &1939820047033769441
 MonoBehaviour:
   m_ObjectHideFlags: 0

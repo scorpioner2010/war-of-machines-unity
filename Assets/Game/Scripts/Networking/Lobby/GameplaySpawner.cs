@@ -75,6 +75,11 @@ namespace Game.Scripts.Networking.Lobby
 
         private void Update()
         {
+            if (IsClientInitialized)
+            {
+                GameplayMapVisibilityState.Tick(Time.unscaledTime);
+            }
+
             if (!IsServerInitialized)
             {
                 return;
@@ -331,38 +336,63 @@ namespace Game.Scripts.Networking.Lobby
             int[] objectIds,
             byte[] relations,
             Vector3[] positions,
-            float[] yaws)
+            float[] yaws,
+            float[] remainingVisibilitySeconds)
         {
             if (target == null)
             {
                 return;
             }
 
-            int estimatedBytes = 32 + Mathf.Max(0, count) * 21;
+            uint snapshotTick = TimeManager != null ? TimeManager.Tick : 0;
+            int estimatedBytes = 36 + Mathf.Max(0, count) * 25;
             DiagnosticsManager.RecordOutgoing("Network.SendMapVisibility", estimatedBytes, target.ClientId);
             ProfileScope.RecordEvent("RPC.TargetMapVisibility", DiagnosticsCategories.Rpc);
             using (ProfileScope.Measure("Network.SendMapVisibility", DiagnosticsCategories.Network))
             {
-                TargetMapVisibilityRpc(target, version, count, objectIds, relations, positions, yaws, NetworkChannel.Unreliable);
+                TargetMapVisibilityRpc(
+                    target,
+                    version,
+                    snapshotTick,
+                    count,
+                    objectIds,
+                    relations,
+                    positions,
+                    yaws,
+                    remainingVisibilitySeconds,
+                    NetworkChannel.Unreliable);
             }
         }
 
-        [TargetRpc(DataLength = 512)]
+        [TargetRpc(DataLength = 768)]
         private void TargetMapVisibilityRpc(
             NetworkConnection target,
             int version,
+            uint snapshotTick,
             int count,
             int[] objectIds,
             byte[] relations,
             Vector3[] positions,
             float[] yaws,
+            float[] remainingVisibilitySeconds,
             NetworkChannel channel = NetworkChannel.Unreliable)
         {
             using (ProfileScope.Measure("Client.NetworkSnapshot.Receive", DiagnosticsCategories.Network))
             {
                 using (ProfileScope.Measure("Client.NetworkSnapshot.Apply", DiagnosticsCategories.Client))
                 {
-                    GameplayMapVisibilityState.Apply(version, count, objectIds, relations, positions, yaws);
+                    float snapshotAgeSeconds = TimeManager != null
+                        ? (float)TimeManager.TimePassed(snapshotTick, allowNegative: false)
+                        : 0f;
+                    GameplayMapVisibilityState.Apply(
+                        version,
+                        count,
+                        objectIds,
+                        relations,
+                        positions,
+                        yaws,
+                        remainingVisibilitySeconds,
+                        snapshotAgeSeconds);
                 }
             }
         }

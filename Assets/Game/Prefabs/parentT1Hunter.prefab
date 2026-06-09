@@ -1174,6 +1174,7 @@ GameObject:
   - component: {fileID: -8928229179660308858}
   - component: {fileID: 4431787478038301119}
   - component: {fileID: -5874392096248117331}
+  - component: {fileID: 7312345678901234567}
   - component: {fileID: 5792092772794916013}
   - component: {fileID: 6669848709525505659}
   - component: {fileID: 4741424496171530709}
@@ -1309,6 +1310,7 @@ MonoBehaviour:
   caterpillarTrack: {fileID: 0}
   footAnimator: {fileID: 3255222161953777300}
   vehicleHUD: {fileID: 3362392733163342225}
+  clientVisibility: {fileID: 7312345678901234567}
   botBrain: {fileID: 6669848709525505659}
   hoverOutline: {fileID: -5874392096248117331}
   armorMaps:
@@ -1392,6 +1394,7 @@ MonoBehaviour:
   - {fileID: 3737218006011223405}
   - {fileID: 3067797613776090229}
   - {fileID: 3362392733163342225}
+  - {fileID: 7312345678901234567}
   initializableBehaviours:
   - {fileID: -8928229179660308858}
   - {fileID: -5874392096248117331}
@@ -1600,6 +1603,35 @@ MonoBehaviour:
   - 1
   - 1
   - 1
+--- !u!114 &7312345678901234567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3207898f5a3e405591d0ad2f8fa17045, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleClientVisibility
+  vehicleRoot: {fileID: 5798367828239414435}
+  visualRenderers:
+  - {fileID: 4011954965671401720}
+  - {fileID: 5233824291366137862}
+  - {fileID: 8790597454562735377}
+  - {fileID: 4661920479052967063}
+  - {fileID: 3292622886569190129}
+  - {fileID: 4696780279620901908}
+  - {fileID: 1927881673127734015}
+  - {fileID: 1886268037743369847}
+  - {fileID: 3314107586735822998}
+  - {fileID: 7541561385323695328}
+  - {fileID: 2287934140982763291}
+  - {fileID: 2387018496320024848}
+  - {fileID: 1399841858764603769}
+  - {fileID: 5492150923427435131}
+  - {fileID: 5731366993136918381}
 --- !u!114 &5792092772794916013
 MonoBehaviour:
   m_ObjectHideFlags: 0

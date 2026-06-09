@@ -30,6 +30,7 @@ namespace Game.Scripts.Gameplay.Robots
         public CaterpillarTrack caterpillarTrack;
         public RobotFootAnimator footAnimator;
         public VehicleHUD vehicleHUD;
+        public VehicleClientVisibility clientVisibility;
         public VehicleBotBrain botBrain;
         public VehicleHoverOutline hoverOutline;
         public ArmorMap[] armorMaps = System.Array.Empty<ArmorMap>();
@@ -86,12 +87,20 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartClient()
         {
+            if (clientVisibility != null)
+            {
+                clientVisibility.OnVehicleClientStarted();
+            }
         }
 
         public void Init(bool isMenu = false)
         {
             IsMenu = isMenu;
             CacheComponents();
+            if (vehicleHUD != null)
+            {
+                vehicleHUD.RefreshVisibility();
+            }
 
             if (!IsOwner && !IsMenu)
             {
@@ -181,6 +190,7 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyRootAware(caterpillarTrack);
             ApplyRootAware(footAnimator);
             ApplyRootAware(vehicleHUD);
+            ApplyRootAware(clientVisibility);
             ApplyRootAware(botBrain);
             ApplyRootAware(hoverOutline);
             ApplyRootAware(rootAwareBehaviours);

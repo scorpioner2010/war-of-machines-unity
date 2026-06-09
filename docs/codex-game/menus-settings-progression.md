@@ -16,6 +16,7 @@ Current owner scripts:
   - Vehicle slot display.
 - `Assets/Game/Scripts/UI/MainMenu/RobotView.cs`
   - Main menu robot preview display.
+  - Initializes preview vehicles through `VehicleRoot.Init(true)`. Menu context keeps the robot model visible but suppresses its gameplay-only world nickname and HP bar.
 - `Assets/Game/Scripts/UI/MainMenu/CameraOrbit.cs`
   - Menu camera orbit.
 - `Assets/Game/Scripts/UI/Tree/DevelopmentTree.cs`

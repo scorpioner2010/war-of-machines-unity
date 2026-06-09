@@ -286,9 +286,11 @@ namespace Game.Scripts.UI.HUD
         private void ApplyTrackedVehicleRelation(TrackedVehicleIcon icon, MapVehicleVisibilityRelation relation)
         {
             icon.Relation = relation;
+            bool enemy = relation == MapVehicleVisibilityRelation.Enemy
+                         || relation == MapVehicleVisibilityRelation.EnemyLastKnown;
             Color color = relation == MapVehicleVisibilityRelation.Destroyed
                 ? _runtimeSettings.mapDestroyedIconColor
-                : relation == MapVehicleVisibilityRelation.Enemy
+                : enemy
                     ? _runtimeSettings.mapEnemyIconColor
                     : _runtimeSettings.mapAllyIconColor;
             ApplyIconColor(icon.MiniGraphic, color);

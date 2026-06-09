@@ -333,6 +333,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
+            if (targetRoot.clientVisibility != null && !targetRoot.clientVisibility.IsVisible)
+            {
+                return false;
+            }
+
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
             if (!settings.autoAimRejectSameTeam)
             {

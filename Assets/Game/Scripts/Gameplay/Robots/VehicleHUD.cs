@@ -23,6 +23,8 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _subscribedToHealth;
         private Vector3 _baseLocalScale;
         private bool _hasBaseLocalScale;
+        private bool _spottingVisible = true;
+        private bool _isDead;
         private GameplayRuntimeSettings _runtimeSettings;
 
         public void SetVehicleRoot(VehicleRoot root)
@@ -37,6 +39,7 @@ namespace Game.Scripts.Gameplay.Robots
             TrySubscribeHealth();
             RefreshHpView();
             ApplyHpColor();
+            ApplyRootVisibility();
         }
 
         private void Awake()
@@ -53,6 +56,7 @@ namespace Game.Scripts.Gameplay.Robots
             _nextTeamColorRefreshTime = 0f;
             RefreshHpView();
             ApplyHpColor();
+            ApplyRootVisibility();
         }
 
         private void OnDisable()
@@ -144,12 +148,13 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void OnDeath()
         {
-            gameObject.SetActive(false);
+            _isDead = true;
+            ApplyRootVisibility();
         }
         
         private void ShowFloatingText(float dmg)
         {
-            if (floatingTextPrefab == null)
+            if (!ShouldDisplayRoot() || floatingTextPrefab == null)
             {
                 return;
             }
@@ -174,7 +179,18 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             ApplyHpColor();
-            gameObject.SetActive(true);
+            ApplyRootVisibility();
+        }
+
+        public void SetSpottingVisible(bool visible)
+        {
+            _spottingVisible = visible;
+            ApplyRootVisibility();
+        }
+
+        public void RefreshVisibility()
+        {
+            ApplyRootVisibility();
         }
         
         public void SetCamera(Camera cam)
@@ -389,6 +405,27 @@ namespace Game.Scripts.Gameplay.Robots
         {
             _nextTeamColorRefreshTime = 0f;
             ApplyHpColor();
+            ApplyRootVisibility();
+        }
+
+        private void ApplyRootVisibility()
+        {
+            gameObject.SetActive(ShouldDisplayRoot());
+        }
+
+        private bool ShouldDisplayRoot()
+        {
+            if (!_spottingVisible || _isDead)
+            {
+                return false;
+            }
+
+            if (vehicleRoot == null || vehicleRoot.IsMenu)
+            {
+                return false;
+            }
+
+            return !vehicleRoot.IsOwner && vehicleRoot != VehicleRoot.LocalPlayerVehicle;
         }
 
         private enum VehicleHudRelation

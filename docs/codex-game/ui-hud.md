@@ -7,6 +7,17 @@ Current owner scripts:
   - Robot-prefab world HP/nickname HUD root and root-aware binding.
   - Owns rotating the world HP bar toward the gameplay camera and scaling it by camera distance.
   - Subscribes to `VehicleHealth.OnHealthChanged` and `OnDamaged`, so the HP fill is initialized on spawn and updates on later health changes.
+  - Applies the client spotting visibility gate to the nickname, HP bar, and floating damage text. A later nickname update cannot reactivate a hidden enemy HUD.
+  - Never displays the world nickname, HP bar, or floating damage text for the locally owned gameplay vehicle; the owner uses the screen-space HUD health display instead.
+  - Never displays the world nickname or HP bar for a main-menu robot preview. `VehicleRoot.Init(true)` refreshes this gate after assigning the menu context.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleClientVisibility.cs`
+  - Client-only presenter for the spawned vehicle's 3D visibility.
+  - Reads the local team's authoritative snapshot from `GameplayMapVisibilityState` by FishNet object ID.
+  - Keeps the owner and assigned allies visible and keeps an enemy visible for every relation that still produces its map marker: direct `Enemy`, spotted-memory `EnemyLastKnown`, and `Destroyed`.
+  - Hides the enemy model and world HUD only when that enemy no longer exists in the map visibility snapshot, so 3D visibility ends on the same snapshot update as the map marker.
+  - Uses the prefab-configured renderer list and `Renderer.forceRenderingOff`; it does not disable the network object, gameplay components, colliders, or simulation.
+  - Clears hover outline while hidden. `VehicleAutoAimController` and `VehicleHoverOutline` also reject targets whose presenter is hidden.
+  - Refreshes on visibility snapshots, local-player changes, and `VehicleNetworkInitializer.ClientTeamChanged`, covering teams assigned by the server after FishNet spawn.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`
   - Initializes HUD for a vehicle owner.
 - `Assets/Game/Scripts/UI/HUD/DamageScreen.cs`
@@ -35,7 +46,11 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`
   - Gameplay map HUD.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapVisibilityState.cs`
-  - Map visibility state.
+  - Shared client visibility snapshot state used by both the map and vehicle visibility presenters.
+  - Stores `Enemy` for direct team spotting and `EnemyLastKnown` for spotted-memory map markers.
+  - Provides relation lookup by FishNet object ID without scene/component discovery.
+  - Rejects duplicate or older unreliable snapshot versions so an out-of-order packet cannot restore an already hidden enemy.
+  - Stores a local deadline for finite enemy entries. Remaining server lifetime is reduced by FishNet snapshot age, and expired entries are removed even if the final empty snapshot is dropped.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListHud.cs`
   - Player list HUD for ally/enemy rows under the `GameplayHUD` prefab containers.
   - Auto-tracks active non-menu `VehicleRoot` instances, binds each row to `VehicleHealth`, and refreshes names, vehicle type, HP, death state, and team relation.
@@ -55,6 +70,7 @@ Rules when editing HUD/UI:
 - Keep gameplay input blocking behavior in sync with `VehicleInputController.IsGameplayInputBlockedByUi`.
 - Do not let client-only UI state drive authoritative gameplay.
 - Prefer inspector-wired references for UI components.
+- Keep map and 3D enemy visibility on the same authoritative snapshot. Every enemy relation rendered by the map must also keep the vehicle presenter visible until the relation disappears.
 - For local hit feedback, use `DamageScreen` and `VehicleHealth.OnDamaged`; do not poll health or search for the local vehicle from the scene.
 - VehicleTest uses the same `GameplayHUD.prefab` as the main gameplay UI through `VehicleTestSceneController.clientGameplayHudPrefab`; keep this scene field assigned when changing HUD prefabs.
 - If weapon HUD changes, update `weapons-damage.md` too.

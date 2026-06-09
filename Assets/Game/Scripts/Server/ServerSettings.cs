@@ -635,7 +635,7 @@ namespace Game.Scripts.Server
         public float fallbackViewRange = 120f;
         [Tooltip("Максимальна ефективна дальність огляду. Встановіть 0, щоб вимкнути обмеження.")]
         public float maxViewRange = 450f;
-        [Tooltip("Вороги в межах цієї дистанції виявляються навіть без прямої видимості.")]
+        [Tooltip("Вороги в межах цієї дистанції не обмежуються характеристикою огляду, але стіни все одно блокують виявлення, якщо requireLineOfSight увімкнено.")]
         public float guaranteedDetectionRange = 35f;
         [Tooltip("Скільки секунд ворог залишається видимим на командній карті після втрати прямого spotting усією командою.")]
         public float spottedMemorySeconds = 3f;
