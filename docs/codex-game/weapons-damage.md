@@ -5,10 +5,12 @@ Read this file before changing shooting, reload, projectile visuals, prediction,
 Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`
   - Owns ammo count, reload timer, reload HUD state, and fire gating.
-  - Human owner path predicts/request fires through RPC.
+  - Human owner path starts local prediction, while `ServerTryApproveOwnerShot` atomically validates ownership/reload/ammo, consumes one shell, and starts server reload.
   - Bot/server path uses `ServerTryFireAuthoritative`.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
   - Owns projectile fire, projectile visual spawning, dispersion, authoritative hit resolution, and network RPCs for shot visuals/results.
+  - Owns the single human fire RPC. The server validates finite shot data, limits the client muzzle offset to 8 meters, requests ammo/reload approval, and only then creates the authoritative projectile.
+  - Rejected owner shots cancel the predicted projectile and reconcile the local reload timer to the server value.
   - `ServerFireAuthoritative` is used by bots and other server-authoritative fire paths.
 - `Assets/Game/Scripts/Gameplay/Robots/ServerHitResolver.cs`
   - Server-side raycast/hit resolution helper.
@@ -26,7 +28,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Projectiles/Projectile.cs`
   - Projectile visual/simulation component.
   - Authoritative projectiles own hit callbacks and damage-resolution timing.
-  - Client visual projectiles sweep against the configured hit mask while flying. A local collision immediately stops and hides the shell/tracer head without applying damage or spawning impact FX; the hidden projectile waits for the authoritative result.
+  - Client visual projectiles sweep against the configured hit mask while flying. A local collision immediately spawns cosmetic impact FX, stops the shell/tracer head, and waits for the authoritative result without applying damage.
+  - Client projectiles retain their `shotId` while pooled references are tracked, preventing a late RPC from resolving a reused projectile instance.
+  - Authoritative confirmation suppresses a duplicate impact when the predicted and server target object IDs match. If a target ID is unavailable, world impacts within 2 meters are treated as the same impact. A different target or farther point produces a corrective authoritative impact.
 - `Assets/Game/Scripts/Gameplay/Projectiles/ProjectileRuntimePool.cs`
   - Runtime pooling for projectiles.
 - `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`
@@ -38,9 +42,12 @@ Current owner scripts:
 Fire flow:
 - Human fire input is owned by `VehicleInputController` and consumed by `WeaponReloadController` on the owner.
 - Owner path uses client prediction plus server RPC validation.
+- The owner sends one fire RPC through `NetworkWeaponShooter`; projectile creation and ammo/reload consumption cannot be approved independently.
 - Predicted owner and observer projectiles use client-only collision to prevent visible wall/target overshoot caused by RPC latency.
-- Impact FX remains authoritative: a confirmed hit resolves at the server point, while a server miss releases any client visual that was waiting after a local collision.
-- Server validates reload/ammo in `WeaponReloadController`.
+- Cosmetic impact FX is predicted immediately for the owner and observers. Hit/miss, armor, penetration, damage, HP, kill state, and shot-result HUD remain server-authoritative.
+- A matching authoritative hit completes the waiting visual without replaying the same impact. A divergent authoritative hit may add a correction impact. A server miss releases the waiting visual; an already-played cosmetic prediction is not rolled back.
+- The authoritative projectile catches up by the elapsed client tick time, capped at 0.30 seconds, so server damage timing stays close to client projectile timing.
+- Server validates reload/ammo in `WeaponReloadController` before `NetworkWeaponShooter` creates the authoritative projectile.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Damage should be applied only through authoritative server hit resolution, not directly from bot AI.
 - Local damage feedback is client-side UI only: `VehicleHealth.OnDamaged` drives `DamageScreen` without affecting damage calculation.

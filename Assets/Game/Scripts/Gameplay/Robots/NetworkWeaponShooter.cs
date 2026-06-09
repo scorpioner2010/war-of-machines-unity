@@ -75,6 +75,8 @@ namespace Game.Scripts.Gameplay.Robots
         public float normalizationDeg = 0f;
 
         private const float MAX_PASSED_TIME = 0.30f;
+        private const float MAX_CLIENT_MUZZLE_OFFSET = 8f;
+        private const int NO_NETWORK_OBJECT_ID = -1;
 
         private int _shotSeq;
         private float _nextServerDispersionSyncTime;
@@ -252,6 +254,7 @@ namespace Game.Scripts.Gameplay.Robots
             public float Damage;
             public VehicleHealth TargetHealth;
             public VehicleRoot TargetRoot;
+            public int TargetObjectId;
             public ShotHudStatus HudStatus;
         }
 
@@ -295,6 +298,7 @@ namespace Game.Scripts.Gameplay.Robots
                 Projectile predicted = SpawnLocal(startPos, predictedRay.TargetPoint, 0f, false, false, Vector3.up, true);
                 if (predicted != null)
                 {
+                    predicted.AssignClientShot(shotId);
                     _predictedProjectiles[shotId] = predicted;
                 }
                 SpawnMuzzleFx(startPos, predictedRay.TargetPoint);
@@ -572,12 +576,63 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return;
                 }
+
+                if (!TryValidateOwnerShotRequest(startPos, aimPoint))
+                {
+                    RejectOwnerShot(sender, shotId);
+                    return;
+                }
+
+                WeaponReloadController reloadController = vehicleRoot != null
+                    ? vehicleRoot.weaponReloadController
+                    : null;
+                if (reloadController == null || !reloadController.ServerTryApproveOwnerShot(sender))
+                {
+                    RejectOwnerShot(sender, shotId);
+                    return;
+                }
+
                 _processedShots.Add(shotId);
 
                 float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
-                passed = Mathf.Min(MAX_PASSED_TIME * 0.5f, passed);
+                passed = Mathf.Min(MAX_PASSED_TIME, passed);
                 ProcessServerFire(sender, shotId, startPos, aimPoint, clientTick, passed, true);
             }
+        }
+
+        private bool TryValidateOwnerShotRequest(Vector3 startPos, Vector3 aimPoint)
+        {
+            if (muzzleTransform == null
+                || !IsFinite(startPos)
+                || !IsFinite(aimPoint)
+                || !IsFinite(muzzleTransform.position))
+            {
+                return false;
+            }
+
+            float maxOffsetSqr = MAX_CLIENT_MUZZLE_OFFSET * MAX_CLIENT_MUZZLE_OFFSET;
+            if ((startPos - muzzleTransform.position).sqrMagnitude > maxOffsetSqr)
+            {
+                return false;
+            }
+
+            return (aimPoint - startPos).sqrMagnitude > 0.01f;
+        }
+
+        [Server]
+        private void RejectOwnerShot(NetworkConnection sender, int shotId)
+        {
+            if (sender == null)
+            {
+                return;
+            }
+
+            float serverReloadRemain = vehicleRoot != null && vehicleRoot.weaponReloadController != null
+                ? vehicleRoot.weaponReloadController.ServerReloadRemain
+                : 0f;
+            ProfileScope.RecordEvent("RPC.RejectOwnerShot", DiagnosticsCategories.Rpc);
+            DiagnosticsManager.RecordOutgoing("RPC.RejectOwnerShot", 16, sender.ClientId);
+            RejectOwnerShotTargetRpc(sender, shotId, serverReloadRemain);
         }
 
         private void ProcessServerFire(
@@ -930,13 +985,24 @@ namespace Game.Scripts.Gameplay.Robots
                 if (shooterConnection != null)
                 {
                     ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
-                    DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 40, shooterConnection.ClientId);
-                    ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, shot.Point, shot.Normal, shot.Hit);
+                    DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 44, shooterConnection.ClientId);
+                    ResolveOwnerProjectileTargetRpc(
+                        shooterConnection,
+                        shotId,
+                        shot.Point,
+                        shot.Normal,
+                        shot.TargetObjectId,
+                        shot.Hit);
                 }
 
                 ProfileScope.RecordEvent("RPC.ResolveObserversProjectileTarget", DiagnosticsCategories.Rpc);
-                DiagnosticsManager.RecordOutgoing("RPC.ResolveObserversProjectileTarget", 40);
-                ResolveObserversProjectileTargetRpc(shotId, shot.Point, shot.Normal, shot.Hit);
+                DiagnosticsManager.RecordOutgoing("RPC.ResolveObserversProjectileTarget", 44);
+                ResolveObserversProjectileTargetRpc(
+                    shotId,
+                    shot.Point,
+                    shot.Normal,
+                    shot.TargetObjectId,
+                    shot.Hit);
                 ApplyResolvedShotDamage(shooterConnection, shot);
             }
         }
@@ -953,16 +1019,27 @@ namespace Game.Scripts.Gameplay.Robots
                 if (shooterConnection != null)
                 {
                     ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
-                    DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 40, shooterConnection.ClientId);
-                    ResolveOwnerProjectileTargetRpc(shooterConnection, shotId, missPoint, Vector3.up, false);
+                    DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 44, shooterConnection.ClientId);
+                    ResolveOwnerProjectileTargetRpc(
+                        shooterConnection,
+                        shotId,
+                        missPoint,
+                        Vector3.up,
+                        NO_NETWORK_OBJECT_ID,
+                        false);
                     ProfileScope.RecordEvent("RPC.ShowShotResult", DiagnosticsCategories.Rpc);
                     DiagnosticsManager.RecordOutgoing("RPC.ShowShotResult", 8, shooterConnection.ClientId);
                     ShowShotResultTargetRpc(shooterConnection, (byte)ShotHudStatus.Miss);
                 }
 
                 ProfileScope.RecordEvent("RPC.ResolveObserversProjectileTarget", DiagnosticsCategories.Rpc);
-                DiagnosticsManager.RecordOutgoing("RPC.ResolveObserversProjectileTarget", 40);
-                ResolveObserversProjectileTargetRpc(shotId, missPoint, Vector3.up, false);
+                DiagnosticsManager.RecordOutgoing("RPC.ResolveObserversProjectileTarget", 44);
+                ResolveObserversProjectileTargetRpc(
+                    shotId,
+                    missPoint,
+                    Vector3.up,
+                    NO_NETWORK_OBJECT_ID,
+                    false);
             }
         }
 
@@ -1025,6 +1102,9 @@ namespace Game.Scripts.Gameplay.Robots
                 Damage = targetIsRobot ? hr.damage : 0f,
                 TargetHealth = targetHealth,
                 TargetRoot = targetRoot,
+                TargetObjectId = targetRoot != null && targetRoot.networkObject != null
+                    ? targetRoot.networkObject.ObjectId
+                    : NO_NETWORK_OBJECT_ID,
                 HudStatus = status
             };
         }
@@ -1095,6 +1175,7 @@ namespace Game.Scripts.Gameplay.Robots
             );
             if (projectile != null)
             {
+                projectile.AssignClientShot(shotId);
                 _observedProjectiles[shotId] = projectile;
             }
         }
@@ -1107,7 +1188,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (projectile == null)
+            if (projectile == null || !projectile.MatchesClientShot(shotId))
             {
                 _predictedProjectiles.Remove(shotId);
                 return;
@@ -1156,7 +1237,32 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [TargetRpc]
-        private void ResolveOwnerProjectileTargetRpc(NetworkConnection conn, int shotId, Vector3 impactPoint, Vector3 impactNormal, bool hit)
+        private void RejectOwnerShotTargetRpc(NetworkConnection conn, int shotId, float serverReloadRemain)
+        {
+            if (_predictedProjectiles.TryGetValue(shotId, out Projectile projectile))
+            {
+                if (projectile != null && projectile.MatchesClientShot(shotId))
+                {
+                    projectile.CancelPrediction();
+                }
+
+                _predictedProjectiles.Remove(shotId);
+            }
+
+            if (vehicleRoot != null && vehicleRoot.weaponReloadController != null)
+            {
+                vehicleRoot.weaponReloadController.ReconcileRejectedOwnerShot(serverReloadRemain);
+            }
+        }
+
+        [TargetRpc]
+        private void ResolveOwnerProjectileTargetRpc(
+            NetworkConnection conn,
+            int shotId,
+            Vector3 impactPoint,
+            Vector3 impactNormal,
+            int targetObjectId,
+            bool hit)
         {
             if (!_predictedProjectiles.TryGetValue(shotId, out Projectile projectile))
             {
@@ -1167,7 +1273,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (projectile == null)
+            if (projectile == null || !projectile.MatchesClientShot(shotId))
             {
                 _predictedProjectiles.Remove(shotId);
                 if (hit)
@@ -1179,7 +1285,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (hit)
             {
-                projectile.ResolveImpactNow(impactPoint, impactNormal);
+                projectile.ResolveImpactNow(impactPoint, impactNormal, targetObjectId);
             }
             else
             {
@@ -1190,7 +1296,12 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [ObserversRpc(ExcludeOwner = true)]
-        private void ResolveObserversProjectileTargetRpc(int shotId, Vector3 impactPoint, Vector3 impactNormal, bool hit)
+        private void ResolveObserversProjectileTargetRpc(
+            int shotId,
+            Vector3 impactPoint,
+            Vector3 impactNormal,
+            int targetObjectId,
+            bool hit)
         {
             if (!_observedProjectiles.TryGetValue(shotId, out Projectile projectile))
             {
@@ -1202,7 +1313,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (projectile == null)
+            if (projectile == null || !projectile.MatchesClientShot(shotId))
             {
                 _observedProjectiles.Remove(shotId);
                 if (hit)
@@ -1215,7 +1326,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (hit)
             {
-                projectile.ResolveImpactNow(impactPoint, impactNormal);
+                projectile.ResolveImpactNow(impactPoint, impactNormal, targetObjectId);
             }
             else
             {

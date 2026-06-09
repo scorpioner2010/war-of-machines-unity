@@ -142,6 +142,8 @@ public class Projectile : MonoBehaviour
     private const int TravelDistanceSamples = 12;
     private const float CollisionCastPadding = 0.01f;
     private const float MinLifetime = 0.01f;
+    private const float PredictedWorldImpactDedupDistance = 2f;
+    private const int NoNetworkObjectId = -1;
     private const string ArmorLayerName = "Armor";
     private const string GroundLayerName = "Ground";
     private const string ObstacleLayerName = "Obstacle";
@@ -212,6 +214,7 @@ public class Projectile : MonoBehaviour
     private bool _hasDebugAimPoint;
     private bool _debugUsedBallisticCompensation;
     private bool _debugBallisticSolutionFound;
+    private bool _predictedImpactPlayed;
 
     private Transform _ignoredRoot;
     private Action<RaycastHit, Vector3> _onAuthoritativeLiveHit;
@@ -239,12 +242,19 @@ public class Projectile : MonoBehaviour
     private bool _clientTracerWidthConfigured;
     private bool _clientTracerGradientConfigured;
     private float _trailReleaseTime;
+    private int _clientShotId;
+    private int _predictedImpactTargetObjectId = NoNetworkObjectId;
 
     public Vector3 Origin => _origin;
     public Vector3 InitialVelocity => _initialVelocity;
     public Vector3 Gravity => _gravity;
     public float ElapsedTime => _elapsedTime;
     public float TravelledDistance => _travelledDistance;
+
+    public bool MatchesClientShot(int shotId)
+    {
+        return _clientShotId == shotId && gameObject.activeInHierarchy;
+    }
 
     private void Awake()
     {
@@ -642,6 +652,8 @@ public class Projectile : MonoBehaviour
         _liveCollisionEnabled = false;
         _resolvedTargetHandled = false;
         _hasLastHitPoint = false;
+        _predictedImpactPlayed = false;
+        _predictedImpactTargetObjectId = NoNetworkObjectId;
         _waitingForTrailFade = false;
         _waitingForAuthoritativeResolution = false;
         _trailReleaseTime = 0f;
@@ -659,6 +671,11 @@ public class Projectile : MonoBehaviour
         _initialized = true;
         ConfigureScriptedPhysics();
         ResetTracerForFlight();
+    }
+
+    public void AssignClientShot(int shotId)
+    {
+        _clientShotId = shotId;
     }
 
     public void ReconfigureBallistic(Vector3 initialVelocity, Vector3 gravity)
@@ -729,8 +746,9 @@ public class Projectile : MonoBehaviour
     {
     }
 
-    public void ResolveImpactNow(Vector3 impactPoint, Vector3 impactNormal)
+    public void ResolveImpactNow(Vector3 impactPoint, Vector3 impactNormal, int targetObjectId)
     {
+        bool shouldPlayAuthoritativeImpact = ShouldPlayAuthoritativeImpact(impactPoint, targetObjectId);
         _waitingForAuthoritativeResolution = false;
         _hasLastHitPoint = true;
         _lastHitPoint = impactPoint;
@@ -738,7 +756,17 @@ public class Projectile : MonoBehaviour
 
         transform.position = impactPoint;
         DrawDebugHit(impactPoint, _lastHitNormal);
-        Explode(impactPoint, _lastHitNormal);
+        if (shouldPlayAuthoritativeImpact)
+        {
+            Explode(impactPoint, _lastHitNormal);
+        }
+
+        CompleteFlight();
+    }
+
+    public void CancelPrediction()
+    {
+        _waitingForAuthoritativeResolution = false;
         CompleteFlight();
     }
 
@@ -901,6 +929,10 @@ public class Projectile : MonoBehaviour
 
         if (!_authoritative)
         {
+            _predictedImpactTargetObjectId = GetImpactTargetObjectId(hit.collider);
+            _predictedImpactPlayed = _visualsEnabled && explosionFX != null;
+            DrawDebugHit(hit.point, _lastHitNormal);
+            Explode(hit.point, _lastHitNormal);
             StopClientVisualAtCollision();
             return;
         }
@@ -929,6 +961,38 @@ public class Projectile : MonoBehaviour
         }
 
         HideNonTracerVisuals();
+    }
+
+    private bool ShouldPlayAuthoritativeImpact(Vector3 impactPoint, int targetObjectId)
+    {
+        if (!_predictedImpactPlayed)
+        {
+            return true;
+        }
+
+        bool hasAuthoritativeTarget = targetObjectId != NoNetworkObjectId;
+        bool hasPredictedTarget = _predictedImpactTargetObjectId != NoNetworkObjectId;
+        if (hasAuthoritativeTarget && hasPredictedTarget)
+        {
+            return targetObjectId != _predictedImpactTargetObjectId;
+        }
+
+        float dedupDistance = Mathf.Max(
+            PredictedWorldImpactDedupDistance,
+            _collisionRadius * 4f);
+        return (_lastHitPoint - impactPoint).sqrMagnitude > dedupDistance * dedupDistance;
+    }
+
+    private static int GetImpactTargetObjectId(Collider hitCollider)
+    {
+        if (!VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot targetRoot)
+            || targetRoot == null
+            || targetRoot.networkObject == null)
+        {
+            return NoNetworkObjectId;
+        }
+
+        return targetRoot.networkObject.ObjectId;
     }
 
     private bool HasExceededLimits()
@@ -1177,10 +1241,13 @@ public class Projectile : MonoBehaviour
         _liveCollisionEnabled = false;
         _resolvedTargetHandled = false;
         _hasLastHitPoint = false;
+        _predictedImpactPlayed = false;
+        _predictedImpactTargetObjectId = NoNetworkObjectId;
         _pendingAuthoritativeCatchupTime = 0f;
         _waitingForTrailFade = false;
         _waitingForAuthoritativeResolution = false;
         _trailReleaseTime = 0f;
+        _clientShotId = 0;
         _ignoredRoot = null;
         _onAuthoritativeLiveHit = null;
         _onAuthoritativeLiveMiss = null;

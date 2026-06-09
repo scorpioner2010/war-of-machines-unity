@@ -165,23 +165,21 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     _clientReloadRemain = Mathf.Max(_clientReloadRemain, reloadTime);
                     vehicleRoot.shooterNet.PredictAndRequest();
-
-                    RequestFireServerRpc();
                 }
             }
         }
 
-        [ServerRpc(RequireOwnership = true)]
-        private void RequestFireServerRpc(NetworkConnection sender = null)
+        [Server]
+        public bool ServerTryApproveOwnerShot(NetworkConnection sender)
         {
-            if (!IsServerInitialized || sender == null)
+            if (!IsServerInitialized || sender == null || sender != base.Owner)
             {
-                return;
+                return false;
             }
 
             if (!ServerCanFire)
             {
-                return;
+                return false;
             }
 
             _ammoLeft.Value = Mathf.Max(0, _ammoLeft.Value - 1);
@@ -189,11 +187,18 @@ namespace Game.Scripts.Gameplay.Robots
 
             FireApprovedTargetRpc(sender);
             onShot?.Invoke();
+            return true;
         }
 
         [TargetRpc]
         private void FireApprovedTargetRpc(NetworkConnection conn)
         {
+            ApplyHud();
+        }
+
+        public void ReconcileRejectedOwnerShot(float serverReloadRemain)
+        {
+            _clientReloadRemain = Mathf.Max(0f, serverReloadRemain);
             ApplyHud();
         }
 
