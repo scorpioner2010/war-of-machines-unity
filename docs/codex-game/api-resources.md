@@ -25,8 +25,9 @@ Vehicle resource flow:
 1. `GameResourceManager` is present in the scene and has a `RobotRegistry` reference.
 2. Vehicle code is selected from player profile, room player state, or bot/default code.
 3. `MatchVehicleSpawner` asks `GameResourceManager.GetPrefab(vehicleCode)`.
-4. Spawned vehicle receives runtime stats from `VehicleStatsProvider.GetAsync`.
-5. UI can ask `GameResourceManager.GetIcon(code)`.
+4. Match-spawned vehicle prefabs must also be registered in `Assets/Game/GameResources/PrefabObjects.asset`, the FishNet collection used by `NetworkManager.prefab`.
+5. Spawned vehicle receives runtime stats from `VehicleStatsProvider.GetAsync`.
+6. UI can ask `GameResourceManager.GetIcon(code)`.
 
 Vehicle armor API contract:
 - `VehicleLite.turretArmor` and `VehicleLite.hullArmor` are slash-separated `front/side/rear` millimeter values.

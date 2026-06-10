@@ -27,6 +27,10 @@ Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/MatchVehicleSpawner.cs`
   - Spawns player and bot vehicles in loaded match scenes.
   - Applies runtime stats, assigns `player.playerRoot`, initializes teams/identity, and starts bot brain.
+- `Assets/Game/GameResources/PrefabObjects.asset`
+  - FishNet spawnable-prefab collection assigned to `Assets/Game/Prefabs/NetworkManager.prefab`.
+  - Every vehicle prefab referenced by `RobotRegistry` and spawned in a match must also be present here.
+  - Add new prefabs at the end so existing network prefab IDs remain stable.
 - `Assets/Game/Scripts/Networking/Lobby/MatchBotPopulationService.cs`
   - Adds bot players to matches according to settings.
 - `Assets/Game/Scripts/Networking/Lobby/MatchTeam.cs`
@@ -50,12 +54,13 @@ Spawn flow:
 3. The room receives a scene slot and scene offset so multiple matches can exist at once.
 4. `MatchVehicleSpawner` chooses a free `SpawnPoint` for each player/bot team.
 5. Vehicle prefab is resolved by vehicle code through `GameResourceManager`.
-6. Runtime stats are loaded through `VehicleStatsProvider` and applied before/after FishNet spawn.
-7. Player vehicles are spawned with owner connection; bots are spawned with null owner connection.
-8. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
-9. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
-10. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team.
-11. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
+6. FishNet resolves that prefab on clients through `Assets/Game/GameResources/PrefabObjects.asset`.
+7. Runtime stats are loaded through `VehicleStatsProvider` and applied before/after FishNet spawn.
+8. Player vehicles are spawned with owner connection; bots are spawned with null owner connection.
+9. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
+10. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
+11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team.
+12. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
 
 Rules when editing match/spawn:
 - Keep room state authoritative on server.

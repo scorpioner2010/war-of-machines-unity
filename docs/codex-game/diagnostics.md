@@ -31,6 +31,11 @@ Quick command reminder from repository root on Windows:
 - `./game-diag.cmd top server --last 10`
 - `./game-diag.cmd network --last 10`
 
+Known diagnostic trap:
+- Server-authoritative physics displacement can appear as network desync because FishNet correctly synchronizes the displaced transform. Normal network metrics, especially `0%` packet loss, do not prove the movement code itself is at fault.
+- Recorded example: enabled `CabineReal`, `WeaponReal`, and `MeshReal` debris colliders in `T2-RM.prefab` overlapped the vehicle `CharacterController`. Unity depenetration moved the server vehicle backward/out of the map, then FishNet replicated it.
+- For this failure signature, classify the network itself as healthy and inspect the vehicle prefab for enabled overlapping colliders, root transform offsets, and incomplete `DeathLogic` wiring. The detailed repair contract is in `docs/codex-game/robot-control.md`.
+
 Rules when editing diagnostics:
 - Do not remove diagnostics code unless explicitly asked.
 - Keep diagnostic categories and profile scopes meaningful.

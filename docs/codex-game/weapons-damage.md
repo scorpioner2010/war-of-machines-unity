@@ -22,7 +22,8 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`
   - Disables configured gameplay/armor colliders on death and releases configured visual debris.
   - Disables the root tracked, suspension, walker, and ground-alignment controllers before detaching debris, preventing post-death transform writes against deactivated or detached renderers.
-  - In Editor play mode only, clears the current selection when it belongs to the dying vehicle before hierarchy mutation, avoiding Unity SceneView selection-outline renderer assertions. Player builds contain no editor-selection code.
+  - In Editor play mode only, scans the full multi-selection and clears it when any selected object belongs to the dying vehicle before hierarchy mutation, avoiding Unity SceneView selection-outline renderer assertions. Player builds contain no editor-selection code.
+  - `T2-RM` has exactly 11 configured detachable visuals: three major assemblies and eight wheels. Its serialized list must not contain null placeholder entries.
   - `detachableVisuals` separates each visual debris root, debris collider, rigidbody, and renderer from the colliders that receive gameplay hits.
   - Optional `behavioursToDisable` entries stop visual animation before a detached rigidbody becomes dynamic.
   - The legacy parallel debris arrays remain as a fallback for prefabs that have not moved to `detachableVisuals`.

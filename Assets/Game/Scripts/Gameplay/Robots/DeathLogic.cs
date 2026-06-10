@@ -283,17 +283,27 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             return;
         }
 
-        GameObject selectedObject = UnityEditor.Selection.activeGameObject;
-        if (selectedObject == null)
+        GameObject[] selectedObjects = UnityEditor.Selection.gameObjects;
+        if (selectedObjects == null || selectedObjects.Length == 0)
         {
             return;
         }
 
-        Transform selectedTransform = selectedObject.transform;
         Transform vehicleTransform = vehicleRoot.transform;
-        if (selectedTransform == vehicleTransform || selectedTransform.IsChildOf(vehicleTransform))
+        for (int i = 0; i < selectedObjects.Length; i++)
         {
-            UnityEditor.Selection.activeObject = null;
+            GameObject selectedObject = selectedObjects[i];
+            if (selectedObject == null)
+            {
+                continue;
+            }
+
+            Transform selectedTransform = selectedObject.transform;
+            if (selectedTransform == vehicleTransform || selectedTransform.IsChildOf(vehicleTransform))
+            {
+                UnityEditor.Selection.objects = System.Array.Empty<UnityEngine.Object>();
+                return;
+            }
         }
 #endif
     }
