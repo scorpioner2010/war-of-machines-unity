@@ -22,9 +22,18 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`
   - Disables configured gameplay/armor colliders on death and releases configured visual debris.
   - `detachableVisuals` separates each visual debris root, debris collider, rigidbody, and renderer from the colliders that receive gameplay hits.
+  - Optional `behavioursToDisable` entries stop visual animation before a detached rigidbody becomes dynamic.
   - The legacy parallel debris arrays remain as a fallback for prefabs that have not moved to `detachableVisuals`.
+  - Detached parts are registered with `MapScopedObjectRegistry` and remain in the client map scene until that map is unloaded; death logic has no timed debris cleanup.
 - `Assets/Game/Scripts/Gameplay/Robots/ArmorMap.cs`
   - Armor zone/collider data and line-of-sight armor sampling.
+  - Its collider is a hidden serialized cache maintained from the collider on the same GameObject by editor `Reset`/`OnValidate`; it is not a manual inspector reference.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderReference.cs`
+  - Registers its local collider and optional local `ArmorMap` with `VehicleColliderRegistry`.
+  - Both same-object dependencies are hidden caches maintained by editor `Reset`/`OnValidate`. Runtime initialization only receives the external `VehicleRoot` and validates that the local collider cache exists.
+- `Assets/Game/Scripts/Editor/ArmorPrefabHighlighter.cs`
+  - In Prefab Mode, draws the red armor overlay only for objects whose `ArmorMap` has cached the collider on that same object.
+  - The Unity `Armor` layer alone does not make an object eligible for the overlay, so visual or debris meshes left on that layer are not presented as gameplay armor.
 - `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`
   - Dispersion settings and runtime dispersion model.
 - `Assets/Game/Scripts/Gameplay/Robots/BallisticProjectileMath.cs`
@@ -58,10 +67,20 @@ Fire flow:
 
 T2 armor and destruction prefab contract:
 - `Assets/Game/Prefabs/T2.prefab` registers only colliders below objects named `Armor` as armor damage surfaces.
-- The four hull colliders use `ArmorMap.ArmorZone.Hull`; the five turret colliders and one gun collider use `ArmorMap.ArmorZone.Turret`.
-- `CabineReal`, `WeaponReal`, and `MeshReal` are visual-only while the robot is alive. Each has an inspector-wired disabled debris `BoxCollider` and a kinematic `Rigidbody`.
-- On death, all 10 armor colliders are disabled, then the three `*Real` objects detach, move to the `Chassis` layer, enable their debris colliders, and become non-kinematic.
-- T2 track/wheel objects are not part of the new armor or detachable primary-visual setup.
+- The six hull colliders use `ArmorMap.ArmorZone.Hull`; the six turret colliders and one gun collider use `ArmorMap.ArmorZone.Turret`.
+- `CabineReal`, `WeaponReal`, and `MeshReal` are functional debris parents with inspector-wired disabled debris `BoxCollider` and kinematic `Rigidbody` components. Their direct `VisualMesh` child owns only the rendered mesh.
+- All 22 `WheelA1_*`/`WheelA2_*` parent pivots use the same debris pattern: the parent owns `WheelSpinAnimator`, a disabled `BoxCollider`, and a kinematic `Rigidbody`; the direct `a1`/`a2` child owns only the mesh components.
+- On death, all 13 armor colliders are disabled, then 25 configured visual parents detach, move recursively to the `Chassis` layer, enable their debris colliders, and become non-kinematic. Wheel spin behaviours are disabled before physics starts.
+- `CaterpillarTrackLeft` and `CaterpillarTrackRight` remain visual-only and are deactivated on death instead of detaching.
+- `VehicleClientVisibility` releases the death renderers from future spotting changes while preserving whether the vehicle was visible at the death moment. Visible debris stays visible until map unload; already-hidden enemies do not reveal debris.
+
+T1 Hunter destruction prefab contract:
+- `Assets/Game/Prefabs/T1Hunter.prefab` currently uses eight armor damage surfaces. The three cubes below `Body` use `ArmorMap.ArmorZone.Turret`; the central hull cube and four leg-section cubes below `Chassis/ChassisMain` use `ArmorMap.ArmorZone.Hull`.
+- Their local position, rotation, and scale are authored independently. Adding or duplicating an armor cube automatically refreshes its own `ArmorMap`/collider links in the editor, but the prefab-owned `VehicleRoot` and `DeathLogic` arrays must still include the new component and collider.
+- The old nine mesh-based armor colliders and old mesh-part `VehicleColliderReference` components are removed. On death, `collidersToDisableOnDeath` disables all eight current armor cubes.
+- The legacy debris arrays keep colliders and rigidbodies on the existing functional parent objects while `debrisRenderers` points to their direct `VisualMesh` children.
+- All 15 legacy debris colliders remain disabled while the robot is alive. The lower-right leg parent now has its own disabled `BoxCollider` and kinematic `Rigidbody`; the other debris keeps its existing convex mesh colliders.
+- Death detaches and simulates each functional parent, so every visual body/gun/turret/leg part can remain in the map scene and local mesh corrections on `VisualMesh` stay intact.
 
 Dispersion and aim:
 - `NetworkWeaponShooter` updates server and owner dispersion in `Update`.

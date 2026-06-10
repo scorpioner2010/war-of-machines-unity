@@ -192,7 +192,7 @@ namespace Game.Scripts.Gameplay.Robots
             for (int i = 0; i < _targetArmorMaps.Length; i++)
             {
                 ArmorMap armorMap = _targetArmorMaps[i];
-                _targetArmorMapColliders[i] = armorMap != null ? armorMap.armorCollider : null;
+                _targetArmorMapColliders[i] = armorMap != null ? armorMap.ArmorCollider : null;
             }
         }
 

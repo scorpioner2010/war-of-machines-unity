@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -12,12 +13,13 @@ namespace Game.Scripts.Gameplay.Robots
             Turret = 2
         }
 
-        public VehicleRoot vehicleRoot;
         public Texture2D thicknessMap;
         public ArmorZone armorZone = ArmorZone.Auto;
-        public Collider armorCollider;
         [Min(0f)] public float minMm = 0;
         [Min(0f)] public float maxMm = 500;
+
+        [FormerlySerializedAs("armorCollider")]
+        [SerializeField, HideInInspector] private Collider _armorCollider;
 
         private bool _useRuntimeArmor;
         private VehicleArmorValues _runtimeHullArmor;
@@ -25,11 +27,21 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _resolvedArmorZoneCached;
         private ArmorZone _resolvedArmorZone;
 
+        public VehicleRoot VehicleRoot { get; private set; }
+        public Collider ArmorCollider => _armorCollider;
         public ArmorZone ResolvedArmorZone => ResolveArmorZone();
 
         public void SetVehicleRoot(VehicleRoot root)
         {
-            vehicleRoot = root;
+            VehicleRoot = root;
+            _resolvedArmorZoneCached = false;
+
+            if (_armorCollider == null)
+            {
+                Debug.LogError(
+                    $"{nameof(ArmorMap)} on {name} has no cached local Collider. Re-save the prefab after adding the component.",
+                    this);
+            }
         }
 
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
@@ -133,14 +145,14 @@ namespace Game.Scripts.Gameplay.Robots
         private Transform GetArmorReferenceTransform()
         {
             ArmorZone resolvedZone = ResolveArmorZone();
-            if (resolvedZone == ArmorZone.Turret && vehicleRoot != null && vehicleRoot.robotHullRotation != null)
+            if (resolvedZone == ArmorZone.Turret && VehicleRoot != null && VehicleRoot.robotHullRotation != null)
             {
-                return vehicleRoot.robotHullRotation.transform;
+                return VehicleRoot.robotHullRotation.transform;
             }
 
-            if (vehicleRoot != null && vehicleRoot.objectMover != null)
+            if (VehicleRoot != null && VehicleRoot.objectMover != null)
             {
-                return vehicleRoot.objectMover.transform;
+                return VehicleRoot.objectMover.transform;
             }
 
             return transform;
@@ -180,7 +192,7 @@ namespace Game.Scripts.Gameplay.Robots
                     }
                 }
 
-                if (vehicleRoot != null && current == vehicleRoot.transform)
+                if (VehicleRoot != null && current == VehicleRoot.transform)
                 {
                     break;
                 }
@@ -197,5 +209,23 @@ namespace Game.Scripts.Gameplay.Robots
         {
             return value > 0f ? value : fallback;
         }
+
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            CacheLocalCollider();
+        }
+
+        private void OnValidate()
+        {
+            CacheLocalCollider();
+            _resolvedArmorZoneCached = false;
+        }
+
+        private void CacheLocalCollider()
+        {
+            _armorCollider = GetComponent<Collider>();
+        }
+#endif
     }
 }

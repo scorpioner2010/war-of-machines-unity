@@ -1075,9 +1075,9 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (hr.hit && hr.collider != null)
             {
-                if (hr.armor != null && hr.armor.vehicleRoot != null)
+                if (hr.armor != null && hr.armor.VehicleRoot != null)
                 {
-                    targetRoot = hr.armor.vehicleRoot;
+                    targetRoot = hr.armor.VehicleRoot;
                 }
                 else
                 {

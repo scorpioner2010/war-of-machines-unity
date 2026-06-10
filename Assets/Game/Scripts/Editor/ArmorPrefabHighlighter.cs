@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game.Scripts.Diagnostics;
+using Game.Scripts.Gameplay.Robots;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,7 +11,6 @@ namespace Game.Scripts.Editor
     [InitializeOnLoad]
     public static class ArmorPrefabHighlighter
     {
-        private const string ArmorName = "Armor";
         private const string EnabledPrefsKey = "WOM.ArmorPrefabHighlighter.Enabled";
         private const string MenuEnabled = "Tools/WOM/Armor Prefab Highlighter/Enabled";
         private const string MenuSelect = "Tools/WOM/Armor Prefab Highlighter/Select Armor Objects";
@@ -23,12 +23,9 @@ namespace Game.Scripts.Editor
 
         private static Material _highlightMaterial;
         private static bool _enabled;
-        private static int _armorLayer;
-
         static ArmorPrefabHighlighter()
         {
             _enabled = EditorPrefs.GetBool(EnabledPrefsKey, true);
-            _armorLayer = LayerMask.NameToLayer(ArmorName);
             SceneView.duringSceneGui -= OnSceneGUI;
             SceneView.duringSceneGui += OnSceneGUI;
         }
@@ -173,7 +170,10 @@ namespace Game.Scripts.Editor
                 return false;
             }
 
-            return _armorLayer >= 0 && target.layer == _armorLayer;
+            ArmorMap armorMap = target.GetComponent<ArmorMap>();
+            return armorMap != null
+                   && armorMap.ArmorCollider != null
+                   && armorMap.ArmorCollider.gameObject == target;
         }
 
         private static bool TryGetPrefabRoot(out GameObject root)

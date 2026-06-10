@@ -21,6 +21,7 @@ Current owner scripts:
   - Owns client-side rendering visibility for a spawned vehicle without changing network/gameplay activation.
   - Treats direct enemy spotting and spotted-memory map presence as visible, so the model disappears exactly when the map marker disappears.
   - Requires every visual `Renderer` to be assigned in `visualRenderers`; hidden enemies are suppressed with `forceRenderingOff`.
+  - On vehicle death, freezes the visibility state that was active at that moment and stops processing later spotting updates. Visible debris therefore stays rendered after detaching, while a vehicle that was already hidden does not reveal its death position.
   - `Assets/Game/Prefabs/T1Hunter.prefab` and `Assets/Game/Prefabs/T2.prefab` own the serialized component, `VehicleRoot.clientVisibility` reference, and complete renderer lists.
   - Applies its first client visibility result immediately from `OnStartClient`, preventing an unconfirmed remote vehicle from rendering for an initial frame.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleAutoAimController.cs`
@@ -78,9 +79,15 @@ Aiming flow:
 Prefab/reference rule:
 - `VehicleRoot` references should be assigned in prefab/scene inspector.
 - Battle vehicle prefabs must assign `VehicleRoot.clientVisibility` and every model renderer in `VehicleClientVisibility.visualRenderers`; missing renderer entries can leak hidden geometry.
-- `Assets/Game/Prefabs/T2.prefab` uses `CabineReal`, `WeaponReal`, and `MeshReal` as the turret, gun, and hull visual meshes. These renderers are included in both client visibility and hover-outline lists.
-- T2 armor is separate from visuals: its 10 damage colliders are children of the three objects named `Armor` (four hull colliders and six turret/gun colliders). Armor renderers are disabled and are not included in visual visibility/outline lists.
-- The old T2 primary meshes `MeshBody`, `MeshGun`, `MeshR`, and the old root armor mesh are removed. Track/wheel renderers remain unchanged and are visual-only.
+- The migrated rigid visual parts in `Assets/Game/Prefabs/T1Hunter.prefab` and `Assets/Game/Prefabs/T2.prefab` separate functional transforms from editable meshes. Functional parent objects keep colliders, rigidbodies, armor, animation, and gameplay components; their direct visual child keeps only `Transform`, `MeshFilter`, and `MeshRenderer`.
+- T1 Hunter preserves its existing functional transform names and rig paths. Each of its 15 mesh-bearing objects now has a direct `VisualMesh` child, and visibility, outline, and death renderer references point to those children. Local position, rotation, and scale corrections belong on `VisualMesh`; gameplay movement continues to act on its parent.
+- T1 Hunter armor is separate from visuals and debris. It currently has eight damage surfaces: three turret/gun cubes below `Body` and five hull/leg cubes below `Chassis/ChassisMain`. Each cube has an enabled collider, `ArmorMap`, and `VehicleColliderReference` on layer 6; its `MeshRenderer` is disabled. `VehicleRoot.armorMaps`, `colliderReferences`, and `DeathLogic.collidersToDisableOnDeath` contain all eight, while `turretColliders` contains the three cubes below `Body`.
+- T2 uses `CabineReal`, `WeaponReal`, and `MeshReal` as functional turret, gun, and hull debris parents. Each parent has a direct `VisualMesh` child that owns the rendered mesh and may be adjusted locally without changing gameplay pivots.
+- T2 armor is separate from visuals: all 13 damage colliders are children of the three objects named `Armor` (six hull colliders, six turret colliders, and one gun collider). `VehicleRoot.armorMaps` and `DeathLogic.collidersToDisableOnDeath` contain all 13; `VehicleRoot.turretColliders` contains the seven turret/gun colliders. `VehicleRoot.colliderReferences` contains the 13 armor references plus the local non-armor `ChassisT2` reference. Armor renderers are disabled and are not included in visual visibility/outline lists.
+- The old T2 primary meshes `MeshBody`, `MeshGun`, `MeshR`, the old root armor mesh, and all `WhelMesh`/`WheMesh` wheel instances are removed.
+- T2 wheels use functional `WheelA1_01..04` and `WheelA2_01..07` parent pivots on each side. `WheelSpinAnimator`, a disabled debris `BoxCollider`, and a kinematic `Rigidbody` are on each parent; the imported `a1`/`a2` child keeps only `Transform`, `MeshFilter`, and `MeshRenderer`, so model orientation, offset, and scale are corrected on the child instead of in code. `CaterpillarTrack.leftWheels`/`rightWheels` reference all 11 parent pivots on their corresponding side. The four `a1` pivots remain below the existing suspension holders driven by `CaterpillarBoneAdjuster`.
+- T2 tracks remain visual-only and use the enabled `CaterpillarTrackLeft/Cube` and `CaterpillarTrackRight/Cube` skinned renderers from `t2v2.fbx`. The obsolete hidden `Mesh` physics duplicates are not part of the prefab.
+- On T2 death, all 22 wheel parents detach alongside `CabineReal`, `WeaponReal`, and `MeshReal`. Their spin animators stop before their rigidbodies become dynamic. The two `CaterpillarTrack` roots are visual-only and are deactivated instead of becoming debris.
 - Do not add runtime component discovery for required vehicle parts.
 - If a new vehicle subsystem is needed, add serialized/configured references and validate missing configuration with clear errors.
 

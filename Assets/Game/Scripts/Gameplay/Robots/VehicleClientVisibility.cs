@@ -30,6 +30,23 @@ namespace Game.Scripts.Gameplay.Robots
             RefreshVisibility();
         }
 
+        public bool ReleaseRenderersForDeath()
+        {
+            bool visibleAtDeath = !_clientStarted || !_hasAppliedVisibility || _isVisible;
+            _refreshRequested = false;
+            _hasAppliedVisibility = true;
+            _isVisible = visibleAtDeath;
+            SetRenderersVisible(visibleAtDeath);
+
+            if (vehicleRoot != null && vehicleRoot.hoverOutline != null)
+            {
+                vehicleRoot.hoverOutline.SetOutlined(false);
+            }
+
+            enabled = false;
+            return visibleAtDeath;
+        }
+
         private void OnEnable()
         {
             GameplayMapVisibilityState.Changed += HandleVisibilityChanged;
@@ -138,7 +155,21 @@ namespace Game.Scripts.Gameplay.Robots
 
             _hasAppliedVisibility = true;
             _isVisible = visible;
+            SetRenderersVisible(visible);
 
+            if (vehicleRoot != null && vehicleRoot.vehicleHUD != null)
+            {
+                vehicleRoot.vehicleHUD.SetMapVisible(visible);
+            }
+
+            if (!visible && vehicleRoot != null && vehicleRoot.hoverOutline != null)
+            {
+                vehicleRoot.hoverOutline.SetOutlined(false);
+            }
+        }
+
+        private void SetRenderersVisible(bool visible)
+        {
             if (visualRenderers != null)
             {
                 for (int i = 0; i < visualRenderers.Length; i++)
@@ -149,16 +180,6 @@ namespace Game.Scripts.Gameplay.Robots
                         visualRenderer.forceRenderingOff = !visible;
                     }
                 }
-            }
-
-            if (vehicleRoot != null && vehicleRoot.vehicleHUD != null)
-            {
-                vehicleRoot.vehicleHUD.SetMapVisible(visible);
-            }
-
-            if (!visible && vehicleRoot != null && vehicleRoot.hoverOutline != null)
-            {
-                vehicleRoot.hoverOutline.SetOutlined(false);
             }
         }
     }

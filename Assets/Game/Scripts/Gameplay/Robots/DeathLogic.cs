@@ -14,6 +14,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         public Rigidbody rigidbody;
         public Renderer renderer;
         public MeshCollider meshCollider;
+        public Behaviour[] behavioursToDisable = System.Array.Empty<Behaviour>();
     }
 
     private const string DeathDebrisLayerName = "Chassis";
@@ -70,17 +71,23 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             vehicleRoot.inputManager.SetControlsBlocked(true);
         }
 
+        bool renderDebris = true;
+        if (vehicleRoot != null && vehicleRoot.clientVisibility != null)
+        {
+            renderDebris = vehicleRoot.clientVisibility.ReleaseRenderersForDeath();
+        }
+
         int debrisLayer = ResolveDeathDebrisLayer();
         DisableConfiguredColliders(collidersToDisableOnDeath);
         Scene mapScene = MapScopedObjectRegistry.ResolveMapScene(GetOwningScene());
 
         if (detachableVisuals != null && detachableVisuals.Length > 0)
         {
-            DetachConfiguredVisuals(mapScene, debrisLayer);
+            DetachConfiguredVisuals(mapScene, debrisLayer, renderDebris);
         }
         else
         {
-            DetachLegacyDebris(mapScene, debrisLayer);
+            DetachLegacyDebris(mapScene, debrisLayer, renderDebris);
         }
 
         if (forTurnOff == null)
@@ -97,7 +104,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
     }
 
-    private void DetachConfiguredVisuals(Scene mapScene, int debrisLayer)
+    private void DetachConfiguredVisuals(Scene mapScene, int debrisLayer, bool renderDebris)
     {
         for (int i = 0; i < detachableVisuals.Length; i++)
         {
@@ -125,17 +132,19 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             MapScopedObjectRegistry.MoveRootToScene(mapScene, visual.root);
             SetLayerRecursively(visual.root.transform, debrisLayer);
 
+            DisableConfiguredBehaviours(visual.behavioursToDisable);
             visual.rigidbody.isKinematic = false;
             visual.collider.enabled = true;
 
             if (visual.renderer != null)
             {
                 visual.renderer.enabled = true;
+                visual.renderer.forceRenderingOff = !renderDebris;
             }
         }
     }
 
-    private void DetachLegacyDebris(Scene mapScene, int debrisLayer)
+    private void DetachLegacyDebris(Scene mapScene, int debrisLayer, bool renderDebris)
     {
         if (colliders == null)
         {
@@ -183,6 +192,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             if (obj != null)
             {
                 obj.enabled = true;
+                obj.forceRenderingOff = !renderDebris;
             }
         }
     }
@@ -214,6 +224,23 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             if (collider != null)
             {
                 collider.enabled = false;
+            }
+        }
+    }
+
+    private static void DisableConfiguredBehaviours(Behaviour[] configuredBehaviours)
+    {
+        if (configuredBehaviours == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < configuredBehaviours.Length; i++)
+        {
+            Behaviour configuredBehaviour = configuredBehaviours[i];
+            if (configuredBehaviour != null)
+            {
+                configuredBehaviour.enabled = false;
             }
         }
     }

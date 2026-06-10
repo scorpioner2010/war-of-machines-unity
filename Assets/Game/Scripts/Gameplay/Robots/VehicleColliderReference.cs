@@ -1,24 +1,38 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Scripts.Gameplay.Robots
 {
     [DisallowMultipleComponent]
     public sealed class VehicleColliderReference : MonoBehaviour, IVehicleRootAware
     {
-        public VehicleRoot vehicleRoot;
-        public ArmorMap armorMap;
-        public Collider targetCollider;
-        public Collider[] targetColliders = System.Array.Empty<Collider>();
+        [FormerlySerializedAs("armorMap")]
+        [SerializeField, HideInInspector] private ArmorMap _armorMap;
+
+        [FormerlySerializedAs("targetCollider")]
+        [SerializeField, HideInInspector] private Collider _targetCollider;
 
         private readonly List<Collider> _registeredColliders = new List<Collider>(4);
+        private VehicleRoot _vehicleRoot;
+
+        public ArmorMap ArmorMap => _armorMap;
+        public Collider TargetCollider => _targetCollider;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
-            vehicleRoot = root;
-            if (armorMap != null)
+            _vehicleRoot = root;
+            if (_targetCollider == null)
             {
-                armorMap.SetVehicleRoot(root);
+                Debug.LogError(
+                    $"{nameof(VehicleColliderReference)} on {name} has no cached local Collider. Re-save the prefab after adding the component.",
+                    this);
+                return;
+            }
+
+            if (_armorMap != null)
+            {
+                _armorMap.SetVehicleRoot(root);
             }
 
             Register();
@@ -41,29 +55,19 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Register()
         {
-            if (vehicleRoot == null)
+            if (_vehicleRoot == null)
             {
                 return;
             }
 
-            if (targetColliders != null && targetColliders.Length > 0)
-            {
-                for (int i = 0; i < targetColliders.Length; i++)
-                {
-                    RegisterCollider(targetColliders[i]);
-                }
-
-                return;
-            }
-
-            RegisterCollider(targetCollider);
+            RegisterCollider(_targetCollider);
         }
 
         private void Unregister()
         {
             for (int i = 0; i < _registeredColliders.Count; i++)
             {
-                VehicleColliderRegistry.Unregister(_registeredColliders[i], vehicleRoot);
+                VehicleColliderRegistry.Unregister(_registeredColliders[i], _vehicleRoot);
             }
 
             _registeredColliders.Clear();
@@ -76,9 +80,27 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            VehicleColliderRegistry.Register(collider, vehicleRoot, armorMap);
+            VehicleColliderRegistry.Register(collider, _vehicleRoot, _armorMap);
             _registeredColliders.Add(collider);
         }
+
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            CacheLocalComponents();
+        }
+
+        private void OnValidate()
+        {
+            CacheLocalComponents();
+        }
+
+        private void CacheLocalComponents()
+        {
+            _armorMap = GetComponent<ArmorMap>();
+            _targetCollider = GetComponent<Collider>();
+        }
+#endif
     }
 
     public static class VehicleColliderRegistry

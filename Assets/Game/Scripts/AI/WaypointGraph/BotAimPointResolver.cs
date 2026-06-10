@@ -102,7 +102,7 @@ namespace Game.Scripts.AI.WaypointGraph
                     continue;
                 }
 
-                Collider targetCollider = armorMap.armorCollider;
+                Collider targetCollider = armorMap.ArmorCollider;
                 if (!IsUsableCollider(targetCollider))
                 {
                     continue;
