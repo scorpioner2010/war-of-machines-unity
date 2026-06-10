@@ -127,8 +127,6 @@ GameObject:
   - component: {fileID: 1366277567714949446}
   - component: {fileID: 3127283798528761004}
   - component: {fileID: 1053095380699537911}
-  - component: {fileID: 5191750808170817803}
-  - component: {fileID: 4603306414643136537}
   m_Layer: 6
   m_Name: Cube (1)
   m_TagString: Untagged
@@ -229,34 +227,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5191750808170817803
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 330392095176522100}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 0
-  _armorCollider: {fileID: 1053095380699537911}
---- !u!114 &4603306414643136537
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 330392095176522100}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 5191750808170817803}
-  _targetCollider: {fileID: 1053095380699537911}
 --- !u!1 &331624823617908616
 GameObject:
   m_ObjectHideFlags: 0
@@ -269,8 +239,6 @@ GameObject:
   - component: {fileID: 2344772277393254464}
   - component: {fileID: 1463832415721391120}
   - component: {fileID: 9174269650456579425}
-  - component: {fileID: 6143560918247520422}
-  - component: {fileID: 2256879642197945629}
   m_Layer: 0
   m_Name: ChassisMain
   m_TagString: Untagged
@@ -361,46 +329,6 @@ MonoBehaviour:
   - m_Rig: {fileID: 7567731426504661780}
     m_Active: 1
   m_Effectors: []
---- !u!114 &6143560918247520422
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 331624823617908616}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88d2cee355626ec40b7c83f74b16612a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  raycastLength: 11
-  surfaceCheckRadius: 1
-  raysCount: 8
-  alignmentPercentage: 50
-  surfaceLayer:
-    serializedVersion: 2
-    m_Bits: 264
-  lerpSpeed: 10
---- !u!114 &2256879642197945629
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 331624823617908616}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c9b0c41d275a5fb4eb2aa23a37cbeac5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerRoot: {fileID: 5798367828239414435}
-  walkingBobbingAmplitude: 0.1
-  walkingBobbingFrequency: 2
-  turningBobbingAmplitude: 0.1
-  turningBobbingFrequency: 3
-  inputThreshold: 0.01
-  footSpreadReference: 1.1
-  smoothingSpeed: 8
 --- !u!1 &360747763325710878
 GameObject:
   m_ObjectHideFlags: 0
@@ -410,7 +338,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7431470429779289264}
-  - component: {fileID: 9027659986341262872}
   m_Layer: 0
   m_Name: RFootTargetCinematic
   m_TagString: Untagged
@@ -433,23 +360,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7687057134619296339}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9027659986341262872
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 360747763325710878}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d218499ba2f560447863e2da494c69c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 264
-  groundCheckDistance: 6
-  footOffset: 0
 --- !u!1 &407656106772770317
 GameObject:
   m_ObjectHideFlags: 0
@@ -546,8 +456,6 @@ GameObject:
   - component: {fileID: 5371675735024848118}
   - component: {fileID: 6535640272377417642}
   - component: {fileID: 7266918758433681930}
-  - component: {fileID: 2949180331108690698}
-  - component: {fileID: 1223419201015929599}
   m_Layer: 6
   m_Name: Cube (1)
   m_TagString: Untagged
@@ -648,34 +556,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &2949180331108690698
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 446995630474023667}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 1
-  _armorCollider: {fileID: 7266918758433681930}
---- !u!114 &1223419201015929599
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 446995630474023667}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 2949180331108690698}
-  _targetCollider: {fileID: 7266918758433681930}
 --- !u!1 &677300579693285468
 GameObject:
   m_ObjectHideFlags: 0
@@ -1172,6 +1052,9 @@ GameObject:
   - component: {fileID: 5792092772794916013}
   - component: {fileID: 6669848709525505659}
   - component: {fileID: 4741424496171530709}
+  - component: {fileID: 6431979623619128167}
+  - component: {fileID: 5382418570865382427}
+  - component: {fileID: 770931407294341477}
   m_Layer: 0
   m_Name: T1Hunter
   m_TagString: Untagged
@@ -1301,34 +1184,15 @@ MonoBehaviour:
   gunReticleUIFollower: {fileID: 8801226646842633102}
   shooterNet: {fileID: 9074224211107656160}
   weaponReloadController: {fileID: 2411042778565667645}
-  caterpillarTrack: {fileID: 0}
-  footAnimator: {fileID: 3255222161953777300}
+  armorController: {fileID: 6431979623619128167}
+  trackedVehicleAnimator: {fileID: 0}
+  suspensionController: {fileID: 0}
+  walkerAnimationController: {fileID: 770931407294341477}
+  groundAlignmentController: {fileID: 5382418570865382427}
   vehicleHUD: {fileID: 3362392733163342225}
   clientVisibility: {fileID: 7312345678901234567}
   botBrain: {fileID: 6669848709525505659}
   hoverOutline: {fileID: -5874392096248117331}
-  armorMaps:
-  - {fileID: 3464282573939293433}
-  - {fileID: 8003589407784975090}
-  - {fileID: 5191750808170817803}
-  - {fileID: 2985895054056450496}
-  - {fileID: 3032084648249181801}
-  - {fileID: 2949180331108690698}
-  - {fileID: 7392683142013831349}
-  - {fileID: 2962135779044086272}
-  turretColliders:
-  - {fileID: 8626111167429773425}
-  - {fileID: 9012618769719413394}
-  - {fileID: 1053095380699537911}
-  colliderReferences:
-  - {fileID: 4222252312545365561}
-  - {fileID: 4352240844663254713}
-  - {fileID: 4603306414643136537}
-  - {fileID: 8582577683036645482}
-  - {fileID: 8235981868930659885}
-  - {fileID: 1223419201015929599}
-  - {fileID: 9136327823914133510}
-  - {fileID: 998321643138857951}
   menuStripComponents:
   - {fileID: 8929552993543633262}
   - {fileID: 5275206044390719025}
@@ -1349,9 +1213,7 @@ MonoBehaviour:
   - {fileID: 2411042778565667645}
   - {fileID: 8241540855846823989}
   - {fileID: 6204458581192626764}
-  - {fileID: 3255222161953777300}
   - {fileID: 2411425367087528452}
-  - {fileID: 2256879642197945629}
   - {fileID: 3067797613776090229}
   - {fileID: 3362392733163342225}
   - {fileID: 7312345678901234567}
@@ -1451,15 +1313,7 @@ MonoBehaviour:
   - {fileID: 4434917365862437182}
   - {fileID: 9210437389913318608}
   - {fileID: 3165874047151140631}
-  collidersToDisableOnDeath:
-  - {fileID: 8626111167429773425}
-  - {fileID: 9012618769719413394}
-  - {fileID: 1053095380699537911}
-  - {fileID: 441242851669953531}
-  - {fileID: 231461112207153769}
-  - {fileID: 7266918758433681930}
-  - {fileID: 6655559585601033798}
-  - {fileID: 2234496612675365817}
+  collidersToDisableOnDeath: []
   debrisRigidbodies:
   - {fileID: 5618368860577006029}
   - {fileID: 2025882119937710634}
@@ -1616,6 +1470,108 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.AI.WaypointGraph.BotNavigator
   target: {fileID: 0}
   drawDebugGizmos: 1
+--- !u!114 &6431979623619128167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dbbd5d836509024292adce02cf9736a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleArmorController
+  turretColliders:
+  - {fileID: 8626111167429773425}
+  - {fileID: 9012618769719413394}
+  - {fileID: 1053095380699537911}
+  hullColliders:
+  - {fileID: 441242851669953531}
+  - {fileID: 231461112207153769}
+  - {fileID: 7266918758433681930}
+  - {fileID: 6655559585601033798}
+  - {fileID: 2234496612675365817}
+  additionalVehicleColliders: []
+  highlightArmorInPrefab: 1
+--- !u!114 &5382418570865382427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90ac7660fd36ac8438d8015ca893526a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
+  targets:
+  - transform: {fileID: 7687057134619296339}
+    raycastLength: 11
+    surfaceCheckRadius: 1
+    raysCount: 8
+    alignmentPercentage: 50
+    surfaceLayer:
+      serializedVersion: 2
+      m_Bits: 264
+    lerpSpeed: 10
+  - transform: {fileID: 4889700800967488987}
+    raycastLength: 2
+    surfaceCheckRadius: 0.01
+    raysCount: 8
+    alignmentPercentage: 100
+    surfaceLayer:
+      serializedVersion: 2
+      m_Bits: 264
+    lerpSpeed: 10
+  - transform: {fileID: 4185458135393788068}
+    raycastLength: 2
+    surfaceCheckRadius: 0.01
+    raysCount: 8
+    alignmentPercentage: 100
+    surfaceLayer:
+      serializedVersion: 2
+      m_Bits: 264
+    lerpSpeed: 10
+--- !u!114 &770931407294341477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e0bb6d1ebd1dd341b67dd9169ebffb2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t1.WalkerAnimationController
+  vehicleRoot: {fileID: 0}
+  leftFoot:
+    transform: {fileID: 450216799538671986}
+  rightFoot:
+    transform: {fileID: 7431470429779289264}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 264
+  groundCheckDistance: 6
+  footOffset: 0
+  inputThreshold: 0.01
+  stepDistance: 1.1
+  stepHeight: 0.5
+  stepCycleDuration: 1
+  turnLiftHeight: 0.4
+  turnStepDuration: 0.25
+  animTransitionSpeed: 15
+  strideSpeedSmoothing: 12
+  minStrideSpeed: 0.05
+  bodyTransform: {fileID: 7687057134619296339}
+  walkingBobbingAmplitude: 0.1
+  walkingBobbingFrequency: 2
+  turningBobbingAmplitude: 0.1
+  turningBobbingFrequency: 3
+  footSpreadReference: 1.1
+  bodySmoothingSpeed: 8
 --- !u!1 &1411394818131318734
 GameObject:
   m_ObjectHideFlags: 0
@@ -1718,7 +1674,6 @@ GameObject:
   - component: {fileID: 1606332068934995315}
   - component: {fileID: 8241540855846823989}
   - component: {fileID: 6204458581192626764}
-  - component: {fileID: 3255222161953777300}
   - component: {fileID: 2411425367087528452}
   - component: {fileID: 7605531651926363149}
   m_Layer: 0
@@ -1824,30 +1779,6 @@ MonoBehaviour:
   rotateSpeed: 2
   acceleration: 30
   maxSpeed: 3
---- !u!114 &3255222161953777300
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1476538492309367418}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c66b841b92113a74aae0803c2bf926f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerRoot: {fileID: 5798367828239414435}
-  leftFoot: {fileID: 347267942056810950}
-  rightFoot: {fileID: 9027659986341262872}
-  inputThreshold: 0.01
-  stepDistance: 1.1
-  stepHeight: 0.5
-  stepCycleDuration: 1
-  turnLiftHeight: 0.4
-  turnStepDuration: 0.25
-  animTransitionSpeed: 15
-  strideSpeedSmoothing: 12
-  minStrideSpeed: 0.05
 --- !u!114 &2411425367087528452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2076,7 +2007,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4185458135393788068}
-  - component: {fileID: 761224912271165726}
   m_Layer: 0
   m_Name: Left
   m_TagString: Untagged
@@ -2100,26 +2030,6 @@ Transform:
   - {fileID: 2384624025147182831}
   m_Father: {fileID: 3196074525441531830}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &761224912271165726
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1717965098956383009}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88d2cee355626ec40b7c83f74b16612a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  raycastLength: 2
-  surfaceCheckRadius: 0.01
-  raysCount: 8
-  alignmentPercentage: 100
-  surfaceLayer:
-    serializedVersion: 2
-    m_Bits: 264
-  lerpSpeed: 10
 --- !u!1 &1734501171799060317
 GameObject:
   m_ObjectHideFlags: 0
@@ -2412,8 +2322,6 @@ GameObject:
   - component: {fileID: 993846469231994690}
   - component: {fileID: 3548548254584163796}
   - component: {fileID: 9012618769719413394}
-  - component: {fileID: 8003589407784975090}
-  - component: {fileID: 4352240844663254713}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
@@ -2514,34 +2422,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8003589407784975090
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2278988691436164559}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 0
-  _armorCollider: {fileID: 9012618769719413394}
---- !u!114 &4352240844663254713
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2278988691436164559}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 8003589407784975090}
-  _targetCollider: {fileID: 9012618769719413394}
 --- !u!1 &2474109655621999960
 GameObject:
   m_ObjectHideFlags: 0
@@ -2845,7 +2725,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4889700800967488987}
-  - component: {fileID: 4725309138960689853}
   m_Layer: 0
   m_Name: Right
   m_TagString: Untagged
@@ -2869,26 +2748,6 @@ Transform:
   - {fileID: 3010679971694362557}
   m_Father: {fileID: 6300566607558340230}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4725309138960689853
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3032350828055990805}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88d2cee355626ec40b7c83f74b16612a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  raycastLength: 2
-  surfaceCheckRadius: 0.01
-  raysCount: 8
-  alignmentPercentage: 100
-  surfaceLayer:
-    serializedVersion: 2
-    m_Bits: 264
-  lerpSpeed: 10
 --- !u!1 &3173612935295677551
 GameObject:
   m_ObjectHideFlags: 0
@@ -2991,8 +2850,6 @@ GameObject:
   - component: {fileID: 1987278270988190788}
   - component: {fileID: 652418190835455130}
   - component: {fileID: 8626111167429773425}
-  - component: {fileID: 3464282573939293433}
-  - component: {fileID: 4222252312545365561}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
@@ -3093,34 +2950,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3464282573939293433
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3361799769730770293}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 0
-  _armorCollider: {fileID: 8626111167429773425}
---- !u!114 &4222252312545365561
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3361799769730770293}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 3464282573939293433}
-  _targetCollider: {fileID: 8626111167429773425}
 --- !u!1 &3487782008442484782
 GameObject:
   m_ObjectHideFlags: 0
@@ -4001,8 +3830,6 @@ GameObject:
   - component: {fileID: 329937315498599784}
   - component: {fileID: 7416219038567805031}
   - component: {fileID: 2234496612675365817}
-  - component: {fileID: 2962135779044086272}
-  - component: {fileID: 998321643138857951}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
@@ -4103,34 +3930,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &2962135779044086272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5436532866322387238}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 1
-  _armorCollider: {fileID: 2234496612675365817}
---- !u!114 &998321643138857951
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5436532866322387238}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 2962135779044086272}
-  _targetCollider: {fileID: 2234496612675365817}
 --- !u!1 &5617066474265864493
 GameObject:
   m_ObjectHideFlags: 0
@@ -4258,8 +4057,6 @@ GameObject:
   - component: {fileID: 6954646539605885728}
   - component: {fileID: 6296053984256951524}
   - component: {fileID: 6655559585601033798}
-  - component: {fileID: 7392683142013831349}
-  - component: {fileID: 9136327823914133510}
   m_Layer: 6
   m_Name: Cube (1)
   m_TagString: Untagged
@@ -4360,34 +4157,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7392683142013831349
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6103255960193169988}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 1
-  _armorCollider: {fileID: 6655559585601033798}
---- !u!114 &9136327823914133510
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6103255960193169988}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 7392683142013831349}
-  _targetCollider: {fileID: 6655559585601033798}
 --- !u!1 &6235681494059122490
 GameObject:
   m_ObjectHideFlags: 0
@@ -4692,7 +4461,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 450216799538671986}
-  - component: {fileID: 347267942056810950}
   m_Layer: 0
   m_Name: LFootTargetCinematic
   m_TagString: Untagged
@@ -4715,23 +4483,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7687057134619296339}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &347267942056810950
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6664236091546759009}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d218499ba2f560447863e2da494c69c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 264
-  groundCheckDistance: 6
-  footOffset: 0
 --- !u!1 &6716222479267934782
 GameObject:
   m_ObjectHideFlags: 0
@@ -4942,8 +4693,6 @@ GameObject:
   - component: {fileID: 6117298985096321057}
   - component: {fileID: 7447792289132203389}
   - component: {fileID: 441242851669953531}
-  - component: {fileID: 2985895054056450496}
-  - component: {fileID: 8582577683036645482}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
@@ -5044,34 +4793,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &2985895054056450496
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7447296739836705152}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 1
-  _armorCollider: {fileID: 441242851669953531}
---- !u!114 &8582577683036645482
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7447296739836705152}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 2985895054056450496}
-  _targetCollider: {fileID: 441242851669953531}
 --- !u!1 &7636852754885561432
 GameObject:
   m_ObjectHideFlags: 0
@@ -5793,8 +5514,6 @@ GameObject:
   - component: {fileID: 5442554970234488599}
   - component: {fileID: 1346747586760144903}
   - component: {fileID: 231461112207153769}
-  - component: {fileID: 3032084648249181801}
-  - component: {fileID: 8235981868930659885}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
@@ -5895,34 +5614,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3032084648249181801
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9088125507638265473}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  armorZone: 1
-  _armorCollider: {fileID: 231461112207153769}
---- !u!114 &8235981868930659885
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9088125507638265473}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55c1d2b00f4545e41874eee8d32914a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleColliderReference
-  _armorMap: {fileID: 3032084648249181801}
-  _targetCollider: {fileID: 231461112207153769}
 --- !u!1 &9099464208353685555
 GameObject:
   m_ObjectHideFlags: 0

@@ -16,13 +16,15 @@ namespace Game.Scripts.AI.WaypointGraph
             Bounds bounds;
             Vector3 point;
             if (settings.preferTurretAimPoint
-                && (TryGetBoundsFromColliders(targetRoot.turretColliders, out bounds)
-                    || TryGetBoundsFromArmorMaps(targetRoot.armorMaps, ArmorMap.ArmorZone.Turret, out bounds)))
+                && TryGetBoundsFromArmorController(
+                    targetRoot.armorController,
+                    VehicleArmorController.ArmorZone.Turret,
+                    out bounds))
             {
                 point = bounds.center;
             }
             else if ((targetRoot.health != null && TryGetBoundsFromColliders(targetRoot.health.colliders, out bounds))
-                     || TryGetBoundsFromArmorMaps(targetRoot.armorMaps, null, out bounds))
+                     || TryGetBoundsFromArmorController(targetRoot.armorController, null, out bounds))
             {
                 point = bounds.center;
             }
@@ -80,49 +82,38 @@ namespace Game.Scripts.AI.WaypointGraph
             return hasBounds;
         }
 
-        private static bool TryGetBoundsFromArmorMaps(
-            ArmorMap[] armorMaps,
-            ArmorMap.ArmorZone? requiredZone,
+        private static bool TryGetBoundsFromArmorController(
+            VehicleArmorController armorController,
+            VehicleArmorController.ArmorZone? requiredZone,
             out Bounds bounds)
         {
             bounds = default;
-            bool hasBounds = false;
-            if (armorMaps == null)
+            if (armorController == null)
             {
                 return false;
             }
 
-            for (int i = 0; i < armorMaps.Length; i++)
+            if (requiredZone.HasValue)
             {
-                ArmorMap armorMap = armorMaps[i];
-                if (armorMap == null)
-                {
-                    continue;
-                }
-
-                if (requiredZone.HasValue && armorMap.ResolvedArmorZone != requiredZone.Value)
-                {
-                    continue;
-                }
-
-                Collider targetCollider = armorMap.ArmorCollider;
-                if (!IsUsableCollider(targetCollider))
-                {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = targetCollider.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(targetCollider.bounds);
-                }
+                return TryGetBoundsFromColliders(
+                    armorController.GetColliders(requiredZone.Value),
+                    out bounds);
             }
 
-            return hasBounds;
+            bool hasBounds = TryGetBoundsFromColliders(armorController.turretColliders, out bounds);
+            if (!TryGetBoundsFromColliders(armorController.hullColliders, out Bounds hullBounds))
+            {
+                return hasBounds;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = hullBounds;
+                return true;
+            }
+
+            bounds.Encapsulate(hullBounds);
+            return true;
         }
 
         private static bool IsUsableCollider(Collider targetCollider)

@@ -30,7 +30,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/AI/WaypointGraph/BotTargetValidator.cs`
   - Filters invalid targets: null, self, dead, or same assigned team.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotAimPointResolver.cs`
-  - Resolves target aim points from turret bounds, health colliders, armor maps, turret transform, or fallback height.
+  - Resolves target aim points from the centralized turret armor array, health/all-armor bounds, turret transform, or fallback height.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotLineOfFireChecker.cs`
   - Performs combat line-of-fire raycasts and accepts hits on the expected target while ignoring the shooter's own colliders.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotTargetMotionTracker.cs`

@@ -71,6 +71,9 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             vehicleRoot.inputManager.SetControlsBlocked(true);
         }
 
+        DisableVehicleAnimationControllers();
+        ClearEditorSelectionForDyingVehicle();
+
         bool renderDebris = true;
         if (vehicleRoot != null && vehicleRoot.clientVisibility != null)
         {
@@ -78,6 +81,11 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
 
         int debrisLayer = ResolveDeathDebrisLayer();
+        if (vehicleRoot != null && vehicleRoot.armorController != null)
+        {
+            vehicleRoot.armorController.SetArmorCollidersEnabled(false);
+        }
+
         DisableConfiguredColliders(collidersToDisableOnDeath);
         Scene mapScene = MapScopedObjectRegistry.ResolveMapScene(GetOwningScene());
 
@@ -243,6 +251,51 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                 configuredBehaviour.enabled = false;
             }
         }
+    }
+
+    private void DisableVehicleAnimationControllers()
+    {
+        if (vehicleRoot == null)
+        {
+            return;
+        }
+
+        DisableBehaviour(vehicleRoot.trackedVehicleAnimator);
+        DisableBehaviour(vehicleRoot.suspensionController);
+        DisableBehaviour(vehicleRoot.walkerAnimationController);
+        DisableBehaviour(vehicleRoot.groundAlignmentController);
+    }
+
+    private static void DisableBehaviour(Behaviour behaviour)
+    {
+        if (behaviour != null)
+        {
+            behaviour.enabled = false;
+        }
+    }
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    private void ClearEditorSelectionForDyingVehicle()
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying || vehicleRoot == null)
+        {
+            return;
+        }
+
+        GameObject selectedObject = UnityEditor.Selection.activeGameObject;
+        if (selectedObject == null)
+        {
+            return;
+        }
+
+        Transform selectedTransform = selectedObject.transform;
+        Transform vehicleTransform = vehicleRoot.transform;
+        if (selectedTransform == vehicleTransform || selectedTransform.IsChildOf(vehicleTransform))
+        {
+            UnityEditor.Selection.activeObject = null;
+        }
+#endif
     }
 
     private static int ResolveDeathDebrisLayer()

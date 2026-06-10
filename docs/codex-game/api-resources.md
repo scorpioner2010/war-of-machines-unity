@@ -31,7 +31,7 @@ Vehicle resource flow:
 Vehicle armor API contract:
 - `VehicleLite.turretArmor` and `VehicleLite.hullArmor` are slash-separated `front/side/rear` millimeter values.
 - `VehicleRuntimeStats` parses those strings into `TurretArmor` and `HullArmor`.
-- `ArmorMap` uses only the values for its explicitly selected zone. A missing, malformed, zero, or negative directional value becomes `1000 mm`.
+- `VehicleArmorController` uses the values for the collider's configured turret/hull array. A missing, malformed, zero, or negative directional value becomes `1000 mm`.
 
 Rules when editing API/resource code:
 - Keep API DTO changes synchronized with backend expectations.

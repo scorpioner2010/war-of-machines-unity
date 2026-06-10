@@ -15,10 +15,10 @@ namespace Game.Scripts.Editor
         private const string MenuEnabled = "Tools/WOM/Armor Prefab Highlighter/Enabled";
         private const string MenuSelect = "Tools/WOM/Armor Prefab Highlighter/Select Armor Objects";
 
-        private static readonly List<Transform> TransformBuffer = new List<Transform>(128);
         private static readonly List<Renderer> RendererBuffer = new List<Renderer>(64);
         private static readonly List<MeshCollider> MeshColliderBuffer = new List<MeshCollider>(64);
         private static readonly List<Object> SelectionBuffer = new List<Object>(64);
+        private static readonly HashSet<GameObject> ArmorObjects = new HashSet<GameObject>();
         private static readonly Color FillColor = new Color(1f, 0f, 0f, 0.22f);
 
         private static Material _highlightMaterial;
@@ -48,20 +48,18 @@ namespace Game.Scripts.Editor
         [MenuItem(MenuSelect)]
         private static void SelectArmorObjects()
         {
-            if (!TryGetPrefabRoot(out GameObject root))
+            if (!TryGetArmorController(out _, out VehicleArmorController armorController))
             {
                 return;
             }
 
             SelectionBuffer.Clear();
-            TransformBuffer.Clear();
-            root.GetComponentsInChildren(true, TransformBuffer);
-            for (int i = 0; i < TransformBuffer.Count; i++)
+            BuildArmorObjectSet(armorController);
+            foreach (GameObject armorObject in ArmorObjects)
             {
-                Transform target = TransformBuffer[i];
-                if (target != null && IsArmorGameObject(target.gameObject))
+                if (armorObject != null)
                 {
-                    SelectionBuffer.Add(target.gameObject);
+                    SelectionBuffer.Add(armorObject);
                 }
             }
 
@@ -83,11 +81,13 @@ namespace Game.Scripts.Editor
                     return;
                 }
 
-                if (!TryGetPrefabRoot(out GameObject root))
+                if (!TryGetArmorController(out GameObject root, out VehicleArmorController armorController)
+                    || !armorController.highlightArmorInPrefab)
                 {
                     return;
                 }
 
+                BuildArmorObjectSet(armorController);
                 Material material = GetHighlightMaterial();
                 if (material == null || !material.SetPass(0))
                 {
@@ -100,7 +100,7 @@ namespace Game.Scripts.Editor
                 for (int i = 0; i < RendererBuffer.Count; i++)
                 {
                     Renderer renderer = RendererBuffer[i];
-                    if (renderer == null || !IsArmorGameObject(renderer.gameObject))
+                    if (renderer == null || !ArmorObjects.Contains(renderer.gameObject))
                     {
                         continue;
                     }
@@ -116,7 +116,7 @@ namespace Game.Scripts.Editor
                     if (meshCollider == null
                         || meshCollider.sharedMesh == null
                         || meshCollider.GetComponent<Renderer>() != null
-                        || !IsArmorGameObject(meshCollider.gameObject))
+                        || !ArmorObjects.Contains(meshCollider.gameObject))
                     {
                         continue;
                     }
@@ -163,17 +163,47 @@ namespace Game.Scripts.Editor
             }
         }
 
-        private static bool IsArmorGameObject(GameObject target)
+        private static void BuildArmorObjectSet(VehicleArmorController armorController)
         {
-            if (target == null)
+            ArmorObjects.Clear();
+            if (armorController == null)
+            {
+                return;
+            }
+
+            AddArmorObjects(armorController.turretColliders);
+            AddArmorObjects(armorController.hullColliders);
+        }
+
+        private static void AddArmorObjects(Collider[] colliders)
+        {
+            if (colliders == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider targetCollider = colliders[i];
+                if (targetCollider != null)
+                {
+                    ArmorObjects.Add(targetCollider.gameObject);
+                }
+            }
+        }
+
+        private static bool TryGetArmorController(
+            out GameObject root,
+            out VehicleArmorController armorController)
+        {
+            armorController = null;
+            if (!TryGetPrefabRoot(out root))
             {
                 return false;
             }
 
-            ArmorMap armorMap = target.GetComponent<ArmorMap>();
-            return armorMap != null
-                   && armorMap.ArmorCollider != null
-                   && armorMap.ArmorCollider.gameObject == target;
+            armorController = root.GetComponentInChildren<VehicleArmorController>(true);
+            return armorController != null;
         }
 
         private static bool TryGetPrefabRoot(out GameObject root)

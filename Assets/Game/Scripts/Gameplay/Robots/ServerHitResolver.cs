@@ -15,7 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
             public Vector3 point;
             public Vector3 normal;
             public Collider collider;
-            public ArmorMap armor;
+            public VehicleArmorController armor;
             public float baseMm;
             public float losMm;
             public bool penetrated;
@@ -146,10 +146,16 @@ namespace Game.Scripts.Gameplay.Robots
                 dir.Normalize();
             }
 
-            ArmorMap armor = null;
+            VehicleArmorController armor = null;
+            VehicleArmorController.ArmorZone zone = VehicleArmorController.ArmorZone.Turret;
             bool hasArmor = hit.collider != null
-                            && VehicleColliderRegistry.TryGetArmor(hit.collider, out armor, out _);
-            if (hasArmor && armor.TryGetArmorLoS(hit, dir, normDeg, out float baseMm, out float losMm))
+                            && VehicleColliderRegistry.TryGetArmor(
+                                hit.collider,
+                                out armor,
+                                out zone,
+                                out _);
+            if (hasArmor
+                && armor.TryGetArmorLoS(hit, zone, dir, normDeg, out float baseMm, out float losMm))
             {
                 hr.armor = armor;
                 hr.baseMm = baseMm;
@@ -159,7 +165,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
             else
             {
-                // No ArmorMap: treat it as a thin surface with full penetration.
+                // No configured armor surface: treat it as a thin surface with full penetration.
                 hr.penetrated = true;
                 hr.damage = Mathf.Max(0f, shellDamage);
             }

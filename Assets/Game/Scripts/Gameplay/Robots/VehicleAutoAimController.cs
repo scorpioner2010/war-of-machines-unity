@@ -13,9 +13,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private VehicleRoot _targetRoot;
         private Collider[] _targetArmorColliders;
-        private Collider[] _targetTurretColliders;
-        private ArmorMap[] _targetArmorMaps;
-        private Collider[] _targetArmorMapColliders;
+        private VehicleArmorController _targetArmorController;
         private Transform _targetTurretTransform;
         private Vector3 _lastTargetPoint;
         private bool _controlsLocalAutoAim;
@@ -57,9 +55,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             _targetRoot = null;
             _targetArmorColliders = null;
-            _targetTurretColliders = null;
-            _targetArmorMaps = null;
-            _targetArmorMapColliders = null;
+            _targetArmorController = null;
             _targetTurretTransform = null;
             _lastTargetPoint = Vector3.zero;
         }
@@ -127,7 +123,7 @@ namespace Game.Scripts.Gameplay.Robots
                 QueryTriggerInteraction.Ignore
             );
 
-            ArmorMap bestArmor = null;
+            VehicleArmorController bestArmor = null;
             VehicleRoot bestRoot = null;
             RaycastHit bestHit = default;
             float bestDistance = float.PositiveInfinity;
@@ -140,7 +136,11 @@ namespace Game.Scripts.Gameplay.Robots
                     continue;
                 }
 
-                if (!VehicleColliderRegistry.TryGetArmor(hitCollider, out ArmorMap armor, out VehicleRoot targetRoot))
+                if (!VehicleColliderRegistry.TryGetArmor(
+                        hitCollider,
+                        out VehicleArmorController armor,
+                        out _,
+                        out VehicleRoot targetRoot))
                 {
                     continue;
                 }
@@ -174,26 +174,8 @@ namespace Game.Scripts.Gameplay.Robots
             _targetRoot = targetRoot;
             _targetArmorColliders = targetRoot.health != null ? targetRoot.health.colliders : null;
             _targetTurretTransform = targetRoot.robotHullRotation != null ? targetRoot.robotHullRotation.transform : null;
-            _targetTurretColliders = targetRoot.turretColliders;
-            _targetArmorMaps = targetRoot.armorMaps;
-            CacheArmorMapColliders();
+            _targetArmorController = targetRoot.armorController;
             _lastTargetPoint = IsFinite(hitPoint) ? hitPoint : targetRoot.transform.position;
-        }
-
-        private void CacheArmorMapColliders()
-        {
-            if (_targetArmorMaps == null)
-            {
-                _targetArmorMapColliders = null;
-                return;
-            }
-
-            _targetArmorMapColliders = new Collider[_targetArmorMaps.Length];
-            for (int i = 0; i < _targetArmorMaps.Length; i++)
-            {
-                ArmorMap armorMap = _targetArmorMaps[i];
-                _targetArmorMapColliders[i] = armorMap != null ? armorMap.ArmorCollider : null;
-            }
         }
 
         private bool TryGetTargetPoint(out Vector3 point)
@@ -207,8 +189,10 @@ namespace Game.Scripts.Gameplay.Robots
 
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
             if (settings.autoAimPreferTurretTarget
-                && (TryGetBoundsFromColliders(_targetTurretColliders, out Bounds bounds)
-                    || TryGetBoundsFromArmorMaps(_targetArmorMaps, ArmorMap.ArmorZone.Turret, out bounds)))
+                && TryGetBoundsFromArmorController(
+                    _targetArmorController,
+                    VehicleArmorController.ArmorZone.Turret,
+                    out Bounds bounds))
             {
                 point = bounds.center;
                 return IsFinite(point);
@@ -221,7 +205,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             if (TryGetBoundsFromColliders(_targetArmorColliders, out Bounds fallbackBounds)
-                || TryGetBoundsFromArmorMaps(_targetArmorMaps, null, out fallbackBounds))
+                || TryGetBoundsFromArmorController(_targetArmorController, null, out fallbackBounds))
             {
                 point = fallbackBounds.center;
                 return IsFinite(point);
@@ -269,52 +253,38 @@ namespace Game.Scripts.Gameplay.Robots
             return hasBounds;
         }
 
-        private bool TryGetBoundsFromArmorMaps(
-            ArmorMap[] armorMaps,
-            ArmorMap.ArmorZone? requiredZone,
+        private bool TryGetBoundsFromArmorController(
+            VehicleArmorController armorController,
+            VehicleArmorController.ArmorZone? requiredZone,
             out Bounds bounds)
         {
             bounds = default;
-            bool hasBounds = false;
-
-            if (armorMaps == null)
+            if (armorController == null)
             {
                 return false;
             }
 
-            for (int i = 0; i < armorMaps.Length; i++)
+            if (requiredZone.HasValue)
             {
-                ArmorMap armorMap = armorMaps[i];
-                if (armorMap == null)
-                {
-                    continue;
-                }
-
-                if (requiredZone.HasValue && armorMap.ResolvedArmorZone != requiredZone.Value)
-                {
-                    continue;
-                }
-
-                Collider targetCollider = _targetArmorMapColliders != null && i < _targetArmorMapColliders.Length
-                    ? _targetArmorMapColliders[i]
-                    : null;
-                if (!IsUsableCollider(targetCollider))
-                {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = targetCollider.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(targetCollider.bounds);
-                }
+                return TryGetBoundsFromColliders(
+                    armorController.GetColliders(requiredZone.Value),
+                    out bounds);
             }
 
-            return hasBounds;
+            bool hasBounds = TryGetBoundsFromColliders(armorController.turretColliders, out bounds);
+            if (!TryGetBoundsFromColliders(armorController.hullColliders, out Bounds hullBounds))
+            {
+                return hasBounds;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = hullBounds;
+                return true;
+            }
+
+            bounds.Encapsulate(hullBounds);
+            return true;
         }
 
         private bool IsUsableCollider(Collider targetCollider)

@@ -27,15 +27,15 @@ namespace Game.Scripts.Gameplay.Robots
         public WeaponReticlePresenter gunReticleUIFollower;
         public NetworkWeaponShooter shooterNet;
         public WeaponReloadController weaponReloadController;
-        public CaterpillarTrack caterpillarTrack;
-        public RobotFootAnimator footAnimator;
+        public VehicleArmorController armorController;
+        public TrackedVehicleAnimator trackedVehicleAnimator;
+        public CaterpillarSuspensionController suspensionController;
+        public WalkerAnimationController walkerAnimationController;
+        public VehicleGroundAlignmentController groundAlignmentController;
         public VehicleHUD vehicleHUD;
         public VehicleClientVisibility clientVisibility;
         public VehicleBotBrain botBrain;
         public VehicleHoverOutline hoverOutline;
-        public ArmorMap[] armorMaps = System.Array.Empty<ArmorMap>();
-        public Collider[] turretColliders = System.Array.Empty<Collider>();
-        public VehicleColliderReference[] colliderReferences = System.Array.Empty<VehicleColliderReference>();
         public Component[] menuStripComponents = System.Array.Empty<Component>();
 
         [Header("Configured component lists")]
@@ -187,15 +187,16 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyRootAware(gunReticleUIFollower);
             ApplyRootAware(shooterNet);
             ApplyRootAware(weaponReloadController);
-            ApplyRootAware(caterpillarTrack);
-            ApplyRootAware(footAnimator);
+            ApplyRootAware(armorController);
+            ApplyRootAware(trackedVehicleAnimator);
+            ApplyRootAware(suspensionController);
+            ApplyRootAware(walkerAnimationController);
+            ApplyRootAware(groundAlignmentController);
             ApplyRootAware(vehicleHUD);
             ApplyRootAware(clientVisibility);
             ApplyRootAware(botBrain);
             ApplyRootAware(hoverOutline);
             ApplyRootAware(rootAwareBehaviours);
-            ApplyRootAware(armorMaps);
-            ApplyRootAware(colliderReferences);
 
             AddInitializable(characterInit);
             AddInitializable(objectMover);
@@ -217,7 +218,7 @@ namespace Game.Scripts.Gameplay.Robots
             AddStatsConsumer(shooterNet);
             AddStatsConsumer(weaponReloadController);
             AddStatsConsumer(statsConsumerBehaviours);
-            AddStatsConsumer(armorMaps);
+            AddStatsConsumer(armorController);
 
             _componentsCached = true;
         }
@@ -231,32 +232,6 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         private void ApplyRootAware(MonoBehaviour[] behaviours)
-        {
-            if (behaviours == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                ApplyRootAware(behaviours[i]);
-            }
-        }
-
-        private void ApplyRootAware(ArmorMap[] behaviours)
-        {
-            if (behaviours == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                ApplyRootAware(behaviours[i]);
-            }
-        }
-
-        private void ApplyRootAware(VehicleColliderReference[] behaviours)
         {
             if (behaviours == null)
             {
@@ -299,19 +274,6 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         private void AddStatsConsumer(MonoBehaviour[] behaviours)
-        {
-            if (behaviours == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                AddStatsConsumer(behaviours[i]);
-            }
-        }
-
-        private void AddStatsConsumer(ArmorMap[] behaviours)
         {
             if (behaviours == null)
             {

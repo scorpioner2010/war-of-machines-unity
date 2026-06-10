@@ -132,7 +132,7 @@ namespace Game.Scripts.Gameplay.Robots
                 RobotMovementGlobalSettings settings = ServerSettings.GetRobotMovement();
                 Rotate(mi, settings, dt);
 
-                bool isLegged = vehicleRoot.footAnimator != null;
+                bool isLegged = vehicleRoot.walkerAnimationController != null;
                 float speedLimit = GetMaxSpeed(settings);
                 float reverseSpeedLimit = GetReverseSpeedLimit(speedLimit);
                 float baseAcceleration = GetAcceleration(settings) * settings.GetAccelerationMultiplier(isLegged);
