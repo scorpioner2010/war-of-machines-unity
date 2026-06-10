@@ -6,8 +6,19 @@ using UnityEngine.SceneManagement;
 
 public class DeathLogic : MonoBehaviour, IVehicleRootAware
 {
+    [System.Serializable]
+    public sealed class DetachableVisual
+    {
+        public GameObject root;
+        public Collider collider;
+        public Rigidbody rigidbody;
+        public Renderer renderer;
+        public MeshCollider meshCollider;
+    }
+
     private const string DeathDebrisLayerName = "Chassis";
 
+    public DetachableVisual[] detachableVisuals = System.Array.Empty<DetachableVisual>();
     public Collider[] colliders;
     public Collider[] collidersToDisableOnDeath;
     public Rigidbody[] debrisRigidbodies;
@@ -60,13 +71,76 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
 
         int debrisLayer = ResolveDeathDebrisLayer();
-        if (colliders == null)
+        DisableConfiguredColliders(collidersToDisableOnDeath);
+        Scene mapScene = MapScopedObjectRegistry.ResolveMapScene(GetOwningScene());
+
+        if (detachableVisuals != null && detachableVisuals.Length > 0)
+        {
+            DetachConfiguredVisuals(mapScene, debrisLayer);
+        }
+        else
+        {
+            DetachLegacyDebris(mapScene, debrisLayer);
+        }
+
+        if (forTurnOff == null)
         {
             return;
         }
 
-        DisableConfiguredColliders(collidersToDisableOnDeath);
-        Scene mapScene = MapScopedObjectRegistry.ResolveMapScene(GetOwningScene());
+        foreach (GameObject obj in forTurnOff)
+        {
+            if (obj != null)
+            {
+                obj.SetActive(false);
+            }
+        }
+    }
+
+    private void DetachConfiguredVisuals(Scene mapScene, int debrisLayer)
+    {
+        for (int i = 0; i < detachableVisuals.Length; i++)
+        {
+            DetachableVisual visual = detachableVisuals[i];
+            if (visual == null || visual.root == null)
+            {
+                Debug.LogError($"{nameof(DeathLogic)} on {name} has an unconfigured detachable visual at index {i}.", this);
+                continue;
+            }
+
+            if (visual.collider == null || visual.rigidbody == null)
+            {
+                Debug.LogError($"{nameof(DeathLogic)} on {name} has no collider or Rigidbody configured for {visual.root.name}.", this);
+                continue;
+            }
+
+            if (!IsConfiguredForDynamicRigidbody(visual.collider, visual.meshCollider))
+            {
+                Debug.LogError($"{nameof(DeathLogic)} on {name} has non-convex debris MeshCollider {visual.collider.name}. Configure it as convex in the prefab before using it with a dynamic Rigidbody.", this);
+                continue;
+            }
+
+            visual.root.transform.SetParent(null, true);
+            MapScopedObjectRegistry.Register(mapScene, visual.root);
+            MapScopedObjectRegistry.MoveRootToScene(mapScene, visual.root);
+            SetLayerRecursively(visual.root.transform, debrisLayer);
+
+            visual.rigidbody.isKinematic = false;
+            visual.collider.enabled = true;
+
+            if (visual.renderer != null)
+            {
+                visual.renderer.enabled = true;
+            }
+        }
+    }
+
+    private void DetachLegacyDebris(Scene mapScene, int debrisLayer)
+    {
+        if (colliders == null)
+        {
+            return;
+        }
 
         for (int i = 0; i < colliders.Length; i++)
         {
@@ -109,14 +183,6 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             if (obj != null)
             {
                 obj.enabled = true;
-            }
-        }
-
-        foreach (GameObject obj in forTurnOff)
-        {
-            if (obj != null)
-            {
-                obj.SetActive(false);
             }
         }
     }

@@ -21,7 +21,7 @@ Current owner scripts:
   - Owns client-side rendering visibility for a spawned vehicle without changing network/gameplay activation.
   - Treats direct enemy spotting and spotted-memory map presence as visible, so the model disappears exactly when the map marker disappears.
   - Requires every visual `Renderer` to be assigned in `visualRenderers`; hidden enemies are suppressed with `forceRenderingOff`.
-  - `Assets/Game/Prefabs/parentT1Hunter.prefab` and `Assets/Game/Prefabs/parentT2.prefab` own the serialized component, `VehicleRoot.clientVisibility` reference, and complete renderer lists.
+  - `Assets/Game/Prefabs/T1Hunter.prefab` and `Assets/Game/Prefabs/T2.prefab` own the serialized component, `VehicleRoot.clientVisibility` reference, and complete renderer lists.
   - Applies its first client visibility result immediately from `OnStartClient`, preventing an unconfirmed remote vehicle from rendering for an initial frame.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleAutoAimController.cs`
   - Rejects enemies hidden by `VehicleClientVisibility`, including an already locked target after its direct spotting expires.
@@ -78,6 +78,9 @@ Aiming flow:
 Prefab/reference rule:
 - `VehicleRoot` references should be assigned in prefab/scene inspector.
 - Battle vehicle prefabs must assign `VehicleRoot.clientVisibility` and every model renderer in `VehicleClientVisibility.visualRenderers`; missing renderer entries can leak hidden geometry.
+- `Assets/Game/Prefabs/T2.prefab` uses `CabineReal`, `WeaponReal`, and `MeshReal` as the turret, gun, and hull visual meshes. These renderers are included in both client visibility and hover-outline lists.
+- T2 armor is separate from visuals: its 10 damage colliders are children of the three objects named `Armor` (four hull colliders and six turret/gun colliders). Armor renderers are disabled and are not included in visual visibility/outline lists.
+- The old T2 primary meshes `MeshBody`, `MeshGun`, `MeshR`, and the old root armor mesh are removed. Track/wheel renderers remain unchanged and are visual-only.
 - Do not add runtime component discovery for required vehicle parts.
 - If a new vehicle subsystem is needed, add serialized/configured references and validate missing configuration with clear errors.
 

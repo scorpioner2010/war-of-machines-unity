@@ -1363,7 +1363,7 @@ PrefabInstance:
     - target: {fileID: 3533032834666098081, guid: 37920e9282dd1184faf512fea6cfe275,
         type: 3}
       propertyPath: botsPerMatch
-      value: 1
+      value: 19
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -19,6 +19,10 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHealth.cs`
   - Networked health state and death handling integration.
   - Raises `OnDamaged` on observers after authoritative damage is applied; the local HUD `DamageScreen` uses this event for the red hit indicator.
+- `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`
+  - Disables configured gameplay/armor colliders on death and releases configured visual debris.
+  - `detachableVisuals` separates each visual debris root, debris collider, rigidbody, and renderer from the colliders that receive gameplay hits.
+  - The legacy parallel debris arrays remain as a fallback for prefabs that have not moved to `detachableVisuals`.
 - `Assets/Game/Scripts/Gameplay/Robots/ArmorMap.cs`
   - Armor zone/collider data and line-of-sight armor sampling.
 - `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`
@@ -51,6 +55,13 @@ Fire flow:
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Damage should be applied only through authoritative server hit resolution, not directly from bot AI.
 - Local damage feedback is client-side UI only: `VehicleHealth.OnDamaged` drives `DamageScreen` without affecting damage calculation.
+
+T2 armor and destruction prefab contract:
+- `Assets/Game/Prefabs/T2.prefab` registers only colliders below objects named `Armor` as armor damage surfaces.
+- The four hull colliders use `ArmorMap.ArmorZone.Hull`; the five turret colliders and one gun collider use `ArmorMap.ArmorZone.Turret`.
+- `CabineReal`, `WeaponReal`, and `MeshReal` are visual-only while the robot is alive. Each has an inspector-wired disabled debris `BoxCollider` and a kinematic `Rigidbody`.
+- On death, all 10 armor colliders are disabled, then the three `*Real` objects detach, move to the `Chassis` layer, enable their debris colliders, and become non-kinematic.
+- T2 track/wheel objects are not part of the new armor or detachable primary-visual setup.
 
 Dispersion and aim:
 - `NetworkWeaponShooter` updates server and owner dispersion in `Update`.
