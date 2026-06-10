@@ -72,8 +72,8 @@ Fire flow:
 T2 armor and destruction prefab contract:
 - `Assets/Game/Prefabs/T2.prefab` registers only colliders below objects named `Armor` as armor damage surfaces.
 - Its single root `VehicleArmorController` contains six hull colliders and seven turret/gun colliders. `ChassisT2` is the one registry-only non-armor collider.
-- `CabineReal`, `WeaponReal`, and `MeshReal` are functional debris parents with inspector-wired disabled debris `BoxCollider` and kinematic `Rigidbody` components. Their direct `VisualMesh` child owns only the rendered mesh.
-- All 22 `WheelA1_*`/`WheelA2_*` parent pivots use the same debris pattern: the parent owns only a disabled `BoxCollider` and kinematic `Rigidbody`; the direct `a1`/`a2` child owns the mesh components. Wheel animation is centralized on the vehicle root.
+- `CabineReal`, `WeaponReal`, and `MeshReal` are functional debris parents with inspector-wired disabled convex `MeshCollider` and kinematic `Rigidbody` components. Their direct `VisualMesh` child owns only the rendered mesh.
+- All 22 centered `WheelA1_*`/`WheelA2_*` parent pivots use the same debris pattern: the parent owns a disabled `BoxCollider` fitted to its mesh bounds and a kinematic `Rigidbody`; the direct `a1`/`a2` child owns the mesh components. Every wheel debris entry explicitly references those components. Wheel animation is centralized on the vehicle root.
 - On death, all 13 armor colliders are disabled, then 25 configured visual parents detach, move recursively to the `Chassis` layer, enable their debris colliders, and become non-kinematic. Wheel spin behaviours are disabled before physics starts.
 - `CaterpillarTrackLeft` and `CaterpillarTrackRight` remain visual-only and are deactivated on death instead of detaching.
 - `VehicleClientVisibility` releases the death renderers from future spotting changes while preserving whether the vehicle was visible at the death moment. Visible debris stays visible until map unload; already-hidden enemies do not reveal debris.
