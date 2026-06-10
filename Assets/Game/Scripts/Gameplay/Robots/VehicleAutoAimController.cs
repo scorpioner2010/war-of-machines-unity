@@ -221,7 +221,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             if (TryGetBoundsFromColliders(_targetArmorColliders, out Bounds fallbackBounds)
-                || TryGetBoundsFromArmorMaps(_targetArmorMaps, ArmorMap.ArmorZone.Auto, out fallbackBounds))
+                || TryGetBoundsFromArmorMaps(_targetArmorMaps, null, out fallbackBounds))
             {
                 point = fallbackBounds.center;
                 return IsFinite(point);
@@ -269,7 +269,10 @@ namespace Game.Scripts.Gameplay.Robots
             return hasBounds;
         }
 
-        private bool TryGetBoundsFromArmorMaps(ArmorMap[] armorMaps, ArmorMap.ArmorZone requiredZone, out Bounds bounds)
+        private bool TryGetBoundsFromArmorMaps(
+            ArmorMap[] armorMaps,
+            ArmorMap.ArmorZone? requiredZone,
+            out Bounds bounds)
         {
             bounds = default;
             bool hasBounds = false;
@@ -287,7 +290,7 @@ namespace Game.Scripts.Gameplay.Robots
                     continue;
                 }
 
-                if (requiredZone != ArmorMap.ArmorZone.Auto && armorMap.ResolvedArmorZone != requiredZone)
+                if (requiredZone.HasValue && armorMap.ResolvedArmorZone != requiredZone.Value)
                 {
                     continue;
                 }

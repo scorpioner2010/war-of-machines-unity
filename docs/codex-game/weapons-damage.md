@@ -27,6 +27,9 @@ Current owner scripts:
   - Detached parts are registered with `MapScopedObjectRegistry` and remain in the client map scene until that map is unloaded; death logic has no timed debris cleanup.
 - `Assets/Game/Scripts/Gameplay/Robots/ArmorMap.cs`
   - Armor zone/collider data and line-of-sight armor sampling.
+  - Armor zones are explicit: `Turret = 0` is the default inspector value and `Hull = 1`. There is no automatic name-based zone detection.
+  - Base armor comes only from API runtime stats: `turretArmor` or `hullArmor` in `front/side/rear` order. Armor textures and inspector min/max thickness values are not used.
+  - A missing, malformed, zero, or negative directional armor value resolves to `1000 mm`; an armor zone never falls back to values from the other zone.
   - Its collider is a hidden serialized cache maintained from the collider on the same GameObject by editor `Reset`/`OnValidate`; it is not a manual inspector reference.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderReference.cs`
   - Registers its local collider and optional local `ArmorMap` with `VehicleColliderRegistry`.

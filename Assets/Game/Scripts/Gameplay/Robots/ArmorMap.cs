@@ -6,35 +6,29 @@ namespace Game.Scripts.Gameplay.Robots
     [DisallowMultipleComponent]
     public class ArmorMap : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
     {
+        private const float FallbackArmorMm = 1000f;
+
         public enum ArmorZone
         {
-            Auto = 0,
-            Hull = 1,
-            Turret = 2
+            Turret = 0,
+            Hull = 1
         }
 
-        public Texture2D thicknessMap;
-        public ArmorZone armorZone = ArmorZone.Auto;
-        [Min(0f)] public float minMm = 0;
-        [Min(0f)] public float maxMm = 500;
+        public ArmorZone armorZone = ArmorZone.Turret;
 
         [FormerlySerializedAs("armorCollider")]
         [SerializeField, HideInInspector] private Collider _armorCollider;
 
-        private bool _useRuntimeArmor;
         private VehicleArmorValues _runtimeHullArmor;
         private VehicleArmorValues _runtimeTurretArmor;
-        private bool _resolvedArmorZoneCached;
-        private ArmorZone _resolvedArmorZone;
 
         public VehicleRoot VehicleRoot { get; private set; }
         public Collider ArmorCollider => _armorCollider;
-        public ArmorZone ResolvedArmorZone => ResolveArmorZone();
+        public ArmorZone ResolvedArmorZone => armorZone;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
             VehicleRoot = root;
-            _resolvedArmorZoneCached = false;
 
             if (_armorCollider == null)
             {
@@ -48,35 +42,18 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (stats == null)
             {
+                _runtimeHullArmor = default;
+                _runtimeTurretArmor = default;
                 return;
             }
 
             _runtimeHullArmor = stats.HullArmor;
             _runtimeTurretArmor = stats.TurretArmor;
-            _useRuntimeArmor = _runtimeHullArmor.HasAny || _runtimeTurretArmor.HasAny;
-
-            VehicleArmorValues armor = GetRuntimeArmorValues();
-            if (armor.HasAny)
-            {
-                minMm = GetPositiveOrFallback(armor.Rear, minMm);
-                maxMm = GetPositiveOrFallback(armor.Front, maxMm);
-            }
-        }
-
-        public float SampleMm(Vector2 uv)
-        {
-            float u = Mathf.Clamp01(uv.x);
-            float v = Mathf.Clamp01(uv.y);
-            Color c = thicknessMap.GetPixelBilinear(u, v);
-            float t = Mathf.Clamp01(c.r);
-            return Mathf.Lerp(maxMm, minMm, t);
         }
 
         public bool TryGetArmorLoS(RaycastHit hit, Vector3 shotDir, float normDeg, out float baseMm, out float losMm)
         {
-            baseMm = _useRuntimeArmor
-                ? SampleRuntimeArmor(hit)
-                : SampleMm(hit.textureCoord);
+            baseMm = SampleArmor(hit);
 
             Vector3 dir = shotDir.normalized;
             Vector3 n = hit.normal.normalized;
@@ -93,14 +70,9 @@ namespace Game.Scripts.Gameplay.Robots
             return true;
         }
 
-        private float SampleRuntimeArmor(RaycastHit hit)
+        private float SampleArmor(RaycastHit hit)
         {
             VehicleArmorValues armor = GetRuntimeArmorValues();
-            if (!armor.HasAny)
-            {
-                return SampleMm(hit.textureCoord);
-            }
-
             Transform reference = GetArmorReferenceTransform();
             Vector3 normal = hit.normal.normalized;
 
@@ -110,42 +82,30 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (absRight > absForward)
             {
-                return GetPositiveOrFallback(armor.Side, GetPositiveOrFallback(armor.Front, maxMm));
+                return GetArmorOrFallback(armor.Side);
             }
 
             if (forwardDot < -0.35f)
             {
-                return GetPositiveOrFallback(armor.Rear, GetPositiveOrFallback(armor.Side, minMm));
+                return GetArmorOrFallback(armor.Rear);
             }
 
-            return GetPositiveOrFallback(armor.Front, maxMm);
+            return GetArmorOrFallback(armor.Front);
         }
 
         private VehicleArmorValues GetRuntimeArmorValues()
         {
-            ArmorZone resolvedZone = ResolveArmorZone();
-            if (resolvedZone == ArmorZone.Turret && _runtimeTurretArmor.HasAny)
+            if (armorZone == ArmorZone.Turret)
             {
                 return _runtimeTurretArmor;
             }
 
-            if (resolvedZone == ArmorZone.Hull && _runtimeHullArmor.HasAny)
-            {
-                return _runtimeHullArmor;
-            }
-
-            if (_runtimeHullArmor.HasAny)
-            {
-                return _runtimeHullArmor;
-            }
-
-            return _runtimeTurretArmor;
+            return _runtimeHullArmor;
         }
 
         private Transform GetArmorReferenceTransform()
         {
-            ArmorZone resolvedZone = ResolveArmorZone();
-            if (resolvedZone == ArmorZone.Turret && VehicleRoot != null && VehicleRoot.robotHullRotation != null)
+            if (armorZone == ArmorZone.Turret && VehicleRoot != null && VehicleRoot.robotHullRotation != null)
             {
                 return VehicleRoot.robotHullRotation.transform;
             }
@@ -158,56 +118,9 @@ namespace Game.Scripts.Gameplay.Robots
             return transform;
         }
 
-        private ArmorZone ResolveArmorZone()
+        private static float GetArmorOrFallback(float value)
         {
-            if (armorZone != ArmorZone.Auto)
-            {
-                return armorZone;
-            }
-
-            if (_resolvedArmorZoneCached)
-            {
-                return _resolvedArmorZone;
-            }
-
-            Transform current = transform;
-            while (current != null)
-            {
-                string objectName = current.name;
-                if (!string.IsNullOrEmpty(objectName))
-                {
-                    string lower = objectName.ToLowerInvariant();
-                    if (lower.Contains("turret") || lower.Contains("tower") || lower.Contains("head"))
-                    {
-                        _resolvedArmorZone = ArmorZone.Turret;
-                        _resolvedArmorZoneCached = true;
-                        return _resolvedArmorZone;
-                    }
-
-                    if (lower.Contains("hull") || lower.Contains("body") || lower.Contains("chassis"))
-                    {
-                        _resolvedArmorZone = ArmorZone.Hull;
-                        _resolvedArmorZoneCached = true;
-                        return _resolvedArmorZone;
-                    }
-                }
-
-                if (VehicleRoot != null && current == VehicleRoot.transform)
-                {
-                    break;
-                }
-
-                current = current.parent;
-            }
-
-            _resolvedArmorZone = ArmorZone.Hull;
-            _resolvedArmorZoneCached = true;
-            return _resolvedArmorZone;
-        }
-
-        private static float GetPositiveOrFallback(float value, float fallback)
-        {
-            return value > 0f ? value : fallback;
+            return value > 0f ? value : FallbackArmorMm;
         }
 
 #if UNITY_EDITOR
@@ -219,7 +132,6 @@ namespace Game.Scripts.Gameplay.Robots
         private void OnValidate()
         {
             CacheLocalCollider();
-            _resolvedArmorZoneCached = false;
         }
 
         private void CacheLocalCollider()

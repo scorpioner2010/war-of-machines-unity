@@ -28,6 +28,11 @@ Vehicle resource flow:
 4. Spawned vehicle receives runtime stats from `VehicleStatsProvider.GetAsync`.
 5. UI can ask `GameResourceManager.GetIcon(code)`.
 
+Vehicle armor API contract:
+- `VehicleLite.turretArmor` and `VehicleLite.hullArmor` are slash-separated `front/side/rear` millimeter values.
+- `VehicleRuntimeStats` parses those strings into `TurretArmor` and `HullArmor`.
+- `ArmorMap` uses only the values for its explicitly selected zone. A missing, malformed, zero, or negative directional value becomes `1000 mm`.
+
 Rules when editing API/resource code:
 - Keep API DTO changes synchronized with backend expectations.
 - Do not use runtime scene searches for vehicle prefabs; use `GameResourceManager` and `RobotRegistry`.

@@ -22,7 +22,7 @@ namespace Game.Scripts.AI.WaypointGraph
                 point = bounds.center;
             }
             else if ((targetRoot.health != null && TryGetBoundsFromColliders(targetRoot.health.colliders, out bounds))
-                     || TryGetBoundsFromArmorMaps(targetRoot.armorMaps, ArmorMap.ArmorZone.Auto, out bounds))
+                     || TryGetBoundsFromArmorMaps(targetRoot.armorMaps, null, out bounds))
             {
                 point = bounds.center;
             }
@@ -80,7 +80,10 @@ namespace Game.Scripts.AI.WaypointGraph
             return hasBounds;
         }
 
-        private static bool TryGetBoundsFromArmorMaps(ArmorMap[] armorMaps, ArmorMap.ArmorZone requiredZone, out Bounds bounds)
+        private static bool TryGetBoundsFromArmorMaps(
+            ArmorMap[] armorMaps,
+            ArmorMap.ArmorZone? requiredZone,
+            out Bounds bounds)
         {
             bounds = default;
             bool hasBounds = false;
@@ -97,7 +100,7 @@ namespace Game.Scripts.AI.WaypointGraph
                     continue;
                 }
 
-                if (requiredZone != ArmorMap.ArmorZone.Auto && armorMap.ResolvedArmorZone != requiredZone)
+                if (requiredZone.HasValue && armorMap.ResolvedArmorZone != requiredZone.Value)
                 {
                     continue;
                 }

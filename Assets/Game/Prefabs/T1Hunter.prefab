@@ -241,10 +241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
-  armorZone: 2
-  minMm: 0
-  maxMm: 500
+  armorZone: 0
   _armorCollider: {fileID: 1053095380699537911}
 --- !u!114 &4603306414643136537
 MonoBehaviour:
@@ -663,10 +660,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 1
-  minMm: 0
-  maxMm: 500
   _armorCollider: {fileID: 7266918758433681930}
 --- !u!114 &1223419201015929599
 MonoBehaviour:
@@ -2532,10 +2526,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
-  armorZone: 2
-  minMm: 0
-  maxMm: 500
+  armorZone: 0
   _armorCollider: {fileID: 9012618769719413394}
 --- !u!114 &4352240844663254713
 MonoBehaviour:
@@ -3114,10 +3105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
-  armorZone: 2
-  minMm: 0
-  maxMm: 500
+  armorZone: 0
   _armorCollider: {fileID: 8626111167429773425}
 --- !u!114 &4222252312545365561
 MonoBehaviour:
@@ -4127,10 +4115,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 1
-  minMm: 0
-  maxMm: 500
   _armorCollider: {fileID: 2234496612675365817}
 --- !u!114 &998321643138857951
 MonoBehaviour:
@@ -4387,10 +4372,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 1
-  minMm: 0
-  maxMm: 500
   _armorCollider: {fileID: 6655559585601033798}
 --- !u!114 &9136327823914133510
 MonoBehaviour:
@@ -5074,10 +5056,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 1
-  minMm: 0
-  maxMm: 500
   _armorCollider: {fileID: 441242851669953531}
 --- !u!114 &8582577683036645482
 MonoBehaviour:
@@ -5928,10 +5907,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1beb06b7ed00c0a4b8749018e28f6440, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.ArmorMap
-  thicknessMap: {fileID: 2800000, guid: dde29654efcaa824aa073f3fcec70713, type: 3}
   armorZone: 1
-  minMm: 0
-  maxMm: 500
   _armorCollider: {fileID: 231461112207153769}
 --- !u!114 &8235981868930659885
 MonoBehaviour:
