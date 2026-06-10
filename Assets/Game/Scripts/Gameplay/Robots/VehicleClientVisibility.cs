@@ -14,8 +14,10 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _clientStarted;
         private bool _hasAppliedVisibility;
         private bool _isVisible;
+        private bool _serverVisualObjectsDestroyed;
 
         public bool IsVisible => _hasAppliedVisibility && _isVisible;
+        public bool ServerVisualObjectsDestroyed => _serverVisualObjectsDestroyed;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -45,6 +47,60 @@ namespace Game.Scripts.Gameplay.Robots
 
             enabled = false;
             return visibleAtDeath;
+        }
+
+        public void DestroyVisualObjectsForServer()
+        {
+            if (_serverVisualObjectsDestroyed)
+            {
+                return;
+            }
+
+            _serverVisualObjectsDestroyed = true;
+            _refreshRequested = false;
+            enabled = false;
+
+            if (visualRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                Renderer visualRenderer = visualRenderers[i];
+                if (visualRenderer == null)
+                {
+                    continue;
+                }
+
+                GameObject visualObject = visualRenderer.gameObject;
+                if (visualObject == gameObject || !visualObject.transform.IsChildOf(transform))
+                {
+                    Debug.LogError(
+                        $"{nameof(VehicleClientVisibility)} on {name} cannot strip renderer {visualRenderer.name} because it is not on a child visual object.",
+                        this);
+                    continue;
+                }
+
+                bool alreadyQueued = false;
+                for (int previousIndex = 0; previousIndex < i; previousIndex++)
+                {
+                    Renderer previousRenderer = visualRenderers[previousIndex];
+                    if (previousRenderer != null && previousRenderer.gameObject == visualObject)
+                    {
+                        alreadyQueued = true;
+                        break;
+                    }
+                }
+
+                if (alreadyQueued)
+                {
+                    continue;
+                }
+
+                visualRenderer.forceRenderingOff = true;
+                Destroy(visualObject);
+            }
         }
 
         private void OnEnable()

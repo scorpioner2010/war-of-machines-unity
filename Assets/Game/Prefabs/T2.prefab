@@ -916,12 +916,12 @@ MonoBehaviour:
   vehicleRoot: {fileID: 2321927772602250882}
   projectilePrefab: {fileID: 7674765070753820207, guid: 5c0e3fb49fbd8c948953622a99303421,
     type: 3}
+  authoritativeProjectilePrefab: {fileID: 7317351192318911003, guid: 73a77400529343ca9d4170ad03c44e66,
+    type: 3}
   muzzleTransform: {fileID: 8952852033910042811}
   prewarmProjectilePools: 1
   projectilePoolPrewarmCount: 16
   projectilePoolMaxInactive: 64
-  impactFxPoolPrewarmCount: 16
-  impactFxPoolMaxInactive: 64
   dispersion:
     minDispersionDeg: 0.35
     maxDispersionDeg: 6
@@ -4452,6 +4452,20 @@ MonoBehaviour:
   additionalVehicleColliders:
   - {fileID: 1699867880869822920}
   highlightArmorInPrefab: 0
+  serverEditorArmorRenderers:
+  - {fileID: 1225120340935322035}
+  - {fileID: 8905648007711357192}
+  - {fileID: 7512404253477105815}
+  - {fileID: 7245420181161458815}
+  - {fileID: 1636165008617750563}
+  - {fileID: 1040540090133392545}
+  - {fileID: 8395227049844015845}
+  - {fileID: 6411300060617801412}
+  - {fileID: 5461176586190378565}
+  - {fileID: 5428152212290705488}
+  - {fileID: 5231008032828304032}
+  - {fileID: 9110760899740080719}
+  - {fileID: 428483835240161210}
 --- !u!114 &268157763388590189
 MonoBehaviour:
   m_ObjectHideFlags: 0

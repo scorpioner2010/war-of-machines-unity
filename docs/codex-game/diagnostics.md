@@ -16,6 +16,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/Diagnostics/RollingMetricsBuffer.cs`
 - `Assets/Game/Scripts/Diagnostics/UnityFrameProfilerRecorder.cs`
 - `tools/` and `game-diag.cmd`
+- `Assets/Game/Scripts/Server/ServerDebugOverlay.cs`
+  - The `Local client (host only)` line reports whether the server process itself also runs a FishNet client. It correctly remains `Stopped` on a dedicated server when remote players connect.
+  - `Connected clients` is the remote connection count from `ServerManager.Clients.Count` and is the line to use for player connections.
 
 Mandatory workflow is defined in `AGENTS.md` and must be followed before gameplay edits for performance reports.
 

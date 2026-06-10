@@ -1,3 +1,4 @@
+using FishNet;
 using FishNet.Object;
 using Game.Scripts.Gameplay.Robots.t1;
 using Game.Scripts.Gameplay.Robots.t2;
@@ -83,6 +84,11 @@ namespace Game.Scripts.Gameplay.Robots
         {
             CacheComponents();
             InitializeComponents(VehicleInitializationPhase.Server);
+
+            if (!InstanceFinder.IsClientStarted)
+            {
+                ApplyServerOnlyPresentation();
+            }
         }
 
         public override void OnStartClient()
@@ -348,6 +354,19 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     Destroy(component);
                 }
+            }
+        }
+
+        private void ApplyServerOnlyPresentation()
+        {
+            if (armorController != null)
+            {
+                armorController.SetServerEditorVisualization(true);
+            }
+
+            if (clientVisibility != null)
+            {
+                clientVisibility.DestroyVisualObjectsForServer();
             }
         }
 

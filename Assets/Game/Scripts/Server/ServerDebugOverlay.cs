@@ -166,7 +166,10 @@ namespace Game.Scripts.Server
 
             AddStatusLine("NetworkManager: Initialized", OverlayLineState.Working);
             AddValueLine("Server", GetStateText(serverStarted), GetRunningState(serverStarted));
-            AddValueLine("Client", GetStateText(clientStarted), GetRunningState(clientStarted));
+            OverlayLineState localClientState = clientStarted
+                ? OverlayLineState.Working
+                : serverStarted ? OverlayLineState.Info : OverlayLineState.NotWorking;
+            AddValueLine("Local client (host only)", GetStateText(clientStarted), localClientState);
             AddValueLine("Start status", StartServerButtons.LastServerStatus, GetRunningState(serverStarted));
 
             bool transportInitialized = networkManager.TransportManager != null

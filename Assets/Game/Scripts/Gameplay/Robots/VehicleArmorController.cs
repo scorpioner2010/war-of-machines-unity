@@ -23,6 +23,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         [Header("Editor")]
         public bool highlightArmorInPrefab = true;
+        [SerializeField] private Renderer[] serverEditorArmorRenderers = System.Array.Empty<Renderer>();
 
         private readonly List<Collider> _registeredColliders = new List<Collider>(32);
         private VehicleArmorValues _runtimeHullArmor;
@@ -91,6 +92,26 @@ namespace Game.Scripts.Gameplay.Robots
         public Collider[] GetColliders(ArmorZone zone)
         {
             return zone == ArmorZone.Turret ? turretColliders : hullColliders;
+        }
+
+        public void SetServerEditorVisualization(bool visible)
+        {
+#if UNITY_EDITOR
+            if (serverEditorArmorRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < serverEditorArmorRenderers.Length; i++)
+            {
+                Renderer armorRenderer = serverEditorArmorRenderers[i];
+                if (armorRenderer != null)
+                {
+                    armorRenderer.enabled = visible;
+                    armorRenderer.forceRenderingOff = !visible;
+                }
+            }
+#endif
         }
 
         private void OnEnable()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using FishNet;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Unity.Profiling;
@@ -37,7 +38,7 @@ public static class ProjectileRuntimePool
 
     public static void ConfigureImpactFxPool(PooledImpactFx prefab, int maxInactive)
     {
-        if (prefab == null)
+        if (prefab == null || IsServerOnlyProcess())
         {
             return;
         }
@@ -72,7 +73,7 @@ public static class ProjectileRuntimePool
 
     public static void PrewarmImpactFx(PooledImpactFx prefab, int count, int maxInactive)
     {
-        if (prefab == null || count <= 0)
+        if (prefab == null || count <= 0 || IsServerOnlyProcess())
         {
             return;
         }
@@ -164,7 +165,7 @@ public static class ProjectileRuntimePool
 
     public static void SpawnImpactFx(PooledImpactFx prefab, Vector3 position, Quaternion rotation)
     {
-        if (prefab == null)
+        if (prefab == null || IsServerOnlyProcess())
         {
             return;
         }
@@ -179,7 +180,7 @@ public static class ProjectileRuntimePool
 
     public static void SpawnVisualFx(PooledImpactFx prefab, Vector3 position, Quaternion rotation, float scaleMultiplier)
     {
-        if (prefab == null)
+        if (prefab == null || IsServerOnlyProcess())
         {
             return;
         }
@@ -328,5 +329,10 @@ public static class ProjectileRuntimePool
         root.hideFlags = HideFlags.HideInHierarchy;
         Object.DontDestroyOnLoad(root);
         return root.transform;
+    }
+
+    private static bool IsServerOnlyProcess()
+    {
+        return InstanceFinder.IsServerStarted && !InstanceFinder.IsClientStarted;
     }
 }

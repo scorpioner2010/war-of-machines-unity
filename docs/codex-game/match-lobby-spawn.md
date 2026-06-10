@@ -55,6 +55,7 @@ Spawn flow:
 8. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
 9. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
 10. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team.
+11. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
 
 Rules when editing match/spawn:
 - Keep room state authoritative on server.

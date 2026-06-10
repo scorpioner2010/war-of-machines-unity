@@ -18,14 +18,13 @@ namespace Game.Scripts.Gameplay.Robots
         public VehicleRoot vehicleRoot;
 
         public Projectile projectilePrefab;
+        [SerializeField] private Projectile authoritativeProjectilePrefab;
         public Transform muzzleTransform;
 
         [Header("Runtime pooling")]
         [SerializeField] private bool prewarmProjectilePools = true;
         [SerializeField, Min(0)] private int projectilePoolPrewarmCount = 16;
         [SerializeField, Min(1)] private int projectilePoolMaxInactive = 64;
-        [SerializeField, Min(0)] private int impactFxPoolPrewarmCount = 16;
-        [SerializeField, Min(1)] private int impactFxPoolMaxInactive = 64;
 
         public GunDispersionSettings dispersion = new GunDispersionSettings();
 
@@ -92,7 +91,7 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly GunDispersionModel _serverDispersion = new GunDispersionModel();
         private readonly SyncVar<float> _serverDispersionDeg = new();
         private bool _testAccuracyDebugMode;
-        private bool _projectilePoolsPrepared;
+        private bool _authoritativeProjectilePoolPrepared;
         private bool _clientVisualPoolsPrepared;
 
         public void SetVehicleRoot(VehicleRoot root)
@@ -177,18 +176,19 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
         {
-            if (!context.IsMenu)
-            {
-                PrepareProjectilePools();
-            }
-
             if (context.IsServer)
             {
+                if (!context.IsMenu)
+                {
+                    PrepareAuthoritativeProjectilePool();
+                }
+
                 InitServerDispersion();
             }
 
             if (context.IsOwner && !context.IsMenu)
             {
+                PrepareClientVisualPools();
                 InitOwnerDispersion();
             }
         }
@@ -382,7 +382,15 @@ namespace Game.Scripts.Gameplay.Robots
             System.Action onAuthoritativeImpact = null,
             bool configureResolvedTarget = true)
         {
-            PrepareProjectilePools();
+            if (authoritative)
+            {
+                PrepareAuthoritativeProjectilePool();
+            }
+            else
+            {
+                PrepareClientVisualPools();
+            }
+
             ProjectileVisualSpawnParams spawnParams = CreateProjectileSpawnParams(
                 startPos,
                 aimPoint,
@@ -445,7 +453,14 @@ namespace Game.Scripts.Gameplay.Robots
 
         private Projectile GetProjectilePrefabForSpawn(bool authoritative, ClientProjectileVisualSettings visualSettings)
         {
-            if (!authoritative && visualSettings != null && visualSettings.projectilePrefab != null)
+            if (authoritative)
+            {
+                return authoritativeProjectilePrefab != null
+                    ? authoritativeProjectilePrefab
+                    : projectilePrefab;
+            }
+
+            if (visualSettings != null && visualSettings.projectilePrefab != null)
             {
                 return visualSettings.projectilePrefab;
             }
@@ -463,38 +478,28 @@ namespace Game.Scripts.Gameplay.Robots
             return ClientSettings.GetProjectileVisuals();
         }
 
-        private void PrepareProjectilePools()
+        private void PrepareAuthoritativeProjectilePool()
         {
-            if (_projectilePoolsPrepared)
+            if (_authoritativeProjectilePoolPrepared)
             {
                 return;
             }
 
-            _projectilePoolsPrepared = true;
-            if (projectilePrefab == null)
+            _authoritativeProjectilePoolPrepared = true;
+            Projectile serverPrefab = authoritativeProjectilePrefab != null
+                ? authoritativeProjectilePrefab
+                : projectilePrefab;
+            if (serverPrefab == null)
             {
-                PrepareClientVisualPools();
                 return;
             }
 
             int projectileMaxInactive = Mathf.Max(1, projectilePoolMaxInactive);
-            ProjectileRuntimePool.ConfigureProjectilePool(projectilePrefab, projectileMaxInactive);
+            ProjectileRuntimePool.ConfigureProjectilePool(serverPrefab, projectileMaxInactive);
             if (prewarmProjectilePools && projectilePoolPrewarmCount > 0)
             {
-                ProjectileRuntimePool.PrewarmProjectile(projectilePrefab, projectilePoolPrewarmCount, projectileMaxInactive);
+                ProjectileRuntimePool.PrewarmProjectile(serverPrefab, projectilePoolPrewarmCount, projectileMaxInactive);
             }
-
-            if (projectilePrefab.explosionFX != null)
-            {
-                int impactFxMaxInactive = Mathf.Max(1, impactFxPoolMaxInactive);
-                ProjectileRuntimePool.ConfigureImpactFxPool(projectilePrefab.explosionFX, impactFxMaxInactive);
-                if (prewarmProjectilePools && impactFxPoolPrewarmCount > 0)
-                {
-                    ProjectileRuntimePool.PrewarmImpactFx(projectilePrefab.explosionFX, impactFxPoolPrewarmCount, impactFxMaxInactive);
-                }
-            }
-
-            PrepareClientVisualPools();
         }
 
         private void PrepareClientVisualPools()
@@ -672,7 +677,6 @@ namespace Game.Scripts.Gameplay.Robots
                 ConfigureOwnerProjectileTrajectoryTargetRpc(sender, shotId, dispersedRay.TargetPoint);
             }
 
-            bool serverVisualVisible = !IsClientInitialized || (sender != null && !sender.IsLocalClient);
             Projectile serverProjectile = SpawnLocal(
                 startPos,
                 dispersedRay.TargetPoint,
@@ -680,7 +684,7 @@ namespace Game.Scripts.Gameplay.Robots
                 true,
                 false,
                 Vector3.up,
-                serverVisualVisible,
+                false,
                 null,
                 configureResolvedTarget: false
             );
@@ -1338,7 +1342,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void SpawnImpactFx(Vector3 impactPoint, Vector3 impactNormal)
         {
-            ProjectileVisualSpawner.SpawnImpactFx(projectilePrefab, impactPoint, impactNormal);
+            ClientProjectileVisualSettings visualSettings = GetClientProjectileVisualSettings();
+            Projectile visualProjectilePrefab = visualSettings != null && visualSettings.projectilePrefab != null
+                ? visualSettings.projectilePrefab
+                : projectilePrefab;
+            ProjectileVisualSpawner.SpawnImpactFx(visualProjectilePrefab, impactPoint, impactNormal);
         }
 
         private void SpawnMuzzleFx(Vector3 startPos, Vector3 targetPoint)

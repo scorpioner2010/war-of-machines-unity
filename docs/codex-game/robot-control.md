@@ -19,6 +19,8 @@ Current owner scripts:
   - Suppresses the same world-space presentation for menu-preview vehicles after `VehicleRoot.Init(true)`.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleClientVisibility.cs`
   - Owns client-side rendering visibility for a spawned vehicle without changing network/gameplay activation.
+  - On a server-only spawn, destroys the GameObjects that own every inspector-wired `visualRenderers` entry. This removes robot model meshes, wheel meshes, and track renderers from the dedicated server while leaving functional transforms, colliders, armor, and movement components intact.
+  - Server visual stripping is skipped for a host process because the local client still needs the model.
   - Treats direct enemy spotting and spotted-memory map presence as visible, so the model disappears exactly when the map marker disappears.
   - Requires every visual `Renderer` to be assigned in `visualRenderers`; hidden enemies are suppressed with `forceRenderingOff`.
   - On vehicle death, freezes the visibility state that was active at that moment and stops processing later spotting updates. Visible debris therefore stays rendered after detaching, while a vehicle that was already hidden does not reveal its death position.
@@ -86,6 +88,8 @@ Prefab/reference rule:
 - Root walker, tracked, suspension, and ground-alignment controllers stop updating when `VehicleHealth.IsDead`; `DeathLogic` also disables them before debris detachment.
 - T2 uses `CabineReal`, `WeaponReal`, and `MeshReal` as functional turret, gun, and hull debris parents. Each parent owns a disabled convex debris `MeshCollider` and has a direct `VisualMesh` child that owns the rendered mesh.
 - T2 armor is separate from visuals: all 13 damage colliders are children of the three objects named `Armor` (six hull colliders, six turret colliders, and one gun collider). One root `VehicleArmorController` owns those arrays plus the registry-only `ChassisT2` collider. Armor renderers are disabled and are not included in visual visibility/outline lists.
+- T1 Hunter and T2 configure their armor renderers in `VehicleArmorController.serverEditorArmorRenderers`. A server-only process running in the Unity Editor enables those renderers after spawn so server armor geometry remains visible for inspection. Player builds do not enable armor rendering.
+- `VehicleRoot.OnStartServer` owns the server-only presentation transition: it enables Editor armor visualization, then asks `VehicleClientVisibility` to destroy configured model visual objects.
 - The old T2 primary meshes `MeshBody`, `MeshGun`, `MeshR`, the old root armor mesh, and all `WhelMesh`/`WheMesh` wheel instances are removed.
 - T2 wheels use one centered functional `WheelA1_01..04` or `WheelA2_01..07` parent directly below `LeftWhels`/`RightWhels`, followed by the nested `a1`/`a2` mesh. The redundant numeric A1 holder level is removed.
 - Every wheel parent owns its disabled mesh-fitted `BoxCollider` and kinematic `Rigidbody`. The A1 wheel parent is also the suspension target; one root `TrackedVehicleAnimator` owns left/right wheel arrays, per-wheel rotation speeds, and both track renderers.

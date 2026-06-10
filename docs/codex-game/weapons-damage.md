@@ -50,6 +50,7 @@ Current owner scripts:
   - Authoritative confirmation suppresses a duplicate impact when the predicted and server target object IDs match. If a target ID is unavailable, world impacts within 2 meters are treated as the same impact. A different target or farther point produces a corrective authoritative impact.
 - `Assets/Game/Scripts/Gameplay/Projectiles/ProjectileRuntimePool.cs`
   - Runtime pooling for projectiles.
+  - Rejects impact and muzzle FX configuration, prewarming, and spawning in a server-only process. Hosts retain client FX because they also run a local client.
 - `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`
   - Impact FX pooling.
   - Applies local impact camera shake through CFXR effects with the gameplay camera, distance falloff, the client camera-shake setting, and a runtime strength scale of `0.3` so pooled impact shake is 70% weaker than prefab-authored CFXR strength.
@@ -62,6 +63,8 @@ Fire flow:
 - The owner sends one fire RPC through `NetworkWeaponShooter`; projectile creation and ammo/reload consumption cannot be approved independently.
 - Predicted owner and observer projectiles use client-only collision to prevent visible wall/target overshoot caused by RPC latency.
 - Cosmetic impact FX is predicted immediately for the owner and observers. Hit/miss, armor, penetration, damage, HP, kill state, and shot-result HUD remain server-authoritative.
+- Authoritative simulation uses `Assets/Game/Prefabs/ServerProjectile.prefab`, which contains only `Transform` and `Projectile`: no mesh, renderer, trail, particle system, collider, rigidbody, material, or explosion FX reference.
+- `NetworkWeaponShooter` prepares the authoritative projectile pool only for the server phase. Client projectile, impact, muzzle-flash, and muzzle-smoke pools are prepared only from client visual paths.
 - A matching authoritative hit completes the waiting visual without replaying the same impact. A divergent authoritative hit may add a correction impact. A server miss releases the waiting visual; an already-played cosmetic prediction is not rolled back.
 - The authoritative projectile catches up by the elapsed client tick time, capped at 0.30 seconds, so server damage timing stays close to client projectile timing.
 - Server validates reload/ammo in `WeaponReloadController` before `NetworkWeaponShooter` creates the authoritative projectile.
