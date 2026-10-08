@@ -753,7 +753,7 @@ MonoBehaviour:
   - {fileID: 8224498899922251464}
   additionalVehicleColliders:
   - {fileID: 1899529151278672299}
-  highlightArmorInPrefab: 0
+  highlightArmorInPrefab: 1
   serverEditorArmorRenderers:
   - {fileID: 2526671782136434656}
   - {fileID: 8707239786736382864}

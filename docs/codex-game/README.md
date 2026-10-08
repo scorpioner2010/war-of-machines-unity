@@ -25,6 +25,8 @@ Mechanic files:
 - `server-settings.md` - global settings prefab, validation, runtime accessors.
 - `ui-hud.md` - gameplay HUD, crosshair, reload/ammo, player list, map visibility.
 - `api-resources.md` - backend API managers, profile data, robot registry, vehicle prefab/icon lookup.
+- `local-network-builds.md` - reproducible Windows client/server builds for local network testing.
+- `network-transport.md` - FishNet transport ownership, pinned dependency, and local handshake verification.
 - `world-maps-spawns.md` - map metadata, scene-scoped spawn points, team spawn selection.
 - `vehicle-test-scene.md` - VehicleTest bootstrap, test spawn flow, HUD setup, test runtime overrides.
 - `menus-settings-progression.md` - main menu, settings screens, development tree, vehicle selection UI.

@@ -5,6 +5,8 @@ Read this file before changing backend API calls, profile loading, vehicle regis
 Current owner scripts:
 - `Assets/Game/Scripts/API/HttpLink.cs`
   - Shared HTTP/API link configuration.
+  - The default API base for Editor, client builds, and server builds is the local API at `https://localhost:7216`.
+  - `WOM_API_BASE`, `API_BASE`, or the `-apiBase`/`--api-base` command-line override can still point a process at another API when explicitly needed.
 - `Assets/Game/Scripts/API/Endpoints/*.cs`
   - Endpoint managers for leaderboard, maps, matches, players, register, user vehicles, vehicles.
 - `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs`

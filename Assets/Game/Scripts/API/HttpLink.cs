@@ -13,11 +13,7 @@ namespace Game.Scripts.API
         public const string LocalIisHttpAPIBase = "http://localhost:43606";
         public const string RenderAPIBase = "https://war-of-machines-api.onrender.com";
 
-#if UNITY_EDITOR
         public static string APIBase = LocalAPIBase;
-#else
-        public static string APIBase = RenderAPIBase;
-#endif
 
         private static bool _runtimeConfigApplied;
 
