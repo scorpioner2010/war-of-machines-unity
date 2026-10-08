@@ -48,7 +48,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - VehicleTest bootstrap that instantiates `Assets/Game/Prefabs/UI/GameplayHUD.prefab` under the scene Canvas.
   - Registers and opens the HUD through `MenuManager` when present; otherwise opens the HUD `Menu` directly because VehicleTest has no scene `MenuManager`.
-  - Hides the instantiated `GameplayHUD` while the centered expanded VehicleTest panel is open, then reopens it when the panel is collapsed or vehicle control resumes.
+  - Hides the instantiated `GameplayHUD` while the centered expanded VehicleTest panel is open, then reopens it when the panel is collapsed or vehicle control resumes. The test panel is responsive: it scales with the screen and switches its vehicle catalog/statistics card from two columns to a vertical layout on narrow screens.
   - Rebinds `GunCrosshair` canvas references after instantiation.
   - When VehicleTest spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`

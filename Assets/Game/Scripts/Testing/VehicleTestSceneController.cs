@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Managing;
@@ -34,8 +33,10 @@ namespace Game.Scripts.Testing
         }
 
         private const string TestPlayerName = "VehicleTest";
-        private const float ExpandedPanelMaxWidth = 520f;
-        private const float ExpandedPanelMaxHeight = 680f;
+        private const float ExpandedPanelMaxWidth = 900f;
+        private const float ExpandedPanelMaxHeight = 760f;
+        private const float ReferenceScreenWidth = 1600f;
+        private const float ReferenceScreenHeight = 900f;
         private const float PanelScreenPadding = 12f;
 
         public RobotRegistry registry;
@@ -70,7 +71,6 @@ namespace Game.Scripts.Testing
         private Vector2 _vehicleScroll;
         private Vector2 _statsScroll;
         private Vector2 _botsScroll;
-        private readonly StringBuilder _builder = new StringBuilder(512);
         private readonly string[] _testPanelTabs =
         {
             "Vehicle",
@@ -85,8 +85,24 @@ namespace Game.Scripts.Testing
         private bool _networkStartInProgress;
         private bool _testCursorMode = true;
         private bool _testPanelExpanded = true;
+        private bool _useCompactLayout;
+        private float _uiScale = 1f;
+        private float _styleScale = -1f;
         private TestPanelTab _activeTab = TestPanelTab.Vehicle;
         private Rect _testGuiArea;
+        private GUIStyle _panelStyle;
+        private GUIStyle _cardStyle;
+        private GUIStyle _titleStyle;
+        private GUIStyle _statusStyle;
+        private GUIStyle _tabStyle;
+        private GUIStyle _sectionTitleStyle;
+        private GUIStyle _vehicleRowStyle;
+        private GUIStyle _selectedVehicleRowStyle;
+        private GUIStyle _primaryButtonStyle;
+        private GUIStyle _secondaryButtonStyle;
+        private GUIStyle _detailLabelStyle;
+        private GUIStyle _detailValueStyle;
+        private GUIStyle _hintStyle;
         private GameObject _spawnedGameplayHud;
         private bool _gameplayHudHiddenForTest;
         private bool _gameplayHudOpenedForTest;
@@ -173,6 +189,9 @@ namespace Game.Scripts.Testing
 
         private void OnGUI()
         {
+            _uiScale = GetUiScale();
+            EnsureGuiStyles();
+
             if (!ShouldDrawTestGui())
             {
                 RefreshGameplayHudVisibilityForTest();
@@ -191,12 +210,13 @@ namespace Game.Scripts.Testing
                 }
 
                 _testGuiArea = GetExpandedTestPanelRect();
-                GUILayout.BeginArea(_testGuiArea, GUI.skin.box);
+                _useCompactLayout = _testGuiArea.width < 720f;
+                GUILayout.BeginArea(_testGuiArea, _panelStyle);
 
                 DrawTestPanelHeader();
-                GUILayout.Space(6f);
+                GUILayout.Space(6f * _uiScale);
                 DrawTestPanelTabs();
-                GUILayout.Space(8f);
+                GUILayout.Space(8f * _uiScale);
 
                 if (_activeTab == TestPanelTab.Vehicle)
                 {
@@ -217,10 +237,11 @@ namespace Game.Scripts.Testing
 
         private void DrawCollapsedTestPanel()
         {
-            _testGuiArea = new Rect(12f, 12f, 190f, 44f);
-            GUILayout.BeginArea(_testGuiArea, GUI.skin.box);
+            float padding = PanelScreenPadding * _uiScale;
+            _testGuiArea = new Rect(padding, padding, 190f * _uiScale, 46f * _uiScale);
+            GUILayout.BeginArea(_testGuiArea, _panelStyle);
 
-            if (GUILayout.Button("Open Vehicle Test", GUILayout.Height(28f)))
+            if (GUILayout.Button("Open Vehicle Test", _primaryButtonStyle, GUILayout.Height(30f * _uiScale)))
             {
                 _testPanelExpanded = true;
                 SetTestCursorMode(true);
@@ -233,69 +254,95 @@ namespace Game.Scripts.Testing
         private void DrawTestPanelHeader()
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Vehicle Test", GUILayout.Width(230f));
+            GUILayout.Label("Vehicle Test", _titleStyle);
 
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Collapse", GUILayout.Width(92f), GUILayout.Height(24f)))
+            GUI.enabled = !_loading;
+            if (GUILayout.Button("Reload", _secondaryButtonStyle, GUILayout.Width(82f * _uiScale), GUILayout.Height(28f * _uiScale)))
+            {
+                LoadVehiclesAsync().Forget();
+            }
+
+            GUI.enabled = true;
+            if (GUILayout.Button("Collapse", _secondaryButtonStyle, GUILayout.Width(92f * _uiScale), GUILayout.Height(28f * _uiScale)))
             {
                 _testPanelExpanded = false;
                 RefreshGameplayHudVisibilityForTest();
             }
 
             GUILayout.EndHorizontal();
-            GUILayout.Label(_status);
+            GUILayout.Label(_status, _statusStyle);
         }
 
         private void DrawTestPanelTabs()
         {
             GUI.enabled = true;
-            int selectedTab = GUILayout.Toolbar((int)_activeTab, _testPanelTabs, GUILayout.Height(28f));
+            int selectedTab = GUILayout.Toolbar((int)_activeTab, _testPanelTabs, _tabStyle, GUILayout.Height(30f * _uiScale));
             _activeTab = (TestPanelTab)Mathf.Clamp(selectedTab, 0, _testPanelTabs.Length - 1);
         }
 
         private void DrawVehicleTab()
         {
-            GUI.enabled = !_loading;
-            if (GUILayout.Button("Reload API vehicles", GUILayout.Height(30f)))
+            float contentHeight = GetVehicleContentHeight();
+            if (_useCompactLayout)
             {
-                LoadVehiclesAsync().Forget();
+                float listHeight = Mathf.Max(110f * _uiScale, contentHeight * 0.4f);
+                DrawVehicleList(listHeight);
+                GUILayout.Space(8f * _uiScale);
+                DrawSelectedStats(Mathf.Max(120f * _uiScale, contentHeight - listHeight - 8f * _uiScale));
+            }
+            else
+            {
+                float contentWidth = Mathf.Max(1f, _testGuiArea.width - _panelStyle.padding.horizontal);
+                float catalogWidth = Mathf.Max(270f * _uiScale, contentWidth * 0.4f);
+
+                GUILayout.BeginHorizontal();
+                DrawVehicleList(contentHeight, catalogWidth);
+                GUILayout.Space(8f * _uiScale);
+                DrawSelectedStats(contentHeight);
+                GUILayout.EndHorizontal();
             }
 
-            GUI.enabled = true;
-            GUILayout.Space(8f);
-            DrawVehicleList();
-            GUILayout.Space(8f);
-            DrawSelectedStats();
-            GUILayout.Space(8f);
+            GUILayout.Space(8f * _uiScale);
+            DrawVehicleActions();
+        }
 
+        private void DrawVehicleActions()
+        {
             VehicleRuntimeStats selected = GetSelected();
             VehicleRoot prefab = GetSelectedPrefab(selected);
-            GUI.enabled = !_loading && !_spawnInProgress && IsNetworkReady() && selected != null && prefab != null;
-            if (GUILayout.Button("Spawn selected robot", GUILayout.Height(34f)))
+            bool canSpawn = !_loading && !_spawnInProgress && IsNetworkReady() && selected != null && prefab != null;
+
+            GUILayout.BeginHorizontal();
+            GUI.enabled = canSpawn;
+            string spawnLabel = _useCompactLayout ? "Spawn robot" : "Spawn selected robot";
+            if (GUILayout.Button(spawnLabel, _primaryButtonStyle, GUILayout.Height(38f * _uiScale)))
             {
                 SpawnSelectedAsync().Forget();
             }
 
             GUI.enabled = _spawnedVehicle != null;
-            if (GUILayout.Button("Despawn robot", GUILayout.Height(28f)))
+            if (GUILayout.Button("Despawn", _secondaryButtonStyle, GUILayout.Width(110f * _uiScale), GUILayout.Height(38f * _uiScale)))
             {
                 DespawnCurrent();
             }
 
             GUI.enabled = true;
-            GUILayout.Space(8f);
-            GUILayout.Label("Controls: WASD move, mouse aim, LMB fire, Space action.");
+            GUILayout.EndHorizontal();
+            GUILayout.Space(5f * _uiScale);
+            GUILayout.Label("WASD move  •  mouse aim  •  LMB fire  •  Space action", _hintStyle);
         }
 
         private void DrawBotsTab()
         {
-            GUILayout.Label("Test bots");
-            GUILayout.Label("Player vehicle: " + (_spawnedVehicle != null ? _spawnedVehicle.name : "not spawned"));
-            GUILayout.Label("Bots in room: " + CountSpawnedBots());
+            GUILayout.BeginVertical(_cardStyle);
+            GUILayout.Label("Test bots", _sectionTitleStyle);
+            GUILayout.Label("Player vehicle: " + (_spawnedVehicle != null ? _spawnedVehicle.name : "not spawned"), _detailLabelStyle);
+            GUILayout.Label("Bots in room: " + CountSpawnedBots(), _detailLabelStyle);
 
             Scene playerScene = _spawnedVehicle != null ? _spawnedVehicle.gameObject.scene : default;
             string sceneName = playerScene.IsValid() ? playerScene.name : "none";
-            GUILayout.Label("Bot spawn scene: " + sceneName);
+            GUILayout.Label("Bot spawn scene: " + sceneName, _detailLabelStyle);
 
             bool canSpawnBot = !_loading
                                && !_spawnInProgress
@@ -306,37 +353,44 @@ namespace Game.Scripts.Testing
                                && playerScene.isLoaded
                                && HasSpawnPoint(playerScene);
 
+            GUILayout.Space(6f * _uiScale);
+            GUILayout.BeginHorizontal();
             GUI.enabled = canSpawnBot;
-            if (GUILayout.Button("Add random enemy bot", GUILayout.Height(34f)))
+            if (GUILayout.Button("Add enemy bot", _primaryButtonStyle, GUILayout.Height(36f * _uiScale)))
             {
                 SpawnRandomBotAsync(false).Forget();
             }
 
-            if (GUILayout.Button("Add random ally bot", GUILayout.Height(34f)))
+            if (GUILayout.Button("Add ally bot", _secondaryButtonStyle, GUILayout.Height(36f * _uiScale)))
             {
                 SpawnRandomBotAsync(true).Forget();
             }
 
             GUI.enabled = true;
+            GUILayout.EndHorizontal();
             if (!canSpawnBot)
             {
-                GUILayout.Space(6f);
-                GUILayout.Label(BuildBotSpawnBlockReason(playerScene));
+                GUILayout.Space(6f * _uiScale);
+                GUILayout.Label(BuildBotSpawnBlockReason(playerScene), _statusStyle);
             }
 
-            GUILayout.Space(8f);
-            DrawBotList();
+            GUILayout.EndVertical();
+
+            GUILayout.Space(8f * _uiScale);
+            DrawBotList(GetScrollableListHeight(250f));
         }
 
         private void DrawRuntimeTab()
         {
-            GUILayout.Label("Runtime status");
-            GUILayout.Label(IsNetworkReady() ? "Network: ready" : "Network: not ready");
-            GUILayout.Label("Server: " + _serverState);
-            GUILayout.Label("Client: " + _clientState);
-            GUILayout.Label("Cursor/UI mode: " + (_testCursorMode ? "test UI" : "vehicle control"));
-            GUILayout.Space(8f);
+            GUILayout.BeginVertical(_cardStyle);
+            GUILayout.Label("Runtime status", _sectionTitleStyle);
+            DrawStatRow("Network", IsNetworkReady() ? "Ready" : "Not ready");
+            DrawStatRow("Server", _serverState.ToString());
+            DrawStatRow("Client", _clientState.ToString());
+            DrawStatRow("Input mode", _testCursorMode ? "Test UI" : "Vehicle control");
+            GUILayout.Space(8f * _uiScale);
             DrawTestSettingsSummary();
+            GUILayout.EndVertical();
         }
 
         private string BuildBotSpawnBlockReason(Scene playerScene)
@@ -379,15 +433,17 @@ namespace Game.Scripts.Testing
             return "Bot spawn blocked.";
         }
 
-        private void DrawBotList()
+        private void DrawBotList(float height)
         {
-            GUILayout.Label("Room bots");
-            _botsScroll = GUILayout.BeginScrollView(_botsScroll, GUILayout.Height(210f));
+            GUILayout.BeginVertical(_cardStyle, GUILayout.Height(height));
+            GUILayout.Label("Room bots", _sectionTitleStyle);
+            _botsScroll = GUILayout.BeginScrollView(_botsScroll, GUILayout.Height(Mathf.Max(60f * _uiScale, height - 48f * _uiScale)));
 
             if (_testRoom == null || _testRoom.players == null)
             {
-                GUILayout.Label("No room yet.");
+                GUILayout.Label("No room yet.", _hintStyle);
                 GUILayout.EndScrollView();
+                GUILayout.EndVertical();
                 return;
             }
 
@@ -408,20 +464,22 @@ namespace Game.Scripts.Testing
                 }
 
                 GUILayout.Label(player.loginName
-                                + " | "
+                                + "  •  "
                                 + player.team
-                                + " | "
+                                + "  •  "
                                 + player.activeVehicleCode
-                                + " | "
-                                + rootState);
+                                + "  •  "
+                                + rootState,
+                    _detailLabelStyle);
             }
 
             if (!hasBots)
             {
-                GUILayout.Label("No bots spawned.");
+                GUILayout.Label("No bots spawned.", _hintStyle);
             }
 
             GUILayout.EndScrollView();
+            GUILayout.EndVertical();
         }
 
         private bool ShouldDrawTestGui()
@@ -455,14 +513,24 @@ namespace Game.Scripts.Testing
             _loading = false;
         }
 
-        private void DrawVehicleList()
+        private void DrawVehicleList(float height, float width = 0f)
         {
-            GUILayout.Label("Vehicles");
-            _vehicleScroll = GUILayout.BeginScrollView(_vehicleScroll, GUILayout.Height(210f));
+            if (width > 0f)
+            {
+                GUILayout.BeginVertical(_cardStyle, GUILayout.Width(width), GUILayout.Height(height));
+            }
+            else
+            {
+                GUILayout.BeginVertical(_cardStyle, GUILayout.Height(height));
+            }
+
+            GUILayout.Label("Vehicle catalog", _sectionTitleStyle);
+            GUILayout.Label(_vehicles != null ? _vehicles.Length + " vehicles loaded" : "No vehicles loaded", _hintStyle);
+            _vehicleScroll = GUILayout.BeginScrollView(_vehicleScroll, GUILayout.Height(Mathf.Max(50f * _uiScale, height - 72f * _uiScale)));
 
             if (_vehicles == null || _vehicles.Length == 0)
             {
-                GUILayout.Label("No vehicles.");
+                GUILayout.Label("No vehicles. Use Reload after the API is ready.", _hintStyle);
             }
             else
             {
@@ -475,14 +543,14 @@ namespace Game.Scripts.Testing
                     }
 
                     VehicleRoot prefab = GetSelectedPrefab(stats);
-                    string label = stats.Name + "  [" + stats.Code + "]";
+                    string label = GetVehicleDisplayName(stats) + "\n" + stats.Code + "  •  Level " + stats.Level;
                     if (prefab == null)
                     {
-                        label += "  no prefab";
+                        label += "  •  no prefab";
                     }
 
                     bool selected = i == _selectedIndex;
-                    if (GUILayout.Toggle(selected, label, GUI.skin.button, GUILayout.Height(26f)) && !selected)
+                    if (GUILayout.Button(label, selected ? _selectedVehicleRowStyle : _vehicleRowStyle, GUILayout.Height(46f * _uiScale)))
                     {
                         _selectedIndex = i;
                     }
@@ -490,24 +558,30 @@ namespace Game.Scripts.Testing
             }
 
             GUILayout.EndScrollView();
+            GUILayout.EndVertical();
         }
 
-        private void DrawSelectedStats()
+        private void DrawSelectedStats(float height)
         {
             VehicleRuntimeStats stats = GetSelected();
-            GUILayout.Label("Selected stats");
-            _statsScroll = GUILayout.BeginScrollView(_statsScroll, GUILayout.Height(190f));
+            GUILayout.BeginVertical(_cardStyle, GUILayout.Height(height));
+            GUILayout.Label("Selected vehicle", _sectionTitleStyle);
 
             if (stats == null)
             {
-                GUILayout.Label("Select a vehicle.");
+                GUILayout.Label("Choose a vehicle from the catalog.", _hintStyle);
             }
             else
             {
-                GUILayout.TextArea(BuildStatsText(stats), GUILayout.ExpandHeight(true));
+                GUILayout.Label(GetVehicleDisplayName(stats) + "  •  " + stats.Code, _titleStyle);
+                GUILayout.Label("Level " + stats.Level + (GetSelectedPrefab(stats) != null ? "  •  ready to spawn" : "  •  prefab missing"), _hintStyle);
+                GUILayout.Space(4f * _uiScale);
+                _statsScroll = GUILayout.BeginScrollView(_statsScroll, GUILayout.Height(Mathf.Max(50f * _uiScale, height - 105f * _uiScale)));
+                DrawVehicleStats(stats);
+                GUILayout.EndScrollView();
             }
 
-            GUILayout.EndScrollView();
+            GUILayout.EndVertical();
         }
 
         private void DrawTestSettingsSummary()
@@ -521,57 +595,87 @@ namespace Game.Scripts.Testing
             string status = testRuntimeSettings.HasActiveTestParameters
                 ? "Test overrides ON"
                 : "Test overrides OFF";
-            GUILayout.Label(status);
+            GUILayout.Label(status, _sectionTitleStyle);
             if (testRuntimeSettings.HasActiveTestParameters)
             {
-                GUILayout.Label("Reload: " + testRuntimeSettings.reloadTime.ToString("0.###") + " s");
-                GUILayout.Label("Shells: " + testRuntimeSettings.shellsCount);
+                DrawStatRow("Reload", testRuntimeSettings.reloadTime.ToString("0.###") + " s");
+                DrawStatRow("Shells", testRuntimeSettings.shellsCount.ToString());
             }
 
-            GUILayout.Label(testRuntimeSettings.createHitMarkerSphere
-                ? "Hit markers ON"
-                : "Hit markers OFF");
-            GUILayout.Label(testRuntimeSettings.forceFullyAimedAccuracyOnly
-                ? "Accuracy debug: fully aimed accuracy only ON"
-                : "Accuracy debug OFF");
+            DrawStatRow("Hit markers", testRuntimeSettings.createHitMarkerSphere ? "On" : "Off");
+            DrawStatRow("Forced full aim", testRuntimeSettings.forceFullyAimedAccuracyOnly ? "On" : "Off");
         }
 
-        private string BuildStatsText(VehicleRuntimeStats stats)
+        private void DrawVehicleStats(VehicleRuntimeStats stats)
         {
-            _builder.Length = 0;
-            _builder.Append("Name: ").Append(stats.Name).Append('\n');
-            _builder.Append("Code: ").Append(stats.Code).Append('\n');
-            _builder.Append("Level: ").Append(stats.Level).Append('\n');
-            _builder.Append("HP: ").Append(stats.MaxHealth).Append('\n');
-            _builder.Append("Damage: ").Append(stats.DamageMin).Append('-').Append(stats.DamageMax).Append('\n');
-            _builder.Append("Penetration: ").Append(stats.Penetration).Append('\n');
-            _builder.Append("Shell speed: ").Append(stats.ShellSpeed).Append('\n');
-            _builder.Append("Ammo: ").Append(stats.ShellsCount).Append('\n');
-            _builder.Append("Reload: ").Append(stats.ReloadTime).Append(" s\n");
-            _builder.Append("Accuracy @100m: ").Append(stats.Accuracy).Append(" m\n");
-            AppendResolvedAccuracyStats(stats);
-            _builder.Append("Aim time: ").Append(stats.AimTime).Append(" s\n");
-            _builder.Append("View range: ").Append(stats.ViewRange).Append(" m\n");
-            _builder.Append("Speed: ").Append(stats.Speed).Append('\n');
-            _builder.Append("Acceleration: ").Append(stats.Acceleration).Append('\n');
-            _builder.Append("Traverse: ").Append(stats.TraverseSpeed).Append('\n');
-            _builder.Append("Turret traverse: ").Append(stats.TurretTraverseSpeed).Append('\n');
-            _builder.Append("Hull armor: ").Append(stats.HullArmor.Front).Append('/')
-                .Append(stats.HullArmor.Side).Append('/').Append(stats.HullArmor.Rear).Append('\n');
-            _builder.Append("Turret armor: ").Append(stats.TurretArmor.Front).Append('/')
-                .Append(stats.TurretArmor.Side).Append('/').Append(stats.TurretArmor.Rear);
-            return _builder.ToString();
-        }
+            DrawStatSection("Combat");
+            DrawStatRow("Durability", stats.MaxHealth.ToString("0"));
+            DrawStatRow("Damage", stats.DamageMin.ToString("0.#") + " – " + stats.DamageMax.ToString("0.#"));
+            DrawStatRow("Penetration", stats.Penetration.ToString("0.#"));
+            DrawStatRow("Reload", stats.ReloadTime.ToString("0.###") + " s");
+            DrawStatRow("Ammo", stats.ShellsCount.ToString());
+            DrawStatRow("Shell speed", stats.ShellSpeed.ToString("0.#") + " m/s");
 
-        private void AppendResolvedAccuracyStats(VehicleRuntimeStats stats)
-        {
+            DrawStatSection("Aiming");
+            DrawStatRow("Accuracy @100m", stats.Accuracy.ToString("0.###") + " m");
+            DrawStatRow("Aim time", stats.AimTime.ToString("0.###") + " s");
+            DrawStatRow("View range", stats.ViewRange.ToString("0.#") + " m");
+
             GunDispersionGlobalSettings dispersionSettings = ServerSettings.GetGunDispersion();
             float dispersionDeg = dispersionSettings.GetAccuracyDispersionDeg(stats.Accuracy, 0f);
             float farRingDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg, 0f);
             float zoomRingDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg, 1f);
-            _builder.Append("Fully aimed dispersion: ").Append(dispersionDeg.ToString("0.###")).Append(" deg\n");
-            _builder.Append("Fully aimed ring far: ").Append(farRingDiameter.ToString("0.#")).Append(" px\n");
-            _builder.Append("Fully aimed ring zoom: ").Append(zoomRingDiameter.ToString("0.#")).Append(" px\n");
+            DrawStatRow("Full aim spread", dispersionDeg.ToString("0.###") + "°");
+            DrawStatRow("Aim ring", farRingDiameter.ToString("0.#") + " / " + zoomRingDiameter.ToString("0.#") + " px");
+
+            DrawStatSection("Mobility");
+            DrawStatRow("Speed", stats.Speed.ToString("0.#"));
+            DrawStatRow("Acceleration", stats.Acceleration.ToString("0.#"));
+            DrawStatRow("Hull traverse", stats.TraverseSpeed.ToString("0.#"));
+            DrawStatRow("Turret traverse", stats.TurretTraverseSpeed.ToString("0.#"));
+
+            DrawStatSection("Armor  front / side / rear");
+            DrawStatRow("Hull", stats.HullArmor.Front + " / " + stats.HullArmor.Side + " / " + stats.HullArmor.Rear);
+            DrawStatRow("Turret", stats.TurretArmor.Front + " / " + stats.TurretArmor.Side + " / " + stats.TurretArmor.Rear);
+        }
+
+        private void DrawStatSection(string title)
+        {
+            GUILayout.Space(6f * _uiScale);
+            GUILayout.Label(title, _sectionTitleStyle);
+        }
+
+        private void DrawStatRow(string label, string value)
+        {
+            float availableWidth = Mathf.Max(1f, _testGuiArea.width - _panelStyle.padding.horizontal);
+            float labelWidth = Mathf.Clamp(availableWidth * 0.44f, 105f * _uiScale, 245f * _uiScale);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(label, _detailLabelStyle, GUILayout.Width(labelWidth));
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(value, _detailValueStyle);
+            GUILayout.EndHorizontal();
+        }
+
+        private static string GetVehicleDisplayName(VehicleRuntimeStats stats)
+        {
+            if (stats == null)
+            {
+                return "Unknown vehicle";
+            }
+
+            return string.IsNullOrWhiteSpace(stats.Name) ? stats.Code : stats.Name;
+        }
+
+        private float GetVehicleContentHeight()
+        {
+            float reservedHeight = _useCompactLayout ? 222f : 176f;
+            return Mathf.Max(150f * _uiScale, _testGuiArea.height - reservedHeight * _uiScale);
+        }
+
+        private float GetScrollableListHeight(float reservedHeight)
+        {
+            return Mathf.Max(110f * _uiScale, _testGuiArea.height - reservedHeight * _uiScale);
         }
 
         private VehicleRuntimeStats GetSelected()
@@ -1523,12 +1627,128 @@ namespace Game.Scripts.Testing
             return showTestGui && _testCursorMode && _testPanelExpanded;
         }
 
+        private float GetUiScale()
+        {
+            float widthScale = Screen.width / ReferenceScreenWidth;
+            float heightScale = Screen.height / ReferenceScreenHeight;
+            return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 0.72f, 1.25f);
+        }
+
+        private void EnsureGuiStyles()
+        {
+            if (_panelStyle != null && Mathf.Abs(_styleScale - _uiScale) < 0.01f)
+            {
+                return;
+            }
+
+            _styleScale = _uiScale;
+            int bodyFontSize = Mathf.Max(11, Mathf.RoundToInt(14f * _uiScale));
+            int smallFontSize = Mathf.Max(10, Mathf.RoundToInt(12f * _uiScale));
+            int sectionFontSize = Mathf.Max(12, Mathf.RoundToInt(15f * _uiScale));
+            int titleFontSize = Mathf.Max(15, Mathf.RoundToInt(22f * _uiScale));
+            int panelPadding = Mathf.Max(8, Mathf.RoundToInt(14f * _uiScale));
+            int cardPadding = Mathf.Max(6, Mathf.RoundToInt(9f * _uiScale));
+
+            _panelStyle = new GUIStyle(GUI.skin.box)
+            {
+                padding = new RectOffset(panelPadding, panelPadding, panelPadding, panelPadding)
+            };
+
+            _cardStyle = new GUIStyle(GUI.skin.box)
+            {
+                padding = new RectOffset(cardPadding, cardPadding, cardPadding, cardPadding),
+                margin = new RectOffset(0, 0, 0, 0)
+            };
+
+            _titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = titleFontSize,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true
+            };
+
+            _statusStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = smallFontSize,
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true
+            };
+
+            _tabStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = bodyFontSize,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true
+            };
+
+            _sectionTitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = sectionFontSize,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true
+            };
+
+            _vehicleRowStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = bodyFontSize,
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true,
+                padding = new RectOffset(cardPadding, cardPadding, cardPadding / 2, cardPadding / 2)
+            };
+
+            _selectedVehicleRowStyle = new GUIStyle(_vehicleRowStyle)
+            {
+                fontStyle = FontStyle.Bold
+            };
+            _selectedVehicleRowStyle.normal.background = GUI.skin.button.active.background;
+            _selectedVehicleRowStyle.normal.textColor = new Color(0.88f, 0.96f, 1f);
+
+            _primaryButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = bodyFontSize,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true
+            };
+
+            _secondaryButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = smallFontSize,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true
+            };
+
+            _detailLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = bodyFontSize,
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true
+            };
+
+            _detailValueStyle = new GUIStyle(_detailLabelStyle)
+            {
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleRight
+            };
+
+            _hintStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = smallFontSize,
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true
+            };
+        }
+
         private Rect GetExpandedTestPanelRect()
         {
-            float availableWidth = Mathf.Max(320f, Screen.width - PanelScreenPadding * 2f);
-            float availableHeight = Mathf.Max(320f, Screen.height - PanelScreenPadding * 2f);
-            float width = Mathf.Min(ExpandedPanelMaxWidth, availableWidth);
-            float height = Mathf.Min(ExpandedPanelMaxHeight, availableHeight);
+            float padding = PanelScreenPadding * _uiScale;
+            float availableWidth = Mathf.Max(1f, Screen.width - padding * 2f);
+            float availableHeight = Mathf.Max(1f, Screen.height - padding * 2f);
+            float width = Mathf.Min(ExpandedPanelMaxWidth * _uiScale, availableWidth);
+            float height = Mathf.Min(ExpandedPanelMaxHeight * _uiScale, availableHeight);
             float x = (Screen.width - width) * 0.5f;
             float y = (Screen.height - height) * 0.5f;
             return new Rect(x, y, width, height);

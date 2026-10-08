@@ -12,7 +12,7 @@ Current owner scripts:
   - Loads the additive gameplay scene through FishNet with `AutomaticallyUnload = false` so test shutdown does not auto-unload the map from an inactive/destroying `NetworkManager`.
   - Waits for the local owner connection to be authenticated, to have loaded start scenes, and to be present in the additive gameplay scene through FishNet's real client-loaded acknowledgement before spawning the selected vehicle.
   - Uses `MatchVehicleSpawner` for map spawn points when spawning into the gameplay scene.
-  - Draws the IMGUI test panel as a centered collapsible panel with `Vehicle`, `Bots`, and `Runtime` tabs.
+  - Draws the IMGUI test panel as a centered, collapsible, screen-responsive panel with `Vehicle`, `Bots`, and `Runtime` tabs. It scales panel dimensions, fonts, spacing, and controls with screen size; the `Vehicle` tab uses a scrollable vehicle catalog and a separate grouped-stat card, switching from two columns to a vertical layout on narrow screens.
   - Keeps the VehicleTest IMGUI overlay visible after entering the gameplay map. When vehicle control starts, the panel collapses to the `Open Vehicle Test` button instead of disappearing; pressing Escape restores cursor/test GUI mode so the panel can be expanded.
   - Hides `GameplayHUD` while the expanded VehicleTest panel is open, and reopens it when the panel is collapsed or vehicle control resumes.
   - The `Bots` tab can add a random enemy bot or random ally bot for the spawned test player. Bot vehicle codes are picked from loaded API stats with a valid prefab, then fall back to server default/registry codes.

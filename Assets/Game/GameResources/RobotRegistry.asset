@@ -14,19 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   items:
   - code: ia_l1_starter
-    prefab: {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
-      type: 3}
+    prefab: {fileID: 901996468296691208, guid: dd4c216603401ee458dba1606a42cbeb, type: 3}
     icon: {fileID: 21300000, guid: 51dde97bd028a324a885abc84151b692, type: 3}
   - code: nv_l1_starter
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
     icon: {fileID: 21300000, guid: 6ebfe44f9956af54d8430024bb3fc86a, type: 3}
   - code: ia_l2_scout
-    prefab: {fileID: 5226239542433404041, guid: 54685c43c2a3ae34cb1ce2b5e537b34e,
+    prefab: {fileID: 4822079852371630191, guid: ac1b924d03aecd345bf53cded32574e3,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
   - code: ia_l2_guardian
-    prefab: {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
+    prefab: {fileID: 5226239542433404041, guid: 54685c43c2a3ae34cb1ce2b5e537b34e,
       type: 3}
     icon: {fileID: 21300000, guid: acd7cf5497ed3a747a296ace1afe1c0e, type: 3}
   - code: ia_l2_colossus
