@@ -37,7 +37,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`
   - Static runtime lookup from a configured collider to its vehicle root and optional centralized armor controller/zone.
 - `Assets/Game/Scripts/Editor/ArmorPrefabHighlighter.cs`
-  - In Prefab Mode, draws the red overlay for objects referenced by the root `VehicleArmorController` turret/hull arrays.
+  - In Prefab Mode, draws the red overlay for active objects referenced by the root `VehicleArmorController` turret/hull arrays; an object disabled with `GameObject.SetActive(false)` is not highlighted.
   - Respects the prefab-owned `highlightArmorInPrefab` checkbox.
 - `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`
   - Dispersion settings and runtime dispersion model.

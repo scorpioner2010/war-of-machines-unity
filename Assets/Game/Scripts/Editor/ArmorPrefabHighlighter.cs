@@ -100,7 +100,9 @@ namespace Game.Scripts.Editor
                 for (int i = 0; i < RendererBuffer.Count; i++)
                 {
                     Renderer renderer = RendererBuffer[i];
-                    if (renderer == null || !ArmorObjects.Contains(renderer.gameObject))
+                    if (renderer == null
+                        || !renderer.gameObject.activeInHierarchy
+                        || !ArmorObjects.Contains(renderer.gameObject))
                     {
                         continue;
                     }
@@ -115,6 +117,7 @@ namespace Game.Scripts.Editor
                     MeshCollider meshCollider = MeshColliderBuffer[i];
                     if (meshCollider == null
                         || meshCollider.sharedMesh == null
+                        || !meshCollider.gameObject.activeInHierarchy
                         || meshCollider.GetComponent<Renderer>() != null
                         || !ArmorObjects.Contains(meshCollider.gameObject))
                     {
