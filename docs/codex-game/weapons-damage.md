@@ -64,7 +64,7 @@ Fire flow:
 - The owner sends one fire RPC through `NetworkWeaponShooter`; projectile creation and ammo/reload consumption cannot be approved independently.
 - Predicted owner and observer projectiles use client-only collision to prevent visible wall/target overshoot caused by RPC latency.
 - Cosmetic impact FX is predicted immediately for the owner and observers. Hit/miss, armor, penetration, damage, HP, kill state, and shot-result HUD remain server-authoritative.
-- Authoritative simulation uses `Assets/Game/Prefabs/ServerProjectile.prefab`, which contains only `Transform` and `Projectile`: no mesh, renderer, trail, particle system, collider, rigidbody, material, or explosion FX reference.
+- Authoritative simulation uses `Assets/Game/Content/Combat/Projectiles/ServerProjectile.prefab`, which contains only `Transform` and `Projectile`: no mesh, renderer, trail, particle system, collider, rigidbody, material, or explosion FX reference.
 - `NetworkWeaponShooter` prepares the authoritative projectile pool only for the server phase. Client projectile, impact, muzzle-flash, and muzzle-smoke pools are prepared only from client visual paths.
 - A matching authoritative hit completes the waiting visual without replaying the same impact. A divergent authoritative hit may add a correction impact. A server miss releases the waiting visual; an already-played cosmetic prediction is not rolled back.
 - The authoritative projectile catches up by the elapsed client tick time, capped at 0.30 seconds, so server damage timing stays close to client projectile timing.
@@ -74,7 +74,7 @@ Fire flow:
 - Local damage feedback is client-side UI only: `VehicleHealth.OnDamaged` drives `DamageScreen` without affecting damage calculation.
 
 T2 armor and destruction prefab contract:
-- `Assets/Game/Prefabs/T2.prefab` registers only colliders below objects named `Armor` as armor damage surfaces.
+- Registered IA robot prefabs under `Assets/Game/Content/Robots/IA` register only colliders below objects named `Armor` as armor damage surfaces.
 - Its single root `VehicleArmorController` contains six hull colliders and seven turret/gun colliders. `ChassisT2` is the one registry-only non-armor collider.
 - `CabineReal`, `WeaponReal`, and `MeshReal` are functional debris parents with inspector-wired disabled convex `MeshCollider` and kinematic `Rigidbody` components. Their direct `VisualMesh` child owns only the rendered mesh.
 - All 22 centered `WheelA1_*`/`WheelA2_*` parent pivots use the same debris pattern: the parent owns a disabled `BoxCollider` fitted to its mesh bounds and a kinematic `Rigidbody`; the direct `a1`/`a2` child owns the mesh components. Every wheel debris entry explicitly references those components. Wheel animation is centralized on the vehicle root.
@@ -83,7 +83,7 @@ T2 armor and destruction prefab contract:
 - `VehicleClientVisibility` releases the death renderers from future spotting changes while preserving whether the vehicle was visible at the death moment. Visible debris stays visible until map unload; already-hidden enemies do not reveal debris.
 
 T1 Hunter destruction prefab contract:
-- `Assets/Game/Prefabs/T1Hunter.prefab` currently uses eight armor damage surfaces. The root armor controller assigns the three cubes below `Body` to its turret array and the central hull cube plus four leg-section cubes below `Chassis/ChassisMain` to its hull array.
+- Registered NV robot prefabs under `Assets/Game/Content/Robots/NV` currently use eight armor damage surfaces. The root armor controller assigns the three cubes below `Body` to its turret array and the central hull cube plus four leg-section cubes below `Chassis/ChassisMain` to its hull array.
 - The root `VehicleArmorController` contains three turret/gun colliders and five hull/leg colliders. Child armor objects contain only Unity collider/renderer components.
 - Their local position, rotation, and scale are authored independently. Adding or duplicating an armor cube requires adding its collider to the matching root armor array and the health collider list.
 - On death, `DeathLogic` asks the centralized armor controller to disable all configured armor surfaces.

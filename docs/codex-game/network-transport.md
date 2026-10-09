@@ -3,7 +3,7 @@
 Read this before changing FishNet transports, Unity Transport packages, connection ports, or client/server build compatibility.
 
 Current transport:
-- `Assets/Game/Prefabs/NetworkManager.prefab` owns the FishNet `NetworkManager`, the Unity Transport component, and its address/port values.
+- `Assets/Game/Content/Networking/Prefabs/NetworkManager.prefab` owns the FishNet `NetworkManager`, the Unity Transport component, and its address/port values.
 - The transport listens on `0.0.0.0:7770`; its local client address is `127.0.0.1:7770`.
 - `Packages/manifest.json` pins `com.alven.fishnet.unitytransport` to commit `08756d9733a556018041e52fcb9d2a6035346aeb`.
 - The pinned transport fixes Unity Transport 2.x queue pointer handling. The project resolves `com.unity.transport` `2.7.2`; older FishyUnityTransport revisions corrupt the FishNet version handshake between the client and dedicated server.

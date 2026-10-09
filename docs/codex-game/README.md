@@ -31,6 +31,7 @@ Mechanic files:
 - `vehicle-test-scene.md` - VehicleTest bootstrap, test spawn flow, HUD setup, test runtime overrides.
 - `menus-settings-progression.md` - main menu, settings screens, development tree, vehicle selection UI.
 - `diagnostics.md` - existing diagnostics workflow and tools.
+- `asset-organization.md` - project content layout, robot asset grouping, and unused-asset policy.
 
 Documentation update rule:
 - Any changed gameplay behavior must be reflected here.

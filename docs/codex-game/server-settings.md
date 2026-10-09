@@ -7,7 +7,7 @@ Current owner files:
   - Main settings MonoBehaviour and nested settings classes.
   - Provides static getters such as bot wander/combat, movement, dispersion, projectile ballistics, and other runtime settings.
   - Validates values in `Validate` methods.
-- `Assets/Game/Prefabs/ServerSettings.prefab`
+- `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`
   - Serialized settings source used in runtime scenes/prefabs.
   - New serialized fields may need explicit YAML/prefab updates if Unity has not serialized them yet.
 - `Assets/Game/Scripts/Server/RemoteServerSettings.cs`
@@ -45,7 +45,7 @@ Rules when editing settings:
 - Add fields to the correct nested settings class.
 - Add validation in that class `Validate` method.
 - Add copy support in `CopyFrom` when the settings class has one.
-- Check `Assets/Game/Prefabs/ServerSettings.prefab` for serialized values.
+- Check `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab` for serialized values.
 - If the settings affect a documented mechanic, update that mechanic doc too.
 - Add a Ukrainian explanation with a practical example to `Assets/Editor/ServerSettingsEditor.cs` for every new serialized `ServerSettings` field, including nested settings.
 - Keep runtime settings lightweight and avoid per-frame allocations.

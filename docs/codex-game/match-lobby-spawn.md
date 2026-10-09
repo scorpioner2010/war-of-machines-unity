@@ -27,8 +27,8 @@ Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/MatchVehicleSpawner.cs`
   - Spawns player and bot vehicles in loaded match scenes.
   - Applies runtime stats, assigns `player.playerRoot`, initializes teams/identity, and starts bot brain.
-- `Assets/Game/GameResources/PrefabObjects.asset`
-  - FishNet spawnable-prefab collection assigned to `Assets/Game/Prefabs/NetworkManager.prefab`.
+- `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`
+  - FishNet spawnable-prefab collection assigned to `Assets/Game/Content/Networking/Prefabs/NetworkManager.prefab`.
   - Every vehicle prefab referenced by `RobotRegistry` and spawned in a match must also be present here.
   - Add new prefabs at the end so existing network prefab IDs remain stable.
 - `Assets/Game/Scripts/Networking/Lobby/MatchBotPopulationService.cs`
@@ -54,7 +54,7 @@ Spawn flow:
 3. The room receives a scene slot and scene offset so multiple matches can exist at once.
 4. `MatchVehicleSpawner` chooses a free `SpawnPoint` for each player/bot team.
 5. Vehicle prefab is resolved by vehicle code through `GameResourceManager`.
-6. FishNet resolves that prefab on clients through `Assets/Game/GameResources/PrefabObjects.asset`.
+6. FishNet resolves that prefab on clients through `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`.
 7. Runtime stats are loaded through `VehicleStatsProvider` and applied before/after FishNet spawn.
 8. Player vehicles are spawned with owner connection; bots are spawned with null owner connection.
 9. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.

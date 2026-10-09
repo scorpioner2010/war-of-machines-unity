@@ -9,7 +9,7 @@ namespace Game.Editor
     public static class GameSceneImageOrganizer
     {
         private const string SceneRoot = "Assets/Game/Scenes";
-        private const string TargetRoot = "Assets/Game/Images";
+        private const string TargetRoot = "Assets/Game/Content";
 
         private static readonly HashSet<string> ImageExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -196,7 +196,7 @@ namespace Game.Editor
         {
             if (ExactDestinations.TryGetValue(assetPath, out string exactDestination))
             {
-                return exactDestination;
+                return ConvertLegacyDestination(exactDestination);
             }
 
             string category = GetCategory(assetPath);
@@ -210,45 +210,107 @@ namespace Game.Editor
             string lower = assetPath.ToLowerInvariant();
             if (lower.Contains("/cartoon fx") || lower.Contains("/effects/") || lower.Contains("cfx"))
             {
-                return "Effects/Particles";
+                return "Effects/Textures/Particles";
             }
 
             if (lower.Contains("/model/") || lower.Contains("/models/") || lower.Contains("t1") || lower.Contains("t2") || lower.Contains("vehicle"))
             {
-                return "Vehicles/Misc";
+                return "Robots/Shared/ImportedTextures";
             }
 
             if (lower.Contains("sky") || lower.Contains("grass") || lower.Contains("rock") || lower.Contains("terrain") || lower.Contains("house") || lower.Contains("foliage"))
             {
-                return "Environment/Misc";
+                return "Environment/Textures/Misc";
             }
 
             if (lower.Contains("button"))
             {
-                return "UI/Buttons";
+                return "UI/Textures/Buttons";
             }
 
             if (lower.Contains("icon") || lower.Contains("adamant") || lower.Contains("bolt") || lower.Contains("exp") || lower.Contains("mmr") || lower.Contains("setting"))
             {
-                return "UI/Icons";
+                return "UI/Textures/Icons";
             }
 
             if (lower.Contains("background") || lower.Contains("login") || lower.Contains("loading"))
             {
-                return "UI/Backgrounds";
+                return "UI/Textures/Backgrounds";
             }
 
             if (lower.Contains("crosshair") || lower.Contains("aim") || lower.Contains("damage"))
             {
-                return "UI/HUD";
+                return "UI/Textures/HUD";
             }
 
             if (lower.Contains("font") || lower.Contains("atlas"))
             {
-                return "UI/Fonts";
+                return "UI/Textures/Fonts";
             }
 
-            return "Misc";
+            return "Shared/ImportedTextures";
+        }
+
+        private static string ConvertLegacyDestination(string legacyDestination)
+        {
+            const string legacyImageRoot = "Assets/Game/Images/";
+            if (legacyDestination.StartsWith(legacyImageRoot, StringComparison.OrdinalIgnoreCase) == false)
+            {
+                return legacyDestination;
+            }
+
+            string relativePath = legacyDestination.Substring(legacyImageRoot.Length);
+            if (relativePath.StartsWith("Vehicles/T1Hunter/Vehicle_T1Hunter_Albedo", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Robots/NV/Shared/NV_Shared_Icon" + Path.GetExtension(legacyDestination);
+            }
+
+            if (relativePath.StartsWith("Vehicles/T1Hunter/Vehicle_T1Hunter_Normal", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Robots/NV/Shared/NV_Shared_Normal" + Path.GetExtension(legacyDestination);
+            }
+
+            if (relativePath.StartsWith("Vehicles/T2/Vehicle_T2_Albedo", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Robots/IA/Shared/IA_Shared_Icon" + Path.GetExtension(legacyDestination);
+            }
+
+            if (relativePath.StartsWith("Vehicles/T2/Vehicle_T2_Normal", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Robots/IA/Shared/IA_Shared_Normal" + Path.GetExtension(legacyDestination);
+            }
+
+            if (relativePath.StartsWith("Vehicles/T2/Vehicle_T2_Track", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Robots/IA/Shared/IA_Shared_Track_Source" + Path.GetExtension(legacyDestination);
+            }
+
+            if (relativePath.StartsWith("Vehicles/T2/Vehicle_T2_Wheel", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Unused/Robots/IA/IA_Shared_Wheel_Source" + Path.GetExtension(legacyDestination);
+            }
+
+            if (relativePath.StartsWith("Effects/Particles/", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Effects/Textures/Particles/" + relativePath.Substring("Effects/Particles/".Length);
+            }
+
+            if (relativePath.StartsWith("Environment/", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Environment/Textures/" + relativePath.Substring("Environment/".Length);
+            }
+
+            if (relativePath.StartsWith("UI/", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/UI/Textures/" + relativePath.Substring("UI/".Length);
+            }
+
+            if (relativePath.StartsWith("Utility/", StringComparison.OrdinalIgnoreCase))
+            {
+                return TargetRoot + "/Shared/Textures/" + relativePath.Substring("Utility/".Length);
+            }
+
+            return TargetRoot + "/Shared/ImportedTextures/" + Path.GetFileName(legacyDestination);
         }
 
         private static string MakeUniqueDestination(string destination)

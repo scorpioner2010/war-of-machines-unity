@@ -14,7 +14,7 @@ namespace Game.Scripts.Editor
 {
     internal static class VehiclePrefabIntegrityEditor
     {
-        private const string NetworkPrefabCollectionPath = "Assets/Game/GameResources/PrefabObjects.asset";
+        private const string NetworkPrefabCollectionPath = "Assets/Game/Content/Configuration/Networking/PrefabObjects.asset";
         private static readonly HashSet<string> QueuedAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private static bool _repairAllQueued;
@@ -57,7 +57,7 @@ namespace Game.Scripts.Editor
             for (int i = 0; i < importedAssets.Length; i++)
             {
                 string assetPath = importedAssets[i];
-                if (string.Equals(assetPath, "Assets/Game/GameResources/RobotRegistry.asset", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(assetPath, "Assets/Game/Content/Configuration/Robots/RobotRegistry.asset", StringComparison.OrdinalIgnoreCase))
                 {
                     _repairAllQueued = true;
                     break;

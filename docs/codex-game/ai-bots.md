@@ -60,7 +60,7 @@ Current owner scripts:
   - It creates bot `Player` entries in the test `ServerRoom` and spawns them through `MatchVehicleSpawner.SpawnBotAsync`; it does not implement movement, combat, or waypoint behavior itself.
 - `Assets/Game/Scripts/Server/ServerSettings.cs`
   - Contains `BotWanderSettings` and `BotCombatSettings`.
-- `Assets/Game/Prefabs/ServerSettings.prefab`
+- `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`
   - Serialized runtime settings. If a field is added to settings, check this prefab and add serialized values if Unity has not done it yet.
 
 Bot movement behavior:

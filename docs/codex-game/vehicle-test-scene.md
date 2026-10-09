@@ -7,7 +7,7 @@ Current owner scripts:
   - Starts the local FishNet host for the test scene.
   - Sets the local test host `TimeManager` tick rate from `localTestTickRate` before starting FishNet; default is 120 Hz so host-only movement does not visibly step at editor frame rates.
   - Loads API vehicle stats and lets the user spawn the selected vehicle.
-  - Instantiates `Assets/Game/Prefabs/UI/GameplayHUD.prefab` under the scene Canvas and manages its visibility for the test scene.
+  - Instantiates `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab` under the scene Canvas and manages its visibility for the test scene.
   - Loads the configured gameplay map scene additively when `loadGameplaySceneForSpawns` is enabled.
   - Loads the additive gameplay scene through FishNet with `AutomaticallyUnload = false` so test shutdown does not auto-unload the map from an inactive/destroying `NetworkManager`.
   - Waits for the local owner connection to be authenticated, to have loaded start scenes, and to be present in the additive gameplay scene through FishNet's real client-loaded acknowledgement before spawning the selected vehicle.

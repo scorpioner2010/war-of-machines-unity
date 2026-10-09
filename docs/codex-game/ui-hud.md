@@ -24,12 +24,12 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`
   - Initializes HUD for a vehicle owner.
 - `Assets/Game/Scripts/Gameplay/HealthBar.cs`
-  - Inspector-wired holder for the local vehicle HP slider, fill image, HP value, and vehicle-name label in `Assets/Game/Prefabs/UI/GameplayHUD.prefab`.
+  - Inspector-wired holder for the local vehicle HP slider, fill image, HP value, and vehicle-name label in `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab`.
 - `Assets/Game/Scripts/Gameplay/Robots/HealthBarUI.cs`
   - Drives the local owner's screen-space HP panel.
   - Shows the runtime vehicle name above the HP bar, falling back to the vehicle code and then the prefab instance name until runtime stats are available.
 - `Assets/Game/Scripts/UI/HUD/DamageScreen.cs`
-  - Fullscreen local hit indicator in `Assets/Game/Prefabs/UI/GameplayHUD.prefab`.
+  - Fullscreen local hit indicator in `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab`.
   - Subscribes to `VehicleRoot.LocalPlayerVehicleChanged`, then to the local vehicle `VehicleHealth.OnDamaged`.
   - Flashes a red fullscreen `Image` through a serialized `CanvasGroup`.
   - On damage, enables the image immediately at canvas group alpha 1, fades alpha to 0 over 1 second, then disables the image object. It is visual only and does not affect gameplay.
@@ -46,7 +46,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/GameplayHudRuntimeBinder.cs`
   - Runtime HUD binding support.
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
-  - VehicleTest bootstrap that instantiates `Assets/Game/Prefabs/UI/GameplayHUD.prefab` under the scene Canvas.
+  - VehicleTest bootstrap that instantiates `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab` under the scene Canvas.
   - Registers and opens the HUD through `MenuManager` when present; otherwise opens the HUD `Menu` directly because VehicleTest has no scene `MenuManager`.
   - Hides the instantiated `GameplayHUD` while the centered expanded VehicleTest panel is open, then reopens it when the panel is collapsed or vehicle control resumes. The test panel is responsive: it scales with the screen and switches its vehicle catalog/statistics card from two columns to a vertical layout on narrow screens.
   - Rebinds `GunCrosshair` canvas references after instantiation.
@@ -64,7 +64,7 @@ Current owner scripts:
   - Auto-tracks active non-menu `VehicleRoot` instances, binds each row to `VehicleHealth`, and refreshes names, vehicle type, synchronized kill count, HP, death state, and team relation.
   - Clears instantiated row items when the HUD is disabled or the local player vehicle becomes null. Its vehicle scan removes every row not seen in the current active-vehicle pass, including rows whose Unity `VehicleRoot` was destroyed during battle scene unload, so stale ally/enemy rows do not persist into the next battle.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListItem.cs`
-  - Presents each ally/enemy row from `Assets/Game/Prefabs/UI/GameplayPlayerListItem.prefab`, including a compact `K:n` kill-count column.
+  - Presents each ally/enemy row from `Assets/Game/Content/UI/Prefabs/GameplayPlayerListItem.prefab`, including a compact `K:n` kill-count column.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleNetworkInitializer.cs`
   - Synchronizes each spawned vehicle's current kill count from the authoritative server so every client player-list row can display it.
 - `Assets/Game/Scripts/UI/HUD/GameplayTimerDisplay.cs`
