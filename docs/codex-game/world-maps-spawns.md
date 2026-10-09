@@ -19,6 +19,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/MatchSceneSlotAllocator.cs`
   - Allocates scene slots/offsets.
 
+Map content:
+- `Assets/Game/Scenes/Map.unity` no longer contains instances of the legacy `GameResources/Map/Houses/Home_1.fbx` through `Home_4.fbx` models. These assets are obsolete and must not be restored for this scene.
+
 Spawn point flow:
 1. Spawn points register into a static active list on enable.
 2. `MatchVehicleSpawner` requests `SpawnPoint.GetFreePoint(additiveServerScene, player.team)`.
