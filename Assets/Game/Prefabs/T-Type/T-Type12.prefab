@@ -773,7 +773,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90ac7660fd36ac8438d8015ca893526a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
-  vehicleRoot: {fileID: 0}
+  vehicleRoot: {fileID: 5226239542433404041}
   targets:
   - transform: {fileID: 5369114017952432729}
     raycastLength: 11
@@ -796,7 +796,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a6668d8529326c4f9168a6c0c00b6ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t2.TrackedVehicleAnimator
-  vehicleRoot: {fileID: 0}
+  vehicleRoot: {fileID: 5226239542433404041}
   trackRenderers:
   - {fileID: 7103603927942996204}
   - {fileID: 5631983313107557927}
@@ -833,7 +833,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ae1ec669c8ce3b46b8a8891ada4066f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t2.CaterpillarSuspensionController
-  vehicleRoot: {fileID: 0}
+  vehicleRoot: {fileID: 5226239542433404041}
   targets:
   - transform: {fileID: 2847223664004203604}
     positionOffset: {x: 0, y: 0.01, z: 0}

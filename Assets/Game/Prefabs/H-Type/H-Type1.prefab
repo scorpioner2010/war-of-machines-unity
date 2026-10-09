@@ -1515,7 +1515,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90ac7660fd36ac8438d8015ca893526a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
-  vehicleRoot: {fileID: 0}
+  vehicleRoot: {fileID: 5798367828239414435}
   targets:
   - transform: {fileID: 7687057134619296339}
     raycastLength: 11
@@ -1556,7 +1556,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e0bb6d1ebd1dd341b67dd9169ebffb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t1.WalkerAnimationController
-  vehicleRoot: {fileID: 0}
+  vehicleRoot: {fileID: 5798367828239414435}
   leftFoot:
     transform: {fileID: 450216799538671986}
   rightFoot:

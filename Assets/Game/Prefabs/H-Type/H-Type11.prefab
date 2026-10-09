@@ -353,7 +353,7 @@ Transform:
   m_GameObject: {fileID: 360747763325710878}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.46478504, y: -0.957, z: 0}
+  m_LocalPosition: {x: 0.343, y: -0.957, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1515,7 +1515,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90ac7660fd36ac8438d8015ca893526a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
-  vehicleRoot: {fileID: 0}
+  vehicleRoot: {fileID: 5798367828239414435}
   targets:
   - transform: {fileID: 7687057134619296339}
     raycastLength: 11
@@ -1556,7 +1556,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e0bb6d1ebd1dd341b67dd9169ebffb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t1.WalkerAnimationController
-  vehicleRoot: {fileID: 0}
+  vehicleRoot: {fileID: 5798367828239414435}
   leftFoot:
     transform: {fileID: 450216799538671986}
   rightFoot:
@@ -3892,7 +3892,7 @@ Transform:
   m_GameObject: {fileID: 6664236091546759009}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.4647851, y: -0.957, z: 0}
+  m_LocalPosition: {x: -0.343, y: -0.957, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4721,7 +4721,7 @@ Transform:
   m_GameObject: {fileID: 8603369341751146785}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.349, y: -0.4, z: -1.3636403}
+  m_LocalPosition: {x: -0.343, y: -0.4, z: -1.3636403}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4752,7 +4752,7 @@ Transform:
   m_GameObject: {fileID: 8661786141818797964}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.352, y: -0.4, z: -1.3636403}
+  m_LocalPosition: {x: 0.343, y: -0.4, z: -1.3636403}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

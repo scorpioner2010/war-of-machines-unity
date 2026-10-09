@@ -16,12 +16,13 @@
 - Keep mechanic docs short enough to scan, but complete enough that a future Codex can find the right scripts before coding.
 
 ## Git workflow
-- Never run `git commit`, `git revert`, `git reset`, or discard changes automatically.
-- The user handles all commit/revert/discard actions manually.
-- If rollback/revert/discard is needed, explain what should be done and wait for the user to do it.
-- In most cases, the user decides what to do with git state and staging.
+- Never run `git commit`, `git revert`, or `git reset`.
+- Codex may remove changes made during the current task with `apply_patch` when they need to be rolled back.
+- Codex may also discard non-critical working-tree changes when doing so is needed to complete the requested task.
+- Do not discard user changes that are critical to the requested work without asking first.
+- The user handles commits, reverts, resets, and staging.
 - If the user explicitly confirms that their current side changes are expected, continue work around those dirty files and do not stop only because they remain modified.
-- Stop and ask only when those approved side changes conflict with the requested work, break important logic, or make verification unreliable.
+- Stop and ask only when approved side changes conflict with the requested work, break important logic, or make verification unreliable.
 
 ## Code style
 - Always use braces for code blocks (`{}`), even for single-line `if`/loops.
