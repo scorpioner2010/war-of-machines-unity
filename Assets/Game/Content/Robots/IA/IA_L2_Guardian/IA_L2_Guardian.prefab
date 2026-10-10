@@ -753,7 +753,7 @@ MonoBehaviour:
   - {fileID: 8224498899922251464}
   additionalVehicleColliders:
   - {fileID: 1899529151278672299}
-  highlightArmorInPrefab: 1
+  highlightArmorInPrefab: 0
   serverEditorArmorRenderers:
   - {fileID: 2526671782136434656}
   - {fileID: 8707239786736382864}
@@ -3440,7 +3440,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.000000074505806, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.0195377, y: 1.0195376, z: 1.0195374}
+  m_LocalScale: {x: 1.0195377, y: 0.5762794, z: 1.0195374}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 843477627787315636}

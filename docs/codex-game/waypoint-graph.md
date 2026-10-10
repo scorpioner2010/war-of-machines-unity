@@ -6,6 +6,7 @@ Current owner scripts:
 - `Assets/Game/Scenes/WaypointPointSpawner.cs`
   - Editor-focused generator for waypoint points and connections in a map scene.
   - Samples points inside a contour, checks ground with raycasts, checks clearance with overlap/sphere casts, and builds point connections.
+  - Checks every prospective connection with `Physics.CheckCapsule` on `obstacleMask`; this includes overlaps at both waypoint ends, so an edge cannot be created through an obstacle even when a waypoint is too close to it.
   - Provides generated points and `WaypointConnection` data to runtime graph code.
 - `Assets/Game/Scripts/AI/WaypointGraph/WaypointGraphRuntime.cs`
   - Runtime graph component registered per scene handle.
@@ -42,3 +43,12 @@ When changing this mechanic:
 - Update this file if point generation, connection rules, runtime graph ownership, or bot path traversal changes.
 - Update `ai-bots.md` if bot movement behavior changes.
 - Update map/prefab documentation if serialized scene fields are added.
+
+Connection obstacle requirements:
+- The collider's own GameObject must be in the generator's `obstacleMask`; a parent layer alone does not include a collider on a child object.
+- `Map111` uses layer `Obstacle` (layer 8) as the mask. `Concrete_fence_v2_S` owns enabled non-trigger `BoxCollider` components on its prefab root and a column child; both collider owners use layer 8 in the prefab, while all 27 map instances override the root to layer 8.
+- `Concrete_fence_v2_S_half` and `Concrete_fence_v2_Gate` own their blocking colliders on child objects. Their prefab collider owners and all current `Map111` instance overrides use layer `Obstacle` (8), not only the prefab root.
+- The `Map111` static-object audit also requires child collider owners in `Hangar_v2` and `UNIConcrete_wall_v1_W_3` to be on layer `Obstacle` (8). The source prefabs and their scene overrides are configured accordingly.
+- Keep `minDistanceFromObstacles` at least `connectionCheckRadius` when possible. Smaller values are safe with the capsule check but can generate isolated waypoints that have no valid connections.
+- `Map111` uses `minDistanceFromObstacles = 1` and `connectionCheckRadius = 0.5`; this leaves a half-metre movement clearance without treating every obstacle within two metres of a point as a blocked edge.
+- A clear pair is still not guaranteed to be connected: `connectionRadius` limits the distance and `maxConnectionsPerPoint` limits each point's nearest valid links. In `Map111`, those values are 15 and 5 respectively.

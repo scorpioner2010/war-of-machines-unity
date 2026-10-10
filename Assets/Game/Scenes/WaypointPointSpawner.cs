@@ -426,22 +426,16 @@ public class WaypointPointSpawner : MonoBehaviour
     {
         Vector3 start = from + Vector3.up * connectionCheckHeight;
         Vector3 end = to + Vector3.up * connectionCheckHeight;
-        Vector3 direction = end - start;
-        float distance = direction.magnitude;
 
-        if (distance <= 0.01f)
+        if ((end - start).sqrMagnitude <= 0.0001f)
         {
             return false;
         }
 
-        direction.Normalize();
-
-        bool hitObstacle = Physics.SphereCast(
+        bool hitObstacle = Physics.CheckCapsule(
             start,
+            end,
             connectionCheckRadius,
-            direction,
-            out RaycastHit hit,
-            distance,
             obstacleMask,
             QueryTriggerInteraction.Ignore
         );

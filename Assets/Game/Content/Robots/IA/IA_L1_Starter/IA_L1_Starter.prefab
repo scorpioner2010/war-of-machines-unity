@@ -4625,7 +4625,7 @@ MonoBehaviour:
   - {fileID: 4619719489834794798}
   additionalVehicleColliders:
   - {fileID: 3486700205569808384}
-  highlightArmorInPrefab: 1
+  highlightArmorInPrefab: 0
   serverEditorArmorRenderers:
   - {fileID: 6688992514157845656}
   - {fileID: 0}
@@ -5639,7 +5639,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
@@ -5654,7 +5654,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.572
+      value: -0.548
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
@@ -7378,7 +7378,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
@@ -7393,7 +7393,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.572
+      value: 0.548
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 609779f22d8204b42be0923c6d1e23d3,
         type: 3}
