@@ -22,10 +22,10 @@ Current owner files:
   - Draws nested serialized settings recursively and provides tooltip documentation without adding description rows below fields.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleBodySwayController.cs`
   - IA robot body-sway values are prefab-local presentation settings, not `ServerSettings` values.
-  - Tune them on each IA prefab root; the component uses synchronized input plus local ground-ray results and does not change server-authoritative movement or network state.
+  - Tune them on each IA prefab root; the component uses synchronized input plus local ground-ray results only for the local gameplay owner. It does not change server-authoritative movement or network state.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleBodyVerticalSpringController.cs`
   - Body vertical-spring values are prefab-local presentation settings, not `ServerSettings` values.
-  - Tune them on each robot prefab's `Body` object; the component samples its serialized `Chassis` world Y motion, turns sudden vertical-speed changes into local spring impulses, and lets its assigned `PositionSync` apply the result. `maxUpwardOffset` and `maxDownwardOffset` bound positive and negative local Y independently; `endStopRebound` retains a controlled returning speed at either limit. It does not change server-authoritative movement or network state.
+  - Tune them on each robot prefab's `Body` object; only the local gameplay owner samples its serialized `Chassis` world Y motion, turns sudden vertical-speed changes into local spring impulses, and lets its assigned `PositionSync` apply the result. `maxUpwardOffset` and `maxDownwardOffset` bound positive and negative local Y independently; `endStopRebound` retains a controlled returning speed at either limit. It does not change server-authoritative movement or network state.
 
 Important settings classes currently used by recent gameplay work:
 - `BotWanderSettings`

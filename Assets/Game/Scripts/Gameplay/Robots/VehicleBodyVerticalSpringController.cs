@@ -54,6 +54,8 @@ namespace Game.Scripts.Gameplay.Robots
         private void LateUpdate()
         {
             if (vehicleRoot == null
+                || !vehicleRoot.IsOwner
+                || vehicleRoot.IsMenu
                 || (vehicleRoot.health != null && vehicleRoot.health.IsDead)
                 || chassis == null)
             {

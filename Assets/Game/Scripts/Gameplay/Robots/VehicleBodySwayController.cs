@@ -57,7 +57,9 @@ namespace Game.Scripts.Gameplay.Robots
             float averageGroundDistance,
             float deltaTime)
         {
-            if (!isActiveAndEnabled || vehicleRoot == null || vehicleRoot.inputManager == null)
+            if (!isActiveAndEnabled
+                || !ShouldSimulateLocalPresentation()
+                || vehicleRoot.inputManager == null)
             {
                 ResetState();
                 return Quaternion.identity;
@@ -129,6 +131,17 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void ClearTerrainContact()
         {
+            if (!ShouldSimulateLocalPresentation())
+            {
+                ResetState();
+                return;
+            }
+
+            ClearTerrainContactState();
+        }
+
+        private void ClearTerrainContactState()
+        {
             _hasTerrainSample = false;
             _previousGroundNormal = Vector3.zero;
             _previousGroundDistance = 0f;
@@ -158,6 +171,11 @@ namespace Game.Scripts.Gameplay.Robots
             damping = Mathf.Max(damping, 0f);
             maxPitchSpeedDegrees = Mathf.Max(maxPitchSpeedDegrees, MinimumPitchSpeed);
             maximumSimulationStep = Mathf.Max(maximumSimulationStep, MinimumSimulationStep);
+        }
+
+        private bool ShouldSimulateLocalPresentation()
+        {
+            return vehicleRoot != null && vehicleRoot.IsOwner && !vehicleRoot.IsMenu;
         }
 
         private void ResolveTerrainTargets(
@@ -256,7 +274,7 @@ namespace Game.Scripts.Gameplay.Robots
             _pitchSpeedDegrees = 0f;
             _rollDegrees = 0f;
             _rollSpeedDegrees = 0f;
-            ClearTerrainContact();
+            ClearTerrainContactState();
         }
     }
 }
