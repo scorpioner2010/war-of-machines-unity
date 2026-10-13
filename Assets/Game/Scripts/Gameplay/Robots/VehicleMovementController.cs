@@ -8,6 +8,7 @@ namespace Game.Scripts.Gameplay.Robots
     public class VehicleMovementController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
         private const float ReverseSpeedMultiplier = 0.5f;
+        private const float TraverseAccelerationMultiplier = 2f;
 
         public VehicleRoot vehicleRoot;
         public CharacterController controller;
@@ -17,7 +18,10 @@ namespace Game.Scripts.Gameplay.Robots
         public float maxSpeed = 10f;
 
         private float _forwardSpeed;
+        private float _traverseSpeedDegPerSecond;
         private float _vVel;
+        private bool _useRuntimeTraverseAcceleration;
+        private float _runtimeTraverseAccelerationDegPerSecondSquared;
         private bool _useRuntimeTraverseSpeed;
         private float _runtimeTraverseSpeedDegPerSecond;
         private TimeManager _timeManager;
@@ -58,6 +62,17 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 _runtimeTraverseSpeedDegPerSecond = stats.TraverseSpeed;
                 _useRuntimeTraverseSpeed = true;
+            }
+
+            _useRuntimeTraverseAcceleration = stats.Faction != RobotFaction.NovaSyndicate
+                && stats.TraverseAcceleration > 0f;
+            _runtimeTraverseAccelerationDegPerSecondSquared = _useRuntimeTraverseAcceleration
+                ? stats.TraverseAcceleration
+                : 0f;
+
+            if (_useRuntimeTraverseAcceleration == false)
+            {
+                _traverseSpeedDegPerSecond = 0f;
             }
         }
 
@@ -172,19 +187,36 @@ namespace Game.Scripts.Gameplay.Robots
         private void ResetMotionState()
         {
             _forwardSpeed = 0f;
+            _traverseSpeedDegPerSecond = 0f;
             _vVel = 0f;
         }
 
         private void Rotate(Vector2 mi, RobotMovementGlobalSettings settings, float dt)
         {
             float turnInput = mi.y < 0f ? -mi.x : mi.x;
+            float traverseSpeed = _useRuntimeTraverseSpeed
+                ? _runtimeTraverseSpeedDegPerSecond
+                : GetFallbackTraverseSpeed(settings);
+
+            if (_useRuntimeTraverseAcceleration)
+            {
+                float desiredTraverseSpeed = Mathf.Clamp(turnInput, -1f, 1f) * traverseSpeed;
+                _traverseSpeedDegPerSecond = Mathf.MoveTowards(
+                    _traverseSpeedDegPerSecond,
+                    desiredTraverseSpeed,
+                    _runtimeTraverseAccelerationDegPerSecondSquared * TraverseAccelerationMultiplier * dt);
+
+                if (Mathf.Abs(_traverseSpeedDegPerSecond) > 0.0001f)
+                {
+                    transform.Rotate(Vector3.up * _traverseSpeedDegPerSecond * dt);
+                }
+
+                return;
+            }
+
             if (turnInput != 0f)
             {
-                float rotationStep = _useRuntimeTraverseSpeed
-                    ? _runtimeTraverseSpeedDegPerSecond * dt
-                    : GetFallbackTraverseSpeed(settings) * dt;
-
-                transform.Rotate(Vector3.up * turnInput * rotationStep);
+                transform.Rotate(Vector3.up * turnInput * traverseSpeed * dt);
             }
         }
 

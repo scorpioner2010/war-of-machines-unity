@@ -4,6 +4,13 @@ using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
 {
+    public enum RobotFaction
+    {
+        Unknown = 0,
+        IronAlliance = 1,
+        NovaSyndicate = 2
+    }
+
     [Serializable]
     public struct VehicleArmorValues
     {
@@ -53,6 +60,7 @@ namespace Game.Scripts.Gameplay.Robots
         public string Code;
         public string Name;
         public int Level;
+        public RobotFaction Faction;
 
         public float MaxHealth;
         public float Penetration;
@@ -66,6 +74,7 @@ namespace Game.Scripts.Gameplay.Robots
         public float ViewRange;
         public float Speed;
         public float Acceleration;
+        public float TraverseAcceleration;
         public float TraverseSpeed;
         public float TurretTraverseSpeed;
 
@@ -95,6 +104,7 @@ namespace Game.Scripts.Gameplay.Robots
                 Code = vehicle.code,
                 Name = vehicle.name,
                 Level = vehicle.level,
+                Faction = ResolveFaction(vehicle.factionCode),
                 MaxHealth = Mathf.Max(0f, vehicle.hp),
                 Penetration = Mathf.Max(0f, vehicle.penetration),
                 ShellSpeed = ResolveShellSpeed(vehicle.shellSpeed),
@@ -107,6 +117,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ViewRange = ResolveViewRange(vehicle.viewRange),
                 Speed = Mathf.Max(0f, vehicle.speed),
                 Acceleration = Mathf.Max(0f, vehicle.acceleration),
+                TraverseAcceleration = Mathf.Max(0f, vehicle.traverseAcceleration),
                 TraverseSpeed = Mathf.Max(0f, vehicle.traverseSpeed),
                 TurretTraverseSpeed = Mathf.Max(0f, vehicle.turretTraverseSpeed),
                 HullArmor = VehicleArmorValues.Parse(vehicle.hullArmor),
@@ -114,6 +125,21 @@ namespace Game.Scripts.Gameplay.Robots
             };
 
             return stats;
+        }
+
+        public static RobotFaction ResolveFaction(string factionCode)
+        {
+            if (string.Equals(factionCode, "iron_alliance", StringComparison.OrdinalIgnoreCase))
+            {
+                return RobotFaction.IronAlliance;
+            }
+
+            if (string.Equals(factionCode, "nova_syndicate", StringComparison.OrdinalIgnoreCase))
+            {
+                return RobotFaction.NovaSyndicate;
+            }
+
+            return RobotFaction.Unknown;
         }
 
         public void NormalizeCombatStats()
@@ -194,6 +220,7 @@ namespace Game.Scripts.Gameplay.Robots
                 Code = Code,
                 Name = Name,
                 Level = Level,
+                Faction = Faction,
                 MaxHealth = MaxHealth,
                 Penetration = Penetration,
                 ShellSpeed = ShellSpeed,
@@ -206,6 +233,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ViewRange = ResolveViewRange(ViewRange),
                 Speed = Speed,
                 Acceleration = Acceleration,
+                TraverseAcceleration = TraverseAcceleration,
                 TraverseSpeed = TraverseSpeed,
                 TurretTraverseSpeed = TurretTraverseSpeed,
                 HullArmor = HullArmor,

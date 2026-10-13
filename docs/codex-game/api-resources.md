@@ -3,6 +3,8 @@
 Read this file before changing backend API calls, profile loading, vehicle registry, vehicle resource lookup, or menu data fed by API models.
 
 Current owner scripts:
+- Backend API source: `D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI`
+  - The vehicle JSON contract is defined by `Controllers/VehiclesController.cs`; its `VehicleDto.TraverseAcceleration` serializes as `traverseAcceleration`.
 - `Assets/Game/Scripts/API/HttpLink.cs`
   - Shared HTTP/API link configuration.
   - The default API base for Editor, client builds, and server builds is the local API at `https://localhost:7216`.
@@ -30,6 +32,11 @@ Vehicle resource flow:
 4. Match-spawned vehicle prefabs must also be registered in `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`, the FishNet collection used by `NetworkManager.prefab`.
 5. Spawned vehicle receives runtime stats from `VehicleStatsProvider.GetAsync`.
 6. UI can ask `GameResourceManager.GetIcon(code)`.
+
+Vehicle movement API contract:
+- `VehicleLite.traverseAcceleration` receives JSON `traverseAcceleration` and is carried by `VehicleRuntimeStats` to `VehicleMovementController`.
+- A positive value is the hull yaw acceleration in degrees per second squared. It accelerates/decelerates hull turning only; it does not affect `VehicleTurretRotationController`.
+- `VehicleRuntimeStats.ResolveFaction` maps API `factionCode` to `RobotFaction` (`IronAlliance`, `NovaSyndicate`, or `Unknown`) so gameplay systems do not infer a faction from a vehicle-code prefix.
 
 Vehicle armor API contract:
 - `VehicleLite.turretArmor` and `VehicleLite.hullArmor` are slash-separated `front/side/rear` millimeter values.

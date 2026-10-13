@@ -253,6 +253,7 @@ namespace Game.Scripts.API
 
         public float speed;
         public float acceleration;
+        public float traverseAcceleration;
         public float traverseSpeed;
         public float turretTraverseSpeed;
 

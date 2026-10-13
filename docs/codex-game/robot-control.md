@@ -48,7 +48,9 @@ Current owner scripts:
   - Server-side movement simulation on FishNet ticks.
   - Reads `vehicleRoot.inputManager.Move` and drives a `CharacterController`.
   - Caps reverse movement at 50% of forward max speed for all vehicles, including human input, cruise control, and bot input.
-  - Applies runtime stats for speed, acceleration, and traverse speed.
+  - Applies runtime stats for speed, acceleration, traverse speed, and hull traverse acceleration.
+  - When API `traverseAcceleration` is positive, non-NV hulls accelerate the signed yaw speed toward input × `traverseSpeed` each tick and decelerate it toward zero without turn input. The movement controller applies a `2×` traverse-acceleration multiplier; turret rotation continues to use only `turretTraverseSpeed`.
+  - `RobotFaction.NovaSyndicate` (NV) ignores `traverseAcceleration` and retains the legacy immediate hull-turn behavior. A missing or zero value does the same for every faction.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleGroundAlignmentController.cs`
   - Samples downward raycasts, averages their surface normals and hit distances, and is the only controller that writes rotation to each configured ground-aligned target.
   - Optionally passes the resolved normal, rotation, and average hit distance to `VehicleBodySwayController`, then composes its target-local offset after resolving ground rotation so terrain alignment and body sway cannot overwrite each other.
@@ -74,7 +76,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleAimInputSolver.cs`
   - Converts an aim point/forward direction into target turret yaw and gun pitch.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleRuntimeStats.cs`
-  - Runtime stat values and default stat resolution helpers.
+  - Runtime stat values, API faction mapping through `RobotFaction`, and default stat resolution helpers.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleStatsProvider.cs`
   - Async stat lookup for spawned vehicles.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleNetworkInitializer.cs`
