@@ -42,11 +42,14 @@ namespace Game.Scripts.Gameplay.Robots.t2
             Vector2 movement = vehicleRoot.inputManager.AnimMove;
             float forwardInput = movement.y;
             float turnInput = forwardInput < 0f ? -movement.x : movement.x;
+            float trackForwardInput = -forwardInput;
 
-            ResolveTrackSpeeds(forwardInput, turnInput, out float leftSpeed, out float rightSpeed);
-            AnimateTrackTextures(leftSpeed, rightSpeed);
-            RotateWheels(leftWheels, leftSpeed);
-            RotateWheels(rightWheels, rightSpeed);
+            ResolveTrackSpeeds(trackForwardInput, turnInput, out float leftTrackSpeed, out float rightTrackSpeed);
+            ResolveTrackSpeeds(forwardInput, turnInput, out float leftWheelSpeed, out float rightWheelSpeed);
+
+            AnimateTrackTextures(leftTrackSpeed, rightTrackSpeed);
+            RotateWheels(leftWheels, leftWheelSpeed);
+            RotateWheels(rightWheels, rightWheelSpeed);
         }
 
         private void ResolveTrackSpeeds(
