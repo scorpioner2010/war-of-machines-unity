@@ -7,6 +7,7 @@ namespace Game.Scripts.Gameplay.Robots
     {
         public Transform target;
         public VehicleRoot vehicleRoot;
+        public VehicleBodyVerticalSpringController bodyVerticalSpringController;
 
         private Vector3 _targetSpaceOffset;
         private bool _hasTargetSpaceOffset;
@@ -42,7 +43,7 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                transform.position = target.position + target.TransformVector(_targetSpaceOffset);
+                transform.position = target.position + target.TransformVector(GetTargetSpaceOffset());
             }
         }
 
@@ -62,16 +63,31 @@ namespace Game.Scripts.Gameplay.Robots
             return vehicleRoot != null && vehicleRoot.IsHostInitialized;
         }
 
-        private void AttachToTarget()
+    private void AttachToTarget()
+    {
+        if (target == null)
         {
-            if (_attachedToTarget || target == null)
+            return;
+        }
+
+        if (!_attachedToTarget)
+        {
+            transform.SetParent(target, true);
+            _attachedToTarget = true;
+        }
+
+        transform.localPosition = GetTargetSpaceOffset();
+    }
+
+        private Vector3 GetTargetSpaceOffset()
+        {
+            Vector3 targetSpaceOffset = _targetSpaceOffset;
+            if (bodyVerticalSpringController != null)
             {
-                return;
+                targetSpaceOffset.y += bodyVerticalSpringController.VerticalOffset;
             }
 
-            transform.SetParent(target, true);
-            transform.localPosition = _targetSpaceOffset;
-            _attachedToTarget = true;
+            return targetSpaceOffset;
         }
     }
 }

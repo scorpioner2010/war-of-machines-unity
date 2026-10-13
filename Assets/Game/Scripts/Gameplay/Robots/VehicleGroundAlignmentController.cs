@@ -9,6 +9,7 @@ namespace Game.Scripts.Gameplay.Robots
         public sealed class Target
         {
             public Transform transform;
+            public VehicleBodySwayController bodySwayController;
             public float raycastLength = 2f;
             public float surfaceCheckRadius = 1f;
             public int raysCount = 8;
@@ -49,6 +50,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             Transform targetTransform = target.transform;
             Vector3 averageNormal = Vector3.zero;
+            float averageGroundDistance = 0f;
             int validHits = 0;
             for (int i = 0; i < target.raysCount; i++)
             {
@@ -64,16 +66,23 @@ namespace Game.Scripts.Gameplay.Robots
                         target.surfaceLayer))
                 {
                     averageNormal += hit.normal;
+                    averageGroundDistance += hit.distance;
                     validHits++;
                 }
             }
 
             if (validHits == 0)
             {
+                if (target.bodySwayController != null)
+                {
+                    target.bodySwayController.ClearTerrainContact();
+                }
+
                 return;
             }
 
             averageNormal /= validHits;
+            averageGroundDistance /= validHits;
             Vector3 finalNormal = Vector3.Lerp(
                 Vector3.up,
                 averageNormal,
@@ -88,6 +97,15 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             Quaternion targetRotation = Quaternion.LookRotation(forwardDirection, finalNormal);
+            if (target.bodySwayController != null)
+            {
+                targetRotation *= target.bodySwayController.GetGroundRelativeRotationOffset(
+                    finalNormal,
+                    targetRotation,
+                    averageGroundDistance,
+                    Time.deltaTime);
+            }
+
             targetTransform.rotation = Quaternion.Lerp(
                 targetTransform.rotation,
                 targetRotation,

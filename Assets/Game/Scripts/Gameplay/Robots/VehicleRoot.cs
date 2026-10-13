@@ -33,6 +33,8 @@ namespace Game.Scripts.Gameplay.Robots
         public CaterpillarSuspensionController suspensionController;
         public WalkerAnimationController walkerAnimationController;
         public VehicleGroundAlignmentController groundAlignmentController;
+        public VehicleBodySwayController bodySwayController;
+        public VehicleBodyVerticalSpringController bodyVerticalSpringController;
         public VehicleHUD vehicleHUD;
         public VehicleClientVisibility clientVisibility;
         public VehicleBotBrain botBrain;
@@ -198,6 +200,8 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyRootAware(suspensionController);
             ApplyRootAware(walkerAnimationController);
             ApplyRootAware(groundAlignmentController);
+            ApplyRootAware(bodySwayController);
+            ApplyRootAware(bodyVerticalSpringController);
             ApplyRootAware(vehicleHUD);
             ApplyRootAware(clientVisibility);
             ApplyRootAware(botBrain);

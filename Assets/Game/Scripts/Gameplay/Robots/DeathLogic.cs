@@ -264,6 +264,8 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         DisableBehaviour(vehicleRoot.suspensionController);
         DisableBehaviour(vehicleRoot.walkerAnimationController);
         DisableBehaviour(vehicleRoot.groundAlignmentController);
+        DisableBehaviour(vehicleRoot.bodySwayController);
+        DisableBehaviour(vehicleRoot.bodyVerticalSpringController);
     }
 
     private static void DisableBehaviour(Behaviour behaviour)

@@ -635,6 +635,7 @@ GameObject:
   - component: {fileID: 8801226646842633102}
   - component: {fileID: 9074224211107656160}
   - component: {fileID: 2411042778565667645}
+  - component: {fileID: -5310217532054712356}
   m_Layer: 0
   m_Name: Body
   m_TagString: Untagged
@@ -674,6 +675,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 7551106815414730899}
   vehicleRoot: {fileID: 0}
+  bodyVerticalSpringController: {fileID: -5310217532054712356}
 --- !u!114 &5065024342052178338
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -900,6 +902,32 @@ MonoBehaviour:
   onShot:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-5310217532054712356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 972081842658309377}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2519292aa3224502a906942945245d78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodyVerticalSpringController
+  vehicleRoot: {fileID: 5798367828239414435}
+  chassis: {fileID: 7687057134619296339}
+  verticalSpeedDeadZone: 0.05
+  verticalSpeedChangeDeadZone: 0.1
+  maximumChassisVerticalSpeed: 8
+  maximumChassisVerticalSpeedChange: 3
+  chassisVerticalSpeedTransfer: 0.8
+  maxUpwardOffset: 0.02
+  maxDownwardOffset: 0.02
+  springStrength: 25
+  damping: 8
+  maxVerticalSpeed: 0.35
+  endStopRebound: 0.15
+  maximumSimulationStep: 0.05
 --- !u!1 &1119079915145266960
 GameObject:
   m_ObjectHideFlags: 0
@@ -1189,6 +1217,8 @@ MonoBehaviour:
   suspensionController: {fileID: 0}
   walkerAnimationController: {fileID: 770931407294341477}
   groundAlignmentController: {fileID: 5382418570865382427}
+  bodySwayController: {fileID: 0}
+  bodyVerticalSpringController: {fileID: -5310217532054712356}
   vehicleHUD: {fileID: 3362392733163342225}
   clientVisibility: {fileID: 7312345678901234567}
   botBrain: {fileID: 6669848709525505659}
@@ -1520,6 +1550,7 @@ MonoBehaviour:
   vehicleRoot: {fileID: 5798367828239414435}
   targets:
   - transform: {fileID: 7687057134619296339}
+    bodySwayController: {fileID: 0}
     raycastLength: 11
     surfaceCheckRadius: 1
     raysCount: 8
@@ -1529,6 +1560,7 @@ MonoBehaviour:
       m_Bits: 264
     lerpSpeed: 10
   - transform: {fileID: 4889700800967488987}
+    bodySwayController: {fileID: 0}
     raycastLength: 2
     surfaceCheckRadius: 0.01
     raysCount: 8
@@ -1538,6 +1570,7 @@ MonoBehaviour:
       m_Bits: 264
     lerpSpeed: 10
   - transform: {fileID: 4185458135393788068}
+    bodySwayController: {fileID: 0}
     raycastLength: 2
     surfaceCheckRadius: 0.01
     raysCount: 8

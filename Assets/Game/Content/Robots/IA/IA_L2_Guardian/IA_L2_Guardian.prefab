@@ -293,6 +293,7 @@ GameObject:
   - component: {fileID: 2449881704443238150}
   - component: {fileID: 9032475458122901811}
   - component: {fileID: 8046131450222037624}
+  - component: {fileID: -5310217532054712347}
   - component: {fileID: 5303873548659674133}
   - component: {fileID: 1348499533107071882}
   m_Layer: 0
@@ -362,7 +363,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 0
+  <PrefabId>k__BackingField: 7
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 13570749970311791315
   <SceneId>k__BackingField: 0
@@ -431,6 +432,8 @@ MonoBehaviour:
   suspensionController: {fileID: 1348499533107071882}
   walkerAnimationController: {fileID: 0}
   groundAlignmentController: {fileID: 8046131450222037624}
+  bodySwayController: {fileID: -5310217532054712347}
+  bodyVerticalSpringController: {fileID: -5310217532054712353}
   vehicleHUD: {fileID: 8833846104923341790}
   clientVisibility: {fileID: 4617555947620702010}
   botBrain: {fileID: 2465740879838413950}
@@ -775,6 +778,7 @@ MonoBehaviour:
   vehicleRoot: {fileID: 5226239542433404041}
   targets:
   - transform: {fileID: 5369114017952432729}
+    bodySwayController: {fileID: -5310217532054712347}
     raycastLength: 11
     surfaceCheckRadius: 0.5
     raysCount: 8
@@ -783,6 +787,36 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 264
     lerpSpeed: 10
+--- !u!114 &-5310217532054712347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1484790940563788304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d57d5c7dcbd428185ac553189ef20e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodySwayController
+  vehicleRoot: {fileID: 5226239542433404041}
+  inputDeadZone: 0.01
+  accelerationInputResponse: 4
+  brakingInputResponse: 8
+  accelerationPitchDegrees: 15
+  brakingPitchDegrees: 3
+  maxPitchDegrees: 4
+  terrainAngularSpeedDeadZone: 5
+  terrainPitchDegreesPerAngularSpeed: 0.025
+  terrainRollDegreesPerAngularSpeed: 0.025
+  terrainPitchDegreesPerVerticalSpeed: 0.75
+  maxTerrainPitchDegrees: 2
+  maxTerrainRollDegrees: 2
+  maxRollSpeedDegrees: 90
+  springStrength: 100
+  damping: 3
+  maxPitchSpeedDegrees: 50
+  maximumSimulationStep: 0.05
 --- !u!114 &5303873548659674133
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2755,6 +2789,7 @@ GameObject:
   - component: {fileID: 8736092333595311738}
   - component: {fileID: 4011530916999497133}
   - component: {fileID: 7984397709219373348}
+  - component: {fileID: -5310217532054712353}
   m_Layer: 0
   m_Name: Body
   m_TagString: Untagged
@@ -2794,6 +2829,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 6402563507188317282}
   vehicleRoot: {fileID: 0}
+  bodyVerticalSpringController: {fileID: -5310217532054712353}
 --- !u!114 &5853697496546940008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3020,6 +3056,32 @@ MonoBehaviour:
   onShot:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-5310217532054712353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5948194347357099678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2519292aa3224502a906942945245d78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodyVerticalSpringController
+  vehicleRoot: {fileID: 5226239542433404041}
+  chassis: {fileID: 6895717797577355721}
+  verticalSpeedDeadZone: 0.05
+  verticalSpeedChangeDeadZone: 0.1
+  maximumChassisVerticalSpeed: 8
+  maximumChassisVerticalSpeedChange: 3
+  chassisVerticalSpeedTransfer: 0.8
+  maxUpwardOffset: 0.02
+  maxDownwardOffset: 0.02
+  springStrength: 25
+  damping: 8
+  maxVerticalSpeed: 0.35
+  endStopRebound: 0.15
+  maximumSimulationStep: 0.05
 --- !u!1 &6147104236138284893
 GameObject:
   m_ObjectHideFlags: 0

@@ -360,6 +360,19 @@ namespace Game.Scripts.Editor
             changed |= SynchronizeReference(entry, "weaponReloadController", root.weaponReloadController, GetUniqueComponent<WeaponReloadController>(entry, root, report), value => root.weaponReloadController = value, repair, report);
             changed |= SynchronizeReference(entry, "armorController", root.armorController, GetUniqueComponent<VehicleArmorController>(entry, root, report), value => root.armorController = value, repair, report);
             changed |= SynchronizeReference(entry, "groundAlignmentController", root.groundAlignmentController, GetUniqueComponent<VehicleGroundAlignmentController>(entry, root, report), value => root.groundAlignmentController = value, repair, report);
+            changed |= SynchronizeReference(entry, "bodyVerticalSpringController", root.bodyVerticalSpringController, GetUniqueComponent<VehicleBodyVerticalSpringController>(entry, root, report), value => root.bodyVerticalSpringController = value, repair, report);
+            PositionSync bodyPositionSync = GetUniqueComponent<PositionSync>(entry, root, report);
+            if (bodyPositionSync != null)
+            {
+                changed |= SynchronizeReference(entry, "PositionSync.bodyVerticalSpringController", bodyPositionSync.bodyVerticalSpringController, root.bodyVerticalSpringController, value => bodyPositionSync.bodyVerticalSpringController = value, repair, report);
+                if (root.bodyVerticalSpringController != null)
+                {
+                    Transform expectedChassis = bodyPositionSync.target != null
+                        ? bodyPositionSync.target.parent
+                        : null;
+                    changed |= SynchronizeReference(entry, "VehicleBodyVerticalSpringController.chassis", root.bodyVerticalSpringController.chassis, expectedChassis, value => root.bodyVerticalSpringController.chassis = value, repair, report);
+                }
+            }
             changed |= SynchronizeReference(entry, "vehicleHUD", root.vehicleHUD, GetUniqueComponent<VehicleHUD>(entry, root, report), value => root.vehicleHUD = value, repair, report);
             changed |= SynchronizeReference(entry, "clientVisibility", root.clientVisibility, GetUniqueComponent<VehicleClientVisibility>(entry, root, report), value => root.clientVisibility = value, repair, report);
             changed |= SynchronizeReference(entry, "botBrain", root.botBrain, GetUniqueComponent<VehicleBotBrain>(entry, root, report), value => root.botBrain = value, repair, report);
@@ -436,6 +449,7 @@ namespace Game.Scripts.Editor
                 changed |= SynchronizeReference(entry, "walkerAnimationController", root.walkerAnimationController, GetUniqueComponent<WalkerAnimationController>(entry, root, report), value => root.walkerAnimationController = value, repair, report);
                 changed |= ClearReference(entry, "trackedVehicleAnimator", root.trackedVehicleAnimator, value => root.trackedVehicleAnimator = value, repair, report);
                 changed |= ClearReference(entry, "suspensionController", root.suspensionController, value => root.suspensionController = value, repair, report);
+                changed |= ClearReference(entry, "bodySwayController", root.bodySwayController, value => root.bodySwayController = value, repair, report);
                 changed |= RepairWalkerIk(entry, root, repair, report);
                 return changed;
             }
@@ -445,6 +459,7 @@ namespace Game.Scripts.Editor
                 bool changed = false;
                 changed |= SynchronizeReference(entry, "trackedVehicleAnimator", root.trackedVehicleAnimator, GetUniqueComponent<TrackedVehicleAnimator>(entry, root, report), value => root.trackedVehicleAnimator = value, repair, report);
                 changed |= SynchronizeReference(entry, "suspensionController", root.suspensionController, GetUniqueComponent<CaterpillarSuspensionController>(entry, root, report), value => root.suspensionController = value, repair, report);
+                changed |= SynchronizeReference(entry, "bodySwayController", root.bodySwayController, GetUniqueComponent<VehicleBodySwayController>(entry, root, report), value => root.bodySwayController = value, repair, report);
                 changed |= ClearReference(entry, "walkerAnimationController", root.walkerAnimationController, value => root.walkerAnimationController = value, repair, report);
                 return changed;
             }

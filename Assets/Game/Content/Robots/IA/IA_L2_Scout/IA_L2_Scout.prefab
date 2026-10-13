@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 7506173029765345574}
   - component: {fileID: 5636821881677508708}
   - component: {fileID: 7878067388090943169}
+  - component: {fileID: -5310217532054712354}
   m_Layer: 0
   m_Name: Body
   m_TagString: Untagged
@@ -56,6 +57,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 4726120493381134021}
   vehicleRoot: {fileID: 0}
+  bodyVerticalSpringController: {fileID: -5310217532054712354}
 --- !u!114 &6032019383178843960
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -282,6 +284,32 @@ MonoBehaviour:
   onShot:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-5310217532054712354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 333460049677505570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2519292aa3224502a906942945245d78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodyVerticalSpringController
+  vehicleRoot: {fileID: 4822079852371630191}
+  chassis: {fileID: 5697315232491756349}
+  verticalSpeedDeadZone: 0.05
+  verticalSpeedChangeDeadZone: 0.1
+  maximumChassisVerticalSpeed: 8
+  maximumChassisVerticalSpeedChange: 3
+  chassisVerticalSpeedTransfer: 0.8
+  maxUpwardOffset: 0.02
+  maxDownwardOffset: 0.02
+  springStrength: 25
+  damping: 8
+  maxVerticalSpeed: 0.35
+  endStopRebound: 0.15
+  maximumSimulationStep: 0.05
 --- !u!1 &344713447121600426
 GameObject:
   m_ObjectHideFlags: 0
@@ -840,6 +868,7 @@ GameObject:
   - component: {fileID: 2156640632636701549}
   - component: {fileID: 8645662442317959655}
   - component: {fileID: 3511365877274891584}
+  - component: {fileID: -5310217532054712348}
   - component: {fileID: 7220482325205215331}
   - component: {fileID: 2562539360778058012}
   m_Layer: 0
@@ -908,7 +937,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 8
+  <PrefabId>k__BackingField: 4
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 8670014853528677628
   <SceneId>k__BackingField: 0
@@ -977,6 +1006,8 @@ MonoBehaviour:
   suspensionController: {fileID: 2562539360778058012}
   walkerAnimationController: {fileID: 0}
   groundAlignmentController: {fileID: 3511365877274891584}
+  bodySwayController: {fileID: -5310217532054712348}
+  bodyVerticalSpringController: {fileID: -5310217532054712354}
   vehicleHUD: {fileID: 1582442210764220297}
   clientVisibility: {fileID: 1878866985231648981}
   botBrain: {fileID: 6039468824987536874}
@@ -1432,6 +1463,7 @@ MonoBehaviour:
   vehicleRoot: {fileID: 4822079852371630191}
   targets:
   - transform: {fileID: 2000569456817956196}
+    bodySwayController: {fileID: -5310217532054712348}
     raycastLength: 11
     surfaceCheckRadius: 0.5
     raysCount: 8
@@ -1440,6 +1472,36 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 264
     lerpSpeed: 10
+--- !u!114 &-5310217532054712348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2531642004132441329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d57d5c7dcbd428185ac553189ef20e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodySwayController
+  vehicleRoot: {fileID: 4822079852371630191}
+  inputDeadZone: 0.01
+  accelerationInputResponse: 4
+  brakingInputResponse: 8
+  accelerationPitchDegrees: 15
+  brakingPitchDegrees: 3
+  maxPitchDegrees: 4
+  terrainAngularSpeedDeadZone: 5
+  terrainPitchDegreesPerAngularSpeed: 0.025
+  terrainRollDegreesPerAngularSpeed: 0.025
+  terrainPitchDegreesPerVerticalSpeed: 0.75
+  maxTerrainPitchDegrees: 2
+  maxTerrainRollDegrees: 2
+  maxRollSpeedDegrees: 90
+  springStrength: 100
+  damping: 3
+  maxPitchSpeedDegrees: 50
+  maximumSimulationStep: 0.05
 --- !u!114 &7220482325205215331
 MonoBehaviour:
   m_ObjectHideFlags: 0
