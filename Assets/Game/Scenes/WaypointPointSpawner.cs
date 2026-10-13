@@ -4,6 +4,7 @@ using Game.Scripts.Diagnostics;
 using Game.Scripts.World.Maps;
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -17,11 +18,11 @@ public class WaypointPointSpawner : MonoBehaviour
     private static readonly Collider[] ObstacleOverlapResults = new Collider[MaxObstacleOverlapResults];
 
     [Header("Contour")]
-    [Tooltip("Contour points. If sortContourByNearest is enabled, order in this array does not matter much.")]
-    public Transform[] contourPoints;
+    [Tooltip("Parent whose direct children define the contour sequence in Hierarchy order.")]
+    public Transform contourPointsParent;
 
-    [Tooltip("If enabled, contour points will be ordered by nearest-neighbor distance before drawing/generation.")]
-    public bool sortContourByNearest = true;
+    [SerializeField, HideInInspector, FormerlySerializedAs("contourPoints")]
+    private Transform[] legacyContourPoints;
 
     [Header("Generation")]
     public int pointsToSpawn = 100;
@@ -56,7 +57,6 @@ public class WaypointPointSpawner : MonoBehaviour
     [Header("Debug")]
     public bool drawGizmos = true;
     public bool drawGizmosInPlayMode;
-    public Color contourColor = Color.yellow;
     public Color pointColor = Color.cyan;
     public Color connectionColor = Color.green;
     public Color blockedConnectionColor = Color.red;
@@ -94,6 +94,8 @@ public class WaypointPointSpawner : MonoBehaviour
 
     private void Awake()
     {
+        MigrateLegacyContourPoints();
+
         if (!Application.isPlaying)
         {
             return;
@@ -104,6 +106,7 @@ public class WaypointPointSpawner : MonoBehaviour
 
     private void OnValidate()
     {
+        MigrateLegacyContourPoints();
         EnsureLists();
 
         pointsToSpawn = Mathf.Max(0, pointsToSpawn);
@@ -134,10 +137,10 @@ public class WaypointPointSpawner : MonoBehaviour
 #if UNITY_EDITOR
         EnsureLists();
 
-        List<Transform> orderedContour = GetOrderedContourPoints();
+        List<Transform> orderedContour = GetContourPoints();
         if (orderedContour.Count < 3)
         {
-            Debug.LogWarning("[WaypointPointSpawner] Need at least 3 contour points.");
+            Debug.LogWarning("[WaypointPointSpawner] Contour parent needs at least 3 child points.");
             return;
         }
 
@@ -527,68 +530,64 @@ public class WaypointPointSpawner : MonoBehaviour
         }
     }
 
-    private List<Transform> GetOrderedContourPoints()
+    private void MigrateLegacyContourPoints()
     {
-        List<Transform> source = new List<Transform>();
-
-        if (contourPoints == null)
+        if (contourPointsParent != null || legacyContourPoints == null || legacyContourPoints.Length == 0)
         {
-            return source;
+            return;
         }
 
-        for (int i = 0; i < contourPoints.Length; i++)
+        if (legacyContourPoints.Length == 1 && legacyContourPoints[0] != null)
         {
-            Transform point = contourPoints[i];
-            if (point != null)
+            contourPointsParent = legacyContourPoints[0];
+            legacyContourPoints = null;
+            return;
+        }
+
+        Transform commonParent = null;
+        for (int i = 0; i < legacyContourPoints.Length; i++)
+        {
+            Transform point = legacyContourPoints[i];
+            if (point == null)
             {
-                source.Add(point);
+                continue;
+            }
+
+            if (commonParent == null)
+            {
+                commonParent = point.parent;
+                continue;
+            }
+
+            if (point.parent != commonParent)
+            {
+                return;
             }
         }
 
-        if (!sortContourByNearest || source.Count <= 2)
+        if (commonParent == null)
         {
-            return source;
+            return;
         }
 
-        List<Transform> ordered = new List<Transform>();
-        HashSet<Transform> used = new HashSet<Transform>();
-        Transform current = source[0];
+        contourPointsParent = commonParent;
+        legacyContourPoints = null;
+    }
 
-        ordered.Add(current);
-        used.Add(current);
-
-        while (ordered.Count < source.Count)
+    private List<Transform> GetContourPoints()
+    {
+        if (contourPointsParent == null)
         {
-            Transform nearest = null;
-            float nearestDistanceSqr = float.MaxValue;
-
-            for (int i = 0; i < source.Count; i++)
-            {
-                Transform candidate = source[i];
-                if (used.Contains(candidate))
-                {
-                    continue;
-                }
-
-                float distanceSqr = (candidate.position - current.position).sqrMagnitude;
-                if (distanceSqr < nearestDistanceSqr)
-                {
-                    nearestDistanceSqr = distanceSqr;
-                    nearest = candidate;
-                }
-            }
-
-            if (nearest == null)
-            {
-                break;
-            }
-
-            ordered.Add(nearest);
-            used.Add(nearest);
-            current = nearest;
+            return new List<Transform>();
         }
 
-        return ordered;
+        List<Transform> contourPoints = new List<Transform>(contourPointsParent.childCount);
+        for (int i = 0; i < contourPointsParent.childCount; i++)
+        {
+            contourPoints.Add(contourPointsParent.GetChild(i));
+        }
+
+        return contourPoints;
     }
 
 #if UNITY_EDITOR
@@ -748,27 +747,28 @@ public class WaypointPointSpawner : MonoBehaviour
 
     private void DrawContourGizmos()
     {
-        List<Transform> orderedContour = GetOrderedContourPoints();
+        List<Transform> orderedContour = GetContourPoints();
 
         if (orderedContour == null || orderedContour.Count < 2)
         {
             return;
         }
 
-        Gizmos.color = contourColor;
+        Gizmos.color = Color.red;
 
         for (int i = 0; i < orderedContour.Count; i++)
         {
-            Transform current = orderedContour[i];
-            Transform next = orderedContour[(i + 1) % orderedContour.Count];
+            Gizmos.DrawSphere(orderedContour[i].position, 0.35f);
+        }
 
-            if (current == null || next == null)
-            {
-                continue;
-            }
+        for (int i = 1; i < orderedContour.Count; i++)
+        {
+            Gizmos.DrawLine(orderedContour[i - 1].position, orderedContour[i].position);
+        }
 
-            Gizmos.DrawLine(current.position, next.position);
-            Gizmos.DrawSphere(current.position, 0.35f);
+        if (orderedContour.Count > 2)
+        {
+            Gizmos.DrawLine(orderedContour[orderedContour.Count - 1].position, orderedContour[0].position);
         }
     }
 
