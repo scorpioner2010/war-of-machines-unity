@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using FishNet;
+using Game.Scripts.Gameplay.Robots;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Unity.Profiling;
@@ -175,9 +176,29 @@ public static class ProjectileRuntimePool
         using (SpawnImpactFxMarker.Auto())
 #endif
         {
-            Vector3 surfacePosition = position + rotation * Vector3.forward * ImpactSurfaceOffset;
-            SpawnVisualFxInternal(prefab, surfacePosition, rotation, 1f);
+            Vector3 cameraFacingPosition = GetCameraFacingImpactPosition(position, rotation);
+            SpawnVisualFxInternal(prefab, cameraFacingPosition, rotation, 1f);
         }
+    }
+
+    private static Vector3 GetCameraFacingImpactPosition(Vector3 impactPosition, Quaternion impactRotation)
+    {
+        CameraSync cameraSync = CameraSync.In;
+        Camera gameplayCamera = cameraSync != null ? cameraSync.gameplayCamera : null;
+        Vector3 offset = gameplayCamera != null
+            ? gameplayCamera.transform.position - impactPosition
+            : impactRotation * Vector3.forward;
+        if (offset.sqrMagnitude <= 0.000001f)
+        {
+            offset = impactRotation * Vector3.forward;
+        }
+
+        if (offset.sqrMagnitude <= 0.000001f)
+        {
+            return impactPosition;
+        }
+
+        return impactPosition + offset.normalized * ImpactSurfaceOffset;
     }
 
     public static void SpawnVisualFx(PooledImpactFx prefab, Vector3 position, Quaternion rotation, float scaleMultiplier)

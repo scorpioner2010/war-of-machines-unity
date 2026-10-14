@@ -3417,6 +3417,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4719889603624235927}
   - component: {fileID: 5751402908505936668}
+  - component: {fileID: 778899001122334457}
   m_Layer: 0
   m_Name: CameraPoint
   m_TagString: Untagged
@@ -3454,6 +3455,26 @@ MonoBehaviour:
   vehicleRoot: {fileID: 5226239542433404041}
   rig: {fileID: 4771849789724329862}
   distance: 7
+  collisionController: {fileID: 778899001122334457}
+--- !u!114 &778899001122334457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163503025713296929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d9f506fe1d04da7a34504d9ebd2a4f5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  ignoredVehicle: {fileID: 5226239542433404041}
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: -5
+  collisionRadius: 0.3
+  surfacePadding: 0.08
+  recoverySpeed: 24
 --- !u!1 &7787819425674981231
 GameObject:
   m_ObjectHideFlags: 0

@@ -2141,6 +2141,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7175828357256100003}
   - component: {fileID: 3067797613776090229}
+  - component: {fileID: 778899001122334460}
   m_Layer: 0
   m_Name: CameraFlyPoint
   m_TagString: Untagged
@@ -2178,6 +2179,26 @@ MonoBehaviour:
   vehicleRoot: {fileID: 5798367828239414435}
   rig: {fileID: 8086914337191537714}
   distance: 10
+  collisionController: {fileID: 778899001122334460}
+--- !u!114 &778899001122334460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2192280151534988256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d9f506fe1d04da7a34504d9ebd2a4f5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  ignoredVehicle: {fileID: 5798367828239414435}
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: -5
+  collisionRadius: 0.3
+  surfacePadding: 0.08
+  recoverySpeed: 24
 --- !u!1 &2278988691436164559
 GameObject:
   m_ObjectHideFlags: 0

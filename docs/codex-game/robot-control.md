@@ -46,8 +46,13 @@ Current owner scripts:
   - Applies server input to movement, shoot/action state, turret yaw, gun pitch, and desired aim point.
 - `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`
   - Owns local gameplay camera orbit, zoom steps, and sniper camera placement.
+  - Delegates the final camera position to its inspector-wired `CameraCollisionController` before gameplay-camera synchronization, so aiming uses the collision-corrected camera origin.
   - When entering sniper mode, aligns the camera yaw/pitch from the sniper anchor to the current gun aim point before moving the camera, so Shift/scroll zoom does not retarget the gun lower because of camera-origin parallax.
   - When exiting sniper mode, aligns the camera yaw/pitch from the normal orbit pivot (`rig.position`) to the current gun aim point before restoring the third-person zoom, so the gun does not climb upward when the camera origin changes back.
+- `Assets/Game/Scripts/Gameplay/Robots/CameraCollisionController.cs`
+  - Client-side camera collision helper placed with `CameraController` on each vehicle's `CameraPoint` or `CameraFlyPoint`.
+  - Sphere-casts from the controller's `rig` toward its desired camera position, ignores colliders below the inspector-wired local `VehicleRoot`, and moves the camera immediately in front of the nearest blocking surface.
+  - Uses a reusable non-alloc hit buffer, ignores trigger colliders, and smoothly restores distance at `recoverySpeed` once a surface no longer blocks the view.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleServerInput.cs`
   - Small struct for server-side movement/combat input.
   - `Movement` carries movement only.
@@ -108,6 +113,7 @@ Aiming flow:
 
 Prefab/reference rule:
 - `VehicleRoot` references should be assigned in prefab/scene inspector.
+- Every registered IA and NV battle-vehicle prefab has one enabled `CameraCollisionController` on the same object as `CameraController`; `CameraController.collisionController` must reference it and `CameraCollisionController.ignoredVehicle` must reference that prefab's root `VehicleRoot`. Its default `collisionMask` excludes the Ignore Raycast layer, `collisionRadius` is `0.3`, `surfacePadding` is `0.08`, and `recoverySpeed` is `24`.
 - Battle vehicle prefabs must assign `VehicleRoot.clientVisibility` and every model renderer in `VehicleClientVisibility.visualRenderers`; missing renderer entries can leak hidden geometry.
 - Battle vehicle prefabs must also assign every non-armor `MeshRenderer` and `SkinnedMeshRenderer` to `VehicleHoverOutline.outlineRenderers`. `outlineSubMeshCounts` must match each renderer's current mesh submesh count; missing entries make only a subset of the robot glow on hover.
 - Every IA prefab under `Assets/Game/Content/Robots/IA` has one enabled root `VehicleBodySwayController`; `VehicleRoot.bodySwayController` and the `Root` target in `VehicleGroundAlignmentController.targets` both point to that same component. Do not place a second sway component on `Root` or `ParentRoot`.

@@ -16,6 +16,7 @@ namespace Game.Scripts.Gameplay.Robots
         public VehicleRoot vehicleRoot;
         public Transform rig;
         public float distance = 10f;
+        public CameraCollisionController collisionController;
 
         private float _X;
         private float _Y;
@@ -152,6 +153,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _currentDistance = _targetDistance;
                 transform.rotation = rotation;
                 transform.position = sniperPosition;
+                ResolveCameraCollision();
                 return;
             }
 
@@ -170,6 +172,17 @@ namespace Game.Scripts.Gameplay.Robots
 
             transform.rotation = rotation;
             transform.position = position;
+            ResolveCameraCollision();
+        }
+
+        private void ResolveCameraCollision()
+        {
+            if (collisionController == null || rig == null)
+            {
+                return;
+            }
+
+            collisionController.Resolve(rig.position);
         }
 
         private bool TryGetSniperCameraPosition(Quaternion cameraRotation, out Vector3 position)

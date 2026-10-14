@@ -806,11 +806,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6e3c82514aee42aeadd276bc80383cd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activateTestParameters: 1
+  activateTestParameters: 0
   reloadTime: 0.1
   shellsCount: 999
   forceFullyAimedAccuracyOnly: 0
-  createHitMarkerSphere: 1
+  createHitMarkerSphere: 0
   hitMarkerRadius: 0.18
   hitMarkerColor: {r: 1, g: 0.052777845, b: 0.05098039, a: 1}
 --- !u!1 &910020000001
