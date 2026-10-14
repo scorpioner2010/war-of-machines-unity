@@ -378,12 +378,146 @@ namespace Game.Scripts.Editor
             changed |= SynchronizeReference(entry, "botBrain", root.botBrain, GetUniqueComponent<VehicleBotBrain>(entry, root, report), value => root.botBrain = value, repair, report);
             changed |= SynchronizeReference(entry, "hoverOutline", root.hoverOutline, GetUniqueComponent<VehicleHoverOutline>(entry, root, report), value => root.hoverOutline = value, repair, report);
 
+            changed |= RepairHoverOutlineRenderers(entry, root, repair, report);
             changed |= RepairMovementController(entry, root.objectMover, root, repair, report);
             changed |= RepairBotNavigator(entry, root.botBrain, root, repair, report);
             changed |= RepairRig(entry, root, repair, report);
             changed |= RepairRootAwareLinks(entry, root, repair, report);
             changed |= RepairMissingMeshReferences(entry, root, repair, report);
             return changed;
+        }
+
+        private static bool RepairHoverOutlineRenderers(RegisteredPrefab entry, VehicleRoot root, bool repair, IntegrityReport report)
+        {
+            if (root.hoverOutline == null)
+            {
+                return false;
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            List<Renderer> expectedRenderers = new List<Renderer>(renderers.Length);
+            List<int> expectedSubMeshCounts = new List<int>(renderers.Length);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (!IsVehiclePresentationRenderer(root, renderer))
+                {
+                    continue;
+                }
+
+                expectedRenderers.Add(renderer);
+                expectedSubMeshCounts.Add(GetRendererSubMeshCount(renderer));
+            }
+
+            if (expectedRenderers.Count == 0)
+            {
+                report.AddError($"Robot '{entry.Code}' has no non-armor renderers available for {nameof(VehicleHoverOutline)}.");
+                return false;
+            }
+
+            VehicleHoverOutline hoverOutline = root.hoverOutline;
+            if (HoverOutlineMatches(hoverOutline, expectedRenderers, expectedSubMeshCounts))
+            {
+                return false;
+            }
+
+            string description = $"Robot '{entry.Code}' {nameof(VehicleHoverOutline)}.outlineRenderers and outlineSubMeshCounts";
+            if (!repair)
+            {
+                report.AddRepairable(description);
+                return false;
+            }
+
+            hoverOutline.outlineRenderers = expectedRenderers.ToArray();
+            hoverOutline.outlineSubMeshCounts = expectedSubMeshCounts.ToArray();
+            report.AddAppliedRepair(description);
+            return true;
+        }
+
+        private static bool HoverOutlineMatches(
+            VehicleHoverOutline hoverOutline,
+            List<Renderer> expectedRenderers,
+            List<int> expectedSubMeshCounts)
+        {
+            if (hoverOutline.outlineRenderers == null
+                || hoverOutline.outlineSubMeshCounts == null
+                || hoverOutline.outlineRenderers.Length != expectedRenderers.Count
+                || hoverOutline.outlineSubMeshCounts.Length != expectedSubMeshCounts.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < expectedRenderers.Count; i++)
+            {
+                if (hoverOutline.outlineRenderers[i] != expectedRenderers[i]
+                    || hoverOutline.outlineSubMeshCounts[i] != expectedSubMeshCounts[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsVehiclePresentationRenderer(VehicleRoot root, Renderer renderer)
+        {
+            if (renderer == null || (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer)))
+            {
+                return false;
+            }
+
+            if (root.vehicleHUD != null
+                && (renderer.transform == root.vehicleHUD.transform || renderer.transform.IsChildOf(root.vehicleHUD.transform)))
+            {
+                return false;
+            }
+
+            return root.armorController == null || !IsArmorRenderer(root.armorController, renderer);
+        }
+
+        private static bool IsArmorRenderer(VehicleArmorController armorController, Renderer renderer)
+        {
+            return IsBelowAnyCollider(renderer.transform, armorController.turretColliders)
+                   || IsBelowAnyCollider(renderer.transform, armorController.hullColliders);
+        }
+
+        private static bool IsBelowAnyCollider(Transform rendererTransform, Collider[] colliders)
+        {
+            if (colliders == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider != null
+                    && (rendererTransform == collider.transform || rendererTransform.IsChildOf(collider.transform)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int GetRendererSubMeshCount(Renderer renderer)
+        {
+            if (renderer is SkinnedMeshRenderer skinnedMeshRenderer && skinnedMeshRenderer.sharedMesh != null)
+            {
+                return Mathf.Max(1, skinnedMeshRenderer.sharedMesh.subMeshCount);
+            }
+
+            if (renderer is MeshRenderer meshRenderer)
+            {
+                MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                if (meshFilter != null && meshFilter.sharedMesh != null)
+                {
+                    return Mathf.Max(1, meshFilter.sharedMesh.subMeshCount);
+                }
+            }
+
+            return Mathf.Max(1, renderer.sharedMaterials.Length);
         }
 
         private static bool RepairMovementController(

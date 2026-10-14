@@ -15,6 +15,8 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _hasAppliedVisibility;
         private bool _isVisible;
         private bool _serverVisualObjectsDestroyed;
+        private bool _hasVisibilityOverride;
+        private bool _visibilityOverride;
 
         public bool IsVisible => _hasAppliedVisibility && _isVisible;
         public bool ServerVisualObjectsDestroyed => _serverVisualObjectsDestroyed;
@@ -30,6 +32,18 @@ namespace Game.Scripts.Gameplay.Robots
             _clientStarted = true;
             _refreshRequested = false;
             RefreshVisibility();
+        }
+
+        public void SetVisibilityOverride(bool enabledOverride, bool visible)
+        {
+            _hasVisibilityOverride = enabledOverride;
+            _visibilityOverride = visible;
+            _refreshRequested = true;
+
+            if (_clientStarted)
+            {
+                RefreshVisibility();
+            }
         }
 
         public bool ReleaseRenderersForDeath()
@@ -153,6 +167,12 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (!_clientStarted)
             {
+                return;
+            }
+
+            if (_hasVisibilityOverride)
+            {
+                ApplyVisibility(_visibilityOverride);
                 return;
             }
 

@@ -989,7 +989,17 @@ namespace Game.Scripts.Testing
 
         private void ConfigureWorldHudForTestVehicle(VehicleRoot vehicleRoot, string nickname)
         {
-            if (vehicleRoot == null || vehicleRoot.vehicleHUD == null)
+            if (vehicleRoot == null)
+            {
+                return;
+            }
+
+            if (vehicleRoot.clientVisibility != null)
+            {
+                vehicleRoot.clientVisibility.SetVisibilityOverride(true, true);
+            }
+
+            if (vehicleRoot.vehicleHUD == null)
             {
                 return;
             }

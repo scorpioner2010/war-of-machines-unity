@@ -1410,22 +1410,17 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   outlineRenderers:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 171253474347662200}
+  - {fileID: 268181955539816694}
+  - {fileID: 8650711786092560845}
+  - {fileID: 4743512635150949755}
+  - {fileID: 1789093374590149682}
   - {fileID: 9119028861911525841}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  outlineSubMeshCounts: 010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  - {fileID: 7246543379188715988}
+  - {fileID: 7056634409294993372}
+  - {fileID: 3280505859469764476}
+  - {fileID: 7704430669358062121}
+  outlineSubMeshCounts: 01000000010000000100000001000000010000000100000001000000010000000100000001000000
 --- !u!114 &7312345678901234567
 MonoBehaviour:
   m_ObjectHideFlags: 0

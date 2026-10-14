@@ -61,7 +61,7 @@ Spawn flow:
 8. Player vehicles are spawned with owner connection; bots are spawned with null owner connection. Bots are spawned one per server frame after real players so a full room does not instantiate all robot prefabs and their network state in a single frame.
 9. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
 10. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
-11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team.
+11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team. VehicleTest forces its spawned vehicles' client presentation visible because its test room does not receive the normal match visibility snapshots.
 12. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
 
 Rules when editing match/spawn:

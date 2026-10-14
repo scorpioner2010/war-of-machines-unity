@@ -72,6 +72,7 @@ Fire flow:
 - The authoritative projectile catches up by the elapsed client tick time, capped at 0.30 seconds, so server damage timing stays close to client projectile timing.
 - Server validates reload/ammo in `WeaponReloadController` before `NetworkWeaponShooter` creates the authoritative projectile.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
+- `BotCombatSettings.attacksEnabled` is checked by both bot combat and `WeaponReloadController`; when false, bot fire input is cleared and no server-authoritative bot shot can consume ammo or create a projectile.
 - Damage should be applied only through authoritative server hit resolution, not directly from bot AI.
 - Local damage feedback is client-side UI only: `VehicleHealth.OnDamaged` drives `DamageScreen` without affecting damage calculation.
 

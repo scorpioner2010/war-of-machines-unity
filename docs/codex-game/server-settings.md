@@ -32,6 +32,7 @@ Important settings classes currently used by recent gameplay work:
   - Bot movement cadence, waypoint arrival, pivot turning, stuck handling, dynamic avoidance.
 - `BotCombatSettings`
   - Bot combat scan cadence, line-of-fire target scoring, aim, fire gate, no-target turret aim.
+  - `attacksEnabled` immediately clears bot fire input and rejects authoritative bot shots while preserving their movement, target selection, and aiming.
   - Target visibility range is now owned by `MatchVisibilityGlobalSettings`; bots select only enemies visible in logical map visibility.
 - `RobotMovementGlobalSettings`
   - Movement fallback speed/acceleration, braking, gravity, grounded snap.
@@ -58,6 +59,7 @@ Rules when editing settings:
 - Keep runtime settings lightweight and avoid per-frame allocations.
 
 Current bot settings added recently:
+- `BotCombatSettings.attacksEnabled`
 - `BotWanderSettings.turnInPlaceEnterAngle`
 - `BotWanderSettings.turnInPlaceExitAngle`
 - `BotWanderSettings.waypointApproachSlowDistance`

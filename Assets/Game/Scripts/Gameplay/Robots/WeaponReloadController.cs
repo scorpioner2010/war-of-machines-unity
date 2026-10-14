@@ -2,6 +2,7 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using FishNet.Connection;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
 
@@ -215,6 +216,7 @@ namespace Game.Scripts.Gameplay.Robots
                    && vehicleRoot != null
                    && vehicleRoot.botBrain != null
                    && vehicleRoot.botBrain.IsRunning
+                   && ServerSettings.GetBotCombat().attacksEnabled
                    && vehicleRoot.inputManager != null
                    && vehicleRoot.inputManager.Shoot;
         }
@@ -222,6 +224,14 @@ namespace Game.Scripts.Gameplay.Robots
         [Server]
         public bool ServerTryFireAuthoritative()
         {
+            if (vehicleRoot != null
+                && vehicleRoot.botBrain != null
+                && vehicleRoot.botBrain.IsRunning
+                && !ServerSettings.GetBotCombat().attacksEnabled)
+            {
+                return false;
+            }
+
             if (!ServerCanFire)
             {
                 return false;
