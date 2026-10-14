@@ -93,7 +93,6 @@ Bot combat behavior:
 - Aim points prefer turret bounds, then health colliders/armor maps, then turret transform, then root fallback height.
 - Bot aim is solved with `VehicleAimInputSolver.SolveForAimPoint` so turret/gun constraints are respected.
 - Bot firing goes through reload and shooter systems, not direct damage calls.
-- `BotCombatSettings.attacksEnabled` blocks all bot attacks without disabling the rest of combat behavior: it clears a pending fire input immediately, bypasses `BotFireDecision`, and makes `WeaponReloadController` reject server-authoritative bot shots. Bots can still find targets, move, and aim while it is false.
 - Bot combat is now tactic-driven after target selection:
   - `CloseMobileAssault`: at close range, drives toward side/rear orbit points and may fire in motion with lower aim-readiness.
   - `FiringPosition`: at medium/far range, holds a clean firing position when allowed and fires only at 95%+ aim readiness.
@@ -126,7 +125,6 @@ Important settings:
 - `BotWanderSettings.dynamicAvoidanceRadius`
 - `BotWanderSettings.dynamicAvoidanceWeight`
 - `BotCombatSettings.enabled`
-- `BotCombatSettings.attacksEnabled`
 - `BotCombatSettings.targetScanInterval`
 - `BotCombatSettings.maxAcquireDistance` (legacy combat cap; target visibility range is now owned by `MatchVisibilityGlobalSettings`)
 - `BotCombatSettings.requireLineOfSightToAcquire`

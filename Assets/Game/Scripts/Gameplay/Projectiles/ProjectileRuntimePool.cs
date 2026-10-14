@@ -10,6 +10,7 @@ public static class ProjectileRuntimePool
     private const int DefaultProjectileMaxInactive = 64;
     private const int DefaultImpactFxMaxInactive = 64;
     private const float DefaultImpactFxFallbackLifetime = 2f;
+    private const float ImpactSurfaceOffset = 1f;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static readonly ProfilerMarker RentProjectileMarker = new ProfilerMarker("ProjectilePool.Rent");
@@ -174,7 +175,8 @@ public static class ProjectileRuntimePool
         using (SpawnImpactFxMarker.Auto())
 #endif
         {
-            SpawnVisualFxInternal(prefab, position, rotation, 1f);
+            Vector3 surfacePosition = position + rotation * Vector3.forward * ImpactSurfaceOffset;
+            SpawnVisualFxInternal(prefab, surfacePosition, rotation, 1f);
         }
     }
 

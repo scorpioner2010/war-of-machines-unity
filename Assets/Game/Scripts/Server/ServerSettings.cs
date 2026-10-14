@@ -335,8 +335,6 @@ namespace Game.Scripts.Server
         [Header("Пошук цілей")]
         [Tooltip("Увімкнути серверний пошук цілей, наведення і стрільбу ботів.")]
         public bool enabled = true;
-        [Tooltip("Дозволити ботам атакувати. Вимкнення одразу скидає їхній вхід пострілу та блокує серверні бот-постріли, але залишає рух і наведення.")]
-        public bool attacksEnabled = true;
         [Tooltip("Як часто бот оновлює бойові рішення.")]
         public float thinkInterval = 0.12f;
         [Tooltip("Як часто бот перевіряє кімнату в пошуку кращої ворожої цілі.")]
@@ -441,7 +439,6 @@ namespace Game.Scripts.Server
             }
 
             enabled = source.enabled;
-            attacksEnabled = source.attacksEnabled;
             thinkInterval = source.thinkInterval;
             targetScanInterval = source.targetScanInterval;
             maxAcquireDistance = source.maxAcquireDistance;

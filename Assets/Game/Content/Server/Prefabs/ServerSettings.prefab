@@ -83,7 +83,6 @@ MonoBehaviour:
     dynamicAvoidanceWeight: 0.65
   botCombat:
     enabled: 0
-    attacksEnabled: 1
     thinkInterval: 0.12
     targetScanInterval: 0.45
     maxAcquireDistance: 800

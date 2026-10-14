@@ -25,7 +25,6 @@ namespace Game.Scripts.AI.WaypointGraph
         private ServerRoom _room;
         private BotNavigator _navigator;
         private bool _isInitialized;
-        private bool _attackInputSuppressed;
 
         public BotCombatController()
         {
@@ -45,7 +44,6 @@ namespace Game.Scripts.AI.WaypointGraph
             _state.ClearTarget();
             _motionTracker.Reset();
             _tacticSelector.Reset();
-            _attackInputSuppressed = false;
             _isInitialized = true;
 
             float now = Time.time;
@@ -60,7 +58,6 @@ namespace Game.Scripts.AI.WaypointGraph
             _state.ClearTarget();
             _motionTracker.Reset();
             _tacticSelector.Reset();
-            _attackInputSuppressed = false;
             _isInitialized = false;
         }
 
@@ -89,8 +86,6 @@ namespace Game.Scripts.AI.WaypointGraph
                     _tacticSelector.Reset();
                     return;
                 }
-
-                SetAttackInputSuppressed(!settings.attacksEnabled);
 
                 if (now < _state.NextThinkTime)
                 {
@@ -226,14 +221,10 @@ namespace Game.Scripts.AI.WaypointGraph
                 return;
             }
 
-            bool shoot = false;
-            if (settings.attacksEnabled)
-            {
-                shoot = tacticDecision.AllowFire
-                        && hasLineOfFire
-                        && aimReadiness01 >= tacticDecision.RequiredAimReadiness01
-                        && _fireDecision.CanShootAtTarget(_vehicleRoot, _state, aimResult, aimPoint, settings, now);
-            }
+            bool shoot = tacticDecision.AllowFire
+                         && hasLineOfFire
+                         && aimReadiness01 >= tacticDecision.RequiredAimReadiness01
+                         && _fireDecision.CanShootAtTarget(_vehicleRoot, _state, aimResult, aimPoint, settings, now);
 
             Vector2 move = tacticDecision.HoldPosition ? Vector2.zero : _vehicleRoot.inputManager.Move;
             _inputWriter.ApplyCombatInput(_vehicleRoot, aimResult, shoot, move);
@@ -253,18 +244,5 @@ namespace Game.Scripts.AI.WaypointGraph
             _inputWriter.ClearCombatInput(_vehicleRoot);
         }
 
-        private void SetAttackInputSuppressed(bool suppressed)
-        {
-            if (_attackInputSuppressed == suppressed)
-            {
-                return;
-            }
-
-            _attackInputSuppressed = suppressed;
-            if (suppressed)
-            {
-                _inputWriter.ClearCombatInput(_vehicleRoot);
-            }
-        }
     }
 }
