@@ -87,7 +87,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: 6147760830989450615, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+  m_Mesh: {fileID: 3001349925963839921, guid: d12697573881a374abad40616011687a, type: 3}
 --- !u!54 &4317279946859288357
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -416,7 +416,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -3013810785857205889, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+  m_Mesh: {fileID: 1102053148659611921, guid: d12697573881a374abad40616011687a, type: 3}
 --- !u!54 &1765156098939795341
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1031,7 +1031,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -6053382344825935911, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+  m_Mesh: {fileID: 574421267560858760, guid: d12697573881a374abad40616011687a, type: 3}
 --- !u!54 &4894572133668390523
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1524,7 +1524,7 @@ MonoBehaviour:
   - {fileID: 6655559585601033798}
   - {fileID: 2234496612675365817}
   additionalVehicleColliders: []
-  highlightArmorInPrefab: 0
+  highlightArmorInPrefab: 1
   serverEditorArmorRenderers:
   - {fileID: 652418190835455130}
   - {fileID: 3548548254584163796}
@@ -3238,7 +3238,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -3013810785857205889, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+  m_Mesh: {fileID: 1102053148659611921, guid: d12697573881a374abad40616011687a, type: 3}
 --- !u!54 &4849961215294860545
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3433,7 +3433,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: 6147760830989450615, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+  m_Mesh: {fileID: 3001349925963839921, guid: d12697573881a374abad40616011687a, type: 3}
 --- !u!54 &2732421374349647404
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3782,7 +3782,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -3369733745826847544, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+  m_Mesh: {fileID: -5235157005448589541, guid: d12697573881a374abad40616011687a, type: 3}
 --- !u!54 &7195704814611114502
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3928,7 +3928,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: -3369733745826847544, guid: dcb84227f6200b348b16574d0197d73b, type: 3}
+  m_Mesh: {fileID: -5235157005448589541, guid: d12697573881a374abad40616011687a, type: 3}
 --- !u!54 &6282199805806122311
 Rigidbody:
   m_ObjectHideFlags: 0

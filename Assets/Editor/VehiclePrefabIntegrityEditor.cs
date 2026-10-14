@@ -382,6 +382,7 @@ namespace Game.Scripts.Editor
             changed |= RepairBotNavigator(entry, root.botBrain, root, repair, report);
             changed |= RepairRig(entry, root, repair, report);
             changed |= RepairRootAwareLinks(entry, root, repair, report);
+            changed |= RepairMissingMeshReferences(entry, root, repair, report);
             return changed;
         }
 
@@ -568,6 +569,175 @@ namespace Game.Scripts.Editor
             }
 
             return changed;
+        }
+
+        private static bool RepairMissingMeshReferences(RegisteredPrefab entry, VehicleRoot root, bool repair, IntegrityReport report)
+        {
+            bool changed = false;
+            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+            for (int i = 0; i < meshColliders.Length; i++)
+            {
+                MeshCollider meshCollider = meshColliders[i];
+                if (!HasMissingMeshReference(meshCollider))
+                {
+                    continue;
+                }
+
+                Mesh expectedMesh = GetClosestVisualMesh(meshCollider.transform);
+                changed |= SynchronizeMeshReference(entry, meshCollider, expectedMesh, value => meshCollider.sharedMesh = value, repair, report);
+            }
+
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (!HasMissingMeshReference(meshFilter) || meshFilter.name != "VisualMesh")
+                {
+                    continue;
+                }
+
+                Mesh expectedMesh = GetClosestSiblingMesh(meshFilter.transform);
+                changed |= SynchronizeMeshReference(entry, meshFilter, expectedMesh, value => meshFilter.sharedMesh = value, repair, report);
+            }
+
+            return changed;
+        }
+
+        private static bool HasMissingMeshReference(Component component)
+        {
+            SerializedObject serializedObject = new SerializedObject(component);
+            SerializedProperty property = serializedObject.FindProperty("m_Mesh");
+            return property != null &&
+                   property.propertyType == SerializedPropertyType.ObjectReference &&
+                   property.objectReferenceValue == null &&
+                   property.objectReferenceInstanceIDValue != 0;
+        }
+
+        private static Mesh GetClosestVisualMesh(Transform transform)
+        {
+            MeshFilter[] meshFilters = transform.GetComponentsInChildren<MeshFilter>(true);
+            Mesh nearestMesh = null;
+            int nearestDistance = int.MaxValue;
+            bool isAmbiguous = false;
+
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                if (meshFilter.transform.parent == transform && meshFilter.name == "VisualMesh")
+                {
+                    return meshFilter.sharedMesh;
+                }
+
+                int distance = GetHierarchyDistance(transform, meshFilter.transform);
+                if (distance < nearestDistance)
+                {
+                    nearestMesh = meshFilter.sharedMesh;
+                    nearestDistance = distance;
+                    isAmbiguous = false;
+                }
+                else if (distance == nearestDistance && nearestMesh != meshFilter.sharedMesh)
+                {
+                    isAmbiguous = true;
+                }
+            }
+
+            return isAmbiguous ? null : nearestMesh;
+        }
+
+        private static Mesh GetClosestSiblingMesh(Transform transform)
+        {
+            Transform parent = transform.parent;
+            if (parent == null)
+            {
+                return null;
+            }
+
+            MeshFilter[] meshFilters = parent.GetComponentsInChildren<MeshFilter>(true);
+            Mesh nearestMesh = null;
+            int nearestDistance = int.MaxValue;
+            bool isAmbiguous = false;
+
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter.transform == transform ||
+                    meshFilter.sharedMesh == null ||
+                    !meshFilter.name.StartsWith("VisualMesh", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                int distance = GetHierarchyDistance(parent, meshFilter.transform);
+                if (distance < nearestDistance)
+                {
+                    nearestMesh = meshFilter.sharedMesh;
+                    nearestDistance = distance;
+                    isAmbiguous = false;
+                }
+                else if (distance == nearestDistance && nearestMesh != meshFilter.sharedMesh)
+                {
+                    isAmbiguous = true;
+                }
+            }
+
+            return isAmbiguous ? null : nearestMesh;
+        }
+
+        private static int GetHierarchyDistance(Transform ancestor, Transform descendant)
+        {
+            int distance = 0;
+            Transform current = descendant;
+            while (current != null && current != ancestor)
+            {
+                distance++;
+                current = current.parent;
+            }
+
+            return current == ancestor ? distance : int.MaxValue;
+        }
+
+        private static bool SynchronizeMeshReference(
+            RegisteredPrefab entry,
+            Component component,
+            Mesh expectedMesh,
+            Action<Mesh> assign,
+            bool repair,
+            IntegrityReport report)
+        {
+            string description = $"Robot '{entry.Code}' {GetHierarchyPath(component.transform)} {component.GetType().Name}.sharedMesh";
+            if (expectedMesh == null)
+            {
+                report.AddError($"{description} has no unambiguous visual mesh source.");
+                return false;
+            }
+
+            if (!repair)
+            {
+                report.AddRepairable(description);
+                return false;
+            }
+
+            assign(expectedMesh);
+            report.AddAppliedRepair(description);
+            return true;
+        }
+
+        private static string GetHierarchyPath(Transform transform)
+        {
+            string path = transform.name;
+            Transform current = transform.parent;
+            while (current != null)
+            {
+                path = $"{current.name}/{path}";
+                current = current.parent;
+            }
+
+            return path;
         }
 
         private static void ValidateMissingScripts(RegisteredPrefab entry, VehicleRoot root, IntegrityReport report)

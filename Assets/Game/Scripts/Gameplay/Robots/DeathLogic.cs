@@ -1,7 +1,10 @@
+using System.Collections;
+using System.Collections.Generic;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.World.Maps;
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 public class DeathLogic : MonoBehaviour, IVehicleRootAware
@@ -18,6 +21,14 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
     }
 
     private const string DeathDebrisLayerName = "Chassis";
+    private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
+    private static readonly int SurfacePropertyId = Shader.PropertyToID("_Surface");
+    private static readonly int BlendPropertyId = Shader.PropertyToID("_Blend");
+    private static readonly int AlphaClipPropertyId = Shader.PropertyToID("_AlphaClip");
+    private static readonly int SrcBlendPropertyId = Shader.PropertyToID("_SrcBlend");
+    private static readonly int DstBlendPropertyId = Shader.PropertyToID("_DstBlend");
+    private static readonly int ZWritePropertyId = Shader.PropertyToID("_ZWrite");
 
     public DetachableVisual[] detachableVisuals = System.Array.Empty<DetachableVisual>();
     public Collider[] colliders;
@@ -27,6 +38,13 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
     public MeshCollider[] debrisMeshColliders;
     public VehicleRoot vehicleRoot;
     public GameObject[] forTurnOff;
+
+    private readonly List<GameObject> _detachedDebrisObjects = new List<GameObject>(32);
+    private readonly List<Collider> _detachedDebrisColliders = new List<Collider>(32);
+    private readonly List<Renderer> _detachedDebrisRenderers = new List<Renderer>(32);
+    private readonly List<FadeMaterial> _fadeMaterials = new List<FadeMaterial>(8);
+    private bool _deathHandled;
+    private bool _debrisDestroyed;
 
     public void SetVehicleRoot(VehicleRoot root)
     {
@@ -50,6 +68,8 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         {
             vehicleRoot.health.onDeath.RemoveListener(Death);
         }
+
+        DestroyDetachedDebris();
     }
 
     [Button]
@@ -66,6 +86,13 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
 
     private void Death()
     {
+        if (_deathHandled)
+        {
+            return;
+        }
+
+        _deathHandled = true;
+
         if (vehicleRoot != null && vehicleRoot.inputManager != null)
         {
             vehicleRoot.inputManager.SetControlsBlocked(true);
@@ -98,18 +125,18 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             DetachLegacyDebris(mapScene, debrisLayer, renderDebris);
         }
 
-        if (forTurnOff == null)
+        if (forTurnOff != null)
         {
-            return;
-        }
-
-        foreach (GameObject obj in forTurnOff)
-        {
-            if (obj != null)
+            foreach (GameObject obj in forTurnOff)
             {
-                obj.SetActive(false);
+                if (obj != null)
+                {
+                    obj.SetActive(false);
+                }
             }
         }
+
+        StartCoroutine(FadeAndDestroyDebris());
     }
 
     private void DetachConfiguredVisuals(Scene mapScene, int debrisLayer, bool renderDebris)
@@ -119,7 +146,11 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             DetachableVisual visual = detachableVisuals[i];
             if (visual == null || visual.root == null)
             {
-                Debug.LogError($"{nameof(DeathLogic)} on {name} has an unconfigured detachable visual at index {i}.", this);
+                if (HasConfiguredDetachableVisualReferences(visual))
+                {
+                    Debug.LogError($"{nameof(DeathLogic)} on {name} has an unconfigured detachable visual at index {i}.", this);
+                }
+
                 continue;
             }
 
@@ -140,6 +171,8 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             MapScopedObjectRegistry.MoveRootToScene(mapScene, visual.root);
             SetLayerRecursively(visual.root.transform, debrisLayer);
 
+            RegisterDetachedDebris(visual.root, visual.collider, visual.renderer);
+
             DisableConfiguredBehaviours(visual.behavioursToDisable);
             visual.rigidbody.isKinematic = false;
             visual.collider.enabled = true;
@@ -150,6 +183,35 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                 visual.renderer.forceRenderingOff = !renderDebris;
             }
         }
+    }
+
+    private static bool HasConfiguredDetachableVisualReferences(DetachableVisual visual)
+    {
+        if (visual == null)
+        {
+            return false;
+        }
+
+        if (visual.collider != null || visual.rigidbody != null || visual.renderer != null || visual.meshCollider != null)
+        {
+            return true;
+        }
+
+        Behaviour[] configuredBehaviours = visual.behavioursToDisable;
+        if (configuredBehaviours == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < configuredBehaviours.Length; i++)
+        {
+            if (configuredBehaviours[i] != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void DetachLegacyDebris(Scene mapScene, int debrisLayer, bool renderDebris)
@@ -197,11 +259,230 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             Renderer obj = debrisRenderers != null && i < debrisRenderers.Length
                 ? debrisRenderers[i]
                 : null;
+            RegisterDetachedDebris(debrisObject, coll, obj);
+
             if (obj != null)
             {
                 obj.enabled = true;
                 obj.forceRenderingOff = !renderDebris;
             }
+        }
+    }
+
+    private IEnumerator FadeAndDestroyDebris()
+    {
+        yield return new WaitForSecondsRealtime(VehicleHealth.DeathDebrisDelaySeconds);
+
+        PrepareFadeMaterials();
+
+        float elapsedSeconds = 0f;
+        while (elapsedSeconds < VehicleHealth.DeathDebrisFadeDurationSeconds)
+        {
+            elapsedSeconds += Time.unscaledDeltaTime;
+            ApplyFade(1f - Mathf.Clamp01(elapsedSeconds / VehicleHealth.DeathDebrisFadeDurationSeconds));
+            yield return null;
+        }
+
+        ApplyFade(0f);
+        DestroyDetachedDebris();
+    }
+
+    private void RegisterDetachedDebris(GameObject debrisObject, Collider debrisCollider, Renderer debrisRenderer)
+    {
+        if (debrisObject != null && !_detachedDebrisObjects.Contains(debrisObject))
+        {
+            _detachedDebrisObjects.Add(debrisObject);
+        }
+
+        if (debrisCollider != null && !_detachedDebrisColliders.Contains(debrisCollider))
+        {
+            _detachedDebrisColliders.Add(debrisCollider);
+        }
+
+        if (debrisRenderer != null && !_detachedDebrisRenderers.Contains(debrisRenderer))
+        {
+            _detachedDebrisRenderers.Add(debrisRenderer);
+        }
+    }
+
+    private void PrepareFadeMaterials()
+    {
+        for (int rendererIndex = 0; rendererIndex < _detachedDebrisRenderers.Count; rendererIndex++)
+        {
+            Renderer debrisRenderer = _detachedDebrisRenderers[rendererIndex];
+            if (debrisRenderer == null || debrisRenderer.forceRenderingOff)
+            {
+                continue;
+            }
+
+            Material[] sourceMaterials = debrisRenderer.sharedMaterials;
+            if (sourceMaterials == null || sourceMaterials.Length == 0)
+            {
+                continue;
+            }
+
+            Material[] fadeRendererMaterials = new Material[sourceMaterials.Length];
+            for (int materialIndex = 0; materialIndex < sourceMaterials.Length; materialIndex++)
+            {
+                Material sourceMaterial = sourceMaterials[materialIndex];
+                fadeRendererMaterials[materialIndex] = sourceMaterial == null
+                    ? null
+                    : GetOrCreateFadeMaterial(sourceMaterial).material;
+            }
+
+            debrisRenderer.sharedMaterials = fadeRendererMaterials;
+        }
+    }
+
+    private FadeMaterial GetOrCreateFadeMaterial(Material sourceMaterial)
+    {
+        for (int materialIndex = 0; materialIndex < _fadeMaterials.Count; materialIndex++)
+        {
+            FadeMaterial fadeMaterial = _fadeMaterials[materialIndex];
+            if (fadeMaterial.sourceMaterial == sourceMaterial)
+            {
+                return fadeMaterial;
+            }
+        }
+
+        Material material = new Material(sourceMaterial);
+        int colorPropertyId = GetColorPropertyId(material);
+        Color initialColor = colorPropertyId >= 0 ? material.GetColor(colorPropertyId) : Color.white;
+        ConfigureMaterialForFade(material);
+
+        FadeMaterial createdFadeMaterial = new FadeMaterial(sourceMaterial, material, colorPropertyId, initialColor);
+        _fadeMaterials.Add(createdFadeMaterial);
+        return createdFadeMaterial;
+    }
+
+    private static int GetColorPropertyId(Material material)
+    {
+        if (material.HasProperty(BaseColorPropertyId))
+        {
+            return BaseColorPropertyId;
+        }
+
+        if (material.HasProperty(ColorPropertyId))
+        {
+            return ColorPropertyId;
+        }
+
+        return -1;
+    }
+
+    private static void ConfigureMaterialForFade(Material material)
+    {
+        if (!material.HasProperty(SurfacePropertyId))
+        {
+            return;
+        }
+
+        material.SetFloat(SurfacePropertyId, 1f);
+        if (material.HasProperty(BlendPropertyId))
+        {
+            material.SetFloat(BlendPropertyId, 0f);
+        }
+
+        if (material.HasProperty(AlphaClipPropertyId))
+        {
+            material.SetFloat(AlphaClipPropertyId, 0f);
+        }
+
+        if (material.HasProperty(SrcBlendPropertyId))
+        {
+            material.SetInt(SrcBlendPropertyId, (int)BlendMode.SrcAlpha);
+        }
+
+        if (material.HasProperty(DstBlendPropertyId))
+        {
+            material.SetInt(DstBlendPropertyId, (int)BlendMode.OneMinusSrcAlpha);
+        }
+
+        if (material.HasProperty(ZWritePropertyId))
+        {
+            material.SetInt(ZWritePropertyId, 0);
+        }
+
+        material.SetOverrideTag("RenderType", "Transparent");
+        material.DisableKeyword("_ALPHATEST_ON");
+        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.DisableKeyword("_ALPHAMODULATE_ON");
+        material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        material.SetShaderPassEnabled("DepthOnly", false);
+        material.renderQueue = (int)RenderQueue.Transparent;
+    }
+
+    private void ApplyFade(float opacity)
+    {
+        for (int materialIndex = 0; materialIndex < _fadeMaterials.Count; materialIndex++)
+        {
+            FadeMaterial fadeMaterial = _fadeMaterials[materialIndex];
+            if (fadeMaterial.material == null || fadeMaterial.colorPropertyId < 0)
+            {
+                continue;
+            }
+
+            Color color = fadeMaterial.initialColor;
+            color.a *= opacity;
+            fadeMaterial.material.SetColor(fadeMaterial.colorPropertyId, color);
+        }
+    }
+
+    private void DestroyDetachedDebris()
+    {
+        if (_debrisDestroyed)
+        {
+            return;
+        }
+
+        _debrisDestroyed = true;
+
+        for (int colliderIndex = 0; colliderIndex < _detachedDebrisColliders.Count; colliderIndex++)
+        {
+            Collider debrisCollider = _detachedDebrisColliders[colliderIndex];
+            if (debrisCollider != null)
+            {
+                debrisCollider.enabled = false;
+            }
+        }
+
+        for (int debrisIndex = 0; debrisIndex < _detachedDebrisObjects.Count; debrisIndex++)
+        {
+            GameObject debrisObject = _detachedDebrisObjects[debrisIndex];
+            if (debrisObject != null)
+            {
+                Destroy(debrisObject);
+            }
+        }
+
+        for (int materialIndex = 0; materialIndex < _fadeMaterials.Count; materialIndex++)
+        {
+            Material material = _fadeMaterials[materialIndex].material;
+            if (material != null)
+            {
+                Destroy(material);
+            }
+        }
+
+        _detachedDebrisObjects.Clear();
+        _detachedDebrisColliders.Clear();
+        _detachedDebrisRenderers.Clear();
+        _fadeMaterials.Clear();
+    }
+
+    private sealed class FadeMaterial
+    {
+        public readonly Material sourceMaterial;
+        public readonly Material material;
+        public readonly int colorPropertyId;
+        public readonly Color initialColor;
+
+        public FadeMaterial(Material sourceMaterial, Material material, int colorPropertyId, Color initialColor)
+        {
+            this.sourceMaterial = sourceMaterial;
+            this.material = material;
+            this.colorPropertyId = colorPropertyId;
+            this.initialColor = initialColor;
         }
     }
 

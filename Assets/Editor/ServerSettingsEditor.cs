@@ -167,8 +167,10 @@ namespace Toras.Editor
                     "Запасне прискорення машини, якщо runtime-статистика недоступна. Наприклад: 30 швидко розганяє тестову машину до fallbackMaxSpeed.",
                 ["robotMovement.fallbackTraverseSpeedDegPerSecond"] =
                     "Запасна швидкість повороту корпусу в градусах за секунду; 0 залишає локальне значення компонента. Наприклад: 90 примусово задає поворот 90 градусів за секунду.",
-                ["robotMovement.stoppingAccelerationMultiplier"] =
-                    "Множник прискорення гальмування для повної зупинки. Наприклад: 3 зупиняє машину утричі активніше за базове прискорення.",
+                ["robotMovement.nvStoppingAccelerationMultiplier"] =
+                    "Множник гальмування NV після відпускання руху. Наприклад: 3 зупиняє NV утричі активніше за базове прискорення.",
+                ["robotMovement.iaStoppingAccelerationMultiplier"] =
+                    "Множник гальмування IA після відпускання руху. Наприклад: 2.75 зупиняє IA у 2.75 раза активніше за базове прискорення.",
                 ["robotMovement.standardAccelerationMultiplier"] =
                     "Множник розгону звичайних і гусеничних машин. Наприклад: 1 залишає базове прискорення без змін.",
                 ["robotMovement.standardBrakingMultiplier"] =

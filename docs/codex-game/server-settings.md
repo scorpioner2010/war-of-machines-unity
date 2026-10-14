@@ -35,6 +35,7 @@ Important settings classes currently used by recent gameplay work:
   - Target visibility range is now owned by `MatchVisibilityGlobalSettings`; bots select only enemies visible in logical map visibility.
 - `RobotMovementGlobalSettings`
   - Movement fallback speed/acceleration, braking, gravity, grounded snap.
+  - `nvStoppingAccelerationMultiplier` and `iaStoppingAccelerationMultiplier` independently control NV and IA deceleration after forward/reverse input is released. They are separate from class-specific braking multipliers used for active slowing or reversal.
 - `GunDispersionGlobalSettings`
   - Accuracy/dispersion conversion, UI/network smoothing, and global on/off behavior for the current speed/turret/shot dispersion model.
   - Runtime spread itself is not configured with old reference traverse speeds anymore: `GunDispersionModel` derives it from normalized vehicle speed, normalized turret-local yaw speed, and fixed post-shot spread.

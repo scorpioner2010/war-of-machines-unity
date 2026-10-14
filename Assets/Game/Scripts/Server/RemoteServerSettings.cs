@@ -19,7 +19,8 @@ namespace Game.Scripts.Server
             float robotFallbackMaxSpeed,
             float robotFallbackAcceleration,
             float robotFallbackTraverseSpeed,
-            float robotStoppingAccelerationMultiplier,
+            float robotNvStoppingAccelerationMultiplier,
+            float robotIaStoppingAccelerationMultiplier,
             float robotStandardAccelerationMultiplier,
             float robotStandardBrakingMultiplier,
             float robotLeggedAccelerationMultiplier,
@@ -68,7 +69,8 @@ namespace Game.Scripts.Server
             RobotMovement.fallbackMaxSpeed = robotFallbackMaxSpeed > 0f ? robotFallbackMaxSpeed : RobotMovementGlobalSettings.Default.fallbackMaxSpeed;
             RobotMovement.fallbackAcceleration = robotFallbackAcceleration > 0f ? robotFallbackAcceleration : RobotMovementGlobalSettings.Default.fallbackAcceleration;
             RobotMovement.fallbackTraverseSpeedDegPerSecond = robotFallbackTraverseSpeed >= 0f ? robotFallbackTraverseSpeed : RobotMovementGlobalSettings.Default.fallbackTraverseSpeedDegPerSecond;
-            RobotMovement.stoppingAccelerationMultiplier = robotStoppingAccelerationMultiplier > 0f ? robotStoppingAccelerationMultiplier : RobotMovementGlobalSettings.Default.stoppingAccelerationMultiplier;
+            RobotMovement.nvStoppingAccelerationMultiplier = robotNvStoppingAccelerationMultiplier > 0f ? robotNvStoppingAccelerationMultiplier : RobotMovementGlobalSettings.Default.nvStoppingAccelerationMultiplier;
+            RobotMovement.iaStoppingAccelerationMultiplier = robotIaStoppingAccelerationMultiplier > 0f ? robotIaStoppingAccelerationMultiplier : RobotMovementGlobalSettings.Default.iaStoppingAccelerationMultiplier;
             RobotMovement.standardAccelerationMultiplier = robotStandardAccelerationMultiplier > 0f ? robotStandardAccelerationMultiplier : RobotMovementGlobalSettings.Default.standardAccelerationMultiplier;
             RobotMovement.standardBrakingMultiplier = robotStandardBrakingMultiplier > 0f ? robotStandardBrakingMultiplier : RobotMovementGlobalSettings.Default.standardBrakingMultiplier;
             RobotMovement.leggedAccelerationMultiplier = robotLeggedAccelerationMultiplier > 0f ? robotLeggedAccelerationMultiplier : RobotMovementGlobalSettings.Default.leggedAccelerationMultiplier;

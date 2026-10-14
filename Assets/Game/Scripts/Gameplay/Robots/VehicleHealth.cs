@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
@@ -9,7 +10,11 @@ namespace Game.Scripts.Gameplay.Robots
     public class VehicleHealth : NetworkBehaviour, IVehicleStatsConsumer
     {
         private const string DeathDebrisLayerName = "Chassis";
+        private const float DeathDespawnSafetySeconds = 0.25f;
         private static int _deathDebrisLayer = int.MinValue;
+
+        public const float DeathDebrisDelaySeconds = 5f;
+        public const float DeathDebrisFadeDurationSeconds = 1f;
 
         [Min(1f)] public float maxHealth = 100f;
 
@@ -27,6 +32,7 @@ namespace Game.Scripts.Gameplay.Robots
         private float _observedHealth;
         private bool _hasAppliedSyncHealth;
         private float _appliedSyncHealth;
+        private Coroutine _serverDeathDespawnRoutine;
 
         public float Current
         {
@@ -93,9 +99,21 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartServer()
         {
+            _serverDeathDespawnRoutine = null;
             _hp.Value = Mathf.Max(1f, maxHealth);
             _dead.Value = false;
             SetObservedHealth(_hp.Value, maxHealth, true);
+        }
+
+        public override void OnStopServer()
+        {
+            if (_serverDeathDespawnRoutine != null)
+            {
+                StopCoroutine(_serverDeathDespawnRoutine);
+                _serverDeathDespawnRoutine = null;
+            }
+
+            base.OnStopServer();
         }
 
         public override void OnStartClient()
@@ -169,6 +187,20 @@ namespace Game.Scripts.Gameplay.Robots
             SetCollidersEnabled(false);
             OnServerDeath?.Invoke(this);
             DiedObserversRpc();
+            _serverDeathDespawnRoutine = StartCoroutine(DespawnAfterDeath());
+        }
+
+        private IEnumerator DespawnAfterDeath()
+        {
+            float despawnDelay = DeathDebrisDelaySeconds + DeathDebrisFadeDurationSeconds + DeathDespawnSafetySeconds;
+            yield return new WaitForSecondsRealtime(despawnDelay);
+
+            if (!IsServerInitialized || !_dead.Value || NetworkObject == null || !NetworkObject.IsSpawned || ServerManager == null)
+            {
+                yield break;
+            }
+
+            ServerManager.Despawn(NetworkObject);
         }
         
         private void SetCollidersEnabled(bool v)

@@ -37,6 +37,7 @@ namespace Game.Scripts.Networking.Lobby
         private readonly MatchVehicleSpawner _vehicleSpawner = new MatchVehicleSpawner();
         private readonly Dictionary<int, int> _sceneSlotsByHandle = new Dictionary<int, int>();
         private readonly Dictionary<int, ServerRoom> _roomsBySceneHandle = new Dictionary<int, ServerRoom>();
+        private readonly HashSet<string> _abandonedRoomIdsAwaitingResult = new HashSet<string>();
         private MatchSceneSlotAllocator _sceneSlotAllocator;
 
         private void Awake()
@@ -69,6 +70,7 @@ namespace Game.Scripts.Networking.Lobby
 
             _sceneSlotsByHandle.Clear();
             _roomsBySceneHandle.Clear();
+            _abandonedRoomIdsAwaitingResult.Clear();
             _sceneSlotAllocator.Clear();
             PendingBattleResults.Clear();
         }
@@ -122,9 +124,11 @@ namespace Game.Scripts.Networking.Lobby
                         continue;
                     }
 
-                    if (serverRoom.IsActiveMatch)
+                    if (serverRoom.spawnStarted || serverRoom.HasLoadedScene || serverRoom.HasSceneSlot)
                     {
                         AbandonPlayer(serverRoom, player);
+                        player.Connection = null;
+                        CleanupRoomWithoutConnectedPlayers(serverRoom);
                         continue;
                     }
 
@@ -425,10 +429,12 @@ namespace Game.Scripts.Networking.Lobby
 
                     if (player != null)
                     {
-                        if (serverRoom.IsActiveMatch)
+                        if (serverRoom.spawnStarted || serverRoom.HasLoadedScene || serverRoom.HasSceneSlot)
                         {
                             AbandonPlayer(serverRoom, player);
+                            player.Connection = null;
                             UnloadRoomSceneForConnection(conn, serverRoom);
+                            CleanupRoomWithoutConnectedPlayers(serverRoom);
                             return;
                         }
 
@@ -459,6 +465,49 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             SceneManager.UnloadConnectionScenes(connection, sceneUnloadData);
+        }
+
+        [Server]
+        private void CleanupRoomWithoutConnectedPlayers(ServerRoom serverRoom)
+        {
+            if (serverRoom == null || HasConnectedRealPlayer(serverRoom))
+            {
+                return;
+            }
+
+            if (!serverRoom.isGameFinished)
+            {
+                FinishBattle(serverRoom, MatchTeam.None, true);
+            }
+
+            SceneUnloadData sceneUnloadData = CreateRoomSceneUnloadData(serverRoom);
+            if (sceneUnloadData != null)
+            {
+                SceneManager.UnloadConnectionScenes(sceneUnloadData);
+            }
+
+            if (serverRoom.matchRewardsSent)
+            {
+                LobbyRooms.RemoveRoom(serverRoom);
+                return;
+            }
+
+            _abandonedRoomIdsAwaitingResult.Add(serverRoom.roomId);
+        }
+
+        private static bool HasConnectedRealPlayer(ServerRoom serverRoom)
+        {
+            List<Player> players = serverRoom.GetPlayers();
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player != null && !player.isBot && !player.leftBattle && player.Connection != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private SceneUnloadData CreateRoomSceneUnloadData(ServerRoom serverRoom)
@@ -577,6 +626,7 @@ namespace Game.Scripts.Networking.Lobby
                 if (player.isBot)
                 {
                     await SpawnBotAsync(serverRoom, player);
+                    await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
                 }
                 else
                 {
@@ -729,6 +779,11 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             serverRoom.matchRewardsSent = true;
+
+            if (_abandonedRoomIdsAwaitingResult.Remove(serverRoom.roomId))
+            {
+                LobbyRooms.RemoveRoom(serverRoom);
+            }
         }
 
         [ServerRpc(RequireOwnership = false)]

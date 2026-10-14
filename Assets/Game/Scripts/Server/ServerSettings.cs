@@ -16,9 +16,11 @@ namespace Game.Scripts.Server
         [Tooltip("Запасна швидкість повороту корпусу в градусах за секунду. 0 означає використовувати локальне значення компонента.")]
         public float fallbackTraverseSpeedDegPerSecond = 0f;
 
-        [Header("Інерція")]
-        [Tooltip("Множник гальмування, коли машина має повністю зупинитися.")]
-        public float stoppingAccelerationMultiplier = 3f;
+        [Header("Зупинка після відпускання руху")]
+        [Tooltip("Множник гальмування NV після відпускання руху.")]
+        public float nvStoppingAccelerationMultiplier = 3f;
+        [Tooltip("Множник гальмування IA після відпускання руху.")]
+        public float iaStoppingAccelerationMultiplier = 2.75f;
         [Tooltip("Множник прискорення для звичайних/гусеничних машин.")]
         public float standardAccelerationMultiplier = 1f;
         [Tooltip("Множник гальмування для звичайних/гусеничних машин.")]
@@ -77,7 +79,8 @@ namespace Game.Scripts.Server
             fallbackMaxSpeed = ClampFinite(fallbackMaxSpeed, 0f, Default.fallbackMaxSpeed);
             fallbackAcceleration = ClampFinite(fallbackAcceleration, 0.01f, Default.fallbackAcceleration);
             fallbackTraverseSpeedDegPerSecond = ClampFinite(fallbackTraverseSpeedDegPerSecond, 0f, Default.fallbackTraverseSpeedDegPerSecond);
-            stoppingAccelerationMultiplier = ClampFinite(stoppingAccelerationMultiplier, 0.01f, Default.stoppingAccelerationMultiplier);
+            nvStoppingAccelerationMultiplier = ClampFinite(nvStoppingAccelerationMultiplier, 0.01f, Default.nvStoppingAccelerationMultiplier);
+            iaStoppingAccelerationMultiplier = ClampFinite(iaStoppingAccelerationMultiplier, 0.01f, Default.iaStoppingAccelerationMultiplier);
             standardAccelerationMultiplier = ClampFinite(standardAccelerationMultiplier, 0.01f, Default.standardAccelerationMultiplier);
             standardBrakingMultiplier = ClampFinite(standardBrakingMultiplier, 0.01f, Default.standardBrakingMultiplier);
             leggedAccelerationMultiplier = ClampFinite(leggedAccelerationMultiplier, 0.01f, Default.leggedAccelerationMultiplier);
@@ -124,7 +127,8 @@ namespace Game.Scripts.Server
             fallbackMaxSpeed = source.fallbackMaxSpeed;
             fallbackAcceleration = source.fallbackAcceleration;
             fallbackTraverseSpeedDegPerSecond = source.fallbackTraverseSpeedDegPerSecond;
-            stoppingAccelerationMultiplier = source.stoppingAccelerationMultiplier;
+            nvStoppingAccelerationMultiplier = source.nvStoppingAccelerationMultiplier;
+            iaStoppingAccelerationMultiplier = source.iaStoppingAccelerationMultiplier;
             standardAccelerationMultiplier = source.standardAccelerationMultiplier;
             standardBrakingMultiplier = source.standardBrakingMultiplier;
             leggedAccelerationMultiplier = source.leggedAccelerationMultiplier;

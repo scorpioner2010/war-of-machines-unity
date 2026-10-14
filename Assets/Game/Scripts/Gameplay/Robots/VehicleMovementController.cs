@@ -20,6 +20,7 @@ namespace Game.Scripts.Gameplay.Robots
         private float _forwardSpeed;
         private float _traverseSpeedDegPerSecond;
         private float _vVel;
+        private RobotFaction _faction = RobotFaction.IronAlliance;
         private bool _useRuntimeTraverseAcceleration;
         private float _runtimeTraverseAccelerationDegPerSecondSquared;
         private bool _useRuntimeTraverseSpeed;
@@ -57,6 +58,8 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 acceleration = stats.Acceleration;
             }
+
+            _faction = stats.Faction;
 
             if (stats.TraverseSpeed > 0f)
             {
@@ -154,9 +157,12 @@ namespace Game.Scripts.Gameplay.Robots
 
                 float desiredSpeed = GetDesiredForwardSpeed(mi.y, speedLimit);
                 float accelerationRate = baseAcceleration;
-                if (IsStoppingOrBraking(desiredSpeed))
+                if (IsCoasting(desiredSpeed))
                 {
-                    accelerationRate *= Mathf.Max(1f, settings.stoppingAccelerationMultiplier);
+                    accelerationRate *= GetStoppingAccelerationMultiplier(settings);
+                }
+                else if (IsBraking(desiredSpeed))
+                {
                     accelerationRate *= settings.GetBrakingMultiplier(isLegged);
                 }
 
@@ -276,6 +282,16 @@ namespace Game.Scripts.Gameplay.Robots
             return settings.groundedSnap > 0f ? settings.groundedSnap : RobotMovementGlobalSettings.Default.groundedSnap;
         }
 
+        private float GetStoppingAccelerationMultiplier(RobotMovementGlobalSettings settings)
+        {
+            if (_faction == RobotFaction.NovaSyndicate)
+            {
+                return Mathf.Max(0.01f, settings.nvStoppingAccelerationMultiplier);
+            }
+
+            return Mathf.Max(0.01f, settings.iaStoppingAccelerationMultiplier);
+        }
+
         private void ReconcileForwardSpeedAfterSideCollision(
             Vector3 positionBeforeMove,
             Vector3 horizontalVelocity,
@@ -301,16 +317,17 @@ namespace Game.Scripts.Gameplay.Robots
             _forwardSpeed *= retainedSpeedRatio;
         }
 
-        private bool IsStoppingOrBraking(float desiredSpeed)
+        private bool IsCoasting(float desiredSpeed)
+        {
+            return Mathf.Abs(_forwardSpeed) > 0.0001f
+                   && Mathf.Abs(desiredSpeed) <= 0.0001f;
+        }
+
+        private bool IsBraking(float desiredSpeed)
         {
             if (Mathf.Abs(_forwardSpeed) <= 0.0001f)
             {
                 return false;
-            }
-
-            if (Mathf.Abs(desiredSpeed) <= 0.0001f)
-            {
-                return true;
             }
 
             return _forwardSpeed * desiredSpeed <= 0f || Mathf.Abs(desiredSpeed) < Mathf.Abs(_forwardSpeed);

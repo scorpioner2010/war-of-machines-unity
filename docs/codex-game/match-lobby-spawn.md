@@ -16,6 +16,8 @@ Current owner scripts:
   - Server/client additive scene load flow, scene slot reservation, spawn lifecycle, visibility ticking, disconnect handling.
   - Ticks `ServerRoom.Visibility` for active matches so player map HUDs and bots share the same logical map spotting state.
   - Sends unreliable visibility snapshots with a monotonic state version, FishNet server tick, and per-entry remaining lifetime. The client uses the tick to subtract packet age before applying a deadline.
+  - Receives `VehicleHealth.OnServerDeath` to evaluate battle end. Individual dead vehicles are later removed by the authoritative `VehicleHealth` FishNet despawn timer, not by local client presentation code.
+  - When the last real player disconnects from a spawned/loading match, finishes the match as a draw, unloads that match scene on the server without affecting other room instances, and removes the room after result delivery. This prevents abandoned bot vehicles and their AI from accumulating across reconnects.
 - `Assets/Game/Scripts/Networking/Lobby/MatchVisibilityService.cs`
   - Builds team visibility from room participants, view range, line of sight, and spotted memory.
   - Sends snapshots to real players only, but also exposes server-side `MatchVisibleEnemy` results for bot target acquisition and last-known-position navigation.
@@ -56,7 +58,7 @@ Spawn flow:
 5. Vehicle prefab is resolved by vehicle code through `GameResourceManager`.
 6. FishNet resolves that prefab on clients through `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`.
 7. Runtime stats are loaded through `VehicleStatsProvider` and applied before/after FishNet spawn.
-8. Player vehicles are spawned with owner connection; bots are spawned with null owner connection.
+8. Player vehicles are spawned with owner connection; bots are spawned with null owner connection. Bots are spawned one per server frame after real players so a full room does not instantiate all robot prefabs and their network state in a single frame.
 9. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
 10. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
 11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team.
