@@ -6,6 +6,8 @@ namespace Game.Scripts.Gameplay.Robots.t1
     [DisallowMultipleComponent]
     public sealed class WalkerAnimationController : MonoBehaviour, IVehicleRootAware
     {
+        private const float FootGroundTransitionDuration = 0.4f;
+
         [System.Serializable]
         public sealed class Foot
         {
@@ -13,6 +15,12 @@ namespace Game.Scripts.Gameplay.Robots.t1
             [System.NonSerialized] public Transform parent;
             [System.NonSerialized] public Vector3 neutralLocalPosition;
             [System.NonSerialized] public bool initialized;
+            [System.NonSerialized] public bool isGroundingWhileStopped;
+            [System.NonSerialized] public float stoppedGroundingElapsed;
+            [System.NonSerialized] public float stoppedGroundingStartY;
+            [System.NonSerialized] public bool isReturningToStep;
+            [System.NonSerialized] public float stepResumeElapsed;
+            [System.NonSerialized] public float stepResumeStartY;
         }
 
         public VehicleRoot vehicleRoot;
@@ -84,7 +92,16 @@ namespace Game.Scripts.Gameplay.Robots.t1
             bool isWalking = Mathf.Abs(movementInput.y) > inputThreshold;
             bool isTurning = !isWalking && Mathf.Abs(movementInput.x) > inputThreshold;
             UpdateAnimationWeights(settings, movementInput, actualSpeed, isWalking, isTurning);
-            ApplyFootAnimation(settings);
+            if (isWalking || isTurning)
+            {
+                BeginFootStepResume();
+                ApplyFootAnimation(settings);
+            }
+            else
+            {
+                PlaceStoppedFeetOnGround();
+            }
+
             ApplyBodyBobbing(isWalking, isTurning);
         }
 
@@ -119,11 +136,6 @@ namespace Game.Scripts.Gameplay.Robots.t1
                     _turnTimer -= duration;
                     _isLeftTurningStep = !_isLeftTurningStep;
                 }
-            }
-            else
-            {
-                _currentWalkWeight = Mathf.Lerp(_currentWalkWeight, 0f, Time.deltaTime * transitionSpeed);
-                _currentTurnWeight = Mathf.Lerp(_currentTurnWeight, 0f, Time.deltaTime * transitionSpeed);
             }
         }
 
@@ -202,6 +214,90 @@ namespace Game.Scripts.Gameplay.Robots.t1
             }
 
             Vector3 targetWorldPosition = foot.parent.TransformPoint(foot.neutralLocalPosition + offset);
+            targetWorldPosition = ResolveFootGroundPosition(foot, targetWorldPosition, groundBlend);
+            targetWorldPosition = ApplyFootStepResume(foot, targetWorldPosition);
+            foot.transform.localPosition = foot.parent.InverseTransformPoint(targetWorldPosition);
+        }
+
+        private void PlaceStoppedFeetOnGround()
+        {
+            PlaceFootOnGround(leftFoot);
+            PlaceFootOnGround(rightFoot);
+        }
+
+        private void PlaceFootOnGround(Foot foot)
+        {
+            if (foot == null || !foot.initialized)
+            {
+                return;
+            }
+
+            Vector3 targetWorldPosition = foot.transform.position;
+            Vector3 groundedWorldPosition = ResolveFootGroundPosition(foot, targetWorldPosition, 1f);
+            if (!foot.isGroundingWhileStopped)
+            {
+                foot.isGroundingWhileStopped = true;
+                foot.isReturningToStep = false;
+                foot.stoppedGroundingElapsed = 0f;
+                foot.stoppedGroundingStartY = targetWorldPosition.y;
+            }
+
+            foot.stoppedGroundingElapsed = Mathf.Min(
+                foot.stoppedGroundingElapsed + Time.deltaTime,
+                FootGroundTransitionDuration);
+            float groundingProgress = foot.stoppedGroundingElapsed / FootGroundTransitionDuration;
+            targetWorldPosition.y = Mathf.Lerp(
+                foot.stoppedGroundingStartY,
+                groundedWorldPosition.y,
+                groundingProgress);
+            foot.transform.position = targetWorldPosition;
+        }
+
+        private void BeginFootStepResume()
+        {
+            BeginFootStepResume(leftFoot);
+            BeginFootStepResume(rightFoot);
+        }
+
+        private static void BeginFootStepResume(Foot foot)
+        {
+            if (foot == null || !foot.isGroundingWhileStopped)
+            {
+                return;
+            }
+
+            foot.isGroundingWhileStopped = false;
+            foot.stoppedGroundingElapsed = 0f;
+            foot.isReturningToStep = true;
+            foot.stepResumeElapsed = 0f;
+            foot.stepResumeStartY = foot.transform.position.y;
+        }
+
+        private Vector3 ApplyFootStepResume(Foot foot, Vector3 targetWorldPosition)
+        {
+            if (!foot.isReturningToStep)
+            {
+                return targetWorldPosition;
+            }
+
+            foot.stepResumeElapsed = Mathf.Min(
+                foot.stepResumeElapsed + Time.deltaTime,
+                FootGroundTransitionDuration);
+            float resumeProgress = foot.stepResumeElapsed / FootGroundTransitionDuration;
+            targetWorldPosition.y = Mathf.Lerp(
+                foot.stepResumeStartY,
+                targetWorldPosition.y,
+                resumeProgress);
+            if (resumeProgress >= 1f)
+            {
+                foot.isReturningToStep = false;
+            }
+
+            return targetWorldPosition;
+        }
+
+        private Vector3 ResolveFootGroundPosition(Foot foot, Vector3 targetWorldPosition, float groundBlend)
+        {
             Vector3 rayOrigin = targetWorldPosition + Vector3.up * 0.5f;
             if (Physics.Raycast(
                     rayOrigin,
@@ -223,7 +319,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
                     groundBlend);
             }
 
-            foot.transform.localPosition = foot.parent.InverseTransformPoint(targetWorldPosition);
+            return targetWorldPosition;
         }
 
         private static void InitializeFoot(Foot foot)
