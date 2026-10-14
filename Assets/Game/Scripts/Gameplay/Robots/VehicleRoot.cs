@@ -28,6 +28,7 @@ namespace Game.Scripts.Gameplay.Robots
         public WeaponReticlePresenter gunReticleUIFollower;
         public NetworkWeaponShooter shooterNet;
         public WeaponReloadController weaponReloadController;
+        public VehicleGunRecoilController gunRecoilController;
         public VehicleArmorController armorController;
         public TrackedVehicleAnimator trackedVehicleAnimator;
         public CaterpillarSuspensionController suspensionController;
@@ -195,6 +196,7 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyRootAware(gunReticleUIFollower);
             ApplyRootAware(shooterNet);
             ApplyRootAware(weaponReloadController);
+            ApplyRootAware(gunRecoilController);
             ApplyRootAware(armorController);
             ApplyRootAware(trackedVehicleAnimator);
             ApplyRootAware(suspensionController);

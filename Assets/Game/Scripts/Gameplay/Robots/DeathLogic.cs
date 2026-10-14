@@ -547,6 +547,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         DisableBehaviour(vehicleRoot.groundAlignmentController);
         DisableBehaviour(vehicleRoot.bodySwayController);
         DisableBehaviour(vehicleRoot.bodyVerticalSpringController);
+        vehicleRoot.gunRecoilController?.StopForDeath();
     }
 
     private static void DisableBehaviour(Behaviour behaviour)

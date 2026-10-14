@@ -302,6 +302,7 @@ namespace Game.Scripts.Gameplay.Robots
                     _predictedProjectiles[shotId] = predicted;
                 }
                 SpawnMuzzleFx(startPos, predictedRay.TargetPoint);
+                vehicleRoot.gunRecoilController?.PlayRecoil();
                 AddOwnerShotDispersion();
 
                 if (!IsSpawned)
@@ -1160,6 +1161,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             SpawnMuzzleFx(startPos, targetPoint);
+            vehicleRoot.gunRecoilController?.PlayRecoil();
 
             if (_observedResolvedHitShots.Remove(shotId))
             {

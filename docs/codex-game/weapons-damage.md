@@ -22,7 +22,7 @@ Current owner scripts:
   - On a confirmed death, disables configured hit colliders immediately, sends the observer death event, and server-despawns the robot after the temporary `5`-second debris hold plus a `1`-second client fade and `0.25`-second safety margin. The client never decides when to despawn the network object.
 - `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`
   - Disables configured gameplay/armor colliders on death and releases configured visual debris.
-  - Disables the root tracked, suspension, walker, and ground-alignment controllers before detaching debris, preventing post-death transform writes against deactivated or detached renderers.
+  - Disables the root tracked, suspension, walker, ground-alignment, and gun-recoil presentation controllers before detaching debris, preventing post-death transform writes against deactivated or detached renderers.
   - In Editor play mode only, scans the full multi-selection and clears it when any selected object belongs to the dying vehicle before hierarchy mutation, avoiding Unity SceneView selection-outline renderer assertions. Player builds contain no editor-selection code.
   - `T2-RM` has exactly 11 configured detachable visuals: three major assemblies and eight wheels. Its serialized list must not contain null placeholder entries.
   - `detachableVisuals` separates each visual debris root, debris collider, rigidbody, and renderer from the colliders that receive gameplay hits.
@@ -63,6 +63,7 @@ Current owner scripts:
 Fire flow:
 - Human fire input is owned by `VehicleInputController` and consumed by `WeaponReloadController` on the owner.
 - Owner path uses client prediction plus server RPC validation.
+- `NetworkWeaponShooter` triggers `VehicleGunRecoilController.PlayRecoil` with the predicted owner shot and with each observer shot RPC, so the firing robot visibly recoils for both the local player and remote clients without waiting for hit resolution.
 - The owner sends one fire RPC through `NetworkWeaponShooter`; projectile creation and ammo/reload consumption cannot be approved independently.
 - Predicted owner and observer projectiles use client-only collision to prevent visible wall/target overshoot caused by RPC latency.
 - Cosmetic impact FX is predicted immediately for the owner and observers. Hit/miss, armor, penetration, damage, HP, kill state, and shot-result HUD remain server-authoritative.

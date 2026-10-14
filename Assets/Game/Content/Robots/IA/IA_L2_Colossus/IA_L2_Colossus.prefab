@@ -2543,6 +2543,7 @@ GameObject:
   - component: {fileID: -5310217532054712346}
   - component: {fileID: 7227677677995702757}
   - component: {fileID: 2705024808742539335}
+  - component: {fileID: 839321119422476913}
   m_Layer: 0
   m_Name: IA_L2_Colossus
   m_TagString: Untagged
@@ -2567,6 +2568,23 @@ Transform:
   - {fileID: 5629243360322721699}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &839321119422476913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7389821364265542770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5a086fc40e47068a9e5fa641b96d2e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  gun: {fileID: 4193322498039211549}
+  recoilDistance: 0.18
+  recoilSpeed: 3
+  returnDelay: 0.04
+  returnSpeed: 0.75
 --- !u!114 &1991983900910442081
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2673,6 +2691,7 @@ MonoBehaviour:
   gunReticleUIFollower: {fileID: 6733234712343286394}
   shooterNet: {fileID: 8224641798986285655}
   weaponReloadController: {fileID: 3855264161025134098}
+  gunRecoilController: {fileID: 839321119422476913}
   armorController: {fileID: 268025433668678964}
   trackedVehicleAnimator: {fileID: 7227677677995702757}
   suspensionController: {fileID: 2705024808742539335}
