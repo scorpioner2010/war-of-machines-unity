@@ -6,6 +6,7 @@ Content layout:
 - `Audio`, `Combat`, `Effects`, `Environment`, `Networking`, `Rendering`, `Server`, `Shared`, and `UI` group reusable assets by runtime role.
 - `Configuration/Robots/RobotRegistry.asset` is the vehicle registry used by `GameResourceManager`.
 - `Configuration/Networking/PrefabObjects.asset` is the FishNet spawnable-prefab collection assigned to `Networking/Prefabs/NetworkManager.prefab`.
+- `Fonts/RobotoCondensed-Regular SDF.asset` is the dynamic TextMeshPro asset for Roboto Condensed Regular. It references `Fonts/static/RobotoCondensed-Regular.ttf`, which must remain in the project so the font can add glyphs at runtime.
 - `Robots/IA/<vehicle-code>` and `Robots/NV/<vehicle-code>` keep each registered robot prefab beside its model, material, and texture files. Common parts are in the adjacent faction `Shared` folder.
 - `Unused` contains project-owned assets not found in the recursive dependencies of `Client.unity`, `Server.unity`, or `Map.unity`. It is an archive, not a runtime load location.
 
