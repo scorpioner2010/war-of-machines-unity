@@ -118,7 +118,7 @@ MonoBehaviour:
     fallbackMaxSpeed: 10
     fallbackAcceleration: 30
     fallbackTraverseSpeedDegPerSecond: 0
-    nvStoppingAccelerationMultiplier: 6
+    nvStoppingAccelerationMultiplier: 10
     iaStoppingAccelerationMultiplier: 4
     standardAccelerationMultiplier: 1
     standardBrakingMultiplier: 3

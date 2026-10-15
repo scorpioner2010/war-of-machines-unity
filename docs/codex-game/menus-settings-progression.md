@@ -8,17 +8,19 @@ Current owner scripts:
 - `Assets/Game/Scripts/MenuController/MenuType.cs`
   - Menu enum used by menu routing and input blocking.
 - `Assets/Game/Scripts/UI/MainMenu/MainMenu.cs`
-  - Main menu root, settings/development tree buttons, profile display values.
+  - Main menu root, settings/development tree buttons, profile display values, and the persistent right-side statistics panel for the selected vehicle.
   - Calls `ProfileServer.UpdateProfile()` when main menu opens.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleItemView.cs`
   - Vehicle list item view.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleSlotView.cs`
-  - Vehicle slot display.
+  - Vehicle slot display and vehicle-selection click handling. It does not create a hover specifications popup.
 - `Assets/Game/Scripts/UI/MainMenu/RobotView.cs`
-  - Main menu robot preview display.
+  - Main menu robot preview display and vehicle slot generation.
+  - Sends the selected vehicle's resolved API stats to `MainMenu.UpdateVehicleInfo` after rebuilding the slots.
   - Initializes preview vehicles through `VehicleRoot.Init(true)`. Menu context keeps the robot model visible but suppresses its gameplay-only world nickname and HP bar.
 - `Assets/Game/Scripts/UI/MainMenu/CameraOrbit.cs`
-  - Menu camera orbit.
+  - Menu camera orbit driven by `UIOrbitDragArea`.
+  - In `Assets/Game/Scenes/Client.unity`, it is bound to `MainMenuNew/DragImage`; this transparent image must keep `Raycast Target` enabled.
 - `Assets/Game/Scripts/UI/Tree/DevelopmentTree.cs`
   - Development tree root/init.
 - `Assets/Game/Scripts/UI/Tree/TreeGrid.cs`, `TreeItem.cs`, `ArrowDrawer.cs`
@@ -42,6 +44,9 @@ Current owner scripts:
 
 Important behavior:
 - `MainMenu.SetActive(true)` opens `MenuType.MainMenu`; false opens `MenuType.GameplayHUD`.
+- In `Assets/Game/Scenes/Client.unity`, `MainMenuNew` is the routed `MenuType.MainMenu` root. Its `AnimationPanel`, `CanvasGroup`, profile fields, settings button, technology-tree button, vehicle container, and battle button are wired to the existing menu, profile, preview, and matchmaking controllers.
+- The settings listener is bound to `MainMenuNew/AnimationPanel/TopPanel/SettingsBack/Settings`, the button that receives the UI click.
+- The selected vehicle's name, faction, tier icon, XP, armor, mobility, firepower, and calculated average DPS are shown continuously in `MainMenuNew/AnimationPanel/RightPanel`. The panel is updated from the profile's selected vehicle after the vehicle list and API stats load; it is not shown only while hovering a slot.
 - Settings and development tree buttons use `MenuManager.OpenMenu`.
 - Gameplay input blocking is tied to menu state in `VehicleInputController.IsGameplayInputBlockedByUi`.
 

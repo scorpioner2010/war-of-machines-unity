@@ -171,6 +171,18 @@ namespace Game.Scripts.UI.MainMenu
                 VehicleItemView vehicle = Instantiate(view.vehiclePrefab);
                 slot.PlaceVehicle(vehicle, vehicles[i], view.OnVehicleSelected);
             }
+
+            VehicleSlotVehicleData selectedVehicle = null;
+            for (int i = 0; i < vehicles.Count; i++)
+            {
+                if (vehicles[i].IsSelected)
+                {
+                    selectedVehicle = vehicles[i];
+                    break;
+                }
+            }
+
+            MainMenu.In?.UpdateVehicleInfo(selectedVehicle);
         }
 
         private int GetVisibleSlotCount(int vehicleCount)
@@ -364,26 +376,7 @@ namespace Game.Scripts.UI.MainMenu
             {
                 for (int i = vehicleContainer.childCount - 1; i >= 0; i--)
                 {
-                    Transform child = vehicleContainer.GetChild(i);
-                    if (child == null || !child.gameObject.activeSelf)
-                    {
-                        continue;
-                    }
-
-                    VehicleSlotView slot = child.GetComponent<VehicleSlotView>();
-                    if (slot != null)
-                    {
-                        Destroy(child.gameObject);
-                    }
-                }
-            }
-
-            for (int i = 0; i < _slots.Count; i++)
-            {
-                VehicleSlotView slot = _slots[i];
-                if (slot != null)
-                {
-                    Destroy(slot.gameObject);
+                    Destroy(vehicleContainer.GetChild(i).gameObject);
                 }
             }
 
