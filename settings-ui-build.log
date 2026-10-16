@@ -1,0 +1,655 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.3/staging' branch; Version is '6000.3.13f1 (8c4f11e4fb20) revision 9195281'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-TorasPC" at "2026-10-16T21:19:18.3584351Z"
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'en' Physical Memory: 32293 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-10-16T21:19:18Z
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 25708, path: "C:/Program Files/Unity Hub/UnityLicensingClient_V1/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.3+d7ffd15
+  Session Id:              b6915063af584e8bacd2f26b5e88a197
+  Correlation Id:          30de6ee2da474589d71bb7485e217f20
+  External correlation Id: 5119599559786874393
+  Machine Id:              5hPhFgdLFSFaWbf9FbQ+5jyBlWg=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-TorasPC" (connect: 0.00s, validation: 0.00s, handshake: 0.03s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-TorasPC-notifications" at "2026-10-16T21:19:18.3868353Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-FK7R-KWH4-YRUZ-JYSD-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: 2026-11-23T21:49:18Z
+[Licensing::Module] License group:
+  Id: 4004323-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.00
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-FK7R-KWH4-YRUZ-JYSD-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: 2026-11-23T21:49:18Z
+[Licensing::Module] License group:
+  Id: 4004323-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Module] Licensing Background thread has ended after 0.03s
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.3.13f1\Editor\Unity.exe
+-batchmode
+-nographics
+-quit
+-projectPath
+D:\Programing\UnityProjects\war-of-machines-unity
+-executeMethod
+SettingsUiSceneBuilder.BuildSettingsUiControls
+-logFile
+D:\Programing\UnityProjects\war-of-machines-unity\settings-ui-build.log
+Successfully changed project path to: D:\Programing\UnityProjects\war-of-machines-unity
+D:/Programing/UnityProjects/war-of-machines-unity
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+Player connection [35612]  Target information:
+
+Player connection [35612]  * "[IP] 192.168.1.2 [Port] 55504 [Flags] 2 [Guid] 1131820773 [EditorId] 1131820773 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-IBVQ61I) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [35612]  * "[IP] 192.168.160.1 [Port] 55504 [Flags] 2 [Guid] 1131820773 [EditorId] 1131820773 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-IBVQ61I) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [35612]  * "[IP] 172.31.224.1 [Port] 55504 [Flags] 2 [Guid] 1131820773 [EditorId] 1131820773 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-IBVQ61I) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [35612] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [35612] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Package Manager] Connected to IPC stream "Upm-42812" after 0.2 seconds.
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-FK7R-KWH4-YRUZ-JYSD-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: 2026-11-23T21:49:18Z
+[Licensing::Module] License group:
+  Id: 4004323-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Artifact Garbage Collection - Removed 63 unused hashed content files
+Refreshing native plugins compatible for Editor in 0.25 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 6000.3.13f1 (8c4f11e4fb20)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.3.13f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path D:/Programing/UnityProjects/war-of-machines-unity/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.3.13f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.3.13f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.3.13f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56812
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.3.13f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-FK7R-KWH4-YRUZ-JYSD-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: 2026-11-23T21:49:18Z
+[Licensing::Module] License group:
+  Id: 4004323-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.3.13f1/Editor/Data/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Registered in 0.003169 seconds.
+- Loaded All Assemblies, in  0.271 seconds
+Native extension for Android target not found
+Native extension for WindowsStandalone target not found
+Package Manager log level set to [2]
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.262 seconds
+Domain Reload Profiling: 531ms
+	BeginReloadAssembly (86ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (5ms)
+	RebuildCommonClasses (24ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (34ms)
+	LoadAllAssembliesAndSetupDomain (116ms)
+		LoadAssemblies (79ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (114ms)
+			TypeCache.Refresh (112ms)
+				TypeCache.ScanAssembly (103ms)
+			BuildScriptInfoCaches (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (262ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (236ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (60ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (52ms)
+			ProcessInitializeOnLoadAttributes (85ms)
+			ProcessInitializeOnLoadMethodAttributes (36ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-FK7R-KWH4-YRUZ-JYSD-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: 2026-11-23T21:49:18Z
+[Licensing::Module] License group:
+  Id: 4004323-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 74 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.ai.navigation@2.0.12 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.ai.navigation@734c2c4c5591)
+    com.unity.animation.rigging@1.4.1 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.animation.rigging@ae5f251e1ed4)
+    com.unity.dedicated-server@2.0.2 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.dedicated-server@a70d25d41e21)
+    com.unity.ide.rider@3.0.39 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.ide.rider@4504839d03f7)
+    com.unity.ide.visualstudio@2.0.26 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.ide.visualstudio@a99d56dec63f)
+    com.unity.sdk.linux-arm64@1.0.2 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.sdk.linux-arm64@24ad2077730b)
+    com.unity.sdk.linux-x86_64@1.1.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.sdk.linux-x86_64@6d12be270055)
+    com.unity.toolchain.win-x86_64-linux@1.1.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.toolchain.win-x86_64-linux@8cba24a9a87c)
+    com.unity.visualscripting@1.9.11 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.visualscripting@8bed5ad90189)
+    com.unity.sysroot.base@1.1.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.sysroot.base@3559fe1aa613)
+    com.unity.timeline@1.8.13 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.timeline@3a22918286f5)
+    com.unity.sequences@2.1.3 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.sequences@f969dac3a2cb)
+    com.unity.formats.fbx@5.1.4 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.formats.fbx@edcf227fb224)
+    com.unity.formats.alembic@2.4.4 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.formats.alembic@f855296d3867)
+    com.unity.cinemachine@2.10.7 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.cinemachine@631385387c5a)
+    com.unity.recorder@5.1.5 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.recorder@544ed421bd22)
+    com.unity.burst@1.8.29 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.burst@6bb9aca3ef38)
+    com.unity.transport@2.7.2 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.transport@ed7eca02732f)
+    com.unity.searcher@4.9.4 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.mathematics@1.3.3 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.collections@2.6.5 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.collections@12999e356c23)
+    com.unity.bindings.openimageio@1.0.2 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.bindings.openimageio@94e2abc0bc65)
+    com.autodesk.fbx@5.1.3 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.autodesk.fbx@90432ec06ab5)
+    com.unity.settings-manager@2.1.1 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.settings-manager@0b8638c5ce86)
+    com.unity.nuget.mono-cecil@1.11.6 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.4.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.test-framework.performance@aa81a99c4a75)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.2d.sprite@d14b9d497a24)
+    com.unity.feature.cinematic@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.feature.cinematic@d5f4b84e93c0)
+    com.unity.multiplayer.center@1.0.1 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.multiplayer.center@f01f4ba8d00a)
+    com.unity.render-pipelines.universal@17.3.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.render-pipelines.universal@d00cd191b3cc)
+    com.unity.test-framework@1.6.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.test-framework@aebcb98460c6)
+    com.unity.ugui@2.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.ugui@8ccc29d23a79)
+    com.unity.modules.accessibility@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.adaptiveperformance@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.adaptiveperformance)
+    com.unity.modules.ai@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.xr)
+    com.unity.modules.subsystems@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.ext.nunit@2.0.5 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+    com.unity.render-pipelines.core@17.3.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.render-pipelines.core@beca2a4be9a2)
+    com.unity.shadergraph@17.3.0 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.shadergraph@8453f937f03b)
+    com.unity.render-pipelines.universal-config@17.0.3 (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.unity.render-pipelines.universal-config@8dc1aab4af1d)
+  Git packages:
+    com.alven.fishnet.unitytransport@https://github.com/ooonush/FishyUnityTransport.git?path=Assets/FishNet/Plugins/FishyUnityTransport#08756d9733a556018041e52fcb9d2a6035346aeb (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.alven.fishnet.unitytransport@135253c12e58)
+    com.cysharp.unitask@https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask (location: D:\Programing\UnityProjects\war-of-machines-unity\Library\PackageCache\com.cysharp.unitask@1d3a06e7d071)
+[Package Manager] com.unity.feature.cinematic is deprecated: This feature set is no longer supported on this editor version.
+[Package Manager] com.unity.sequences is deprecated: This package is no longer supported on this editor version.
+[Subsystems] No new subsystems found in resolved package list.
+[Package Manager] Done registering packages in 0.01 seconds
+[ScriptCompilation] Requested script compilation because: Assetdatabase observed changes in script compilation related files
+Starting: C:\Program Files\Unity\Hub\Editor\6000.3.13f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: D:/Programing/UnityProjects/war-of-machines-unity
+DisplayProgressbar: Compiling Scripts
+Starting: C:\Program Files\Unity\Hub\Editor\6000.3.13f1\Editor\Data\netcorerun\netcorerun.exe "C:\Program Files\Unity\Hub\Editor\6000.3.13f1\Editor\Data\Tools\BuildPipeline\ScriptCompilationBuildProgram.exe" "Library/Bee/1900b0aE.dag.json" "Library/Bee/1900b0aE-inputdata.json" "Library\Bee\buildprogram0.traceevents"
+WorkingDir: D:/Programing/UnityProjects/war-of-machines-unity
+ExitCode: 4 Duration: 0s198ms
+Rebuilding DAG because FileSignature timestamp changed: Library/Bee/1900b0aE-inputdata.json
+*** Tundra requires additional run (0.08 seconds), 0 items updated, 77 evaluated
+ExitCode: 0 Duration: 0s899ms
+Starting: C:\Program Files\Unity\Hub\Editor\6000.3.13f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --dagfilejson="Library\Bee\1900b0aE.dag.json" --profile="Library/Bee/backend2.traceevents" ScriptAssemblies
+WorkingDir: D:/Programing/UnityProjects/war-of-machines-unity
+ExitCode: 0 Duration: 7s797ms
+Finished compiling graph: 1401 nodes, 31264 flattened edges (24228 ToBuild, 236 ToUse), maximum node priority 1736
+[ 634/1397  0s] WriteText Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.rsp
+[1061/1397  1s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[1389/1397  4s] Csc Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp.dll (+2 others)
+Assets\FishNet\Upgrading\UpgradeFromMirrorMenu.cs(46,37): warning CS0618: 'PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup)' is obsolete: 'Use GetScriptingDefineSymbols(NamedBuildTarget buildTarget) instead'
+
+Assets\FishNet\Upgrading\UpgradeFromMirrorMenu.cs(68,17): warning CS0618: 'PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup, string)' is obsolete: 'Use SetScriptingDefineSymbols(NamedBuildTarget buildTarget, string defines) instead'
+[1390/1397  0s] Csc Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll (+2 others)
+[1391/1397  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Assembly-CSharp-Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll, with 140 defines and 382 references
+
+processors: FishNet.CodeGenerating.ILCore.FishNetILPP, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running FishNet.CodeGenerating.ILCore.FishNetILPP
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1392/1397  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.pdb
+[1393/1397  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.dll
+[1394/1397  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Assembly-CSharp.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp.dll, with 142 defines and 364 references
+
+processors: FishNet.CodeGenerating.ILCore.FishNetILPP, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running FishNet.CodeGenerating.ILCore.FishNetILPP
+
+FishNet.CodeGenerating.ILCore.FishNetILPP: (0,0): warning  - FishNet 3 to FishNet 4 upgrade helpers are currently enabled. This will result in longer compile times for code changes. If you are no longer seeing any errors in your console related to upgrading consider disabling this feature in the Fish-Networking menu, Utility, Upgrading.
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1395/1397  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp.pdb
+[1396/1397  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp.dll
+*** Tundra build success (7.78 seconds), 10 items updated, 1397 evaluated
+Assets\FishNet\Upgrading\UpgradeFromMirrorMenu.cs(46,37): warning CS0618: 'PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup)' is obsolete: 'Use GetScriptingDefineSymbols(NamedBuildTarget buildTarget) instead'
+Assets\FishNet\Upgrading\UpgradeFromMirrorMenu.cs(68,17): warning CS0618: 'PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup, string)' is obsolete: 'Use SetScriptingDefineSymbols(NamedBuildTarget buildTarget, string defines) instead'
+FishNet.CodeGenerating.ILCore.FishNetILPP: (0,0): warning  - FishNet 3 to FishNet 4 upgrade helpers are currently enabled. This will result in longer compile times for code changes. If you are no longer seeing any errors in your console related to upgrading consider disabling this feature in the Fish-Networking menu, Utility, Upgrading.
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+AssetDatabase: script compilation time: 9.240307s
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.898 seconds
+Refreshing native plugins compatible for Editor in 2.27 ms, found 7 plugins.
+Native extension for Android target not found
+Native extension for WindowsStandalone target not found
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-war-of-machines
+Your project uses Compatibility Mode, which disables the render graph system. Compatibility Mode is deprecated. Migrate your ScriptableRenderPasses to the Render Graph API instead. After you migrate, go to Edit > Project Settings > Player and remove the URP_COMPATIBILITY_MODE define from the Scripting Define Symbols. If you don't remove the define, build time and build size are slightly increased.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Rendering.Universal.WarnUsingNonRenderGraph:EmitConsoleWarning () (at ./Library/PackageCache/com.unity.render-pipelines.universal@d00cd191b3cc/Runtime/Data/UniversalRenderPipelineAsset.cs:440)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes ()
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@d00cd191b3cc/Runtime/Data/UniversalRenderPipelineAsset.cs Line: 440)
+
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  3.569 seconds
+Domain Reload Profiling: 4464ms
+	BeginReloadAssembly (256ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (32ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (134ms)
+	RebuildCommonClasses (23ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (18ms)
+	LoadAllAssembliesAndSetupDomain (589ms)
+		LoadAssemblies (458ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (195ms)
+			TypeCache.Refresh (124ms)
+				TypeCache.ScanAssembly (115ms)
+			BuildScriptInfoCaches (57ms)
+			ResolveRequiredComponents (11ms)
+	FinalizeReload (3569ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (3400ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (29ms)
+			SetLoadedEditorAssemblies (2ms)
+			BeforeProcessingInitializeOnLoad (113ms)
+			ProcessInitializeOnLoadAttributes (3144ms)
+			ProcessInitializeOnLoadMethodAttributes (107ms)
+			AfterProcessingInitializeOnLoad (4ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (13ms)
+Start importing Packages/com.unity.render-pipelines.core/Tests/Editor/UnifiedRayTracing/TraceRays.urtshader using Guid(1142bbad8b9e8c44c83a9775ff120d37) (ScriptedImporter)Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+
+Compiling Ray Tracing Shader "TraceRays.urtshader", keywords = <no keywords>
+    finished in 0.01 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: 'a8ea6742f6b880d9739bf23df9eb18bb') in 0.0978689 seconds
+Start importing Packages/com.unity.render-pipelines.universal/Runtime/RendererFeatures/SurfaceCacheGI/SurfaceCacheCore/RisEstimation.urtshader using Guid(713f6141bd66a134383b787f2eaa7c11) (ScriptedImporter)
+Compiling Ray Tracing Shader "RisEstimation.urtshader", keywords = <no keywords>
+    finished in 0.00 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: '85483653542df2a9584e21311af209c0') in 0.1094639 seconds
+Start importing Packages/com.unity.render-pipelines.core/Editor/Lighting/ProbeVolume/RenderingLayerMask/TraceRenderingLayerMask.urtshader using Guid(94a070d33e408384bafc1dea4a565df9) (ScriptedImporter)
+Compiling Ray Tracing Shader "TraceRenderingLayerMask.urtshader", keywords = <no keywords>
+    finished in 0.10 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: 'f6bb3bec601b57d177013f54cb992ef1') in 0.1631421 seconds
+Start importing Packages/com.unity.render-pipelines.universal/Runtime/RendererFeatures/SurfaceCacheGI/SurfaceCacheCore/UniformEstimation.urtshader using Guid(94a39d12848d8d64ca962a72b74e7c50) (ScriptedImporter)
+Compiling Ray Tracing Shader "UniformEstimation.urtshader", keywords = <no keywords>
+    finished in 0.00 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: '1f0c4babd42b95190a91ecdc2fab132e') in 0.0231947 seconds
+Start importing Packages/com.unity.render-pipelines.core/Tests/Editor/UnifiedRayTracing/TraceTransparentRays.urtshader using Guid(6513c3b892e933c4f8d00c19d5c47532) (ScriptedImporter)
+Compiling Ray Tracing Shader "TraceTransparentRays.urtshader", keywords = <no keywords>
+    finished in 0.02 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: 'd432cdd77f7a99d2ab5546ea5c7fd3a4') in 0.0344701 seconds
+Start importing Packages/com.unity.render-pipelines.core/Editor/Lighting/ProbeVolume/DynamicGI/DynamicGISkyOcclusion.urtshader using Guid(5a2a534753fbdb44e96c3c78b5a6999d) (ScriptedImporter)
+Compiling Ray Tracing Shader "DynamicGISkyOcclusion.urtshader", keywords = <no keywords>
+    finished in 0.00 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: '0e972ffc1eaacfd3d5ff1f02b75498da') in 0.0213045 seconds
+Start importing Packages/com.unity.render-pipelines.core/Tests/Editor/UnifiedRayTracing/TraceRaysAndFetchAttributes.urtshader using Guid(fbc59f55df2416344b008dc23753cae2) (ScriptedImporter)
+Compiling Ray Tracing Shader "TraceRaysAndFetchAttributes.urtshader", keywords = <no keywords>
+    finished in 0.00 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: '5e518210d64afcf414624668b000722c') in 0.0422266 seconds
+Start importing Packages/com.unity.render-pipelines.universal/Runtime/RendererFeatures/SurfaceCacheGI/SurfaceCacheCore/RestirCandidateTemporal.urtshader using Guid(ad3a9f9982f8c4f4a839a78955e78458) (ScriptedImporter)
+Compiling Ray Tracing Shader "RestirCandidateTemporal.urtshader", keywords = <no keywords>
+    finished in 0.01 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: 'bb4b7d12fb6ed0039744ade1ce8b423b') in 0.0329384 seconds
+Start importing Packages/com.unity.render-pipelines.core/Editor/Lighting/ProbeVolume/VirtualOffset/TraceVirtualOffset.urtshader using Guid(ff2cbab5da58bf04d82c5f34037ed123) (ScriptedImporter)
+Compiling Ray Tracing Shader "TraceVirtualOffset.urtshader", keywords = <no keywords>
+    finished in 0.06 seconds. Local cache hits 1, remote cache hits 0, compiled 0 platform variants
+ -> (artifact id: '6c6b9fa987ce9ca680d4a29ff6a084fa') in 0.0982143 seconds
+Default prefab generator found 22 prefabs in 857ms.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FishNet.Editing.PrefabCollectionGenerator.Generator:GenerateFull (FishNet.Configuring.PrefabGeneratorConfigurations,bool,bool) (at Assets/FishNet/Runtime/Editor/PrefabCollectionGenerator/Generator.cs:383)
+FishNet.Editing.PrefabCollectionGenerator.Generator:OnPostprocessAllAssets (string[],string[],string[],string[]) (at Assets/FishNet/Runtime/Editor/PrefabCollectionGenerator/Generator.cs:626)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+UnityEditor.AssetPostprocessingInternal:InvokeMethod (System.Reflection.MethodInfo,object[])
+UnityEditor.AssetPostprocessingInternal:PostprocessAllAssets (string[],string[],string[],string[],string[],bool)
+
+(Filename: Assets/FishNet/Runtime/Editor/PrefabCollectionGenerator/Generator.cs Line: 383)
+
+Start importing Assets/DefaultPrefabObjects.asset using Guid(17c4eb7911be1b34c95c8e7a9c35e760) (NativeFormatImporter) -> (artifact id: 'd7e67d3a8883e6cb5c8a7d4e53800d8f') in 0.0013424 seconds
+Refreshing native plugins compatible for Editor in 2.49 ms, found 7 plugins.
+Preloading 1 native plugins for Editor in 0.84 ms.
+Asset Pipeline Refresh (id=59d76f53549c6e3419a65c345248ac44): Total: 16.774 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=10 (actual=10, local cache=0, cache server=0)
+		Asset DB Process Time: managed=2 ms, native=4801 ms
+		Asset DB Callback time: managed=1688 ms, native=98 ms
+		Scripting: domain reloads=1, domain reload time=898 ms, compile time=9241 ms, other=43 ms
+		Project Asset Count: scripts=2171, non-scripts=8670
+		Asset File Changes: new=1, changed=4, moved=0, deleted=0
+		Scan Filter Count: 2
+	InvokeCustomDependenciesCallbacks: 0.002ms
+	InvokePackagesCallback: 18.717ms
+	ApplyChangesToAssetFolders: 0.665ms
+	Scan: 236.115ms
+	OnSourceAssetsModified: 0.609ms
+	CategorizeAssetsWithTransientArtifact: 45.025ms
+	ProcessAssetsWithTransientArtifactChanges: 70.101ms
+	CategorizeAssets: 87.274ms
+	ImportOutOfDateAssets: 4239.389ms (-5677.762ms without children)
+		ImportManagerImport: 656.307ms (18.443ms without children)
+			ImportInProcess: 637.426ms
+			UpdateCategorizedAssets: 0.438ms
+		CompileScripts: 9241.350ms
+		ReloadNativeAssets: 0.117ms
+		UnloadImportedAssets: 0.870ms
+		ReloadImportedAssets: 15.797ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 1.879ms
+		InitializingProgressBar: 0.013ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.002ms
+		OnDemandSchedulerStart: 0.816ms
+	PostProcessAllAssets: 1794.976ms
+	Hotreload: 8.936ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.270ms
+	UnloadStreamsBegin: 17.394ms
+	PersistCurrentRevisions: 0.549ms
+	UnloadStreamsEnd: 0.001ms
+	GenerateScriptTypeHashes: 3.892ms
+	Untracked: 10254.180ms
+
+Application.AssetDatabase Initial Refresh End
+Scanning for USB devices : 6.083ms
+Initializing Unity extensions:
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Unloading 23 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 46554 unused Assets / (30.9 MB). Loaded Objects now: 13614.
+Memory consumption went from 328.1 MB to 297.2 MB.
+Total: 59.932300 ms (FindLiveObjects: 2.707900 ms CreateObjectMapping: 2.411500 ms MarkObjects: 9.917000 ms  DeleteObjects: 44.894800 ms)
+
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Opening scene 'Assets/Game/Scenes/Client.unity'
+Unloading 78 Unused Serialized files (Serialized files now loaded: 0)
+LightingSettings: switching bake backend from 2 to 1.
+Loaded scene 'Assets/Game/Scenes/Client.unity'
+	Deserialize:            505.177 ms
+	Integration:            329.544 ms
+	Integration of assets:  1.498 ms
+	Thread Wait Time:       -0.052 ms
+	Total Operation Time:   836.166 ms
+Unloading 4 unused Assets / (10.8 KB). Loaded Objects now: 15835.
+Memory consumption went from 255.1 MB to 255.1 MB.
+Total: 7.908600 ms (FindLiveObjects: 0.791800 ms CreateObjectMapping: 0.354700 ms MarkObjects: 6.719800 ms  DeleteObjects: 0.041700 ms)
+
+Start importing Assets/Game/Scenes/Client.unity using Guid(b813628accd629c458ee2dc6cbfb55d9) (DefaultImporter) -> (artifact id: '7e7345b81b1cc53f82aca6346ca9dc83') in 0.0012162 seconds
+Refreshing native plugins compatible for Editor in 1.88 ms, found 7 plugins.
+Preloading 1 native plugins for Editor in 0.04 ms.
+Asset Pipeline Refresh (id=d6f17e29e60f5a04e94ea6d9713bdd20): Total: 0.451 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=441 ms
+		Asset DB Callback time: managed=2 ms, native=6 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=2171, non-scripts=8670
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.000ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.104ms
+	Scan: 4.476ms
+	OnSourceAssetsModified: 0.621ms
+	CategorizeAssetsWithTransientArtifact: 0.009ms
+	ProcessAssetsWithTransientArtifactChanges: 0.068ms
+	CategorizeAssets: 44.849ms
+	ImportOutOfDateAssets: 385.934ms (0.369ms without children)
+		ImportManagerImport: 383.973ms (0.719ms without children)
+			ImportInProcess: 383.233ms
+			UpdateCategorizedAssets: 0.020ms
+		ReloadNativeAssets: 0.052ms
+		UnloadImportedAssets: 0.235ms
+		ReloadImportedAssets: 0.092ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.876ms
+		InitializingProgressBar: 0.008ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.329ms
+	PostProcessAllAssets: 5.102ms
+	Hotreload: 3.316ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.228ms
+	UnloadStreamsBegin: 0.295ms
+	PersistCurrentRevisions: 0.241ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 5.421ms
+
+Start importing Assets/DefaultPrefabObjects.asset using Guid(17c4eb7911be1b34c95c8e7a9c35e760) (NativeFormatImporter) -> (artifact id: 'd7e67d3a8883e6cb5c8a7d4e53800d8f') in 0.0010652 seconds
+Refreshing native plugins compatible for Editor in 2.09 ms, found 7 plugins.
+Preloading 1 native plugins for Editor in 0.04 ms.
+Asset Pipeline Refresh (id=92136b4cdbad82f439addc95185d8931): Total: 0.018 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Batchmode quit successfully invoked - shutting down!
+Killing ADB server in 2.03695 seconds.
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-TorasPC-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-TorasPC channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+05:19:42.441 |V| RiderPlugin                    | :1                             | AppDomain.CurrentDomain.DomainUnload lifetimeDefinition.Terminate
+Exiting batchmode successfully now!
+Exiting without the bug reporter. Application will terminate with return code 0

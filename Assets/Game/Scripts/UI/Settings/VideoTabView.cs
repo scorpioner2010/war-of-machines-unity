@@ -22,8 +22,6 @@ namespace Game.Scripts.UI.Settings
         public void Initialize(SettingsController controller)
         {
             _controller = controller;
-            EnsureFrameRateDropdown();
-            EnsureVerticalSyncToggle();
 
             FullScreenDropdown.ClearOptions();
             List<string> fullScreenType = new List<string>
@@ -204,119 +202,6 @@ namespace Game.Scripts.UI.Settings
             _controller.HandleVerticalSyncChanged(isOn);
         }
 
-        private void EnsureFrameRateDropdown()
-        {
-            if (FrameRateDropdown != null)
-            {
-                return;
-            }
-
-            Transform existing = transform.Find("FrameRateDropdown");
-            if (existing != null)
-            {
-                FrameRateDropdown = existing.GetComponent<TMP_Dropdown>();
-                if (FrameRateDropdown != null)
-                {
-                    return;
-                }
-            }
-
-            TMP_Dropdown template = QualityDropdown != null
-                ? QualityDropdown
-                : ResolutionDropdown != null
-                    ? ResolutionDropdown
-                    : FullScreenDropdown;
-            if (template == null)
-            {
-                return;
-            }
-
-            Vector2 position = GetOffsetPosition(template.transform as RectTransform, new Vector2(-156.124f, 72f), -58f);
-            CreateLabel("FrameRateDropdown_Label", "FPS limit", new Vector2(position.x - 277f, position.y));
-            FrameRateDropdown = Instantiate(template, transform, false);
-            FrameRateDropdown.name = "FrameRateDropdown";
-            FrameRateDropdown.onValueChanged.RemoveAllListeners();
-
-            RectTransform dropdownRect = FrameRateDropdown.transform as RectTransform;
-            if (dropdownRect != null)
-            {
-                dropdownRect.anchoredPosition = position;
-            }
-        }
-
-        private void EnsureVerticalSyncToggle()
-        {
-            if (VerticalSyncToggle != null)
-            {
-                return;
-            }
-
-            Transform existing = transform.Find("VerticalSyncToggle");
-            if (existing != null)
-            {
-                VerticalSyncToggle = existing.GetComponent<Toggle>();
-                if (VerticalSyncToggle != null)
-                {
-                    return;
-                }
-            }
-
-            RectTransform frameRateRect = FrameRateDropdown != null ? FrameRateDropdown.transform as RectTransform : null;
-            Vector2 position = GetOffsetPosition(frameRateRect, new Vector2(-156.124f, 14f), -58f);
-
-            GameObject root = new GameObject("VerticalSyncToggle", typeof(RectTransform), typeof(Toggle));
-            RectTransform rootRect = root.GetComponent<RectTransform>();
-            rootRect.SetParent(transform, false);
-            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
-            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
-            rootRect.pivot = new Vector2(0.5f, 0.5f);
-            rootRect.anchoredPosition = position;
-            rootRect.sizeDelta = new Vector2(436f, 32f);
-
-            Toggle toggle = root.GetComponent<Toggle>();
-
-            GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
-            RectTransform backgroundRect = background.GetComponent<RectTransform>();
-            backgroundRect.SetParent(rootRect, false);
-            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
-            backgroundRect.anchorMax = new Vector2(0f, 0.5f);
-            backgroundRect.pivot = new Vector2(0f, 0.5f);
-            backgroundRect.anchoredPosition = Vector2.zero;
-            backgroundRect.sizeDelta = new Vector2(22f, 22f);
-            Image backgroundImage = background.GetComponent<Image>();
-            backgroundImage.color = new Color(0.12f, 0.14f, 0.17f, 1f);
-
-            GameObject checkmark = new GameObject("Checkmark", typeof(RectTransform), typeof(Image));
-            RectTransform checkmarkRect = checkmark.GetComponent<RectTransform>();
-            checkmarkRect.SetParent(backgroundRect, false);
-            checkmarkRect.anchorMin = new Vector2(0.2f, 0.2f);
-            checkmarkRect.anchorMax = new Vector2(0.8f, 0.8f);
-            checkmarkRect.offsetMin = Vector2.zero;
-            checkmarkRect.offsetMax = Vector2.zero;
-            Image checkmarkImage = checkmark.GetComponent<Image>();
-            checkmarkImage.color = new Color(0.25f, 0.62f, 1f, 1f);
-
-            GameObject label = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-            RectTransform labelRect = label.GetComponent<RectTransform>();
-            labelRect.SetParent(rootRect, false);
-            labelRect.anchorMin = new Vector2(0f, 0.5f);
-            labelRect.anchorMax = new Vector2(0f, 0.5f);
-            labelRect.pivot = new Vector2(0f, 0.5f);
-            labelRect.anchoredPosition = new Vector2(34f, 0f);
-            labelRect.sizeDelta = new Vector2(320f, 32f);
-
-            TextMeshProUGUI labelText = label.GetComponent<TextMeshProUGUI>();
-            labelText.text = "Vertical sync";
-            labelText.fontSize = 20f;
-            labelText.color = Color.white;
-            labelText.alignment = TextAlignmentOptions.MidlineLeft;
-            labelText.raycastTarget = false;
-
-            toggle.targetGraphic = backgroundImage;
-            toggle.graphic = checkmarkImage;
-            VerticalSyncToggle = toggle;
-        }
-
         private void SetFrameRateDropdownInteractable(bool interactable)
         {
             if (FrameRateDropdown != null)
@@ -349,39 +234,6 @@ namespace Game.Scripts.UI.Settings
             return ClientFramePacingSettings.GetSupportedTargetFrameRate(index);
         }
 
-        private static Vector2 GetOffsetPosition(RectTransform source, Vector2 fallback, float yOffset)
-        {
-            if (source == null)
-            {
-                return fallback;
-            }
-
-            return source.anchoredPosition + new Vector2(0f, yOffset);
-        }
-
-        private void CreateLabel(string objectName, string labelText, Vector2 position)
-        {
-            if (transform.Find(objectName) != null)
-            {
-                return;
-            }
-
-            GameObject labelObject = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshProUGUI));
-            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
-            labelRect.SetParent(transform, false);
-            labelRect.anchorMin = new Vector2(0.5f, 0.5f);
-            labelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            labelRect.pivot = new Vector2(0.5f, 0.5f);
-            labelRect.anchoredPosition = position;
-            labelRect.sizeDelta = new Vector2(220f, 46f);
-
-            TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
-            label.text = labelText;
-            label.fontSize = 20f;
-            label.color = Color.white;
-            label.alignment = TextAlignmentOptions.MidlineLeft;
-            label.raycastTarget = false;
-        }
     }
 
     internal static class VideoResolutionOptions

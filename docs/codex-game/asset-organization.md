@@ -8,7 +8,10 @@ Content layout:
 - `Configuration/Networking/PrefabObjects.asset` is the FishNet spawnable-prefab collection assigned to `Networking/Prefabs/NetworkManager.prefab`.
 - `Fonts/RobotoCondensed-Regular SDF.asset` is the dynamic TextMeshPro asset for Roboto Condensed Regular. It references `Fonts/static/RobotoCondensed-Regular.ttf`, which must remain in the project so the font can add glyphs at runtime.
 - `Robots/IA/<vehicle-code>` and `Robots/NV/<vehicle-code>` keep each registered robot prefab beside its model, material, and texture files. Common parts are in the adjacent faction `Shared` folder.
-- `UI/Backgrounds` contains UI textures that are referenced by the game scenes or Game prefabs. Its `Bar` and `icons` subfolders preserve the original grouping.
+- `UI/Backgrounds` contains 18 active UI backgrounds and decorations, including the `Bar` subfolder, `InfoPanel`, and `line`.
+- `UI/ButtonBackgrounds` contains the seven active backgrounds verified on serialized Button objects or their children: `close_button_bg`, `login_button_blank`, `medium_tank_node_bg`, `nav_button_a_bg_v2`, `nav_button_gear_bg`, `popup_login_button_background`, and `tab_garage_active`.
+- `UI/ButtonIcons` contains only the six active icons verified on serialized Button objects or their children: `close_x`, `emblem_a`, `mail`, `settings_gear`, `starS`, and `tree_sidebar_gear`.
+- `UI/Icons` contains 13 active non-button UI icons, including the `png` tier-icon subfolder.
 - `Unused` contains project-owned assets not found in the recursive dependencies of `Client.unity`, `Server.unity`, or `Map.unity`. It is an archive, not a runtime load location.
 - `Unused/Backgrounds` contains archived UI textures with no serialized or explicit path reference in the project; its subfolder layout mirrors `UI/Backgrounds` where applicable.
 

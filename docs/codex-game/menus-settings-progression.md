@@ -40,7 +40,8 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/Tree/VehicleResearchProgressResolver.cs`
   - Vehicle research/progression data support.
 - `Assets/Game/Scripts/UI/Settings/*.cs`
-  - Settings tabs and settings model/view/controller.
+  - Settings tabs and settings model/view/controller. Their controls are authored and wired as serialized primitive UI objects in `Assets/Game/Scenes/Client.unity`; the views only bind values and events at runtime.
+  - `GeneralTabView` owns the Server crosshair and Camera shake toggles, `ControlsTabView` owns gameplay and sniper mouse-sensitivity sliders, and `VideoTabView` owns FPS-limit and vertical-sync controls.
 - `Assets/Game/Scripts/Client/ClientSettings.cs`
   - Local client runtime settings for frame pacing, projectile visuals, HUD, map, camera, reticle, auto-aim, and hover outline behavior.
 - `Assets/Editor/ClientSettingsEditor.cs`
@@ -82,6 +83,8 @@ Important behavior:
 - `Assets/Game/Scenes/Client.unity` keeps the `FindGame` root inactive until its routed menu opens. Its `AnimationPanel/panel/arrow` uses `ClockwiseUiRotator` with `rotationSpeed: 120`.
 
 Rules when editing menus:
+- Author every new static menu, popup, and settings control manually from Unity UI objects in `Assets/Game/Scenes/Client.unity` (or in its owning UI prefab), then assign its dependencies through serialized inspector references.
+- Runtime UI views may bind data, visibility, and events only. Do not create static controls with `new GameObject` or `AddComponent`, and do not locate required UI controls through `Find` or `GetComponent` calls.
 - Keep menu state changes consistent with gameplay input blocking.
 - Do not let menu-only code affect server-authoritative gameplay.
 - If profile fields or vehicle selection changes, update `api-resources.md` too.
