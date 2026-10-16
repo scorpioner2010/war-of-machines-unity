@@ -14,6 +14,8 @@ namespace Game.Scripts.UI.MainMenu
     {
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button developmentTreeButton;
+        [SerializeField] private Button freeXpButton;
+        [SerializeField] private FreeXpConversionPopup freeXpConversionPopup;
 
         [SerializeField] private TMP_Text user;
         [SerializeField] private TMP_Text bolts;
@@ -66,6 +68,11 @@ namespace Game.Scripts.UI.MainMenu
                     tree.Init();
                 }
             });
+
+            if (freeXpButton != null && freeXpConversionPopup != null)
+            {
+                freeXpButton.onClick.AddListener(freeXpConversionPopup.Show);
+            }
 
             MenuManager.OnEnable += type =>
             {
@@ -206,5 +213,6 @@ namespace Game.Scripts.UI.MainMenu
                 MenuManager.OpenMenu(MenuType.GameplayHUD);
             }
         }
+
     }
 }

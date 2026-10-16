@@ -33,6 +33,24 @@ namespace Game.Scripts.API.ServerManagers
             _in.GetProfileServerRpc();
         }
 
+        public static void ConvertFreeXp(int vehicleId, int amount)
+        {
+            if (_in == null)
+            {
+                Popup.ShowText("Profile service is not available.", Color.red);
+                return;
+            }
+
+            if (vehicleId <= 0 || amount <= 0)
+            {
+                Popup.ShowText("Choose a vehicle and XP amount.", Color.red);
+                return;
+            }
+
+            StandardLoadingOverlay.Show();
+            _in.ConvertFreeXpServerRpc(vehicleId, amount);
+        }
+
         [ServerRpc(RequireOwnership = false)]
         private void GetProfileServerRpc(NetworkConnection sender = null)
         {
@@ -63,10 +81,55 @@ namespace Game.Scripts.API.ServerManagers
             TargetRpcUpdateProfile(sender, data.isSuccess, data.message, data.profile);
         }
 
+        [ServerRpc(RequireOwnership = false)]
+        private void ConvertFreeXpServerRpc(int vehicleId, int amount, NetworkConnection sender = null)
+        {
+            if (sender == null)
+            {
+                return;
+            }
+
+            ConvertFreeXpAsync(sender, vehicleId, amount).Forget();
+        }
+
+        private async UniTask ConvertFreeXpAsync(NetworkConnection sender, int vehicleId, int amount)
+        {
+            if (vehicleId <= 0 || amount <= 0)
+            {
+                TargetRpcConvertFreeXp(sender, false, "Choose a vehicle and XP amount.");
+                return;
+            }
+
+            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (string.IsNullOrEmpty(token))
+            {
+                TargetRpcConvertFreeXp(sender, false, "Not logged in.");
+                return;
+            }
+
+            (bool ok, string message) result = await UserVehiclesManager.ConvertFreeXp(vehicleId, amount, token);
+            TargetRpcConvertFreeXp(sender, result.ok, result.message);
+        }
+
         [TargetRpc]
         private void TargetRpcUpdateProfile(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
         {
             TargetRpcUpdateProfileAsync(target, success, errorMessage, profile).Forget();
+        }
+
+        [TargetRpc]
+        private void TargetRpcConvertFreeXp(NetworkConnection target, bool success, string errorMessage)
+        {
+            if (success)
+            {
+                FreeXpConversionPopup.NotifyConversionSucceeded();
+                UpdateProfile();
+                return;
+            }
+
+            FreeXpConversionPopup.NotifyConversionFailed();
+            Popup.ShowText(errorMessage, Color.red);
+            StandardLoadingOverlay.Hide();
         }
 
         private async UniTask TargetRpcUpdateProfileAsync(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)

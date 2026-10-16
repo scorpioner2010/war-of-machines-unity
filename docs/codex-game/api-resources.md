@@ -13,6 +13,7 @@ Current owner scripts:
   - Endpoint managers for leaderboard, maps, matches, players, register, user vehicles, vehicles.
 - `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs`
   - Profile loading/update flow used by menu and player data.
+  - Proxies Free XP conversion through the owning player's server session, then refreshes the profile after a successful backend response.
 - `Assets/Game/Scripts/API/ServerManagers/RegisterServer.cs`
   - Registration/auth support.
 - `Assets/Game/Scripts/API/Models/*.cs`
@@ -32,6 +33,11 @@ Vehicle resource flow:
 4. Match-spawned vehicle prefabs must also be registered in `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`, the FishNet collection used by `NetworkManager.prefab`.
 5. Spawned vehicle receives runtime stats from `VehicleStatsProvider.GetAsync`.
 6. UI can ask `GameResourceManager.GetIcon(code)`.
+
+Free XP conversion flow:
+1. `FreeXpConversionPopup` sends the chosen owned `vehicleId` and whole XP amount to `ProfileServer.ConvertFreeXp`.
+2. `ProfileServer` gets the caller's session token and calls `UserVehiclesManager.ConvertFreeXp`, which POSTs to `/user-vehicles/{vehicleId}/convert-freexp`.
+3. The backend remains authoritative for ownership and available Free XP; on success, the client profile is reloaded so both Free XP and vehicle XP displays update.
 
 Vehicle movement API contract:
 - `VehicleLite.traverseAcceleration` receives JSON `traverseAcceleration` and is carried by `VehicleRuntimeStats` to `VehicleMovementController`.

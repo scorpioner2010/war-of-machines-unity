@@ -580,7 +580,7 @@ Transform:
   m_GameObject: {fileID: 677300579693285468}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.001, y: -0.02, z: 0.757}
+  m_LocalPosition: {x: 0.001, y: -0.001, z: 0.418}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -611,8 +611,8 @@ Transform:
   m_GameObject: {fileID: 856239096236765357}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0.01, z: 0}
+  m_LocalScale: {x: 0.64, y: 0.66, z: 0.62}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 810325288695739934}
@@ -1107,23 +1107,6 @@ Transform:
   - {fileID: 4812052139967044082}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &839321119422476913
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1215269598981264953}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f5a086fc40e47068a9e5fa641b96d2e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  gun: {fileID: 8401235163935933454}
-  recoilDistance: 0.18
-  recoilSpeed: 3
-  returnDelay: 0.04
-  returnSpeed: 0.75
 --- !u!114 &8929552993543633262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1536,7 +1519,7 @@ MonoBehaviour:
   - {fileID: 6655559585601033798}
   - {fileID: 2234496612675365817}
   additionalVehicleColliders: []
-  highlightArmorInPrefab: 1
+  highlightArmorInPrefab: 0
   serverEditorArmorRenderers:
   - {fileID: 652418190835455130}
   - {fileID: 3548548254584163796}
@@ -1628,6 +1611,23 @@ MonoBehaviour:
   turningBobbingFrequency: 3
   footSpreadReference: 1.1
   bodySmoothingSpeed: 8
+--- !u!114 &839321119422476913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5a086fc40e47068a9e5fa641b96d2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gun: {fileID: 8401235163935933454}
+  recoilDistance: 0.18
+  recoilSpeed: 3
+  returnDelay: 0.04
+  returnSpeed: 0.75
 --- !u!1 &1476538492309367418
 GameObject:
   m_ObjectHideFlags: 0
@@ -2115,12 +2115,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d9f506fe1d04da7a34504d9ebd2a4f5, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   ignoredVehicle: {fileID: 5798367828239414435}
   collisionMask:
     serializedVersion: 2
-    m_Bits: -5
+    m_Bits: 4294967291
   collisionRadius: 0.3
   surfacePadding: 0.08
   recoverySpeed: 24
@@ -4649,8 +4649,8 @@ Transform:
   m_GameObject: {fileID: 9018021264893794065}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00000003774895, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.061, y: -1.3321186, z: -0.40064397}
-  m_LocalScale: {x: 157.28, y: 157.28, z: 157.28001}
+  m_LocalPosition: {x: -0.059, y: -0.779, z: -0.386}
+  m_LocalScale: {x: 92.77632, y: 92.77632, z: 92.77634}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4660422644939140106}

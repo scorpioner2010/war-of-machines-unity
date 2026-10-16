@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using FishNet.Connection;
 using FishNet.Object;
-using Game.Scripts;
 using Game.Scripts.API;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
@@ -12,12 +12,11 @@ using Game.Scripts.Core.Resources;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
+using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
-using Game.Scripts.Player.Data;
 using Game.Scripts.UI.Screens;
 using NaughtyAttributes;
-using FishNet.Connection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,66 +25,47 @@ namespace Game.Scripts.UI.Tree
 {
     public class DevelopmentTree : NetworkBehaviour
     {
-        public Transform animationPanel;
-        public Transform fractionTreePrefab;
-        public Transform starterContainerPrefab;
-        public FactionContainer factionContainerPrefab;
-        public TreeGrid treeGridPrefab;
-        public TreeItem treeItemPrefab;
-        
-        public Transform buttonsContainer;
-        public Button factionButtonPrefab;
-        public Button buttonBack;
-    
-        public ArrowDrawer arrowDrawer;
-        public RectTransform arrowsLayerPrefab;
+        [Header("Runtime tree")]
+        [SerializeField] private Transform treeHost;
+        [SerializeField] private FactionTreeView factionTreePrefab;
+        [SerializeField] private RectTransform levelRowPrefab;
+        [SerializeField] private TreeItem treeItemPrefab;
+        [SerializeField] private ArrowDrawer arrowDrawer;
+
+        [Header("Screen controls")]
+        [SerializeField] private Transform buttonsContainer;
+        [SerializeField] private FactionButtonView factionButtonPrefab;
+        [SerializeField] private Button buttonBack;
+        [SerializeField] private GameObject treeMenuRoot;
+        [SerializeField] private DevelopmentTreeDetailsPanel detailsPanel;
 
         private VehicleGraph[] _graphs;
         private VehicleLite[] _vehicleLites;
         private string[] _factionCodes;
-
-        private readonly List<Transform> _fractionRoots = new List<Transform>();
-        private readonly List<Button> _factionButtons = new List<Button>();
-        private readonly Dictionary<string, string> _factionNameByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        public bool isInitialized;
-
-        private class FactionView
-        {
-            public RectTransform Root;
-            public RectTransform ArrowsLayer;
-            public VehicleEdge[] Edges;
-            public Dictionary<int, RectTransform> NodeMap;
-        }
+        private bool _isInitializing;
 
         private readonly List<FactionView> _views = new List<FactionView>();
+        private readonly List<Button> _factionButtons = new List<Button>();
+        private readonly Dictionary<string, string> _factionNameByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        public VehicleLite GetVehicleLite(int id)
+        public bool isInitialized;
+
+        private sealed class FactionView
         {
-            if (_vehicleLites == null)
-            {
-                return null;
-            }
-
-            foreach (VehicleLite vehicleLite in _vehicleLites)
-            {
-                if (vehicleLite != null && vehicleLite.id == id)
-                {
-                    return vehicleLite;
-                }
-            }
-            return null;
+            public string Code;
+            public FactionTreeView Root;
+            public VehicleEdge[] Edges;
+            public Dictionary<int, RectTransform> NodeMap;
         }
 
         private void Awake()
         {
             Singleton<DevelopmentTree>.Register(this);
+
             if (buttonBack != null)
             {
-                buttonBack.onClick.AddListener(() =>
-                {
-                    MenuManager.OpenMenu(MenuType.MainMenu);
-                    RobotView.UpdateUI();
-                });
+                buttonBack.onClick.AddListener(ReturnToMainMenu);
+                buttonBack.transform.SetAsLastSibling();
             }
         }
 
@@ -97,14 +77,29 @@ namespace Game.Scripts.UI.Tree
 
         private async UniTask InitAsync()
         {
-            if (isInitialized == false)
+            if (_isInitializing)
             {
-                isInitialized = true;
-                bool result = await LoadDataFromServer();
-                isInitialized = result;
+                return;
             }
-        
-            await UpdateUI();
+
+            _isInitializing = true;
+
+            try
+            {
+                if (!isInitialized)
+                {
+                    isInitialized = await LoadDataFromServer();
+                }
+
+                if (isInitialized)
+                {
+                    await UpdateUI();
+                }
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
         }
 
         private async UniTask<bool> LoadDataFromServer()
@@ -112,308 +107,174 @@ namespace Game.Scripts.UI.Tree
             _factionNameByCode.Clear();
 
             (bool ok, _, VehicleLite[] items) = await VehiclesManager.GetAll();
-
-            _vehicleLites = items;
-        
             if (!ok || items == null || items.Length == 0)
             {
                 Popup.ShowText("No vehicle data received from server!", Color.red);
                 _graphs = Array.Empty<VehicleGraph>();
+                _vehicleLites = Array.Empty<VehicleLite>();
                 _factionCodes = Array.Empty<string>();
-                return ok;
+                return false;
             }
 
-            foreach (VehicleLite v in items)
-            {
-                if (!string.IsNullOrWhiteSpace(v.factionCode) && !_factionNameByCode.ContainsKey(v.factionCode))
-                {
-                    _factionNameByCode[v.factionCode] = string.IsNullOrWhiteSpace(v.factionName) ? v.factionCode : v.factionName;
-                }
-            }
-
-            _factionCodes = BuildFactionCodes(items);
-
-            List<VehicleGraph> graphs = new List<VehicleGraph>();
-        
-            foreach (string faction in _factionCodes)
-            {
-                (bool okGraph, _, VehicleGraph graph) = await VehiclesManager.GetGraph(faction);
-            
-                if (okGraph && graph != null && graph.nodes != null && graph.nodes.Length > 0)
-                {
-                    graphs.Add(graph);
-                }
-                else
-                {
-                    Popup.ShowText($"Failed to get graph for faction: {faction}", Color.red);
-                    graphs.Add(new VehicleGraph { nodes = Array.Empty<VehicleNode>(), edges = Array.Empty<VehicleEdge>() });
-                }
-            }
-
-            _graphs = graphs.ToArray();
-
-            return true;
-        }
-
-        private static string[] BuildFactionCodes(VehicleLite[] items)
-        {
-            List<string> factionCodes = new List<string>();
+            _vehicleLites = items;
 
             for (int i = 0; i < items.Length; i++)
             {
-                VehicleLite item = items[i];
-                if (item == null || string.IsNullOrWhiteSpace(item.factionCode))
+                VehicleLite vehicle = items[i];
+                if (vehicle == null || string.IsNullOrWhiteSpace(vehicle.factionCode))
                 {
                     continue;
                 }
 
-                if (!ContainsFactionCode(factionCodes, item.factionCode))
+                if (!_factionNameByCode.ContainsKey(vehicle.factionCode))
                 {
-                    factionCodes.Add(item.factionCode);
+                    _factionNameByCode[vehicle.factionCode] = string.IsNullOrWhiteSpace(vehicle.factionName)
+                        ? vehicle.factionCode
+                        : vehicle.factionName;
                 }
             }
 
-            return factionCodes.ToArray();
-        }
+            _factionCodes = BuildFactionCodes(items);
+            List<VehicleGraph> graphs = new List<VehicleGraph>(_factionCodes.Length);
 
-        private static bool ContainsFactionCode(List<string> factionCodes, string factionCode)
-        {
-            for (int i = 0; i < factionCodes.Count; i++)
+            for (int i = 0; i < _factionCodes.Length; i++)
             {
-                if (string.Equals(factionCodes[i], factionCode, StringComparison.OrdinalIgnoreCase))
+                string factionCode = _factionCodes[i];
+                (bool graphOk, _, VehicleGraph graph) = await VehiclesManager.GetGraph(factionCode);
+                if (graphOk && graph != null && graph.nodes != null && graph.nodes.Length > 0)
                 {
-                    return true;
+                    graphs.Add(graph);
+                    continue;
                 }
+
+                Popup.ShowText($"Failed to get graph for faction: {factionCode}", Color.red);
+                graphs.Add(new VehicleGraph
+                {
+                    nodes = Array.Empty<VehicleNode>(),
+                    edges = Array.Empty<VehicleEdge>()
+                });
             }
 
-            return false;
+            _graphs = graphs.ToArray();
+            return true;
         }
 
         public async UniTask UpdateUI()
         {
-            WipeUI();
-            _views.Clear();
+            if (!HasRuntimeTreeConfiguration())
+            {
+                Popup.ShowText("Development tree UI is not configured.", Color.red);
+                return;
+            }
 
-            if (_factionCodes == null || _factionCodes.Length == 0 || _graphs == null || _graphs.Length == 0)
+            ClearRuntimeTree();
+            detailsPanel.Clear();
+
+            if (_factionCodes == null || _graphs == null || _factionCodes.Length == 0 || _graphs.Length == 0)
             {
                 Popup.ShowText("No data to build UI!", Color.red);
                 return;
             }
 
-            for (int i = 0; i < _factionCodes.Length; i++)
-            {
-                int idx = i;
-                string code = _factionCodes[i];
-                string title = _factionNameByCode.TryGetValue(code, out string n) && !string.IsNullOrWhiteSpace(n)
-                    ? n
-                    : code;
+            BuildFactionButtons();
 
-                Button btn = Instantiate(factionButtonPrefab, buttonsContainer);
-                _factionButtons.Add(btn);
-                btn.GetComponentInChildren<TMP_Text>().text = title;
-                btn.onClick.AddListener(() =>
-                {
-                    SetActiveContainer(idx);
-                    _ = RedrawActive(idx);
-                });
+            int factionCount = Mathf.Min(_factionCodes.Length, _graphs.Length);
+            for (int i = 0; i < factionCount; i++)
+            {
+                BuildFactionTree(_factionCodes[i], _graphs[i]);
             }
 
-            for (int i = 0; i < _graphs.Length; i++)
-            {
-                await BuildFactionTreeUI(_factionCodes[i], _graphs[i]);
-            }
+            await RebuildLayoutsAndDrawArrows();
 
-            if (_fractionRoots.Count > 0)
+            if (_views.Count > 0)
             {
                 SetActiveContainer(0);
             }
-
-            await GameplayAssistant.RebuildAllLayouts(_fractionRoots);
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
-            DrawArrowsAll();
         }
 
-        public void SetActiveContainer(int number)
+        public void SetActiveContainer(int index)
         {
-            for (int i = 0; i < _fractionRoots.Count; i++)
+            if (index < 0 || index >= _views.Count)
             {
-                _fractionRoots[i].gameObject.SetActive(i == number);
+                return;
+            }
+
+            for (int i = 0; i < _views.Count; i++)
+            {
+                _views[i].Root.gameObject.SetActive(i == index);
+            }
+
+            detailsPanel.Clear();
+            RedrawActive(index).Forget();
+        }
+
+        private void BuildFactionButtons()
+        {
+            ClearButtons();
+
+            for (int i = 0; i < _factionCodes.Length; i++)
+            {
+                int factionIndex = i;
+                string code = _factionCodes[i];
+                string title = _factionNameByCode.TryGetValue(code, out string factionName)
+                    && !string.IsNullOrWhiteSpace(factionName)
+                    ? factionName
+                    : code;
+
+                FactionButtonView factionButton = Instantiate(factionButtonPrefab, buttonsContainer);
+                Button button = factionButton.Button;
+                _factionButtons.Add(button);
+                factionButton.Configure(code, title);
+
+                button.onClick.AddListener(() => SetActiveContainer(factionIndex));
             }
         }
 
-        private async UniTask BuildFactionTreeUI(string factionCode, VehicleGraph graph)
+        private void BuildFactionTree(string factionCode, VehicleGraph graph)
         {
             if (graph == null || graph.nodes == null || graph.nodes.Length == 0)
             {
                 return;
             }
 
-            Transform rootT = Instantiate(fractionTreePrefab, animationPanel);
-            rootT.name = $"FactionRoot_{factionCode}";
-            _fractionRoots.Add(rootT);
+            FactionTreeView root = Instantiate(factionTreePrefab, treeHost);
+            root.name = $"FactionTree_{factionCode}";
 
-            RectTransform arrowsLayer = null;
-            if (arrowsLayerPrefab != null)
-            {
-                arrowsLayer = Instantiate(arrowsLayerPrefab, rootT).GetComponent<RectTransform>();
-                arrowsLayer.name = "ArrowsLayer";
-                arrowsLayer.SetAsFirstSibling();
-            }
-
-            Transform starterContainer = Instantiate(starterContainerPrefab, rootT);
-            starterContainer.name = "StarterContainer";
+            VehicleResearchProgressResolver progressResolver = new VehicleResearchProgressResolver(
+                GetCurrentProfile(),
+                graph,
+                _vehicleLites);
 
             Dictionary<int, RectTransform> nodeMap = new Dictionary<int, RectTransform>();
+            Dictionary<int, List<VehicleNode>> nodesByLevel = GroupNodesByLevel(graph.nodes);
+            List<int> levels = GetSortedLevels(nodesByLevel);
 
-            VehicleNode starter = FindStarterNode(graph.nodes);
+            for (int i = 0; i < levels.Count; i++)
+            {
+                int level = levels[i];
+                RectTransform row = Instantiate(levelRowPrefab, root.RowsContainer);
+                row.name = $"Level_{level}";
+                row.SetAsFirstSibling();
 
-            VehicleResearchProgressResolver progressResolver = CreateProgressResolver(graph);
+                List<VehicleNode> nodes = nodesByLevel[level];
+                nodes.Sort(CompareNodesByCode);
 
-            CreateTreeItemFromNode(starterContainer, starter, nodeMap, progressResolver);
-
-            FactionContainer columns = Instantiate(factionContainerPrefab, rootT);
-            columns.name = "ColumnsContainer";
-
-            BuildColumn(columns.transform, graph, "Scout", "Scout_Column", nodeMap, progressResolver);
-            BuildColumn(columns.transform, graph, "Guardian", "Guardian_Column", nodeMap, progressResolver);
-            BuildColumn(columns.transform, graph, "Colossus", "Colossus_Column", nodeMap, progressResolver);
+                for (int nodeIndex = 0; nodeIndex < nodes.Count; nodeIndex++)
+                {
+                    CreateTreeItem(row, nodes[nodeIndex], nodeMap, progressResolver);
+                }
+            }
 
             _views.Add(new FactionView
             {
-                Root = (RectTransform)rootT,
-                ArrowsLayer = arrowsLayer,
+                Code = factionCode,
+                Root = root,
                 Edges = graph.edges ?? Array.Empty<VehicleEdge>(),
                 NodeMap = nodeMap
             });
-
-            await UniTask.Yield();
         }
 
-        private void BuildColumn(
-            Transform parent,
-            VehicleGraph graph,
-            string className,
-            string columnName,
-            Dictionary<int, RectTransform> nodeMap,
-            VehicleResearchProgressResolver progressResolver)
-        {
-            TreeGrid grid = Instantiate(treeGridPrefab, parent);
-            grid.name = columnName;
-            grid.Init(ParseVehicleClass(className));
-
-            List<VehicleNode> nodes = GetColumnNodes(graph.nodes, className);
-
-            foreach (VehicleNode n in nodes)
-            {
-                CreateTreeItemFromNode(grid.transform, n, nodeMap, progressResolver);
-            }
-        }
-
-        private static VehicleNode FindStarterNode(VehicleNode[] nodes)
-        {
-            VehicleNode starter = null;
-            VehicleNode fallback = null;
-
-            for (int i = 0; i < nodes.Length; i++)
-            {
-                VehicleNode node = nodes[i];
-                if (node == null)
-                {
-                    continue;
-                }
-
-                if (node.level == 1 && IsBetterByCode(node, starter))
-                {
-                    starter = node;
-                }
-
-                if (IsBetterByLevelThenCode(node, fallback))
-                {
-                    fallback = node;
-                }
-            }
-
-            return starter ?? fallback;
-        }
-
-        private static List<VehicleNode> GetColumnNodes(VehicleNode[] nodes, string className)
-        {
-            List<VehicleNode> result = new List<VehicleNode>();
-
-            for (int i = 0; i < nodes.Length; i++)
-            {
-                VehicleNode node = nodes[i];
-                if (node != null
-                    && node.level >= 2
-                    && string.Equals(node.@class, className, StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Add(node);
-                }
-            }
-
-            result.Sort(CompareByLevelThenCode);
-            return result;
-        }
-
-        private static bool IsBetterByCode(VehicleNode candidate, VehicleNode current)
-        {
-            if (current == null)
-            {
-                return true;
-            }
-
-            return string.Compare(candidate.code, current.code, StringComparison.Ordinal) < 0;
-        }
-
-        private static bool IsBetterByLevelThenCode(VehicleNode candidate, VehicleNode current)
-        {
-            if (current == null)
-            {
-                return true;
-            }
-
-            int levelCompare = candidate.level.CompareTo(current.level);
-            if (levelCompare != 0)
-            {
-                return levelCompare < 0;
-            }
-
-            return string.Compare(candidate.code, current.code, StringComparison.Ordinal) < 0;
-        }
-
-        private static int CompareByLevelThenCode(VehicleNode left, VehicleNode right)
-        {
-            if (left == null && right == null)
-            {
-                return 0;
-            }
-
-            if (left == null)
-            {
-                return 1;
-            }
-
-            if (right == null)
-            {
-                return -1;
-            }
-
-            int levelCompare = left.level.CompareTo(right.level);
-            if (levelCompare != 0)
-            {
-                return levelCompare;
-            }
-
-            return string.Compare(left.code, right.code, StringComparison.Ordinal);
-        }
-
-        private VehicleResearchProgressResolver CreateProgressResolver(VehicleGraph graph)
-        {
-            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-            return new VehicleResearchProgressResolver(clientInfo != null ? clientInfo.Profile : null, graph, _vehicleLites);
-        }
-
-        private void CreateTreeItemFromNode(
+        private void CreateTreeItem(
             Transform parent,
             VehicleNode node,
             Dictionary<int, RectTransform> nodeMap,
@@ -425,30 +286,38 @@ namespace Game.Scripts.UI.Tree
             }
 
             TreeItem item = Instantiate(treeItemPrefab, parent);
-            item.vehicleName.text = node.name;
-            item.vehicleType = ParseVehicleClass(node.@class);
-            item.level.text = node.level.ToString();
+            item.name = $"Vehicle_{node.code}";
 
-            VehicleResearchProgress progress = progressResolver != null
-                ? progressResolver.Resolve(node)
-                : new VehicleResearchProgress { Node = node, Status = VehicleResearchStatus.Hidden };
-
-            ApplyTreeItemState(item, progress);
-        
-            Sprite sprite = GameResourceManager.GetIcon(node.code);
-            item.image.sprite = sprite;
-        
-            item.button.onClick.AddListener(() =>
+            if (item.vehicleName != null)
             {
-                OnVehicleNodeClicked(progress);
-            });
-        
-        
-            RectTransform rt = item.rectTransform;
-            nodeMap[node.id] = rt;
+                item.vehicleName.text = node.name;
+            }
+
+            if (item.level != null)
+            {
+                item.level.text = node.level.ToString();
+            }
+
+            if (item.image != null)
+            {
+                item.image.sprite = GameResourceManager.GetIcon(node.code);
+            }
+
+            VehicleResearchProgress progress = progressResolver.Resolve(node);
+            ApplyTreeItemState(item, progress);
+
+            if (item.button != null)
+            {
+                item.button.onClick.AddListener(() => SelectVehicle(progress));
+            }
+
+            if (item.rectTransform != null)
+            {
+                nodeMap[node.id] = item.rectTransform;
+            }
         }
 
-        private void ApplyTreeItemState(TreeItem item, VehicleResearchProgress progress)
+        private static void ApplyTreeItemState(TreeItem item, VehicleResearchProgress progress)
         {
             if (item == null || progress == null)
             {
@@ -465,104 +334,210 @@ namespace Game.Scripts.UI.Tree
 
             if (item.isHave != null)
             {
-                item.isHave.gameObject.SetActive(progress.IsOwned);
+                item.isHave.SetActive(progress.IsOwned);
             }
 
-            if (item.price == null)
-            {
-                return;
-            }
-
-            if (progress.Status == VehicleResearchStatus.Owned)
-            {
-                item.price.text = "Owned";
-                return;
-            }
-
-            if (progress.Status == VehicleResearchStatus.LockedByResearch)
-            {
-                item.price.text = "XP " + progress.CurrentXp + "/" + progress.RequiredXp;
-                return;
-            }
-
-            if (progress.Status == VehicleResearchStatus.AvailableToResearch)
-            {
-                item.price.text = "Research " + progress.RequiredXp + " XP";
-                return;
-            }
-
-            if (progress.Status == VehicleResearchStatus.Hidden)
+            if (item.price != null)
             {
                 item.price.text = string.Empty;
-                return;
             }
-
-            item.price.text = progress.PurchaseCost.ToString();
         }
 
-        private void OnVehicleNodeClicked(VehicleResearchProgress progress)
+        private void SelectVehicle(VehicleResearchProgress progress)
         {
             if (progress == null || progress.Node == null)
             {
                 return;
             }
 
-            if (progress.Status == VehicleResearchStatus.Owned)
-            {
-                return;
-            }
-
-            if (progress.Status == VehicleResearchStatus.Hidden)
-            {
-                Popup.ShowText("This vehicle is not available.", Color.red);
-                return;
-            }
-
-            if (progress.Status == VehicleResearchStatus.LockedByResearch)
-            {
-                ShowResearchLockedPopup(progress);
-                return;
-            }
-
-            if (progress.Status == VehicleResearchStatus.AvailableToResearch)
-            {
-                TryResearch(progress);
-                return;
-            }
-
-            TryBuy(progress);
+            detailsPanel.Show(progress, TryBuy, TryResearch);
         }
 
-        private void ShowResearchLockedPopup(VehicleResearchProgress progress)
+        private async UniTask RebuildLayoutsAndDrawArrows()
         {
-            Popup.ShowText(BuildResearchLockedMessage(progress), Color.red);
+            Canvas.ForceUpdateCanvases();
+
+            for (int i = 0; i < _views.Count; i++)
+            {
+                FactionView view = _views[i];
+                LayoutRebuilder.ForceRebuildLayoutImmediate(view.Root.RowsContainer);
+                arrowDrawer.Draw(view.Edges, view.NodeMap, view.Root.ArrowsLayer);
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
         }
 
-        private static string BuildResearchLockedMessage(VehicleResearchProgress progress)
+        private async UniTask RedrawActive(int index)
         {
-            if (progress == null)
+            if (index < 0 || index >= _views.Count)
             {
-                return "Research required.";
+                return;
             }
 
-            string predecessorName = string.IsNullOrEmpty(progress.PredecessorName)
-                ? "previous vehicle"
-                : progress.PredecessorName;
+            FactionView view = _views[index];
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(view.Root.RowsContainer);
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+            arrowDrawer.Draw(view.Edges, view.NodeMap, view.Root.ArrowsLayer);
+        }
 
-            string message = "Research required\n"
-                + predecessorName + ": " + progress.CurrentXp + "/" + progress.RequiredXp + " XP";
+        private static Dictionary<int, List<VehicleNode>> GroupNodesByLevel(VehicleNode[] nodes)
+        {
+            Dictionary<int, List<VehicleNode>> nodesByLevel = new Dictionary<int, List<VehicleNode>>();
 
-            if (progress.MissingXp > 0)
+            for (int i = 0; i < nodes.Length; i++)
             {
-                message += "\nMissing: " + progress.MissingXp + " XP";
+                VehicleNode node = nodes[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                int level = Mathf.Max(1, node.level);
+                if (!nodesByLevel.TryGetValue(level, out List<VehicleNode> levelNodes))
+                {
+                    levelNodes = new List<VehicleNode>();
+                    nodesByLevel.Add(level, levelNodes);
+                }
+
+                levelNodes.Add(node);
             }
 
-            return message;
+            return nodesByLevel;
+        }
+
+        private static List<int> GetSortedLevels(Dictionary<int, List<VehicleNode>> nodesByLevel)
+        {
+            List<int> levels = new List<int>(nodesByLevel.Keys);
+            levels.Sort();
+            return levels;
+        }
+
+        private static int CompareNodesByCode(VehicleNode left, VehicleNode right)
+        {
+            if (left == null && right == null)
+            {
+                return 0;
+            }
+
+            if (left == null)
+            {
+                return 1;
+            }
+
+            if (right == null)
+            {
+                return -1;
+            }
+
+            int codeCompare = string.Compare(left.code, right.code, StringComparison.Ordinal);
+            if (codeCompare != 0)
+            {
+                return codeCompare;
+            }
+
+            return left.id.CompareTo(right.id);
+        }
+
+        private static string[] BuildFactionCodes(VehicleLite[] items)
+        {
+            List<string> factionCodes = new List<string>();
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                VehicleLite item = items[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.factionCode))
+                {
+                    continue;
+                }
+
+                bool exists = false;
+                for (int factionIndex = 0; factionIndex < factionCodes.Count; factionIndex++)
+                {
+                    if (string.Equals(factionCodes[factionIndex], item.factionCode, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists)
+                {
+                    factionCodes.Add(item.factionCode);
+                }
+            }
+
+            return factionCodes.ToArray();
+        }
+
+        private PlayerProfile GetCurrentProfile()
+        {
+            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+            return clientInfo != null ? clientInfo.Profile : null;
+        }
+
+        private bool HasRuntimeTreeConfiguration()
+        {
+            return treeHost != null
+                && factionTreePrefab != null
+                && levelRowPrefab != null
+                && treeItemPrefab != null
+                && arrowDrawer != null
+                && buttonsContainer != null
+                && factionButtonPrefab != null
+                && detailsPanel != null;
+        }
+
+        private void ClearRuntimeTree()
+        {
+            ClearChildren(treeHost);
+            _views.Clear();
+            ClearButtons();
+        }
+
+        private void ClearButtons()
+        {
+            ClearChildren(buttonsContainer);
+            _factionButtons.Clear();
+        }
+
+        private static void ClearChildren(Transform parent)
+        {
+            if (parent == null)
+            {
+                return;
+            }
+
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                child.gameObject.SetActive(false);
+
+                if (Application.isPlaying)
+                {
+                    Destroy(child.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+            }
+        }
+
+        public void ReturnToMainMenu()
+        {
+            if (treeMenuRoot != null)
+            {
+                treeMenuRoot.SetActive(false);
+            }
+
+            MenuManager.OpenMenu(MenuType.MainMenu);
+            RobotView.UpdateUI();
         }
 
         private void TryResearch(VehicleResearchProgress progress)
         {
-            if (progress == null || progress.Node == null)
+            if (progress == null || progress.Node == null || progress.Status != VehicleResearchStatus.AvailableToResearch)
             {
                 return;
             }
@@ -577,18 +552,24 @@ namespace Game.Scripts.UI.Tree
                 ? "previous vehicle"
                 : progress.PredecessorName;
 
-            string message = "Research vehicle?\n"
-                + predecessorName + ": -" + progress.RequiredXp + " XP";
-
-            Popup.ShowText(message, Color.green, () =>
-            {
-                Helpers.StandardLoadingOverlay.Show();
-                ResearchVehicleServerRpc(progress.Node.id, progress.PredecessorVehicleId);
-            }, PopupType.Confirm);
+            Popup.ShowText(
+                "Research vehicle?\n" + predecessorName + ": -" + progress.RequiredXp + " XP",
+                Color.green,
+                () =>
+                {
+                    Helpers.StandardLoadingOverlay.Show();
+                    ResearchVehicleServerRpc(progress.Node.id, progress.PredecessorVehicleId);
+                },
+                PopupType.Confirm);
         }
 
         private void TryBuy(VehicleResearchProgress progress)
         {
+            if (progress == null || progress.Node == null || progress.Status != VehicleResearchStatus.AvailableToBuy)
+            {
+                return;
+            }
+
             IPlayerClientInfo info = ServiceLocator.Get<IPlayerClientInfo>();
             if (info == null || info.Profile == null)
             {
@@ -596,37 +577,39 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
-            VehicleLite lite = progress.Vehicle != null ? progress.Vehicle : GetVehicleLite(progress.Node.id);
-            if (lite == null)
+            VehicleLite vehicle = progress.Vehicle ?? FindVehicleLite(progress.Node.id);
+            if (vehicle == null)
             {
                 Popup.ShowText("Vehicle data is not loaded.", Color.red);
                 return;
             }
 
-            if (info.Profile.bolts < lite.purchaseCost)
+            if (info.Profile.bolts < vehicle.purchaseCost)
             {
-                Popup.ShowText("Not enough bolts.\nprice: " + lite.purchaseCost, Color.red);
+                Popup.ShowText("Not enough bolts.\nprice: " + vehicle.purchaseCost, Color.red);
                 return;
             }
 
-            Popup.ShowText("Do you want buy?\nprice: " + lite.purchaseCost, Color.green, () =>
-            {
-                Helpers.StandardLoadingOverlay.Show();
-                BuyVehicleServerRpc(lite.code);
-            }, PopupType.Confirm);
+            Popup.ShowText(
+                "Do you want buy?\nprice: " + vehicle.purchaseCost,
+                Color.green,
+                () =>
+                {
+                    Helpers.StandardLoadingOverlay.Show();
+                    BuyVehicleServerRpc(vehicle.code);
+                },
+                PopupType.Confirm);
         }
 
         [ServerRpc(RequireOwnership = false)]
         private void BuyVehicleServerRpc(string code, NetworkConnection sender = null)
         {
-            if (sender == null)
+            if (sender != null)
             {
-                return;
+                BuyVehicleAsync(sender, code).Forget();
             }
-
-            BuyVehicleAsync(sender, code).Forget();
         }
-            
+
         private async UniTask BuyVehicleAsync(NetworkConnection sender, string code)
         {
             string token = ServerPlayerSessions.GetToken(sender.ClientId);
@@ -636,26 +619,24 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
-            (bool ok, string msg) validation = await ValidateVehiclePurchaseAsync(token, code);
+            (bool ok, string message) validation = await ValidateVehiclePurchaseAsync(token, code);
             if (!validation.ok)
             {
-                TargetRpcBuy(sender, false, validation.msg);
+                TargetRpcBuy(sender, false, validation.message);
                 return;
             }
 
-            (bool ok, string msg, BuyVehicleResult data) result =  await UserVehiclesManager.Buy(code, token);
-            TargetRpcBuy(sender, result.ok, result.msg);
+            (bool ok, string message, BuyVehicleResult _) result = await UserVehiclesManager.Buy(code, token);
+            TargetRpcBuy(sender, result.ok, result.message);
         }
 
         [ServerRpc(RequireOwnership = false)]
         private void ResearchVehicleServerRpc(int vehicleId, int predecessorVehicleId, NetworkConnection sender = null)
         {
-            if (sender == null)
+            if (sender != null)
             {
-                return;
+                ResearchVehicleAsync(sender, vehicleId, predecessorVehicleId).Forget();
             }
-
-            ResearchVehicleAsync(sender, vehicleId, predecessorVehicleId).Forget();
         }
 
         private async UniTask ResearchVehicleAsync(NetworkConnection sender, int vehicleId, int predecessorVehicleId)
@@ -667,8 +648,8 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
-            (bool ok, string msg, ResearchVehicleResult data) result = await UserVehiclesManager.Research(vehicleId, predecessorVehicleId, token);
-            TargetRpcResearch(sender, result.ok, result.msg);
+            (bool ok, string message, ResearchVehicleResult _) result = await UserVehiclesManager.Research(vehicleId, predecessorVehicleId, token);
+            TargetRpcResearch(sender, result.ok, result.message);
         }
 
         [TargetRpc]
@@ -677,66 +658,84 @@ namespace Game.Scripts.UI.Tree
             if (success)
             {
                 ProfileServer.UpdateProfile();
+                return;
+            }
+
+            Popup.ShowText(errorMessage, Color.red);
+            Helpers.StandardLoadingOverlay.Hide();
+        }
+
+        [TargetRpc]
+        private void TargetRpcBuy(NetworkConnection target, bool success, string errorMessage)
+        {
+            if (success)
+            {
+                ProfileServer.UpdateProfile();
             }
             else
             {
                 Popup.ShowText(errorMessage, Color.red);
-                Helpers.StandardLoadingOverlay.Hide();
             }
+
+            MenuManager.OpenMenu(MenuType.MainMenu);
+            RobotView.UpdateUI();
+            Helpers.StandardLoadingOverlay.Hide();
         }
 
-        private void OnDestroy()
-        {
-            Singleton<DevelopmentTree>.Unregister(this);
-        }
-
-        private async UniTask<(bool ok, string msg)> ValidateVehiclePurchaseAsync(string token, string code)
+        private async UniTask<(bool ok, string message)> ValidateVehiclePurchaseAsync(string token, string code)
         {
             if (string.IsNullOrEmpty(code))
             {
                 return (false, "Vehicle code is empty.");
             }
 
-            (bool isSuccess, string message, PlayerProfile profile) profileResult = await PlayersManager.GetMyProfile(token);
-            if (!profileResult.isSuccess || profileResult.profile == null)
+            (bool profileOk, string profileMessage, PlayerProfile profile) profileResult = await PlayersManager.GetMyProfile(token);
+            if (!profileResult.profileOk || profileResult.profile == null)
             {
-                return (false, string.IsNullOrEmpty(profileResult.message) ? "Failed to load profile." : profileResult.message);
+                return (false, string.IsNullOrEmpty(profileResult.profileMessage)
+                    ? "Failed to load profile."
+                    : profileResult.profileMessage);
             }
 
-            (bool isSuccess, string message, VehicleLite item) vehicleResult = await VehiclesManager.GetByCode(code);
-            if (!vehicleResult.isSuccess || vehicleResult.item == null)
+            (bool vehicleOk, string vehicleMessage, VehicleLite vehicle) vehicleResult = await VehiclesManager.GetByCode(code);
+            if (!vehicleResult.vehicleOk || vehicleResult.vehicle == null)
             {
-                return (false, string.IsNullOrEmpty(vehicleResult.message) ? "Vehicle data is not loaded." : vehicleResult.message);
+                return (false, string.IsNullOrEmpty(vehicleResult.vehicleMessage)
+                    ? "Vehicle data is not loaded."
+                    : vehicleResult.vehicleMessage);
             }
 
-            if (profileResult.profile.IsHave(vehicleResult.item.id))
+            if (profileResult.profile.IsHave(vehicleResult.vehicle.id))
             {
                 return (false, "Vehicle already owned.");
             }
 
-            (bool isSuccess, string message, VehicleLite[] items) vehiclesResult = await VehiclesManager.GetAll(vehicleResult.item.factionCode);
-            if (!vehiclesResult.isSuccess || vehiclesResult.items == null || vehiclesResult.items.Length == 0)
+            (bool vehiclesOk, string vehiclesMessage, VehicleLite[] vehicles) vehiclesResult = await VehiclesManager.GetAll(vehicleResult.vehicle.factionCode);
+            if (!vehiclesResult.vehiclesOk || vehiclesResult.vehicles == null || vehiclesResult.vehicles.Length == 0)
             {
-                return (false, string.IsNullOrEmpty(vehiclesResult.message) ? "Failed to load vehicle list." : vehiclesResult.message);
+                return (false, string.IsNullOrEmpty(vehiclesResult.vehiclesMessage)
+                    ? "Failed to load vehicle list."
+                    : vehiclesResult.vehiclesMessage);
             }
 
-            (bool ok, string msg, VehicleGraph graph) graphResult = await VehiclesManager.GetGraph(vehicleResult.item.factionCode);
-            if (!graphResult.ok || graphResult.graph == null || graphResult.graph.nodes == null)
+            (bool graphOk, string graphMessage, VehicleGraph graph) graphResult = await VehiclesManager.GetGraph(vehicleResult.vehicle.factionCode);
+            if (!graphResult.graphOk || graphResult.graph == null || graphResult.graph.nodes == null)
             {
-                return (false, string.IsNullOrEmpty(graphResult.msg) ? "Failed to load research tree." : graphResult.msg);
+                return (false, string.IsNullOrEmpty(graphResult.graphMessage)
+                    ? "Failed to load research tree."
+                    : graphResult.graphMessage);
             }
 
-            VehicleNode node = FindNode(graphResult.graph.nodes, vehicleResult.item.id);
+            VehicleNode node = FindNode(graphResult.graph.nodes, vehicleResult.vehicle.id);
             if (node == null)
             {
                 return (false, "Vehicle is missing from research tree.");
             }
 
-            VehicleResearchProgressResolver resolver = new VehicleResearchProgressResolver(
+            VehicleResearchProgress progress = new VehicleResearchProgressResolver(
                 profileResult.profile,
                 graphResult.graph,
-                vehiclesResult.items);
-            VehicleResearchProgress progress = resolver.Resolve(node);
+                vehiclesResult.vehicles).Resolve(node);
 
             if (progress.Status == VehicleResearchStatus.Hidden)
             {
@@ -753,12 +752,31 @@ namespace Game.Scripts.UI.Tree
                 return (false, "Vehicle is not researched.");
             }
 
-            if (profileResult.profile.bolts < vehicleResult.item.purchaseCost)
+            if (profileResult.profile.bolts < vehicleResult.vehicle.purchaseCost)
             {
-                return (false, "Not enough bolts.\nprice: " + vehicleResult.item.purchaseCost);
+                return (false, "Not enough bolts.\nprice: " + vehicleResult.vehicle.purchaseCost);
             }
 
             return (true, string.Empty);
+        }
+
+        private VehicleLite FindVehicleLite(int vehicleId)
+        {
+            if (_vehicleLites == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < _vehicleLites.Length; i++)
+            {
+                VehicleLite vehicle = _vehicleLites[i];
+                if (vehicle != null && vehicle.id == vehicleId)
+                {
+                    return vehicle;
+                }
+            }
+
+            return null;
         }
 
         private static VehicleNode FindNode(VehicleNode[] nodes, int vehicleId)
@@ -779,100 +797,27 @@ namespace Game.Scripts.UI.Tree
 
             return null;
         }
-        
-        [TargetRpc]
-        private void TargetRpcBuy(NetworkConnection target, bool success, string errorMessage)
+
+        private static string BuildResearchLockedMessage(VehicleResearchProgress progress)
         {
-            if (success)
+            string predecessorName = string.IsNullOrEmpty(progress.PredecessorName)
+                ? "previous vehicle"
+                : progress.PredecessorName;
+
+            string message = "Research required\n"
+                + predecessorName + ": " + progress.CurrentXp + "/" + progress.RequiredXp + " XP";
+
+            if (progress.MissingXp > 0)
             {
-                ProfileServer.UpdateProfile();
-            }
-            else
-            {
-                Popup.ShowText(errorMessage, Color.red);
-            }
-            
-            MenuManager.OpenMenu(MenuType.MainMenu);
-            RobotView.UpdateUI();
-            Helpers.StandardLoadingOverlay.Hide();
-        }
-        
-        private VehicleClass ParseVehicleClass(string cls)
-        {
-            if (string.Equals(cls, "Guardian", StringComparison.OrdinalIgnoreCase))
-            {
-                return VehicleClass.Guardian;
+                message += "\nMissing: " + progress.MissingXp + " XP";
             }
 
-            if (string.Equals(cls, "Colossus", StringComparison.OrdinalIgnoreCase))
-            {
-                return VehicleClass.Colossus;
-            }
-
-            return VehicleClass.Scout;
+            return message;
         }
 
-        private async UniTask RedrawActive(int index)
+        private void OnDestroy()
         {
-            await GameplayAssistant.RebuildAllLayouts(_fractionRoots);
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
-
-            if (arrowDrawer == null || index < 0 || index >= _views.Count)
-            {
-                return;
-            }
-
-            FactionView v = _views[index];
-            if (v.ArrowsLayer == null || v.Edges == null || v.Edges.Length == 0)
-            {
-                return;
-            }
-
-            arrowDrawer.Draw(v.Edges, v.NodeMap, v.ArrowsLayer);
-        }
-
-        private void DrawArrowsAll()
-        {
-            if (arrowDrawer == null)
-            {
-                return;
-            }
-
-            foreach (FactionView v in _views)
-            {
-                if (v.ArrowsLayer == null || v.Edges == null || v.Edges.Length == 0)
-                {
-                    continue;
-                }
-
-                arrowDrawer.Draw(v.Edges, v.NodeMap, v.ArrowsLayer);
-            }
-        }
-    
-        private void WipeUI()
-        {
-            for (int i = 0; i < _fractionRoots.Count; i++)
-            {
-                Transform root = _fractionRoots[i];
-                if (root != null)
-                {
-                    DestroyImmediate(root.gameObject);
-                }
-            }
-
-            _fractionRoots.Clear();
-
-            for (int i = 0; i < _factionButtons.Count; i++)
-            {
-                Button button = _factionButtons[i];
-                if (button != null)
-                {
-                    DestroyImmediate(button.gameObject);
-                }
-            }
-
-            _factionButtons.Clear();
+            Singleton<DevelopmentTree>.Unregister(this);
         }
     }
-
 }

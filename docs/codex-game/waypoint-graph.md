@@ -23,6 +23,7 @@ Current owner scripts:
 Generation vs runtime:
 - `WaypointPointSpawner` is the map/scene authoring side.
 - `WaypointGraphRuntime` is the runtime graph side.
+- `Map.unity` and `Map2.unity` do not use Unity NavMesh at runtime. Bot routing relies only on this waypoint graph; the obsolete `NavMeshBaker` objects were removed because their `NavMeshData` asset was no longer present in the project.
 - Bot behavior such as combat, target detection, turret aiming, or shooting does not belong in `WaypointPointSpawner`.
 - If a task references `WaypointPointSpawner.cs` but talks about runtime bot behavior, inspect `BotNavigator` and `BotCombatController` first.
 

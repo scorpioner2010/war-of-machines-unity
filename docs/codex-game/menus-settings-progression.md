@@ -10,6 +10,10 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/MainMenu/MainMenu.cs`
   - Main menu root, settings/development tree buttons, profile display values, and the persistent right-side statistics panel for the selected vehicle.
   - Calls `ProfileServer.UpdateProfile()` when main menu opens.
+  - Opens `FreeXpConversionPopup` when the `freeXp` control is clicked.
+- `Assets/Game/Scripts/UI/MainMenu/FreeXpConversionPopup.cs`, `FreeXpVehicleOption.cs`
+  - Show the current Free XP balance, build a hidden dropdown list from `PlayerProfile.ownedVehicles`, and convert the selected whole-number slider amount into XP for the selected owned vehicle.
+  - Keep Convert disabled until a vehicle and a positive amount are selected; Close hides the popup without sending a request.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleItemView.cs`
   - Vehicle list item view.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleSlotView.cs`
@@ -22,9 +26,17 @@ Current owner scripts:
   - Menu camera orbit driven by `UIOrbitDragArea`.
   - In `Assets/Game/Scenes/Client.unity`, it is bound to `MainMenuNew/DragImage`; this transparent image must keep `Raycast Target` enabled.
 - `Assets/Game/Scripts/UI/Tree/DevelopmentTree.cs`
-  - Development tree root/init.
-- `Assets/Game/Scripts/UI/Tree/TreeGrid.cs`, `TreeItem.cs`, `ArrowDrawer.cs`
-  - Development tree visual layout.
+  - Loads `VehicleGraph` data per faction, builds the selected faction tree at runtime, and keeps purchase/research RPC validation authoritative on the server.
+  - Groups every graph node by `level`: level 1 is the lowest row, later levels are stacked above it, and nodes in every row are centered.
+  - A `TreeItem` click only selects a vehicle; it never starts purchase or research directly.
+- `Assets/Game/Scripts/UI/Tree/FactionTreeView.cs`, `FactionButtonView.cs`, `DevelopmentTreeDetailsPanel.cs`, `ArrowDrawer.cs`
+  - `FactionTreeView` owns the serialized rows and arrows layers of a generated faction tree.
+  - `FactionButtonView` provides serialized faction button visuals and selects the correct background and emblem from the faction code, without runtime component lookups.
+  - `DevelopmentTreeDetailsPanel` displays the selected vehicle and exclusively enables its Buy or Research button when the progression state permits it.
+  - `ArrowDrawer` draws one non-interactive arrow for each server-provided `VehicleEdge` after the row layout is resolved.
+- `Assets/Game/Content/UI/Prefabs/Tree/FactionTree.prefab`, `DevelopmentTreeLevelRow.prefab`, `TreeItem.prefab`
+  - The first prefab provides a faction root with empty arrow and vertical-row containers; the second provides a centered, one-row horizontal grid for every level.
+  - `TreeItem.prefab` remains the node visual and selection button; it is not responsible for progression actions.
 - `Assets/Game/Scripts/UI/Tree/VehicleResearchProgressResolver.cs`
   - Vehicle research/progression data support.
 - `Assets/Game/Scripts/UI/Settings/*.cs`
@@ -39,6 +51,8 @@ Current owner scripts:
   - Draws nested serialized settings recursively and provides tooltip documentation without adding description rows below fields.
 - `Assets/Game/Scripts/UI/Loading/*.cs`
   - Loading screen and shared spinner.
+- `Assets/Game/Scripts/UI/Helpers/ClockwiseUiRotator.cs`
+  - Lightweight UI rotation component. A positive `rotationSpeed` rotates its RectTransform clockwise in unscaled time.
 - `Assets/Game/Scripts/UI/Screens/*.cs`
   - Popup/screen base infrastructure.
 
@@ -48,7 +62,15 @@ Important behavior:
 - The settings listener is bound to `MainMenuNew/AnimationPanel/TopPanel/SettingsBack/Settings`, the button that receives the UI click.
 - The selected vehicle's name, faction, tier icon, XP, armor, mobility, firepower, and calculated average DPS are shown continuously in `MainMenuNew/AnimationPanel/RightPanel`. The panel is updated from the profile's selected vehicle after the vehicle list and API stats load; it is not shown only while hovering a slot.
 - Settings and development tree buttons use `MenuManager.OpenMenu`.
+- In `Assets/Game/Scenes/Client.unity`, the existing `MenuType.DevelopmentTree` route now opens `DevelopmentTreeNew`.
+  - `DevelopmentTreeNew/AnimationPanel/FactionRoot` and `ButtonsContainer` must stay empty in the saved scene: `DevelopmentTree` fills them from server data.
+  - Generated faction buttons use the `DevelopmentTreeNewView` visual reference: Iron Alliance uses `nav_button_a_bg_v2` with `emblem_a`; Nova Syndicate uses `nav_button_gear_bg` with `tree_sidebar_gear`.
+  - The right-side `RightInfoPanel` is static layout only. `DevelopmentTreeDetailsPanel` updates its `Tier/lvl` image from the serialized I–X tier sprites after a node is selected.
+  - `DevelopmentTree` registers `CloseBattle` at runtime through its serialized `buttonBack` reference. `DevelopmentTreeCloseButton` also closes on left-pointer-down and verifies the left mouse press is inside its own `RectTransform`, so the control still closes when Unity does not emit the legacy `Button.onClick`. The panel root is hidden before the main-menu route opens.
+  - Owned vehicles disable both actions; researched but unowned vehicles enable only Buy; vehicles with an affordable owned predecessor enable only Research.
+- In `Assets/Game/Scenes/Client.unity`, `FreeXpConversionPopup` is an initially inactive primitive UI popup under the main Canvas. Its serialized references include the vehicle-dropdown button, scrollable option-template container, whole-number slider, Convert button, and Close button; `MainMenu` is wired to the existing `freeXp` control Button.
 - Gameplay input blocking is tied to menu state in `VehicleInputController.IsGameplayInputBlockedByUi`.
+- `Assets/Game/Scenes/Client.unity` keeps the `FindGame` root inactive until its routed menu opens. Its `AnimationPanel/panel/arrow` uses `ClockwiseUiRotator` with `rotationSpeed: 120`.
 
 Rules when editing menus:
 - Keep menu state changes consistent with gameplay input blocking.
