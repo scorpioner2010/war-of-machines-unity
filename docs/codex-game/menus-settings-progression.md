@@ -53,6 +53,15 @@ Current owner scripts:
   - Loading screen and shared spinner.
 - `Assets/Game/Scripts/UI/Helpers/ClockwiseUiRotator.cs`
   - Lightweight UI rotation component. A positive `rotationSpeed` rotates its RectTransform clockwise in unscaled time.
+- `Assets/Game/Scripts/Audio/ButtonComponent.cs`
+  - Shared UI-button behavior: plays `SFX_UI_Button_Mouse_Thick_Generic_1` on a click and keeps serialized child `Graphic` references synchronized with the Button `ColorBlock`.
+  - The Button pointer/selection state drives matching child `Image` and TextMesh Pro colors for Highlighted, Pressed, Selected, and Disabled; Normal restores each child graphic's saved normal color. Color transitions use the Button `fadeDuration` and `colorMultiplier`.
+  - Every Button in `Assets/Game/Scenes/Client.unity` and the game UI prefabs `GameplayHUD.prefab`, `MainMenu/VehicleSlot.prefab`, `Tree/FactionButton.prefab`, and `Tree/TreeItem.prefab` has this component with its Button and child graphics assigned in the inspector.
+- `Assets/Game/Scripts/Client/ClientSettings.cs`
+  - `buttonColors` owns the project-wide Button `ColorBlock` palette: normal, highlighted, pressed, selected, disabled, color multiplier, and fade duration. It is editor configuration only until applied.
+- `Assets/Editor/ClientSettingsEditor.cs`, `ClientButtonColorApplier.cs`
+  - The `Apply Button Colors To All UI Buttons` action in the `ClientSettings` inspector applies `buttonColors` to every Button in `Assets/Game/Scenes/Client.unity` and every prefab under `Assets/Game`, then adds or refreshes each `ButtonComponent` child-graphic reference.
+  - The action asks to save modified open scenes first, saves changed assets, and restores the previously open scene setup afterwards.
 - `Assets/Game/Scripts/UI/Screens/*.cs`
   - Popup/screen base infrastructure.
 

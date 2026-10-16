@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Game.Scripts.Client;
 using UnityEditor;
+using UnityEngine;
 
 namespace Toras.Editor
 {
@@ -10,6 +11,22 @@ namespace Toras.Editor
         private static readonly IReadOnlyDictionary<string, string> Documentation =
             new Dictionary<string, string>
             {
+                ["buttonColors"] =
+                    "Єдина палітра станів UI-кнопок. Наприклад: після зміни pressedColor на помаранчевий натисніть Apply Button Colors To All UI Buttons, щоб оновити Client та UI-префаби.",
+                ["buttonColors.normalColor"] =
+                    "Колір самої кнопки без наведення чи вибору. Наприклад: білий залишає кнопку нейтральною.",
+                ["buttonColors.highlightedColor"] =
+                    "Колір кнопки під курсором. Наприклад: світліший відтінок показує гравцеві, що кнопка готова до натискання.",
+                ["buttonColors.pressedColor"] =
+                    "Колір кнопки під час утримання лівої кнопки миші. Наприклад: темніший відтінок робить натиснення помітним.",
+                ["buttonColors.selectedColor"] =
+                    "Колір кнопки після вибору клавіатурою або геймпадом. Наприклад: відтінок, відмінний від normalColor, показує фокус UI.",
+                ["buttonColors.disabledColor"] =
+                    "Колір недоступної кнопки та її тексту/іконок. Наприклад: напівпрозорий сірий показує відсутність дії.",
+                ["buttonColors.colorMultiplier"] =
+                    "Множник яскравості для всіх кольорів станів. Наприклад: 1 використовує колір без посилення.",
+                ["buttonColors.fadeDuration"] =
+                    "Час плавного переходу між станами кнопки та її тексту/іконок. Наприклад: 0.1 дає швидку, але помітну анімацію.",
                 ["framePacing"] =
                     "Локальні параметри частоти кадрів клієнта. Наприклад: розгорніть групу, щоб обмежити клієнт 144 FPS без VSync.",
                 ["projectileVisuals"] =
@@ -217,6 +234,15 @@ namespace Toras.Editor
                 serializedObject,
                 "Клієнтські налаштування керують локальним FPS, projectile visuals, HUD, картою, камерою та автоприцілом. Сервер їх не читає і не синхронізує. Наведіть курсор на назву параметра, щоб побачити український опис і приклад.",
                 Documentation);
+
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("UI Button Colors", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Applies Button Colors to every Button in Client.unity and Assets/Game prefabs. It also adds or refreshes ButtonComponent child-graphic references.", MessageType.Info);
+
+            if (GUILayout.Button("Apply Button Colors To All UI Buttons"))
+            {
+                ClientButtonColorApplier.ApplyToGameUiButtons(((ClientSettings)target).buttonColors);
+            }
         }
     }
 }

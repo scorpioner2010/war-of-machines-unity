@@ -1,7 +1,51 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Game.Scripts.Client
 {
+    [System.Serializable]
+    public class ClientButtonColorSettings
+    {
+        [Tooltip("Базовий колір UI-кнопки у звичайному стані.")]
+        public Color normalColor = Color.white;
+        [Tooltip("Колір UI-кнопки, коли курсор наведений на неї.")]
+        public Color highlightedColor = new Color(0.88235295f, 0.88235295f, 0.88235295f, 1f);
+        [Tooltip("Колір UI-кнопки, поки вона натиснута.")]
+        public Color pressedColor = new Color(0.69803923f, 0.69803923f, 0.69803923f, 1f);
+        [Tooltip("Колір UI-кнопки, коли її вибрано клавіатурою або геймпадом.")]
+        public Color selectedColor = new Color(0.88235295f, 0.88235295f, 0.88235295f, 1f);
+        [Tooltip("Колір UI-кнопки, коли вона недоступна для натискання.")]
+        public Color disabledColor = new Color(0.52156866f, 0.52156866f, 0.52156866f, 0.5019608f);
+        [Min(0f), Tooltip("Множник яскравості кольорів усіх станів UI-кнопок.")]
+        public float colorMultiplier = 1f;
+        [Min(0f), Tooltip("Тривалість плавної зміни кольору між станами UI-кнопки.")]
+        public float fadeDuration = 0.1f;
+
+        public void ApplyTo(ref ColorBlock colors)
+        {
+            colors.normalColor = normalColor;
+            colors.highlightedColor = highlightedColor;
+            colors.pressedColor = pressedColor;
+            colors.selectedColor = selectedColor;
+            colors.disabledColor = disabledColor;
+            colors.colorMultiplier = colorMultiplier;
+            colors.fadeDuration = fadeDuration;
+        }
+
+        public void Validate()
+        {
+            if (float.IsNaN(colorMultiplier) || float.IsInfinity(colorMultiplier) || colorMultiplier < 0f)
+            {
+                colorMultiplier = 1f;
+            }
+
+            if (float.IsNaN(fadeDuration) || float.IsInfinity(fadeDuration) || fadeDuration < 0f)
+            {
+                fadeDuration = 0.1f;
+            }
+        }
+    }
+
     [System.Serializable]
     public class GameplayRuntimeSettings
     {
@@ -646,6 +690,9 @@ namespace Game.Scripts.Client
         [Tooltip("Локальні клієнтські runtime-налаштування HUD, карти та автоприцілу. Сервер їх не читає і не синхронізує.")]
         public GameplayRuntimeSettings gameplayRuntime = new GameplayRuntimeSettings();
 
+        [Tooltip("Єдина палітра станів UI-кнопок. Застосуйте її до Client і UI-префабів кнопкою в інспекторі ClientSettings.")]
+        public ClientButtonColorSettings buttonColors = new ClientButtonColorSettings();
+
         private void Awake()
         {
             ValidateSettings();
@@ -741,6 +788,11 @@ namespace Game.Scripts.Client
             if (gameplayRuntime != null)
             {
                 gameplayRuntime.Validate();
+            }
+
+            if (buttonColors != null)
+            {
+                buttonColors.Validate();
             }
         }
     }
