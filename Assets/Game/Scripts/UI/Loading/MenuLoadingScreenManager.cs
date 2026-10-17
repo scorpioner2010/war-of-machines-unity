@@ -18,11 +18,18 @@ namespace Game.Scripts.UI.Loading
     public class MenuLoadingScreenManager : MonoBehaviour
     {
         private const string DefaultConnectionStatus = "Trying to connect to battle server";
+        private const float InitialLoadingStageDuration = 1f;
+        private const float InitialLoadingStageProgress = 0.5f;
+        private const float MinimumSceneLoadingDuration = 2f;
+        private const float LateSceneLoadingFinalFillDuration = 0.25f;
 
         [SerializeField] private MenuLoadingProgressBar loadingProgressBar;
 
         private bool _isSubscribed;
+        private bool _sceneLoadCompleted;
         private LoadQueueData _activeSceneLoad;
+        private float _sceneLoadingStartedAt;
+        private int _sceneLoadingVersion;
         private static string _connectionStatusText = DefaultConnectionStatus;
         private static int _connectionLoadingVersion;
 
@@ -40,6 +47,7 @@ namespace Game.Scripts.UI.Loading
 
         private void OnDestroy()
         {
+            _sceneLoadingVersion++;
             Unsubscribe();
         }
 
@@ -52,7 +60,6 @@ namespace Game.Scripts.UI.Loading
 
             InstanceFinder.SceneManager.OnLoadEnd += OnGameplayLoadEnd;
             InstanceFinder.SceneManager.OnLoadStart += OnGameplayLoadStart;
-            InstanceFinder.SceneManager.OnLoadPercentChange += OnGameplayLoadProgress;
             _isSubscribed = true;
         }
 
@@ -65,25 +72,18 @@ namespace Game.Scripts.UI.Loading
 
             InstanceFinder.SceneManager.OnLoadEnd -= OnGameplayLoadEnd;
             InstanceFinder.SceneManager.OnLoadStart -= OnGameplayLoadStart;
-            InstanceFinder.SceneManager.OnLoadPercentChange -= OnGameplayLoadProgress;
             _isSubscribed = false;
         }
         
         private void OnGameplayLoadStart(SceneLoadStartEventArgs args)
         {
             _activeSceneLoad = args.QueueData;
+            _sceneLoadCompleted = false;
+            _sceneLoadingStartedAt = Time.unscaledTime;
+            _sceneLoadingVersion++;
             loadingProgressBar?.SetProgress(0f);
             ShowLoading();
-        }
-
-        private void OnGameplayLoadProgress(SceneLoadPercentEventArgs args)
-        {
-            if (_activeSceneLoad != args.QueueData || CurrentMode != MenuLoadingScreenMode.SceneLoading)
-            {
-                return;
-            }
-
-            loadingProgressBar?.SetProgress(args.Percent);
+            RunSceneLoadingPresentationAsync(args.QueueData, _sceneLoadingVersion).Forget();
         }
 
         private void OnGameplayLoadEnd(SceneLoadEndEventArgs args)
@@ -93,28 +93,102 @@ namespace Game.Scripts.UI.Loading
                 return;
             }
 
-            HandleGameplayLoadEndAsync(args.QueueData).Forget();
+            if (_sceneLoadCompleted)
+            {
+                return;
+            }
+
+            _sceneLoadCompleted = true;
+            PrepareGameplayUnderLoadingOverlay();
         }
 
-        private async UniTask HandleGameplayLoadEndAsync(LoadQueueData completedSceneLoad)
+        private async UniTask RunSceneLoadingPresentationAsync(LoadQueueData sceneLoad, int loadingVersion)
         {
-            loadingProgressBar?.SetProgress(1f);
+            if (!await AnimateProgressAsync(sceneLoad, loadingVersion, 0f, InitialLoadingStageProgress, InitialLoadingStageDuration))
+            {
+                return;
+            }
+
+            while (!_sceneLoadCompleted)
+            {
+                if (!IsCurrentSceneLoad(sceneLoad, loadingVersion))
+                {
+                    return;
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            if (!IsCurrentSceneLoad(sceneLoad, loadingVersion))
+            {
+                return;
+            }
+
+            float remainingMinimumDuration = Mathf.Max(0f, MinimumSceneLoadingDuration - (Time.unscaledTime - _sceneLoadingStartedAt));
+            float finalFillDuration = remainingMinimumDuration > 0f
+                ? remainingMinimumDuration
+                : LateSceneLoadingFinalFillDuration;
+
+            if (!await AnimateProgressAsync(sceneLoad, loadingVersion, InitialLoadingStageProgress, 1f, finalFillDuration))
+            {
+                return;
+            }
+
             await UniTask.NextFrame();
 
-            if (_activeSceneLoad != completedSceneLoad)
+            if (!IsCurrentSceneLoad(sceneLoad, loadingVersion))
             {
                 return;
             }
 
             _activeSceneLoad = null;
-            RobotView.Despawn();
             HideLoading();
-            await UniTask.Delay(1000);
+        }
+
+        private async UniTask<bool> AnimateProgressAsync(LoadQueueData sceneLoad, int loadingVersion, float from, float to, float duration)
+        {
+            if (duration <= 0f)
+            {
+                loadingProgressBar?.SetProgress(to);
+                return IsCurrentSceneLoad(sceneLoad, loadingVersion);
+            }
+
+            float stageStartedAt = Time.unscaledTime;
+            while (true)
+            {
+                if (!IsCurrentSceneLoad(sceneLoad, loadingVersion))
+                {
+                    return false;
+                }
+
+                float normalizedProgress = Mathf.Clamp01((Time.unscaledTime - stageStartedAt) / duration);
+                loadingProgressBar?.SetProgress(Mathf.Lerp(from, to, normalizedProgress));
+                if (normalizedProgress >= 1f)
+                {
+                    return true;
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+        }
+
+        private void PrepareGameplayUnderLoadingOverlay()
+        {
+            RobotView.Despawn();
 
             if (MainMenu.MainMenu.In != null)
             {
                 MainMenu.MainMenu.In.SetActive(false);
             }
+
+            MenuManager.BringMenuToFront(MenuType.LoadScreen);
+        }
+
+        private bool IsCurrentSceneLoad(LoadQueueData sceneLoad, int loadingVersion)
+        {
+            return _activeSceneLoad == sceneLoad
+                && _sceneLoadingVersion == loadingVersion
+                && CurrentMode == MenuLoadingScreenMode.SceneLoading;
         }
 
         public static void ShowLoading()
@@ -169,7 +243,7 @@ namespace Game.Scripts.UI.Loading
 
         public static void HideLoading()
         {
-            MenuManager.CloseMenu(MenuType.LoadScreen);
+            MenuManager.CloseMenuImmediate(MenuType.LoadScreen);
         }
     }
 }

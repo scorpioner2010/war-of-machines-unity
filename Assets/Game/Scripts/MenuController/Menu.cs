@@ -133,7 +133,7 @@ namespace Game.Scripts.MenuController
             return menuRect != null && animationPanel != null && canvasGroup != null;
         }
 
-        private void BringToFront()
+        public void BringToFront()
         {
             if (rootCanvas == null)
             {

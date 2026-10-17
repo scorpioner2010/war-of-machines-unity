@@ -93,6 +93,33 @@ namespace Game.Scripts.MenuController
             }
         }
 
+        public static void CloseMenuImmediate(MenuType type)
+        {
+            if (!IsReady)
+            {
+                return;
+            }
+
+            OnDisable?.Invoke(type);
+            if (_in._map.TryGetValue(type, out Menu controller) && controller != null)
+            {
+                controller.CloseImmediate();
+            }
+        }
+
+        public static void BringMenuToFront(MenuType type)
+        {
+            if (!IsReady)
+            {
+                return;
+            }
+
+            if (_in._map.TryGetValue(type, out Menu controller) && controller != null)
+            {
+                controller.BringToFront();
+            }
+        }
+
         [Serializable]
         public struct MenuEntry
         {
@@ -102,6 +129,11 @@ namespace Game.Scripts.MenuController
 
         private static bool ShouldCloseMenu(MenuType openingType, MenuType candidateType)
         {
+            if (candidateType == MenuType.LoadScreen)
+            {
+                return false;
+            }
+
             if (candidateType == MenuType.GameplayHUD)
             {
                 if (openingType == MenuType.GameplayPause)
