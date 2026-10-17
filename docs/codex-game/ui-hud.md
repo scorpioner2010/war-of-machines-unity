@@ -64,7 +64,8 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListHud.cs`
   - Player list HUD for ally/enemy rows under the `GameplayHUD` prefab containers.
   - Auto-tracks active non-menu `VehicleRoot` instances, binds each row to `VehicleHealth`, and refreshes names, vehicle type, synchronized kill count, HP, death state, and team relation.
-  - Clears instantiated row items when the HUD is disabled or the local player vehicle becomes null. Its vehicle scan removes every row not seen in the current active-vehicle pass, including rows whose Unity `VehicleRoot` was destroyed during battle scene unload, so stale ally/enemy rows do not persist into the next battle.
+  - A row that has received a dead state remains in its ally/enemy list after the server despawns that robot; it keeps the final name, vehicle type, kill count, and zero-HP/dead presentation for the rest of the active HUD session. The row releases its destroyed vehicle/health binding, while a missing row that was not dead is removed.
+  - Clears instantiated row items when the HUD is disabled or the local player vehicle becomes null, so rows from a completed battle do not persist into the next battle.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListItem.cs`
   - Presents each ally/enemy row from `Assets/Game/Content/UI/Prefabs/GameplayPlayerListItem.prefab`, including a compact `K:n` kill-count column.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleNetworkInitializer.cs`

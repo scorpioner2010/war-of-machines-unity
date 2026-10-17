@@ -249,10 +249,24 @@ namespace Game.Scripts.UI.HUD
             for (int i = _rows.Count - 1; i >= 0; i--)
             {
                 PlayerListRow row = _rows[i];
-                if (row == null || !row.Seen)
+                if (row == null)
                 {
                     RemoveRowAt(i);
+                    continue;
                 }
+
+                if (row.Seen)
+                {
+                    continue;
+                }
+
+                if (row.IsDead)
+                {
+                    RetainDestroyedVehicleRow(row);
+                    continue;
+                }
+
+                RemoveRowAt(i);
             }
 
             LayoutRows();
@@ -428,30 +442,46 @@ namespace Game.Scripts.UI.HUD
 
         private void UnbindRow(PlayerListRow row)
         {
-            if (row == null || row.Health == null)
+            if (row == null)
             {
                 return;
             }
 
-            if (row.HealthChangedHandler != null)
+            VehicleHealth health = row.Health;
+            if (health != null && row.HealthChangedHandler != null)
             {
-                row.Health.OnHealthChanged -= row.HealthChangedHandler;
+                health.OnHealthChanged -= row.HealthChangedHandler;
             }
 
-            if (row.DamagedHandler != null)
+            if (health != null && row.DamagedHandler != null)
             {
-                row.Health.OnDamaged -= row.DamagedHandler;
+                health.OnDamaged -= row.DamagedHandler;
             }
 
-            if (row.DeathHandler != null)
+            if (health != null && row.DeathHandler != null)
             {
-                row.Health.onDeath.RemoveListener(row.DeathHandler);
+                health.onDeath.RemoveListener(row.DeathHandler);
             }
 
             row.Health = null;
             row.HealthChangedHandler = null;
             row.DamagedHandler = null;
             row.DeathHandler = null;
+        }
+
+        private void RetainDestroyedVehicleRow(PlayerListRow row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            UnbindRow(row);
+            row.VehicleRoot = null;
+            row.CurrentHealth = 0f;
+            row.IsDead = true;
+            row.Seen = true;
+            ApplyRow(row);
         }
 
         private void OnRowHealthChanged(PlayerListRow row, float currentHealth, float maxHealth)
