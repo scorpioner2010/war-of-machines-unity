@@ -24,6 +24,11 @@
 - If the user explicitly confirms that their current side changes are expected, continue work around those dirty files and do not stop only because they remain modified.
 - Stop and ask only when approved side changes conflict with the requested work, break important logic, or make verification unreliable.
 
+## Replacing implementations
+- When replacing one implementation, feature, system, asset, or configuration with another, fully remove the obsolete variant and all of its unused remnants so the project stays clean.
+- Clean up obsolete scripts, assets, references, serialized fields, prefabs/scenes, settings, tests, documentation, and dead code that belonged only to the replaced variant.
+- Preserve a legacy variant only when the user explicitly requests backward compatibility, migration support, or a temporary parallel rollout.
+
 ## Code style
 - Always use braces for code blocks (`{}`), even for single-line `if`/loops.
 - Use `switch` rarely; prefer clear `if`/`else` flows in most gameplay code.

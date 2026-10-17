@@ -45,11 +45,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &9123456011
 GameObject:
   m_ObjectHideFlags: 0
@@ -95,11 +92,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &1769892108681956282
 GameObject:
   m_ObjectHideFlags: 0
@@ -145,11 +139,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &4058065141393512657
 GameObject:
   m_ObjectHideFlags: 0
@@ -235,11 +226,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &4590738945265487239
 GameObject:
   m_ObjectHideFlags: 0
@@ -285,11 +273,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &5182177003638641692
 GameObject:
   m_ObjectHideFlags: 0
@@ -335,11 +320,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &5825380966817008170
 GameObject:
   m_ObjectHideFlags: 0
@@ -385,11 +367,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &6346952021289750434
 GameObject:
   m_ObjectHideFlags: 0
@@ -435,11 +414,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!1 &8383642661698601375
 GameObject:
   m_ObjectHideFlags: 0
@@ -485,8 +461,5 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   menuRect: {fileID: 0}
-  animationPanel: {fileID: 0}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 0}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5

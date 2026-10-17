@@ -79,8 +79,8 @@ Current owner scripts:
   - Registers only inspector-wired scene menus during `Awake`; it does not instantiate menu prefabs at runtime.
   - `Client.unity/Canvas/GameplayHUD` is the inspector-wired `MenuType.GameplayHUD` route and owns the live gameplay crosshair, map, player list, damage screen, and local HP display.
 - `Assets/Game/Scripts/MenuController/Menu.cs`
-  - Menu animation controller used by HUD/pause/settings menus.
-  - Provides `CloseImmediate()` for VehicleTest to hide `GameplayHUD` instantly without a DOTween close animation fighting the test overlay visibility.
+  - Menu presentation controller used by HUD/pause/settings menus. It fades its inspector-wired `CanvasGroup` alpha without moving the UI layout; each component's `fadeDuration` controls both directions and defaults to `0.5` seconds.
+  - Provides `CloseImmediate()` for VehicleTest to hide `GameplayHUD` instantly without a fade animation fighting the test overlay visibility.
 
 Rules when editing HUD/UI:
 - Keep gameplay input blocking behavior in sync with `VehicleInputController.IsGameplayInputBlockedByUi`.

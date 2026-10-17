@@ -7,18 +7,11 @@ namespace Game.Scripts.MenuController
     public class Menu : MonoBehaviour
     {
         [SerializeField] private RectTransform menuRect;
-        [SerializeField] private RectTransform animationPanel;
-        [SerializeField] private Canvas rootCanvas;
-        
         [SerializeField] private CanvasGroup canvasGroup;
-        
-        private float _duration = 0.3f;
+        [SerializeField, Min(0f)] private float fadeDuration = 0.5f;
 
         private MenuState _state = MenuState.Idle;
-        private Sequence _sequence;
-        
-        [SerializeField] private Vector2 hiddenPosition = new (0, -800);
-        [SerializeField] private Vector2 shownPosition = new (0, 0);
+        private Tween _fadeTween;
 
         public Transform MenuParent => menuRect != null ? menuRect.parent : null;
 
@@ -42,8 +35,6 @@ namespace Game.Scripts.MenuController
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
             _state = MenuState.Idle;
-            _sequence = DOTween.Sequence();
-            _sequence.Join(animationPanel.DOAnchorPos(hiddenPosition, _duration).SetEase(Ease.InBack));
         }
 
         public void Open()
@@ -61,17 +52,12 @@ namespace Game.Scripts.MenuController
             SetActive(true);
             BringToFront();
             _state = MenuState.Opening;
-            canvasGroup.alpha = 0f;
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
 
-            _sequence?.Kill();
-            _sequence = DOTween.Sequence();
-            
-            _sequence.Append(canvasGroup.DOFade(1f, _duration));
-            _sequence.Join(animationPanel.DOAnchorPos(shownPosition, _duration).SetEase(Ease.OutBack));
-            
-            _sequence.OnComplete(() =>
+            _fadeTween?.Kill();
+            _fadeTween = canvasGroup.DOFade(1f, fadeDuration);
+            _fadeTween.OnComplete(() =>
             {
                 _state = MenuState.Opened;
             });
@@ -93,16 +79,13 @@ namespace Game.Scripts.MenuController
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = true;
 
-            _sequence?.Kill();
-            _sequence = DOTween.Sequence();
-            
-            _sequence.Append(canvasGroup.DOFade(0f, _duration));
-            _sequence.Join(animationPanel.DOAnchorPos(hiddenPosition, _duration).SetEase(Ease.InBack));
+            _fadeTween?.Kill();
+            _fadeTween = canvasGroup.DOFade(0f, fadeDuration);
 
-            Sequence closeSequence = _sequence;
-            await closeSequence.AsyncWaitForCompletion();
+            Tween closeTween = _fadeTween;
+            await closeTween.AsyncWaitForCompletion();
 
-            if (_state != MenuState.Closing || _sequence != closeSequence)
+            if (_state != MenuState.Closing || _fadeTween != closeTween)
             {
                 return;
             }
@@ -120,7 +103,7 @@ namespace Game.Scripts.MenuController
                 return;
             }
 
-            _sequence?.Kill();
+            _fadeTween?.Kill();
             _state = MenuState.Idle;
             canvasGroup.alpha = 0f;
             canvasGroup.interactable = false;
@@ -130,28 +113,11 @@ namespace Game.Scripts.MenuController
 
         private bool IsConfigured()
         {
-            return menuRect != null && animationPanel != null && canvasGroup != null;
+            return menuRect != null && canvasGroup != null;
         }
 
         public void BringToFront()
         {
-            if (rootCanvas == null)
-            {
-                menuRect.SetAsLastSibling();
-                return;
-            }
-
-            Transform current = menuRect;
-            while (current.parent != null && current.parent != rootCanvas.transform)
-            {
-                current = current.parent;
-            }
-
-            if (current.parent == rootCanvas.transform)
-            {
-                current.SetAsLastSibling();
-            }
-
             menuRect.SetAsLastSibling();
         }
     }

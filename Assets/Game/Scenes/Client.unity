@@ -10487,7 +10487,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 486140946}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -28824,7 +28824,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1287369330}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -44127,10 +44127,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 420603929}
-    - target: {fileID: 9123456003, guid: fb18ca2f5717b6c4cb576928ff8c627a, type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 269942428}
     - target: {fileID: 9123456013, guid: fb18ca2f5717b6c4cb576928ff8c627a, type: 3}
       propertyPath: menuRect
       value: 
@@ -44139,10 +44135,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 1725537001}
-    - target: {fileID: 9123456013, guid: fb18ca2f5717b6c4cb576928ff8c627a, type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 355621147}
     - target: {fileID: 273754799092988547, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: menuRect
@@ -44151,11 +44143,6 @@ PrefabInstance:
     - target: {fileID: 273754799092988547, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: canvasGroup
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 273754799092988547, guid: fb18ca2f5717b6c4cb576928ff8c627a,
-        type: 3}
-      propertyPath: animationPanel
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 2868687770814507600, guid: fb18ca2f5717b6c4cb576928ff8c627a,
@@ -44168,11 +44155,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 1841091379}
-    - target: {fileID: 2868687770814507600, guid: fb18ca2f5717b6c4cb576928ff8c627a,
-        type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 1841091376}
     - target: {fileID: 2945558905958873098, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: menuRect
@@ -44183,11 +44165,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 663677755}
-    - target: {fileID: 2945558905958873098, guid: fb18ca2f5717b6c4cb576928ff8c627a,
-        type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 970100195}
     - target: {fileID: 3949691994319423052, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -44253,11 +44230,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 4502190234541219440}
-    - target: {fileID: 4385746463272264918, guid: fb18ca2f5717b6c4cb576928ff8c627a,
-        type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 1271770917}
     - target: {fileID: 6588375110832461700, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: menuRect
@@ -44268,11 +44240,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 1466351870}
-    - target: {fileID: 6588375110832461700, guid: fb18ca2f5717b6c4cb576928ff8c627a,
-        type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 670232397}
     - target: {fileID: 6794588807078779544, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: menuRect
@@ -44283,11 +44250,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 5345826007742929243}
-    - target: {fileID: 6794588807078779544, guid: fb18ca2f5717b6c4cb576928ff8c627a,
-        type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 900215604}
     - target: {fileID: 7112542141556350784, guid: fb18ca2f5717b6c4cb576928ff8c627a,
         type: 3}
       propertyPath: menuRect
@@ -44298,11 +44260,6 @@ PrefabInstance:
       propertyPath: canvasGroup
       value: 
       objectReference: {fileID: 1917392843}
-    - target: {fileID: 7112542141556350784, guid: fb18ca2f5717b6c4cb576928ff8c627a,
-        type: 3}
-      propertyPath: animationPanel
-      value: 
-      objectReference: {fileID: 911064064}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -50306,11 +50263,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   menuRect: {fileID: 1540249549}
-  animationPanel: {fileID: 1540249549}
-  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 9216662330}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!114 &9216662286
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50324,11 +50278,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   menuRect: {fileID: 2052894808}
-  animationPanel: {fileID: 765982653}
-  rootCanvas: {fileID: 6073536986615846396}
   canvasGroup: {fileID: 2052894809}
-  hiddenPosition: {x: 0, y: -800}
-  shownPosition: {x: 0, y: 0}
+  fadeDuration: 0.5
 --- !u!225 &9216662330
 CanvasGroup:
   m_ObjectHideFlags: 0
