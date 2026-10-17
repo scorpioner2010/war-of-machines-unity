@@ -10,8 +10,6 @@ namespace Game.Scripts.MenuController
         private static MenuManager _in;
 
         [SerializeField] private List<MenuEntry> menus;
-        [SerializeField] private List<PrefabMenuEntry> prefabMenus;
-        [SerializeField] private Transform defaultPrefabMenuParent;
         private Dictionary<MenuType, Menu> _map;
         public static Action<MenuType> OnDisable;
         public static Action<MenuType> OnEnable;
@@ -35,7 +33,6 @@ namespace Game.Scripts.MenuController
                 e.controller.SetActive(false);
             }
 
-            SpawnPrefabMenus();
         }
 
         public static bool RegisterMenu(MenuType type, Menu controller)
@@ -103,14 +100,6 @@ namespace Game.Scripts.MenuController
             public Menu controller;
         }
 
-        [Serializable]
-        public struct PrefabMenuEntry
-        {
-            public MenuType type;
-            public Menu prefab;
-            public Transform parent;
-        }
-
         private static bool ShouldCloseMenu(MenuType openingType, MenuType candidateType)
         {
             if (candidateType == MenuType.GameplayHUD)
@@ -129,57 +118,5 @@ namespace Game.Scripts.MenuController
             return true;
         }
 
-        private void SpawnPrefabMenus()
-        {
-            if (prefabMenus == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < prefabMenus.Count; i++)
-            {
-                PrefabMenuEntry entry = prefabMenus[i];
-                if (entry.prefab == null)
-                {
-                    continue;
-                }
-
-                Transform parent = entry.parent != null ? entry.parent : FindDefaultPrefabMenuParent();
-                Menu controller = Instantiate(entry.prefab, parent, false);
-                controller.name = entry.prefab.name;
-
-                _map[entry.type] = controller;
-                controller.SetActive(false);
-            }
-        }
-
-        private Transform FindDefaultPrefabMenuParent()
-        {
-            if (defaultPrefabMenuParent != null)
-            {
-                return defaultPrefabMenuParent;
-            }
-
-            return FindDefaultMenuParent();
-        }
-
-        private Transform FindDefaultMenuParent()
-        {
-            if (menus != null)
-            {
-                for (int i = 0; i < menus.Count; i++)
-                {
-                    Menu controller = menus[i].controller;
-                    if (controller == null || controller.MenuParent == null)
-                    {
-                        continue;
-                    }
-
-                    return controller.MenuParent;
-                }
-            }
-
-            return transform.parent;
-        }
     }
 }

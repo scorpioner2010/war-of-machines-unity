@@ -4,7 +4,7 @@ Read this file before changing main menu, settings screens, development tree, ve
 
 Current owner scripts:
 - `Assets/Game/Scripts/MenuController/MenuManager.cs`
-  - Global menu state and menu open/close events.
+  - Global menu state and menu open/close events. It registers only serialized scene-menu references and does not instantiate menus at runtime.
 - `Assets/Game/Scripts/MenuController/MenuType.cs`
   - Menu enum used by menu routing and input blocking.
 - `Assets/Game/Scripts/UI/MainMenu/MainMenu.cs`
@@ -77,6 +77,7 @@ Current owner scripts:
 
 Important behavior:
 - `MainMenu.SetActive(true)` opens `MenuType.MainMenu`; false opens `MenuType.GameplayHUD`.
+- The existing `Assets/Game/Scenes/Client.unity/Canvas/GameplayHUD` is the direct `MenuType.GameplayHUD` reference on `MenuManager`. It stays hidden while the main menu is open and is opened for gameplay; it is not spawned by `MenuManager`, and no second HUD prefab instance is allowed under the Canvas.
 - In `Assets/Game/Scenes/Client.unity`, `MainMenuNew` is the routed `MenuType.MainMenu` root. Its `AnimationPanel`, `CanvasGroup`, profile fields, settings button, technology-tree button, vehicle container, and battle button are wired to the existing menu, profile, preview, and matchmaking controllers.
 - The settings listener is bound to `MainMenuNew/AnimationPanel/TopPanel/SettingsBack/Settings`, the button that receives the UI click.
 - The selected vehicle's name, faction, tier icon, XP, armor, mobility, firepower, and calculated average DPS are shown continuously in `MainMenuNew/AnimationPanel/RightPanel`. The panel is updated from the profile's selected vehicle after the vehicle list and API stats load; it is not shown only while hovering a slot.

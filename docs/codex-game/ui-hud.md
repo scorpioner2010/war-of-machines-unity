@@ -35,6 +35,8 @@ Current owner scripts:
   - On damage, enables the image immediately at canvas group alpha 1, fades alpha to 0 over 1 second, then disables the image object. It is visual only and does not affect gameplay.
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Gun crosshair UI, reload/ammo text, dispersion display target for weapon systems.
+- `Assets/Game/Scripts/UI/HUD/CameraCrosshair.cs`
+  - Owns the simple center crosshair. It records show/hide requests received before the inactive `GameplayHUD` first runs `Awake()`, then applies the last requested state after registration. This keeps the first local-vehicle spawn from being lost to `UIScreenBase.Awake()` hiding the visual child.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReticlePresenter.cs`
   - Positions/presents reticle based on weapon aim.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`
@@ -44,7 +46,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`
   - Gameplay GUI root.
 - `Assets/Game/Scripts/UI/HUD/GameplayHudRuntimeBinder.cs`
-  - Runtime HUD binding support.
+  - Runtime HUD binding support. `Client.unity/Canvas/GameplayHUD` has the serialized root Canvas reference, so its crosshair uses the same Canvas as the other client menus.
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - VehicleTest bootstrap that instantiates `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab` under the scene Canvas.
   - Registers and opens the HUD through `MenuManager` when present; otherwise opens the HUD `Menu` directly because VehicleTest has no scene `MenuManager`.
@@ -74,6 +76,8 @@ Current owner scripts:
   - Suppresses normal gameplay pause handling whenever the `VehicleTest` scene is loaded, not only when it is the active scene, so additive test maps do not open centered pause UI or hide `GameplayHUD`.
 - `Assets/Game/Scripts/MenuController/MenuManager.cs`
   - Global menu state; also affects gameplay input blocking.
+  - Registers only inspector-wired scene menus during `Awake`; it does not instantiate menu prefabs at runtime.
+  - `Client.unity/Canvas/GameplayHUD` is the inspector-wired `MenuType.GameplayHUD` route and owns the live gameplay crosshair, map, player list, damage screen, and local HP display.
 - `Assets/Game/Scripts/MenuController/Menu.cs`
   - Menu animation controller used by HUD/pause/settings menus.
   - Provides `CloseImmediate()` for VehicleTest to hide `GameplayHUD` instantly without a DOTween close animation fighting the test overlay visibility.
@@ -85,5 +89,6 @@ Rules when editing HUD/UI:
 - Keep map markers, enemy model visibility, and `NameCanvas` activation on the same authoritative snapshot. Rendering through walls applies only while that snapshot still contains the robot.
 - For local hit feedback, use `DamageScreen` and `VehicleHealth.OnDamaged`; do not poll health or search for the local vehicle from the scene.
 - VehicleTest uses the same `GameplayHUD.prefab` as the main gameplay UI through `VehicleTestSceneController.clientGameplayHudPrefab`; keep this scene field assigned when changing HUD prefabs.
+- Keep the existing `Client.unity/Canvas/GameplayHUD` assigned to the `GameplayHUD` entry of the scene `MenuManager`; do not add a second HUD prefab instance or spawn one at runtime.
 - If weapon HUD changes, update `weapons-damage.md` too.
 - If menu input blocking changes, update `robot-control.md` too.
