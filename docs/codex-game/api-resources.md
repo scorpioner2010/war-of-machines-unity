@@ -14,6 +14,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs`
   - Profile loading/update flow used by menu and player data.
   - Proxies Free XP conversion through the owning player's server session, then refreshes the profile after a successful backend response.
+  - When `ClientMenuTestMode.enableOfflineMenuTest` is enabled, it builds the local owned
+    profile from `testVehicles` instead of calling the backend. The local selected vehicle
+    is stored by that test component and applied by `RobotView`.
 - `Assets/Game/Scripts/API/ServerManagers/RegisterServer.cs`
   - Registration/auth support.
 - `Assets/Game/Scripts/API/Models/*.cs`

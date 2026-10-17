@@ -6,6 +6,7 @@ using Game.Scripts.Core.Services;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Player.Data;
 using Game.Scripts.Server;
+using Game.Scripts.Testing;
 using Game.Scripts.UI.Loading;
 using System.Collections;
 using System.Collections.Generic;
@@ -50,6 +51,7 @@ namespace Game.Scripts.UI.Helpers
         [SerializeField] private int serverLookupTimeoutSeconds = 5;
         [SerializeField] private string advertisedServerAddress;
         [SerializeField] private bool applyRuntimeServerConfig = true;
+        [SerializeField] private ClientMenuTestMode menuTestMode;
 
         private LocalConnectionState _clientState = LocalConnectionState.Stopped;
         private LocalConnectionState _serverState = LocalConnectionState.Stopped;
@@ -61,6 +63,12 @@ namespace Game.Scripts.UI.Helpers
 
         private void Awake()
         {
+            if (IsOfflineMenuTestEnabled())
+            {
+                LastServerStatus = "Offline menu test mode is active. Networking was not started.";
+                return;
+            }
+
             ApplyRuntimeServerOverrides();
 
             if (connect != null && connect.transform.parent != null)
@@ -94,6 +102,11 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnDestroy()
         {
+            if (IsOfflineMenuTestEnabled())
+            {
+                return;
+            }
+
             StopServerHeartbeat();
             StopNetworkConnections("destroy");
 
@@ -116,6 +129,11 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnApplicationQuit()
         {
+            if (IsOfflineMenuTestEnabled())
+            {
+                return;
+            }
+
             StopServerHeartbeat();
             StopNetworkConnections("application quit");
         }
@@ -173,6 +191,11 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnConnectClicked()
         {
+            if (IsOfflineMenuTestEnabled())
+            {
+                return;
+            }
+
             if (networkManager == null)
             {
                 return;
@@ -525,6 +548,12 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnServerClicked()
         {
+            if (IsOfflineMenuTestEnabled())
+            {
+                LastServerStatus = "Offline menu test mode is active. Networking was not started.";
+                return;
+            }
+
             if (networkManager == null)
             {
                 LastServerStatus = "Cannot start server: NetworkManager is not assigned.";
@@ -779,6 +808,11 @@ namespace Game.Scripts.UI.Helpers
             }
 
             _clientInfoRegistered = true;
+        }
+
+        private bool IsOfflineMenuTestEnabled()
+        {
+            return menuTestMode != null && menuTestMode.IsOfflineMenuTestEnabled;
         }
 
         private void RefreshControls()

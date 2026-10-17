@@ -8,6 +8,7 @@ using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Player.Data;
+using Game.Scripts.Testing;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
 using Game.Scripts.UI.Tree;
@@ -24,6 +25,12 @@ namespace Game.Scripts.API.ServerManagers
 
         public static void UpdateProfile()
         {
+            if (ClientMenuTestMode.TryCreateProfile(out PlayerProfile localTestProfile))
+            {
+                ApplyLocalTestProfile(localTestProfile);
+                return;
+            }
+
             if (_in == null)
             {
                 return;
@@ -35,6 +42,13 @@ namespace Game.Scripts.API.ServerManagers
 
         public static void ConvertFreeXp(int vehicleId, int amount)
         {
+            if (ClientMenuTestMode.IsEnabled)
+            {
+                FreeXpConversionPopup.NotifyConversionFailed();
+                Popup.ShowText("Free XP conversion is disabled in offline menu test mode.", Color.yellow);
+                return;
+            }
+
             if (_in == null)
             {
                 Popup.ShowText("Profile service is not available.", Color.red);
@@ -156,6 +170,26 @@ namespace Game.Scripts.API.ServerManagers
             }
 
             StandardLoadingOverlay.Hide();
+        }
+
+        private static void ApplyLocalTestProfile(PlayerProfile profile)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            if (ServiceLocator.IsRegistered<IPlayerClientInfo>() == false)
+            {
+                ServiceLocator.TryRegister<IPlayerClientInfo>(new PlayerClientInfo());
+            }
+
+            IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+            clientInfo.SetPlayerData(profile);
+            clientInfo.SetClientId(0);
+
+            MainMenu.In?.UpdatePlayerInfo(profile);
+            RobotView.GenerateIcons();
         }
     }
 }

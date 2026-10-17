@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using Game.Scripts.MenuController;
+using Game.Scripts.Testing;
 using Game.Scripts.UI.Lobby;
 using UnityEngine;
 using UnityEngine.UI;
@@ -57,6 +58,13 @@ namespace Game.Scripts.Networking.Lobby
 
         public void FindMatch()
         {
+            if (ClientMenuTestMode.IsEnabled)
+            {
+                MatchmakingStatusView.UpdateInfo(0f, 1);
+                MenuManager.OpenMenu(MenuType.Matchmaking);
+                return;
+            }
+
             if (lobbyManager == null)
             {
                 return;
@@ -68,6 +76,12 @@ namespace Game.Scripts.Networking.Lobby
 
         public void Cancel()
         {
+            if (ClientMenuTestMode.IsEnabled)
+            {
+                MenuManager.OpenMenu(MenuType.MainMenu);
+                return;
+            }
+
             if (lobbyManager == null)
             {
                 return;

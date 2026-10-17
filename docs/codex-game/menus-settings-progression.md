@@ -14,6 +14,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/MainMenu/FreeXpConversionPopup.cs`, `FreeXpVehicleOption.cs`
   - Show the current Free XP balance, build a hidden dropdown list from `PlayerProfile.ownedVehicles`, and convert the selected whole-number slider amount into XP for the selected owned vehicle.
   - Keep Convert disabled until a vehicle and a positive amount are selected; Close hides the popup without sending a request.
+  - `Client.unity/FreeXpConversionPopup` uses the Settings visual system without changing these serialized interaction references: a `620 x 520` `matchmaking_panel_blank` panel; a `322 x 40` `profile_general_statistics` vehicle dropdown with the `tree_icon_research` arrow; and a matching `322 x 40` Gamma-style slider (`loading_cell_ai_attempt_rejected`, its fill variant, and `profile_icon_losses_skull` handle). The `322 x 180` option list uses `slot_empty_05`; option rows and the `160 x 60` Convert/Close controls use `popup_login_button_background`.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleItemView.cs`
   - Vehicle list item view.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleSlotView.cs`
@@ -42,8 +43,14 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/Settings/*.cs`
   - Settings tabs and settings model/view/controller. Their controls are authored and wired as serialized primitive UI objects in `Assets/Game/Scenes/Client.unity`; the views only bind values and events at runtime.
   - `GeneralTabView` owns the Server crosshair and Camera shake toggles, `ControlsTabView` owns gameplay and sniper mouse-sensitivity sliders, and `VideoTabView` owns FPS-limit and vertical-sync controls.
+  - `Client.unity/Settings` uses Video as the visual reference for all tab controls. General toggles are centered at X `77.64`, are `322 x 32`, and retain the same checkbox/label setup as Vertical sync. Controls and Sounds sliders are centered at X `77.64`, are `322 x 40`, and have rows at Y `297`, `237`, and, for SFX, `177`; their labels are at X `-195` and use `160 x 60` bounds.
+  - Every settings slider uses the same serialized frame, fill, and handle sprites as Video Gamma: `Unused/Backgrounds/Bar/loading_cell_ai_attempt_rejected.png`, `loading_cell_ai_attempt_rejected 1.png`, and `Unused/Backgrounds/icons/profile_icon_losses_skull.png`. These are presentation-only scene values; the existing tab views and serialized Slider/Toggle references remain the owners of interaction and settings values.
 - `Assets/Game/Scripts/Client/ClientSettings.cs`
   - Local client runtime settings for frame pacing, projectile visuals, HUD, map, camera, reticle, auto-aim, and hover outline behavior.
+- `Assets/Game/Scripts/Testing/ClientMenuTestMode.cs`
+  - Scene-local offline menu test switch. In `Assets/Game/Scenes/Client.unity`, select `ClientMenuTestMode`, enable `enableOfflineMenuTest`, and edit its `testVehicles` array. Every array entry is an owned local vehicle used by the robot selector and its faction development tree; `vehicleId` values must be unique and `code` must exist in `RobotRegistry` to show its icon/preview. The saved defaults contain Iron Alliance and Nova Syndicate entries. This is for UI testing only; Free XP conversion remains disabled and the Battle/Cancel controls only open and close the matchmaking menu.
+- `Assets/Game/Scripts/UI/Helpers/StartServerButtons.cs`
+  - Receives the serialized `ClientMenuTestMode` reference from `Client.unity`. When its checkbox is enabled, it does not subscribe to or start FishNet networking.
 - `Assets/Editor/ClientSettingsEditor.cs`
   - Custom Unity inspector for `ClientSettings`.
   - Keeps technical serialized field names visible and shows a Ukrainian explanation with a practical example as a tooltip when hovering every root and nested setting.
@@ -84,6 +91,7 @@ Important behavior:
 - `MenuLoadingScreenManager` receives FishNet `OnLoadStart`, `OnLoadPercentChange`, and `OnLoadEnd` for the active `LoadQueueData`. It resets the bar to `0`, forwards each real load percentage to `MenuLoadingProgressBar`, and sets it to `1` for one frame before hiding the load screen. Events from a different queued load are ignored, so a later operation cannot overwrite the current bar.
 - In `Assets/Game/Scenes/Client.unity`, `FreeXpConversionPopup` is an initially inactive primitive UI popup under the main Canvas. Its serialized references include the vehicle-dropdown button, scrollable option-template container, whole-number slider, Convert button, and Close button; `MainMenu` is wired to the existing `freeXp` control Button.
 - Gameplay input blocking is tied to menu state in `VehicleInputController.IsGameplayInputBlockedByUi`.
+- Offline menu test flow: `ClientMenuTestMode` is enabled in the Client scene -> `StartServerButtons` does not start a connection -> `ClientMenuTestMode.Start` opens `MainMenu` -> `ProfileServer.UpdateProfile` creates an owned local profile from `testVehicles` -> `RobotView` builds each selector slot and changes the local selected vehicle -> `DevelopmentTree` groups the same data by `factionCode` and builds one tree per faction without HTTP or RPC calls.
 - `Assets/Game/Scenes/Client.unity` keeps the `FindGame` root inactive until its routed menu opens. Its `AnimationPanel/panel/arrow` uses `ClockwiseUiRotator` with `rotationSpeed: 120`.
 
 Rules when editing menus:

@@ -13,6 +13,7 @@ using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Player.Data;
+using Game.Scripts.Testing;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
 using Game.Scripts.UI.Screens;
@@ -105,6 +106,27 @@ namespace Game.Scripts.UI.Tree
         private async UniTask<bool> LoadDataFromServer()
         {
             _factionNameByCode.Clear();
+
+            if (ClientMenuTestMode.TryCreateDevelopmentTrees(out VehicleLite[] localTestVehicles, out VehicleGraph[] localTestGraphs))
+            {
+                _vehicleLites = localTestVehicles;
+                _factionCodes = BuildFactionCodes(localTestVehicles);
+                for (int i = 0; i < localTestVehicles.Length; i++)
+                {
+                    VehicleLite vehicle = localTestVehicles[i];
+                    if (vehicle == null || string.IsNullOrWhiteSpace(vehicle.factionCode))
+                    {
+                        continue;
+                    }
+
+                    _factionNameByCode[vehicle.factionCode] = string.IsNullOrWhiteSpace(vehicle.factionName)
+                        ? vehicle.factionCode
+                        : vehicle.factionName;
+                }
+
+                _graphs = localTestGraphs;
+                return true;
+            }
 
             (bool ok, _, VehicleLite[] items) = await VehiclesManager.GetAll();
             if (!ok || items == null || items.Length == 0)

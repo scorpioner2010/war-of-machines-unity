@@ -14,6 +14,7 @@ using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Player.Data;
+using Game.Scripts.Testing;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Screens;
 using NaughtyAttributes;
@@ -74,6 +75,12 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
+            if (ClientMenuTestMode.TryCreateVehicles(out VehicleLite[] localTestVehicles))
+            {
+                await BuildLocalTestMenuAsync(view, clientInfo.Profile, localTestVehicles, buildVersion);
+                return;
+            }
+
             OwnedVehicleDto selected = clientInfo.Profile.GetSelected();
             List<VehicleSlotVehicleData> vehicles = new List<VehicleSlotVehicleData>();
             (bool isSuccess, string message, VehicleLite[] items) vehicleStatsResult = await VehiclesManager.GetAll();
@@ -127,6 +134,62 @@ namespace Game.Scripts.UI.MainMenu
             }
 
             await SpawnAsync(vehicleRoot);
+            await UpdateUIAsync(view, buildVersion);
+        }
+
+        private static async UniTask BuildLocalTestMenuAsync(
+            RobotView view,
+            PlayerProfile profile,
+            VehicleLite[] localTestVehicles,
+            int buildVersion)
+        {
+            if (view == null || profile == null || localTestVehicles == null || localTestVehicles.Length == 0)
+            {
+                return;
+            }
+
+            OwnedVehicleDto selected = profile.GetSelected();
+            List<VehicleSlotVehicleData> vehicles = new List<VehicleSlotVehicleData>();
+            if (profile.ownedVehicles != null)
+            {
+                for (int i = 0; i < profile.ownedVehicles.Length; i++)
+                {
+                    OwnedVehicleDto vehicle = profile.ownedVehicles[i];
+                    if (vehicle == null)
+                    {
+                        continue;
+                    }
+
+                    VehicleSlotVehicleData vehicleData = new VehicleSlotVehicleData();
+                    vehicleData.Icon = GameResourceManager.GetIcon(vehicle.code);
+                    vehicleData.VehicleId = vehicle.vehicleId;
+                    vehicleData.IsSelected = selected != null && selected.vehicleId == vehicle.vehicleId;
+                    vehicleData.Name = vehicle.name;
+                    vehicleData.ViewRange = VehicleRuntimeStats.ResolveViewRange(vehicle.viewRange);
+                    vehicleData.ApplyVehicleLite(FindVehicleStats(localTestVehicles, vehicle.code, vehicle.vehicleId));
+                    vehicles.Add(vehicleData);
+                }
+            }
+
+            vehicles.Sort(CompareByName);
+            BuildVehicleSlots(view, vehicles);
+            if (!IsBuildCurrent(view, buildVersion))
+            {
+                return;
+            }
+
+            if (selected == null)
+            {
+                await UpdateUIAsync(view, buildVersion);
+                return;
+            }
+
+            VehicleRoot vehicleRoot = GameResourceManager.GetPrefab(selected.code);
+            if (vehicleRoot != null && IsBuildCurrent(view, buildVersion))
+            {
+                await SpawnAsync(vehicleRoot);
+            }
+
             await UpdateUIAsync(view, buildVersion);
         }
 
@@ -229,6 +292,12 @@ namespace Game.Scripts.UI.MainMenu
 
             if (selected == null || id == selected.vehicleId)
             {
+                return;
+            }
+
+            if (ClientMenuTestMode.TrySelectVehicle(id))
+            {
+                ProfileServer.UpdateProfile();
                 return;
             }
 
