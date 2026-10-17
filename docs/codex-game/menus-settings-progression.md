@@ -50,8 +50,10 @@ Current owner scripts:
 - `Assets/Editor/DocumentedSettingsInspector.cs`
   - Shared editor-only renderer used by settings inspectors.
   - Draws nested serialized settings recursively and provides tooltip documentation without adding description rows below fields.
-- `Assets/Game/Scripts/UI/Loading/*.cs`
-  - Loading screen and shared spinner.
+- `Assets/Game/Scripts/UI/Loading/MenuLoadingScreenManager.cs`, `SharedLoadingSpinner.cs`
+  - Loading screen routing, shared spinner, and FishNet scene-load progress subscription.
+- `Assets/Game/Scripts/UI/Loading/MenuLoadingProgressBar.cs`
+  - Drives the ten-segment map-loading bar at `MenuLoadingScreen/AnimationPanel/Bar`. Its inspector `progress` value is clamped from 0 to 1; complete segments use `fullSprite`, the next segment uses `afterFullSprite`, and remaining segments are inactive.
 - `Assets/Game/Scripts/UI/Helpers/ClockwiseUiRotator.cs`
   - Lightweight UI rotation component. A positive `rotationSpeed` rotates its RectTransform clockwise in unscaled time.
 - `Assets/Game/Scripts/Audio/ButtonComponent.cs`
@@ -78,6 +80,8 @@ Important behavior:
   - The right-side `RightInfoPanel` is static layout only. `DevelopmentTreeDetailsPanel` updates its `Tier/lvl` image from the serialized I–X tier sprites after a node is selected.
   - `DevelopmentTree` registers `CloseBattle` at runtime through its serialized `buttonBack` reference. `DevelopmentTreeCloseButton` also closes on left-pointer-down and verifies the left mouse press is inside its own `RectTransform`, so the control still closes when Unity does not emit the legacy `Button.onClick`. The panel root is hidden before the main-menu route opens.
   - Owned vehicles disable both actions; researched but unowned vehicles enable only Buy; vehicles with an affordable owned predecessor enable only Research.
+- In `Assets/Game/Scenes/Client.unity`, `MenuLoadingScreen/AnimationPanel/Bar` has `MenuLoadingProgressBar` with its ten `element (0-9)` images and the `full` / `after full` sprites assigned. At progress `0.5`, elements 0-4 are full, element 5 is the after-full sprite, and elements 6-9 are hidden; at `1.0`, all ten elements are full.
+- `MenuLoadingScreenManager` receives FishNet `OnLoadStart`, `OnLoadPercentChange`, and `OnLoadEnd` for the active `LoadQueueData`. It resets the bar to `0`, forwards each real load percentage to `MenuLoadingProgressBar`, and sets it to `1` for one frame before hiding the load screen. Events from a different queued load are ignored, so a later operation cannot overwrite the current bar.
 - In `Assets/Game/Scenes/Client.unity`, `FreeXpConversionPopup` is an initially inactive primitive UI popup under the main Canvas. Its serialized references include the vehicle-dropdown button, scrollable option-template container, whole-number slider, Convert button, and Close button; `MainMenu` is wired to the existing `freeXp` control Button.
 - Gameplay input blocking is tied to menu state in `VehicleInputController.IsGameplayInputBlockedByUi`.
 - `Assets/Game/Scenes/Client.unity` keeps the `FindGame` root inactive until its routed menu opens. Its `AnimationPanel/panel/arrow` uses `ClockwiseUiRotator` with `rotationSpeed: 120`.

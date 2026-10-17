@@ -19,7 +19,10 @@ namespace Game.Scripts.UI.Loading
     {
         private const string DefaultConnectionStatus = "Trying to connect to battle server";
 
+        [SerializeField] private MenuLoadingProgressBar loadingProgressBar;
+
         private bool _isSubscribed;
+        private LoadQueueData _activeSceneLoad;
         private static string _connectionStatusText = DefaultConnectionStatus;
         private static int _connectionLoadingVersion;
 
@@ -49,6 +52,7 @@ namespace Game.Scripts.UI.Loading
 
             InstanceFinder.SceneManager.OnLoadEnd += OnGameplayLoadEnd;
             InstanceFinder.SceneManager.OnLoadStart += OnGameplayLoadStart;
+            InstanceFinder.SceneManager.OnLoadPercentChange += OnGameplayLoadProgress;
             _isSubscribed = true;
         }
 
@@ -61,21 +65,48 @@ namespace Game.Scripts.UI.Loading
 
             InstanceFinder.SceneManager.OnLoadEnd -= OnGameplayLoadEnd;
             InstanceFinder.SceneManager.OnLoadStart -= OnGameplayLoadStart;
+            InstanceFinder.SceneManager.OnLoadPercentChange -= OnGameplayLoadProgress;
             _isSubscribed = false;
         }
         
-        private void OnGameplayLoadStart(SceneLoadStartEventArgs obj)
+        private void OnGameplayLoadStart(SceneLoadStartEventArgs args)
         {
+            _activeSceneLoad = args.QueueData;
+            loadingProgressBar?.SetProgress(0f);
             ShowLoading();
         }
 
-        private void OnGameplayLoadEnd(SceneLoadEndEventArgs obj)
+        private void OnGameplayLoadProgress(SceneLoadPercentEventArgs args)
         {
-            HandleGameplayLoadEndAsync().Forget();
+            if (_activeSceneLoad != args.QueueData || CurrentMode != MenuLoadingScreenMode.SceneLoading)
+            {
+                return;
+            }
+
+            loadingProgressBar?.SetProgress(args.Percent);
         }
 
-        private async UniTask HandleGameplayLoadEndAsync()
+        private void OnGameplayLoadEnd(SceneLoadEndEventArgs args)
         {
+            if (_activeSceneLoad != args.QueueData)
+            {
+                return;
+            }
+
+            HandleGameplayLoadEndAsync(args.QueueData).Forget();
+        }
+
+        private async UniTask HandleGameplayLoadEndAsync(LoadQueueData completedSceneLoad)
+        {
+            loadingProgressBar?.SetProgress(1f);
+            await UniTask.NextFrame();
+
+            if (_activeSceneLoad != completedSceneLoad)
+            {
+                return;
+            }
+
+            _activeSceneLoad = null;
             RobotView.Despawn();
             HideLoading();
             await UniTask.Delay(1000);
