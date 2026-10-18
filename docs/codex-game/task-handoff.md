@@ -7,37 +7,54 @@ This is the durable state for one active task. A new Codex chat must read this f
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-18
 - Last updated: 2026-10-18
-- Original user wording: unavailable; the prior chat became inaccessible after its usage limit was reached.
-- Recovered objective: make the main-menu robot-card list horizontally scrollable, preserve its position and cards while a selected robot updates, and keep the preview platform visible while profile data or a new preview robot loads.
+- Original user wording: "окей реалізуй це"
+- Objective: replace the raster `SniperScopeMask` scope overlay with a procedural, resolution-independent UI mask.
 
 ### Acceptance criteria
 
-1. When there are more owned robots than fit in the main-menu row, the player can drag or use the mouse wheel to reveal them.
-2. Selecting or loading another owned robot does not reset the current horizontal scroll position or recreate unchanged robot cards.
-3. The preview platform/camera environment does not flash black while profile data or the selected robot is loading.
-4. Opening the menu and selecting robots produces no Unity Console errors.
+1. `SniperScopeMask` no longer samples `Hud_Aim_Bracket.png`.
+2. A black fullscreen overlay has a precisely circular transparent aperture at the screen centre at every aspect ratio and display resolution.
+3. The aperture has only pixel-scale antialiasing, not texture-scaling blur.
+4. Existing sniper-mode activation and `SniperScopeOverlay` CanvasGroup fade continue to work.
+5. The HUD documentation describes the new shader, material, scene owner, and tuning properties.
+
+### Assumptions
+
+- Retain the current black overlay opacity (`0.72`) and centre the aperture unless visual testing identifies a required aim-point offset.
+- Use an inspector-wired UI material and shader; do not add runtime component discovery or gameplay code.
+- The existing raster scope PNG becomes obsolete only if no other asset references remain after the scene migration.
 
 ### Work recorded
 
-- `Assets/Game/Scenes/Client.unity`: replaced the direct vehicle-card layout container with a horizontal `ScrollRect`, transparent input image, `RectMask2D`, and `Content` child that owns the horizontal layout and content-size fitter; `RobotView.vehicleContainer` now points to `Content`.
-- `Assets/Game/Scripts/UI/MainMenu/RobotView.cs`: retains matching vehicle slots/cards by vehicle ID, updates them in place, and separates destroying the preview robot from clearing slots and hiding the platform.
-- `Assets/Game/Scripts/UI/MainMenu/VehicleSlotView.cs`: added in-place vehicle-card update support and slot-index refresh.
-- `docs/codex-game/menus-settings-progression.md`: documented the scroll view and preview-platform behavior.
+- Orientation complete: read `README.md`, `ui-hud.md`, `robot-control.md`, `weapons-damage.md`, and `server-settings.md`.
+- Inspection found that `Client.unity/SniperScopeMask` is a standard `Image` using `Hud_Aim_Bracket.png` and a `CanvasGroup` fade through `SniperScopeOverlay`.
+- The source texture is `1024x1024`, has mipmaps and compression enabled, and inherits the default 512-pixel import cap, while its scene `RectTransform` is stretched to `8080x8863` UI units.
+- Added `Assets/Game/Content/Rendering/Shaders/ProceduralSniperScopeMask.shader`: a UI-compatible signed-distance-field shader that corrects for display aspect ratio and retains one-pixel derivative antialiasing without sampling a texture.
+- Added `Assets/Game/Content/UI/Materials/ProceduralSniperScopeMask.mat`: the aperture radius is `0.373` of display height, matching the old 102-pixel source opening after its old UI scale; centre is `(0.5, 0.5)` and extra softness is disabled.
+- `Client.unity/SniperScopeMask` now uses that material, has no sprite, stretches directly to `SniperScopeOverlay`, and does not receive raycasts. The black image tint and serialized `CanvasGroup` remain unchanged, preserving the existing fade behavior.
+- Removed the obsolete `Assets/Game/Content/UI/Textures/HUD/Hud_Aim_Bracket.png` and its `.meta`; project-wide reference search found no remaining scene/content reference to its GUID.
+- Updated `ui-hud.md` with the scene hierarchy, shader/material ownership, tuning properties, and CanvasGroup dependency.
 
 ### Verification recorded
 
-- `git diff --check`: passed on 2026-10-18; only line-ending warnings were emitted.
-- Last 400 lines of Unity `Editor.log`: no matching compiler errors or exceptions found on 2026-10-18.
-- Play Mode test: not run or not recorded. This is required before completion.
+- `rg` confirmed that no scene/content asset still references the removed `Hud_Aim_Bracket` GUID and that scene, material, and shader GUID links form one complete chain.
+- Confirmed Unity UGUI's `Image.OnPopulateMesh` calls its base full-rectangle quad generator when no sprite is assigned, so the sprite-less `Image` still submits the procedural mask geometry.
+- Unity 6 reimported the shader, material, and `Client.unity`; `Editor.log` shows the shader compiler started and contains no `ProceduralSniperScopeMask`, shader-compilation, or C# compilation error.
+- The Client scene entered and exited Play Mode without a shader error. It remained at the authorization/connection screen, so no spawned player vehicle was available to trigger sniper mode.
+- `git diff --check`: passed; only Git's line-ending warnings were emitted.
+- `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset` is currently modified but is outside this scope-mask task; its change was not reviewed or intentionally edited here.
 
 ### Remaining work
 
-1. In Unity, open the Client scene and enter Play Mode.
-2. Verify all four acceptance criteria above, including a profile with enough owned robots to overflow the row.
-3. Check the Unity Console after changing selected robots.
-4. Review `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset`: it has a large unrelated-looking uncommitted diff and must not be attributed to this task without confirmation.
-5. Record the test result here and mark the task `COMPLETED` only if all criteria pass; otherwise record the observed failure and keep the status incomplete.
+1. Join or create a test match with a sniper-capable vehicle, enter and exit sniper zoom, and verify the round aperture is centred, sharp at the desired size, and fades with the rest of `SniperScopeOverlay`.
+2. Tune `ProceduralSniperScopeMask.mat` only if needed: `Aperture Radius (Screen Height)` sets circle radius; `Aperture Center (UV)` moves it; keep `Extra Edge Softness (Pixels)` at zero unless a deliberately softer edge is desired.
 
 ## Completed task history
 
-No completed task recorded yet.
+### Main-menu robot-card scrolling and preview stability — closed by user without Play Mode verification
+
+- Previous status: `IMPLEMENTED_NEEDS_VERIFICATION`.
+- User instructed that this task be closed on 2026-10-18 before beginning the procedural scope-mask task.
+- Recorded implementation: `Client.unity` added a horizontal robot-card `ScrollRect`; `RobotView.cs` retains matching cards and horizontal position; `VehicleSlotView.cs` supports in-place updates; `menus-settings-progression.md` documents it.
+- Recorded automated checks: `git diff --check` passed (only line-ending warnings); the last 400 lines of `Editor.log` contained no matching compiler errors or exceptions.
+- Not verified: the four required Play Mode criteria and the unrelated large diff in `RobotoCondensed-Regular SDF.asset`.

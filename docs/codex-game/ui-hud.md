@@ -35,6 +35,10 @@ Current owner scripts:
   - On damage, enables the image immediately at canvas group alpha 1, fades alpha to 0 over 1 second, then disables the image object. It is visual only and does not affect gameplay.
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Gun crosshair UI, reload/ammo text, dispersion display target for weapon systems.
+- `Assets/Game/Scenes/Client.unity/SniperScopeOverlay/SniperScopeMask`
+  - Fullscreen procedural sniper-scope vignette. Its standard UI `Image` is tinted black at alpha `0.72`, uses `Assets/Game/Content/UI/Materials/ProceduralSniperScopeMask.mat`, and intentionally has no sprite.
+  - The material uses `Assets/Game/Content/Rendering/Shaders/ProceduralSniperScopeMask.shader`, which calculates a signed-distance circular aperture per pixel rather than sampling a scope PNG. `Aperture Radius (Screen Height)` is the radius normalized to the display height; the default `0.373` matches the former `Hud_Aim_Bracket.png` opening. `Aperture Center (UV)` moves the opening, and `Extra Edge Softness (Pixels)` adds optional softness beyond the shader's one-pixel antialiasing.
+  - The RectTransform must stretch to its `SniperScopeOverlay` parent with zero offsets. `SniperScopeOverlay` is activated from `CameraController` and fades its serialized `CanvasGroup`; the shader consumes UI vertex alpha, so the existing fade remains authoritative.
 - `Assets/Game/Scripts/UI/HUD/CameraCrosshair.cs`
   - Owns the simple center crosshair. It records show/hide requests received before the inactive `GameplayHUD` first runs `Awake()`, then applies the last requested state after registration. This keeps the first local-vehicle spawn from being lost to `UIScreenBase.Awake()` hiding the visual child.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReticlePresenter.cs`
