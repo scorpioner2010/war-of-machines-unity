@@ -146,5 +146,6 @@ namespace Game.Scripts.API.Endpoints
         public int bolts;
         public int freeXp;
         public int mmrDelta;
+        public bool rewardsCalculated;
     }
 }

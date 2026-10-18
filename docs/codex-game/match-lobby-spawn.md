@@ -18,6 +18,12 @@ Current owner scripts:
   - Sends unreliable visibility snapshots with a monotonic state version, FishNet server tick, and per-entry remaining lifetime. The client uses the tick to subtract packet age before applying a deadline.
   - Receives `VehicleHealth.OnServerDeath` to evaluate battle end. Individual dead vehicles are later removed by the authoritative `VehicleHealth` FishNet despawn timer, not by local client presentation code.
   - When the last real player disconnects from a spawned/loading match, finishes the match as a draw, unloads that match scene on the server without affecting other room instances, and removes the room after result delivery. This prevents abandoned bot vehicles and their AI from accumulating across reconnects.
+  - At battle end, receives the per-user result built by `MatchResultService` and delivers it directly or queues it in `PendingBattleResults` until that same `userId` reconnects.
+- `Assets/Game/Scripts/Networking/Lobby/MatchResultService.cs`
+  - Builds final API participant input from each real room player's stable `userId`, vehicle, team, server-authoritative kills, damage, and result.
+  - Accepts a reward payload only when every submitted `userId` has a matching `rewardsCalculated` participant item. It first uses the end response, then retries the participant-history endpoint even when the end request did not return success (for example, after a response/network race). Otherwise it delivers a result flagged as reward-pending instead of filling missing rewards with confirmed zeroes.
+- `Assets/Game/Scripts/Networking/Lobby/PlayerBattleResult.cs`, `PendingBattleResults.cs`
+  - Carry the post-battle payload and its `RewardsAvailable` state across the FishNet TargetRpc and reconnect queue.
 - `Assets/Game/Scripts/Networking/Lobby/MatchVisibilityService.cs`
   - Builds team visibility from room participants, view range, line of sight, and spotted memory.
   - Sends snapshots to real players only, but also exposes server-side `MatchVisibleEnemy` results for bot target acquisition and last-known-position navigation.
@@ -63,6 +69,12 @@ Spawn flow:
 10. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
 11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team. VehicleTest forces its spawned vehicles' client presentation visible because its test room does not receive the normal match visibility snapshots.
 12. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
+
+Post-battle result flow:
+1. `GameplaySpawner` finishes the room and `MatchResultService` posts the real-player inputs to `/matches/{matchId}/end`.
+2. The API returns stored per-match XP, Bolts, Free XP, and MMR for the same `userId`; participant history is the fallback if the immediate response is incomplete.
+3. A complete authoritative payload is delivered with `RewardsAvailable = true`. An unavailable or historical incomplete payload is delivered as pending while preserving room-authoritative kills and damage.
+4. `GameResultUI` confirms receipt when closed and refreshes the profile, so persistent totals are reloaded after the popup.
 
 Rules when editing match/spawn:
 - Keep room state authoritative on server.

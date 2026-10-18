@@ -7,49 +7,52 @@ This is the durable state for one active task. A new Codex chat must read this f
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-18
 - Last updated: 2026-10-18
-- Original user wording: "окей реалізуй це"
-- Objective: replace the raster `SniperScopeMask` scope overlay with a procedural, resolution-independent UI mask.
+- Original user wording: "супер, я помітив баг після бою ось такий, деякі параметри просто не відображаються чи начислилися чи ні, болтів пише що 0 але я думаю там в реальності не 0, тобюі треба знайти в чому причина та виправит це"
+- Objective: diagnose and fix incomplete or incorrect post-battle reward/statistic presentation, particularly zero Bolts when a reward may have been granted.
 
 ### Acceptance criteria
 
-1. `SniperScopeMask` no longer samples `Hud_Aim_Bracket.png`.
-2. A black fullscreen overlay has a precisely circular transparent aperture at the screen centre at every aspect ratio and display resolution.
-3. The aperture has only pixel-scale antialiasing, not texture-scaling blur.
-4. Existing sniper-mode activation and `SniperScopeOverlay` CanvasGroup fade continue to work.
-5. The HUD documentation describes the new shader, material, scene owner, and tuning properties.
+1. The post-battle result popup displays the authoritative per-player kills, damage, XP, Bolts, Free XP, and MMR delta for the finished match.
+2. A missing backend reward record cannot silently appear as a valid zero-reward result; it is either recovered/retried or presented as pending/error while the player profile refreshes.
+3. Backend reward calculation and the client popup use the same stable player identity.
+4. The relevant match, API, and UI mechanic documentation describes the current result flow and fallback behavior.
+5. Static checks and a targeted verification of the result-payload mapping pass; a real match verification is recorded if it can be run.
 
 ### Assumptions
 
-- Retain the current black overlay opacity (`0.72`) and centre the aperture unless visual testing identifies a required aim-point offset.
-- Use an inspector-wired UI material and shader; do not add runtime component discovery or gameplay code.
-- The existing raster scope PNG becomes obsolete only if no other asset references remain after the scene migration.
+- The backend is the authority for persistent XP, Bolts, Free XP, and MMR rewards.
+- Server-side kills and damage remain authoritative room statistics, even if a backend reward lookup is temporarily unavailable.
+- Existing pending-result delivery across scene changes must continue to work.
 
 ### Work recorded
 
-- Orientation complete: read `README.md`, `ui-hud.md`, `robot-control.md`, `weapons-damage.md`, and `server-settings.md`.
-- Inspection found that `Client.unity/SniperScopeMask` is a standard `Image` using `Hud_Aim_Bracket.png` and a `CanvasGroup` fade through `SniperScopeOverlay`.
-- The source texture is `1024x1024`, has mipmaps and compression enabled, and inherits the default 512-pixel import cap, while its scene `RectTransform` is stretched to `8080x8863` UI units.
-- Added `Assets/Game/Content/Rendering/Shaders/ProceduralSniperScopeMask.shader`: a UI-compatible signed-distance-field shader that corrects for display aspect ratio and retains one-pixel derivative antialiasing without sampling a texture.
-- Added `Assets/Game/Content/UI/Materials/ProceduralSniperScopeMask.mat`: the aperture radius is `0.373` of display height, matching the old 102-pixel source opening after its old UI scale; centre is `(0.5, 0.5)` and extra softness is disabled.
-- `Client.unity/SniperScopeMask` now uses that material, has no sprite, stretches directly to `SniperScopeOverlay`, and does not receive raycasts. The black image tint and serialized `CanvasGroup` remain unchanged, preserving the existing fade behavior.
-- Removed the obsolete `Assets/Game/Content/UI/Textures/HUD/Hud_Aim_Bracket.png` and its `.meta`; project-wide reference search found no remaining scene/content reference to its GUID.
-- Updated `ui-hud.md` with the scene hierarchy, shader/material ownership, tuning properties, and CanvasGroup dependency.
+- Orientation complete: read `README.md`, `match-lobby-spawn.md`, `menus-settings-progression.md`, and `api-resources.md`.
+- Screenshot evidence: the result popup showed XP `150` and MMR `-12`, but Bolts, Free XP, Kills, and Damage as `0`.
+- Initial ownership map: `GameplaySpawner` sends `PlayerBattleResult`; `MatchResultService` loads backend rewards and builds that payload; `GameResultUI` renders it; `MatchesManager` defines the reward DTO/API call.
+- Root cause confirmed in `D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\Controllers\MatchesController.cs`: the API calculated and added Bolts/Free XP to the player profile, but `MatchParticipant` did not store either amount and the participant endpoint did not return either field. Unity therefore deserialized absent numbers as zero and rendered them as a valid reward.
+- Backend implementation: `MatchParticipant` now persists `BoltsEarned` and `FreeXpEarned`; `20261018120000_AddMatchParticipantRewardAmounts` adds both database columns; end and participant-history responses return `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated`. Existing historical rows are explicitly identified as incomplete with `rewardsCalculated: false`.
+- Client implementation: `MatchesManager` parses `rewardsCalculated`; `MatchResultService` accepts a payload only when each submitted stable `userId` has an authoritative record, and performs the history request even if the end request did not report success. The new `RewardsAvailable` flag crosses `PlayerBattleResult`, the TargetRpc, and the reconnect queue. `GameResultUI` renders reward fields only when authoritative; otherwise it displays pending values and retains the authoritative kills/damage.
+- Documentation updated: Unity `match-lobby-spawn.md`, `api-resources.md`, `menus-settings-progression.md`; API `matches-and-rewards.md`, `api-endpoints.md`, and `database-ef-core.md`.
 
 ### Verification recorded
 
-- `rg` confirmed that no scene/content asset still references the removed `Hud_Aim_Bracket` GUID and that scene, material, and shader GUID links form one complete chain.
-- Confirmed Unity UGUI's `Image.OnPopulateMesh` calls its base full-rectangle quad generator when no sprite is assigned, so the sprite-less `Image` still submits the procedural mask geometry.
-- Unity 6 reimported the shader, material, and `Client.unity`; `Editor.log` shows the shader compiler started and contains no `ProceduralSniperScopeMask`, shader-compilation, or C# compilation error.
-- The Client scene entered and exited Play Mode without a shader error. It remained at the authorization/connection screen, so no spawned player vehicle was available to trigger sniper mode.
-- `git diff --check`: passed; only Git's line-ending warnings were emitted.
-- `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset` is currently modified but is outside this scope-mask task; its change was not reviewed or intentionally edited here.
+- `dotnet build WarOfMachinesAPI.csproj --no-restore -p:OutputPath=C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\`: passed with 0 warnings and 0 errors. A normal output build could not overwrite the already-running `WarOfMachines.exe` (PID 43016), so it was not stopped.
+- `dotnet build Assembly-CSharp.csproj --no-restore -p:OutputPath=C:\Users\TorasPC\AppData\Local\Temp\codex-wom-unity-build-20261018\`: passed with 0 errors (24 existing Unity/FishNet/reference warnings).
+- `git diff --check` passed in both repositories. Source mapping confirms persisted `BoltsEarned`/`FreeXpEarned` -> API `bolts`/`freeXp` -> Unity DTO -> `PlayerBattleResult` -> result popup, with `rewardsCalculated` gating the display.
 
 ### Remaining work
 
-1. Join or create a test match with a sniper-capable vehicle, enter and exit sniper zoom, and verify the round aperture is centred, sharp at the desired size, and fades with the rest of `SniperScopeOverlay`.
-2. Tune `ProceduralSniperScopeMask.mat` only if needed: `Aperture Radius (Screen Height)` sets circle radius; `Aperture Center (UV)` moves it; keep `Extra Edge Softness (Pixels)` at zero unless a deliberately softer edge is desired.
+1. Restart/deploy the API so it loads the new build and startup migration `20261018120000_AddMatchParticipantRewardAmounts`.
+2. Complete one real match after that restart and confirm the result popup shows the same nonzero Bolts/Free XP amount that the refreshed profile receives; also confirm a reward-lookup failure shows `pending`, not `0`.
 
 ## Completed task history
+
+### Procedural sniper scope mask — implementation complete, visual zoom check deferred
+
+- Previous status: `IMPLEMENTED_NEEDS_VERIFICATION`; preserved when the user started the post-battle result task.
+- Replaced `Hud_Aim_Bracket.png` with `ProceduralSniperScopeMask.shader` and its material; `Client.unity/SniperScopeMask` now has no sprite and uses a full-screen procedural circular aperture.
+- Unity 6 imported the shader/material with no shader or C# compiler error, `git diff --check` passed, and no content/scene reference to the deleted texture remained.
+- Deferred verification: join a match with a sniper-capable vehicle, enter/exit sniper zoom, and confirm circle placement, edge sharpness, and CanvasGroup fade.
 
 ### Main-menu robot-card scrolling and preview stability — closed by user without Play Mode verification
 

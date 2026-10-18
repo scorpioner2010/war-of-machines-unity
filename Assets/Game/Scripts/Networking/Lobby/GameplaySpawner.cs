@@ -854,7 +854,8 @@ namespace Game.Scripts.Networking.Lobby
                 result.XpEarned,
                 result.Bolts,
                 result.FreeXp,
-                result.MmrDelta
+                result.MmrDelta,
+                result.RewardsAvailable
             );
         }
 
@@ -868,9 +869,10 @@ namespace Game.Scripts.Networking.Lobby
             int xpEarned,
             int bolts,
             int freeXp,
-            int mmrDelta)
+            int mmrDelta,
+            bool rewardsAvailable)
         {
-            GameResultUI.Enqueue(roomId, result, kills, damage, xpEarned, bolts, freeXp, mmrDelta);
+            GameResultUI.Enqueue(roomId, result, kills, damage, xpEarned, bolts, freeXp, mmrDelta, rewardsAvailable);
         }
 
         private async UniTask ShowEndGameDelayed(EndGameResult result)

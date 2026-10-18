@@ -35,6 +35,7 @@ namespace Game.Scripts.UI.Lobby
             public int Bolts;
             public int FreeXp;
             public int MmrDelta;
+            public bool RewardsAvailable;
         }
 
         private void Awake()
@@ -61,7 +62,16 @@ namespace Game.Scripts.UI.Lobby
             MenuManager.OnEnable -= HandleMenuOpened;
         }
 
-        public static void Enqueue(string roomId, string result, int kills, int damage, int xpEarned, int bolts, int freeXp, int mmrDelta)
+        public static void Enqueue(
+            string roomId,
+            string result,
+            int kills,
+            int damage,
+            int xpEarned,
+            int bolts,
+            int freeXp,
+            int mmrDelta,
+            bool rewardsAvailable)
         {
             PendingResults.Enqueue(new ResultData
             {
@@ -72,7 +82,8 @@ namespace Game.Scripts.UI.Lobby
                 XpEarned = xpEarned,
                 Bolts = bolts,
                 FreeXp = freeXp,
-                MmrDelta = mmrDelta
+                MmrDelta = mmrDelta,
+                RewardsAvailable = rewardsAvailable
             });
 
             if (MenuManager.CurrentType != MenuType.MainMenu && MenuManager.CurrentType != MenuType.GameResult)
@@ -202,14 +213,7 @@ namespace Game.Scripts.UI.Lobby
 
             if (summaryText != null)
             {
-                summaryText.text =
-                    $"Battle result: {FormatResult(data.Result)}\n" +
-                    $"XP: {data.XpEarned}\n" +
-                    $"Bolts: {data.Bolts}\n" +
-                    $"Free XP: {data.FreeXp}\n" +
-                    $"MMR: {FormatSigned(data.MmrDelta)}\n" +
-                    $"Kills: {data.Kills}\n" +
-                    $"Damage: {data.Damage}";
+                summaryText.text = BuildSummary(data);
             }
 
             Cursor.lockState = CursorLockMode.None;
@@ -279,6 +283,34 @@ namespace Game.Scripts.UI.Lobby
             }
 
             return "LOSE";
+        }
+
+        private static string BuildSummary(ResultData data)
+        {
+            string summary =
+                $"Battle result: {FormatResult(data.Result)}\n";
+
+            if (data.RewardsAvailable)
+            {
+                summary +=
+                    $"XP: {data.XpEarned}\n" +
+                    $"Bolts: {data.Bolts}\n" +
+                    $"Free XP: {data.FreeXp}\n" +
+                    $"MMR: {FormatSigned(data.MmrDelta)}\n";
+            }
+            else
+            {
+                summary +=
+                    "Rewards: synchronizing. Close this window to refresh your profile.\n" +
+                    "XP: pending\n" +
+                    "Bolts: pending\n" +
+                    "Free XP: pending\n" +
+                    "MMR: pending\n";
+            }
+
+            return summary +
+                   $"Kills: {data.Kills}\n" +
+                   $"Damage: {data.Damage}";
         }
 
         private static string FormatSigned(int value)

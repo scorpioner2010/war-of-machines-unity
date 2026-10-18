@@ -12,6 +12,7 @@ namespace Game.Scripts.Networking.Lobby
         public int Bolts;
         public int FreeXp;
         public int MmrDelta;
+        public bool RewardsAvailable;
     }
 
     public struct PlayerBattleResultDelivery

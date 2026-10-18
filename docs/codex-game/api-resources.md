@@ -11,6 +11,7 @@ Current owner scripts:
   - `WOM_API_BASE`, `API_BASE`, or the `-apiBase`/`--api-base` command-line override can still point a process at another API when explicitly needed.
 - `Assets/Game/Scripts/API/Endpoints/*.cs`
   - Endpoint managers for leaderboard, maps, matches, players, register, user vehicles, vehicles.
+  - `MatchesManager` maps the match reward response fields `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated`. The boolean is required because JSON's omitted numeric fields deserialize as zero in Unity; only a `true` value makes a per-match reward displayable as authoritative.
 - `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs`
   - Profile loading/update flow used by menu and player data.
   - Proxies Free XP conversion through the owning player's server session, then refreshes the profile after a successful backend response.
@@ -41,6 +42,11 @@ Free XP conversion flow:
 1. `FreeXpConversionPopup` sends the chosen owned `vehicleId` and whole XP amount to `ProfileServer.ConvertFreeXp`.
 2. `ProfileServer` gets the caller's session token and calls `UserVehiclesManager.ConvertFreeXp`, which POSTs to `/user-vehicles/{vehicleId}/convert-freexp`.
 3. The backend remains authoritative for ownership and available Free XP; on success, the client profile is reloaded so both Free XP and vehicle XP displays update.
+
+Post-battle reward API flow:
+1. `MatchResultService` sends final room statistics keyed by the stable authenticated profile `userId` through `MatchesManager.EndMatch`.
+2. The client uses `POST /matches/{matchId}/end` participant payload when it has a complete `rewardsCalculated` record for every submitted player; otherwise it requests `GET /matches/{matchId}/participants` once as recovery.
+3. If either path cannot prove the exact reward record, `GameResultUI` receives a pending state and does not present its default numeric zeroes as a completed reward. Closing that result refreshes `ProfileServer` as usual.
 
 Vehicle movement API contract:
 - `VehicleLite.traverseAcceleration` receives JSON `traverseAcceleration` and is carried by `VehicleRuntimeStats` to `VehicleMovementController`.

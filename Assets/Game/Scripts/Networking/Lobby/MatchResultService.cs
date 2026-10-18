@@ -61,18 +61,15 @@ namespace Game.Scripts.Networking.Lobby
         {
             (bool isSuccess, _, EndMatchResponse response) = await MatchesManager.EndMatch(matchId, participants, token);
 
-            if (isSuccess && response != null && response.participants != null)
+            if (isSuccess && response != null && HasAuthoritativeRewards(response.participants, participants))
             {
                 return response.participants;
             }
 
-            if (isSuccess)
+            (bool loaded, _, MatchParticipantView[] items) = await MatchesManager.GetParticipants(matchId, token);
+            if (loaded && HasAuthoritativeRewards(items, participants))
             {
-                (bool loaded, _, MatchParticipantView[] items) = await MatchesManager.GetParticipants(matchId, token);
-                if (loaded && items != null)
-                {
-                    return items;
-                }
+                return items;
             }
 
             return Array.Empty<MatchParticipantView>();
@@ -91,8 +88,28 @@ namespace Game.Scripts.Networking.Lobby
                 XpEarned = reward != null ? reward.xpEarned : 0,
                 Bolts = reward != null ? reward.bolts : 0,
                 FreeXp = reward != null ? reward.freeXp : 0,
-                MmrDelta = reward != null ? reward.mmrDelta : 0
+                MmrDelta = reward != null ? reward.mmrDelta : 0,
+                RewardsAvailable = reward != null && reward.rewardsCalculated
             };
+        }
+
+        private static bool HasAuthoritativeRewards(MatchParticipantView[] rewards, ParticipantInput[] participants)
+        {
+            if (rewards == null || participants == null || participants.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < participants.Length; i++)
+            {
+                MatchParticipantView reward = FindReward(participants[i].userId, rewards);
+                if (reward == null || !reward.rewardsCalculated)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static NetworkConnection ResolveResultConnection(Player player)
