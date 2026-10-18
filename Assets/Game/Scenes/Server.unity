@@ -546,24 +546,17 @@ MonoBehaviour:
   _componentIndexCache: 255
   _addedNetworkObject: {fileID: 1171468201}
   _networkObjectCache: {fileID: 0}
-  animationPanel: {fileID: 0}
-  fractionTreePrefab: {fileID: 6962090755101031679, guid: 91b8e8671b7ceb74a876ececa1e7d9ca,
-    type: 3}
-  starterContainerPrefab: {fileID: 6707247953551227933, guid: 1bb4ac6f4525e0947b6a9fb2564c2a59,
-    type: 3}
-  factionContainerPrefab: {fileID: 5745639412630700124, guid: f45bf5a80efebcc4bad52942c4cfe33c,
-    type: 3}
-  treeGridPrefab: {fileID: 465011443281880905, guid: 0a718985bcfc39a409ca36f1cd027b0d,
-    type: 3}
+  treeHost: {fileID: 0}
+  factionTreePrefab: {fileID: 0}
+  levelRowPrefab: {fileID: 0}
   treeItemPrefab: {fileID: 5488277571310503052, guid: 3c6edf47415a0454d8f19fa6d1d42b5a,
     type: 3}
-  buttonsContainer: {fileID: 0}
-  factionButtonPrefab: {fileID: 7252929660606042418, guid: 3ac8aecddae8ed6469d45e2412a8ef82,
-    type: 3}
-  buttonBack: {fileID: 0}
   arrowDrawer: {fileID: 1171468200}
-  arrowsLayerPrefab: {fileID: 7876436001186824432, guid: 83fd06bf7ddff6340b2087f023d1cccb,
-    type: 3}
+  buttonsContainer: {fileID: 0}
+  factionButtonPrefab: {fileID: 0}
+  buttonBack: {fileID: 0}
+  treeMenuRoot: {fileID: 0}
+  detailsPanel: {fileID: 0}
   isInitialized: 0
 --- !u!114 &1171468200
 MonoBehaviour:
@@ -913,6 +906,7 @@ MonoBehaviour:
   serverLookupTimeoutSeconds: 5
   advertisedServerAddress: 
   applyRuntimeServerConfig: 1
+  menuTestMode: {fileID: 0}
 --- !u!4 &1731322153
 Transform:
   m_ObjectHideFlags: 0

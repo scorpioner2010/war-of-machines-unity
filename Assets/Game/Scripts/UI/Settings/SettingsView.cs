@@ -42,6 +42,9 @@ namespace Game.Scripts.UI.Settings
             SoundTab.Initialize(_controller);
             ControlsTab.Initialize(_controller);
 
+            VideoTab.PendingChangesChanged -= OnVideoPendingChangesChanged;
+            VideoTab.PendingChangesChanged += OnVideoPendingChangesChanged;
+
             GeneralTab.SetData(_model);
             VideoTab.SetData(_model);
             SoundTab.SetData(_model);
@@ -61,6 +64,13 @@ namespace Game.Scripts.UI.Settings
         private void OnApplyClicked()
         {
             _controller.ApplyChanges(_currentTab);
+
+            if (_currentTab == TabType.Video)
+            {
+                VideoTab.MarkChangesApplied();
+            }
+
+            UpdateApplyButtonState();
         }
 
         private void OnBackClicked()
@@ -82,6 +92,34 @@ namespace Game.Scripts.UI.Settings
             VideoTab.gameObject.SetActive(tab == TabType.Video);
             SoundTab.gameObject.SetActive(tab == TabType.Sounds);
             ControlsTab.gameObject.SetActive(tab == TabType.Controls);
+
+            UpdateApplyButtonState();
+        }
+
+        private void OnVideoPendingChangesChanged(bool hasPendingChanges)
+        {
+            if (_currentTab == TabType.Video && ApplyButton != null)
+            {
+                ApplyButton.interactable = hasPendingChanges;
+            }
+        }
+
+        private void UpdateApplyButtonState()
+        {
+            if (ApplyButton == null)
+            {
+                return;
+            }
+
+            ApplyButton.interactable = _currentTab != TabType.Video || VideoTab.HasPendingChanges;
+        }
+
+        private void OnDestroy()
+        {
+            if (VideoTab != null)
+            {
+                VideoTab.PendingChangesChanged -= OnVideoPendingChangesChanged;
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Game.Scripts.Client;
 using TMPro;
@@ -18,6 +19,18 @@ namespace Game.Scripts.UI.Settings
 
         private SettingsController _controller;
         private bool _suppressEvents;
+        private VideoSettingsState _appliedSettings;
+        private bool _hasAppliedSettings;
+
+        public event Action<bool> PendingChangesChanged;
+
+        public bool HasPendingChanges
+        {
+            get
+            {
+                return _hasAppliedSettings && !GetCurrentSettings().Equals(_appliedSettings);
+            }
+        }
 
         public void Initialize(SettingsController controller)
         {
@@ -63,9 +76,13 @@ namespace Game.Scripts.UI.Settings
                 FrameRateDropdown.AddOptions(frameRateOptions);
             }
             
+            FullScreenDropdown.onValueChanged.RemoveListener(OnFullScreenChanged);
             FullScreenDropdown.onValueChanged.AddListener(OnFullScreenChanged);
+            ResolutionDropdown.onValueChanged.RemoveListener(OnResolutionChanged);
             ResolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
+            QualityDropdown.onValueChanged.RemoveListener(OnQualityChanged);
             QualityDropdown.onValueChanged.AddListener(OnQualityChanged);
+            GammaSlider.onValueChanged.RemoveListener(OnGammaChanged);
             GammaSlider.onValueChanged.AddListener(OnGammaChanged);
             if (FrameRateDropdown != null)
             {
@@ -131,6 +148,17 @@ namespace Game.Scripts.UI.Settings
 
             SetFrameRateDropdownInteractable(!verticalSyncEnabled);
             _suppressEvents = false;
+
+            _appliedSettings = GetCurrentSettings();
+            _hasAppliedSettings = true;
+            NotifyPendingChangesChanged();
+        }
+
+        public void MarkChangesApplied()
+        {
+            _appliedSettings = GetCurrentSettings();
+            _hasAppliedSettings = true;
+            NotifyPendingChangesChanged();
         }
         
         private void OnFullScreenChanged(int index)
@@ -149,6 +177,8 @@ namespace Game.Scripts.UI.Settings
             {
                 _controller.HandleFullScreenChanged(3);
             }
+
+            NotifyPendingChangesChanged();
         }
 
         private void OnResolutionChanged(int index)
@@ -159,6 +189,7 @@ namespace Game.Scripts.UI.Settings
             }
 
             _controller.HandleResolutionChanged(index);
+            NotifyPendingChangesChanged();
         }
 
         private void OnQualityChanged(int index)
@@ -169,6 +200,7 @@ namespace Game.Scripts.UI.Settings
             }
 
             _controller.HandleQualityChanged(index);
+            NotifyPendingChangesChanged();
         }
 
         private void OnGammaChanged(float value)
@@ -179,6 +211,7 @@ namespace Game.Scripts.UI.Settings
             }
 
             _controller.HandleGammaChanged(value);
+            NotifyPendingChangesChanged();
         }
 
         private void OnFrameRateChanged(int index)
@@ -189,6 +222,7 @@ namespace Game.Scripts.UI.Settings
             }
 
             _controller.HandleTargetFrameRateChanged(GetFrameRateOptionValue(index));
+            NotifyPendingChangesChanged();
         }
 
         private void OnVerticalSyncChanged(bool isOn)
@@ -200,6 +234,7 @@ namespace Game.Scripts.UI.Settings
 
             SetFrameRateDropdownInteractable(!isOn);
             _controller.HandleVerticalSyncChanged(isOn);
+            NotifyPendingChangesChanged();
         }
 
         private void SetFrameRateDropdownInteractable(bool interactable)
@@ -207,6 +242,69 @@ namespace Game.Scripts.UI.Settings
             if (FrameRateDropdown != null)
             {
                 FrameRateDropdown.interactable = interactable;
+            }
+        }
+
+        private void NotifyPendingChangesChanged()
+        {
+            PendingChangesChanged?.Invoke(HasPendingChanges);
+        }
+
+        private VideoSettingsState GetCurrentSettings()
+        {
+            int fullScreenIndex = FullScreenDropdown != null && FullScreenDropdown.value == 1 ? 3 : 1;
+            int resolutionIndex = ResolutionDropdown != null
+                ? VideoResolutionOptions.ClampIndex(ResolutionDropdown.value)
+                : 0;
+            int qualityIndex = QualityDropdown != null ? QualityDropdown.value : 0;
+            int targetFrameRate = FrameRateDropdown != null
+                ? GetFrameRateOptionValue(FrameRateDropdown.value)
+                : ClientFramePacingSettings.DefaultTargetFrameRate;
+            float gamma = GammaSlider != null ? GammaSlider.value : 1f;
+            bool verticalSyncEnabled = VerticalSyncToggle != null && VerticalSyncToggle.isOn;
+
+            return new VideoSettingsState(
+                fullScreenIndex,
+                resolutionIndex,
+                qualityIndex,
+                targetFrameRate,
+                gamma,
+                verticalSyncEnabled);
+        }
+
+        private struct VideoSettingsState
+        {
+            private readonly int _fullScreenIndex;
+            private readonly int _resolutionIndex;
+            private readonly int _qualityIndex;
+            private readonly int _targetFrameRate;
+            private readonly float _gamma;
+            private readonly bool _verticalSyncEnabled;
+
+            public VideoSettingsState(
+                int fullScreenIndex,
+                int resolutionIndex,
+                int qualityIndex,
+                int targetFrameRate,
+                float gamma,
+                bool verticalSyncEnabled)
+            {
+                _fullScreenIndex = fullScreenIndex;
+                _resolutionIndex = resolutionIndex;
+                _qualityIndex = qualityIndex;
+                _targetFrameRate = targetFrameRate;
+                _gamma = gamma;
+                _verticalSyncEnabled = verticalSyncEnabled;
+            }
+
+            public bool Equals(VideoSettingsState other)
+            {
+                return _fullScreenIndex == other._fullScreenIndex
+                    && _resolutionIndex == other._resolutionIndex
+                    && _qualityIndex == other._qualityIndex
+                    && _targetFrameRate == other._targetFrameRate
+                    && Mathf.Approximately(_gamma, other._gamma)
+                    && _verticalSyncEnabled == other._verticalSyncEnabled;
             }
         }
 

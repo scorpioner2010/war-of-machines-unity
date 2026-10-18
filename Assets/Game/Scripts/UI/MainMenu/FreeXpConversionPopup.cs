@@ -12,11 +12,7 @@ namespace Game.Scripts.UI.MainMenu
     public class FreeXpConversionPopup : MonoBehaviour
     {
         [SerializeField] private TMP_Text availableFreeXpText;
-        [SerializeField] private TMP_Text selectedVehicleText;
-        [SerializeField] private Button vehicleDropdownButton;
-        [SerializeField] private GameObject vehicleOptionsRoot;
-        [SerializeField] private Transform vehicleOptionsContainer;
-        [SerializeField] private FreeXpVehicleOption vehicleOptionTemplate;
+        [SerializeField] private TMP_Dropdown vehicleDropdown;
         [SerializeField] private Slider conversionSlider;
         [SerializeField] private TMP_Text conversionAmountText;
         [SerializeField] private Button convertButton;
@@ -24,7 +20,7 @@ namespace Game.Scripts.UI.MainMenu
 
         private static FreeXpConversionPopup _in;
 
-        private readonly List<FreeXpVehicleOption> _generatedOptions = new();
+        private readonly List<OwnedVehicleDto> _vehicles = new();
         private OwnedVehicleDto _selectedVehicle;
         private int _availableFreeXp;
         private bool _isInitialized;
@@ -42,30 +38,6 @@ namespace Game.Scripts.UI.MainMenu
             {
                 _in = null;
             }
-        }
-
-        public void Configure(
-            TMP_Text availableXp,
-            TMP_Text selectedVehicle,
-            Button dropdownButton,
-            GameObject optionsRoot,
-            Transform optionsContainer,
-            FreeXpVehicleOption optionTemplate,
-            Slider slider,
-            TMP_Text amountText,
-            Button convert,
-            Button close)
-        {
-            availableFreeXpText = availableXp;
-            selectedVehicleText = selectedVehicle;
-            vehicleDropdownButton = dropdownButton;
-            vehicleOptionsRoot = optionsRoot;
-            vehicleOptionsContainer = optionsContainer;
-            vehicleOptionTemplate = optionTemplate;
-            conversionSlider = slider;
-            conversionAmountText = amountText;
-            convertButton = convert;
-            closeButton = close;
         }
 
         public void Show()
@@ -88,11 +60,6 @@ namespace Game.Scripts.UI.MainMenu
                 availableFreeXpText.text = "Available Free XP: " + _availableFreeXp;
             }
 
-            if (selectedVehicleText != null)
-            {
-                selectedVehicleText.text = "Choose vehicle";
-            }
-
             PopulateVehicleOptions(profile.ownedVehicles);
 
             if (conversionSlider != null)
@@ -102,11 +69,6 @@ namespace Game.Scripts.UI.MainMenu
                 conversionSlider.wholeNumbers = true;
                 conversionSlider.SetValueWithoutNotify(0f);
                 conversionSlider.interactable = _availableFreeXp > 0;
-            }
-
-            if (vehicleOptionsRoot != null)
-            {
-                vehicleOptionsRoot.SetActive(false);
             }
 
             gameObject.SetActive(true);
@@ -145,9 +107,9 @@ namespace Game.Scripts.UI.MainMenu
 
             _isInitialized = true;
 
-            if (vehicleDropdownButton != null)
+            if (vehicleDropdown != null)
             {
-                vehicleDropdownButton.onClick.AddListener(ToggleVehicleOptions);
+                vehicleDropdown.onValueChanged.AddListener(OnVehicleDropdownChanged);
             }
 
             if (conversionSlider != null)
@@ -165,82 +127,51 @@ namespace Game.Scripts.UI.MainMenu
                 closeButton.onClick.AddListener(Hide);
             }
 
-            if (vehicleOptionTemplate != null)
-            {
-                vehicleOptionTemplate.gameObject.SetActive(false);
-            }
-
-            if (vehicleOptionsRoot != null)
-            {
-                vehicleOptionsRoot.SetActive(false);
-            }
-        }
-
-        private void ToggleVehicleOptions()
-        {
-            if (vehicleOptionsRoot == null || _isSubmitting || _generatedOptions.Count == 0)
-            {
-                return;
-            }
-
-            vehicleOptionsRoot.SetActive(!vehicleOptionsRoot.activeSelf);
         }
 
         private void PopulateVehicleOptions(OwnedVehicleDto[] vehicles)
         {
-            ClearVehicleOptions();
+            _vehicles.Clear();
 
-            if (vehicles == null)
+            if (vehicleDropdown == null)
             {
                 UpdateButtons();
                 return;
             }
 
-            for (int i = 0; i < vehicles.Length; i++)
+            List<string> options = new List<string> { "Choose vehicle" };
+            if (vehicles != null)
             {
-                OwnedVehicleDto vehicle = vehicles[i];
-                if (vehicle == null || vehicle.vehicleId <= 0 || vehicleOptionTemplate == null || vehicleOptionsContainer == null)
+                for (int i = 0; i < vehicles.Length; i++)
                 {
-                    continue;
-                }
+                    OwnedVehicleDto vehicle = vehicles[i];
+                    if (vehicle == null || vehicle.vehicleId <= 0)
+                    {
+                        continue;
+                    }
 
-                FreeXpVehicleOption option = Instantiate(vehicleOptionTemplate, vehicleOptionsContainer);
-                option.gameObject.SetActive(true);
-                option.Configure(vehicle, SelectVehicle);
-                _generatedOptions.Add(option);
+                    _vehicles.Add(vehicle);
+                    options.Add(string.IsNullOrWhiteSpace(vehicle.name) ? vehicle.code : vehicle.name);
+                }
             }
 
+            vehicleDropdown.ClearOptions();
+            vehicleDropdown.AddOptions(options);
+            vehicleDropdown.SetValueWithoutNotify(0);
+            vehicleDropdown.RefreshShownValue();
             UpdateButtons();
         }
 
-        private void ClearVehicleOptions()
+        private void OnVehicleDropdownChanged(int index)
         {
-            for (int i = 0; i < _generatedOptions.Count; i++)
+            if (index <= 0 || index > _vehicles.Count)
             {
-                FreeXpVehicleOption option = _generatedOptions[i];
-                if (option != null)
-                {
-                    Destroy(option.gameObject);
-                }
+                _selectedVehicle = null;
+                UpdateButtons();
+                return;
             }
 
-            _generatedOptions.Clear();
-        }
-
-        private void SelectVehicle(OwnedVehicleDto vehicle)
-        {
-            _selectedVehicle = vehicle;
-
-            if (selectedVehicleText != null)
-            {
-                selectedVehicleText.text = string.IsNullOrWhiteSpace(vehicle.name) ? vehicle.code : vehicle.name;
-            }
-
-            if (vehicleOptionsRoot != null)
-            {
-                vehicleOptionsRoot.SetActive(false);
-            }
-
+            _selectedVehicle = _vehicles[index - 1];
             UpdateButtons();
         }
 
@@ -259,9 +190,9 @@ namespace Game.Scripts.UI.MainMenu
         {
             int amount = conversionSlider != null ? Mathf.RoundToInt(conversionSlider.value) : 0;
 
-            if (vehicleDropdownButton != null)
+            if (vehicleDropdown != null)
             {
-                vehicleDropdownButton.interactable = !_isSubmitting && _generatedOptions.Count > 0;
+                vehicleDropdown.interactable = !_isSubmitting && _vehicles.Count > 0;
             }
 
             if (convertButton != null)
@@ -288,9 +219,9 @@ namespace Game.Scripts.UI.MainMenu
         {
             _isSubmitting = false;
 
-            if (vehicleOptionsRoot != null)
+            if (vehicleDropdown != null)
             {
-                vehicleOptionsRoot.SetActive(false);
+                vehicleDropdown.Hide();
             }
 
             gameObject.SetActive(false);

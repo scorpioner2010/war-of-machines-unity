@@ -21,6 +21,12 @@ namespace Game.Scripts.UI.Settings
         {
             _controller = controller;
 
+            if (LanguageDropdown != null)
+            {
+                LanguageDropdown.onValueChanged.RemoveListener(OnLanguageDropdownChanged);
+                LanguageDropdown.onValueChanged.AddListener(OnLanguageDropdownChanged);
+            }
+
             if (ServerCrosshairToggle != null)
             {
                 ServerCrosshairToggle.onValueChanged.RemoveListener(OnServerCrosshairToggleChanged);

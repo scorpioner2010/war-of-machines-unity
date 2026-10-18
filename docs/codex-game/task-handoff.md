@@ -1,63 +1,91 @@
 # Codex Task Handoff
 
-This is the durable state for one active task. A new Codex chat must read this file and inspect the recorded working-tree changes before acting on a request to continue.
+This is the durable state for one active Codex task. A new Codex chat must read this file and inspect the working-tree changes before acting on a request to continue.
 
 ## Active task
 
-- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
-- Started: 2026-10-18
-- Last updated: 2026-10-18
-- Original user wording: "супер, я помітив баг після бою ось такий, деякі параметри просто не відображаються чи начислилися чи ні, болтів пише що 0 але я думаю там в реальності не 0, тобюі треба знайти в чому причина та виправит це"
-- Objective: diagnose and fix incomplete or incorrect post-battle reward/statistic presentation, particularly zero Bolts when a reward may have been granted.
+- Status: `COMPLETED`
+- Started: 2026-10-19
+- Last updated: 2026-10-19
+- Original user wording: "глянь сетінги, продивися код, ссилки, як все налаштовано та реалізовано, і запрограмуй так щоб кнопка аплай була активна тільки тоді коли дійсно щось треба аплаїти, в інших випадках вона не активна, це про сетінги відео."
+- Objective: keep the Video settings Apply button disabled until a real video-setting change is pending.
 
 ### Acceptance criteria
 
-1. The post-battle result popup displays the authoritative per-player kills, damage, XP, Bolts, Free XP, and MMR delta for the finished match.
-2. A missing backend reward record cannot silently appear as a valid zero-reward result; it is either recovered/retried or presented as pending/error while the player profile refreshes.
-3. Backend reward calculation and the client popup use the same stable player identity.
-4. The relevant match, API, and UI mechanic documentation describes the current result flow and fallback behavior.
-5. Static checks and a targeted verification of the result-payload mapping pass; a real match verification is recorded if it can be run.
+1. Video Apply is disabled on initial load when controls match the applied baseline.
+2. Changing any Video dropdown, VSync toggle, or Gamma slider enables Apply.
+3. Reverting controls to the baseline or applying changes disables Apply again.
+4. Existing settings controller behavior and non-Video tab Apply behavior remain wired.
 
 ### Assumptions
 
-- The backend is the authority for persistent XP, Bolts, Free XP, and MMR rewards.
-- Server-side kills and damage remain authoritative room statistics, even if a backend reward lookup is temporarily unavailable.
-- Existing pending-result delivery across scene changes must continue to work.
+- The applied Video values are represented by the controls populated in `VideoTabView.SetData`, so the baseline is captured from those controls after initialization.
+- `SettingsController` continues to update the model immediately; Apply remains the point that persists and applies Video values.
+- The existing non-Video tabs keep their current Apply behavior; this task changes only Video pending-state feedback.
 
 ### Work recorded
 
-- Orientation complete: read `README.md`, `match-lobby-spawn.md`, `menus-settings-progression.md`, and `api-resources.md`.
-- Screenshot evidence: the result popup showed XP `150` and MMR `-12`, but Bolts, Free XP, Kills, and Damage as `0`.
-- Initial ownership map: `GameplaySpawner` sends `PlayerBattleResult`; `MatchResultService` loads backend rewards and builds that payload; `GameResultUI` renders it; `MatchesManager` defines the reward DTO/API call.
-- Root cause confirmed in `D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\Controllers\MatchesController.cs`: the API calculated and added Bolts/Free XP to the player profile, but `MatchParticipant` did not store either amount and the participant endpoint did not return either field. Unity therefore deserialized absent numbers as zero and rendered them as a valid reward.
-- Backend implementation: `MatchParticipant` now persists `BoltsEarned` and `FreeXpEarned`; `20261018120000_AddMatchParticipantRewardAmounts` adds both database columns; end and participant-history responses return `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated`. Existing historical rows are explicitly identified as incomplete with `rewardsCalculated: false`.
-- Client implementation: `MatchesManager` parses `rewardsCalculated`; `MatchResultService` accepts a payload only when each submitted stable `userId` has an authoritative record, and performs the history request even if the end request did not report success. The new `RewardsAvailable` flag crosses `PlayerBattleResult`, the TargetRpc, and the reconnect queue. `GameResultUI` renders reward fields only when authoritative; otherwise it displays pending values and retains the authoritative kills/damage.
-- Documentation updated: Unity `match-lobby-spawn.md`, `api-resources.md`, `menus-settings-progression.md`; API `matches-and-rewards.md`, `api-endpoints.md`, and `database-ef-core.md`.
+- Added a Video-settings baseline snapshot and `PendingChangesChanged` event to `VideoTabView`.
+- Added listener cleanup before rebinding, change notifications for every Video control, and baseline refresh after Apply.
+- Updated `SettingsView` to subscribe to the Video pending-state event and drive `ApplyButton.interactable` from the current Video baseline.
+- Updated `menus-settings-progression.md` with the Apply-state ownership and lifecycle.
 
-### Verification recorded
+### Verification
 
-- `dotnet build WarOfMachinesAPI.csproj --no-restore -p:OutputPath=C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\`: passed with 0 warnings and 0 errors. A normal output build could not overwrite the already-running `WarOfMachines.exe` (PID 43016), so it was not stopped.
-- `dotnet build Assembly-CSharp.csproj --no-restore -p:OutputPath=C:\Users\TorasPC\AppData\Local\Temp\codex-wom-unity-build-20261018\`: passed with 0 errors (24 existing Unity/FishNet/reference warnings).
-- `git diff --check` passed in both repositories. Source mapping confirms persisted `BoltsEarned`/`FreeXpEarned` -> API `bolts`/`freeXp` -> Unity DTO -> `PlayerBattleResult` -> result popup, with `rewardsCalculated` gating the display.
+- `git diff --check` passed for the two changed settings scripts.
+- Unity recompiled without a visible compile-error modal.
+- Play Mode with `ClientMenuTestMode`: initial Video Apply was disabled; changing Quality to Balanced enabled it; Apply disabled it after saving; changing back to High Fidelity enabled it again; applying once more disabled it.
+- Play Mode was stopped after verification; no scene changes were saved.
 
 ### Remaining work
 
-1. Restart/deploy the API so it loads the new build and startup migration `20261018120000_AddMatchParticipantRewardAmounts`.
-2. Complete one real match after that restart and confirm the result popup shows the same nonzero Bolts/Free XP amount that the refreshed profile receives; also confirm a reward-lookup failure shows `pending`, not `0`.
+None.
 
 ## Completed task history
 
+### Video settings Apply pending-state tracking — completed
+
+- `VideoTabView` now owns the applied Video baseline and reports whether dropdown, VSync, or Gamma values differ from it.
+- `SettingsView` updates the serialized Apply button from that state and refreshes the baseline after Video Apply.
+- Verified the disabled → enabled → disabled lifecycle in Play Mode with `ClientMenuTestMode`.
+
+### First vertical anchor correction — superseded by current hierarchy diagnostic
+
+- Set all five template-item rects to top vertical anchors while preserving the existing horizontal stretch and 36-pixel row height.
+- Initial Play Mode testing appeared improved, but the user's follow-up screenshot shows the first option still clipped and unused backing height below the list; the correction is therefore not accepted as final.
+
+### TMP dropdown rebuild and first visibility repair — completed before current geometry follow-up
+
+- Rebuilt the one Free XP and four Video settings selectors as inspector-wired `TMP_Dropdown` controls, preserving existing artwork, sizes, text, settings effects, and listeners.
+- Fixed template validation by keeping every template-item `Toggle` active beneath its inactive `Template`; fixed invisible rows by stretching their horizontal anchors from `x: 0` to `1`.
+- Removed the obsolete custom option scripts and references; static scans, compilation, and initial Play Mode selection/list-blocker checks passed.
+- The current task follows a later screenshot that exposes the remaining vertical-template offset.
+
+### Settings dropdown Free XP visual clone — superseded by stable TMP rebuild
+
+- Rebuilt the four Video settings controls as custom Free XP-style button/list dropdowns and preserved their value events and VSync frame-rate disabling.
+- Static checks and C# build passed, but runtime review found that multiple lists could stay open and list backing height was fixed; this implementation is now intentionally replaced by the active task.
+
+### Settings dropdown behavior migration — superseded
+
+- Replaced four Video `TMP_Dropdown` controls with `SettingsDropdown` and `SettingsDropdownOption` while keeping existing setting events.
+- This custom implementation is obsolete under the active project-wide TMP rebuild.
+
+### Free XP dropdown — incorrect inferred refactor discarded
+
+- The Free XP selector was temporarily converted after an inferred request, then restored when the user clarified Free XP was the desired visual reference.
+
+### Post-battle rewards — implementation complete, deployment and match verification pending
+
+- Persisted and returned Bolts/Free XP reward amounts, routed their authoritative availability through the result popup, and documented the result flow.
+- Builds and payload mapping checks passed; pending: deploy the API migration and verify a completed live match.
+
 ### Procedural sniper scope mask — implementation complete, visual zoom check deferred
 
-- Previous status: `IMPLEMENTED_NEEDS_VERIFICATION`; preserved when the user started the post-battle result task.
-- Replaced `Hud_Aim_Bracket.png` with `ProceduralSniperScopeMask.shader` and its material; `Client.unity/SniperScopeMask` now has no sprite and uses a full-screen procedural circular aperture.
-- Unity 6 imported the shader/material with no shader or C# compiler error, `git diff --check` passed, and no content/scene reference to the deleted texture remained.
-- Deferred verification: join a match with a sniper-capable vehicle, enter/exit sniper zoom, and confirm circle placement, edge sharpness, and CanvasGroup fade.
+- Replaced `Hud_Aim_Bracket.png` with `ProceduralSniperScopeMask.shader` and its material; `Client.unity/SniperScopeMask` has no sprite and uses a full-screen procedural circular aperture.
+- Unity imported the shader/material without compiler errors; pending: match visual verification.
 
 ### Main-menu robot-card scrolling and preview stability — closed by user without Play Mode verification
 
-- Previous status: `IMPLEMENTED_NEEDS_VERIFICATION`.
-- User instructed that this task be closed on 2026-10-18 before beginning the procedural scope-mask task.
-- Recorded implementation: `Client.unity` added a horizontal robot-card `ScrollRect`; `RobotView.cs` retains matching cards and horizontal position; `VehicleSlotView.cs` supports in-place updates; `menus-settings-progression.md` documents it.
-- Recorded automated checks: `git diff --check` passed (only line-ending warnings); the last 400 lines of `Editor.log` contained no matching compiler errors or exceptions.
-- Not verified: the four required Play Mode criteria and the unrelated large diff in `RobotoCondensed-Regular SDF.asset`.
+- `Client.unity` includes a horizontal robot-card `ScrollRect`; `RobotView` preserves position while refreshing cards.
+- Automated checks passed; required Play Mode checks were closed by user before beginning subsequent work.
