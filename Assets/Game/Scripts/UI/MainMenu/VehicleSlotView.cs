@@ -18,6 +18,12 @@ namespace Game.Scripts.UI.MainMenu
 
         public int SlotIndex { get; private set; }
         public bool HasVehicle => _vehicle != null;
+        public int VehicleId => _vehicleId;
+
+        public void SetSlotIndex(int slotIndex)
+        {
+            SlotIndex = slotIndex;
+        }
 
         public void InitEmpty(int slotIndex)
         {
@@ -37,6 +43,27 @@ namespace Game.Scripts.UI.MainMenu
                 slotButton.onClick.RemoveListener(OnSlotClicked);
                 slotButton.interactable = false;
             }
+        }
+
+        public bool TryUpdateVehicle(VehicleSlotVehicleData data, Action<int> onVehicleSelected)
+        {
+            if (_vehicle == null || data == null || _vehicleId != data.VehicleId)
+            {
+                return false;
+            }
+
+            _vehicleData = data;
+            _onVehicleSelected = onVehicleSelected;
+            _vehicle.Apply(data);
+
+            if (slotButton != null)
+            {
+                slotButton.onClick.RemoveListener(OnSlotClicked);
+                slotButton.onClick.AddListener(OnSlotClicked);
+                slotButton.interactable = !data.IsSelected;
+            }
+
+            return true;
         }
 
         public void PlaceVehicle(VehicleItemView vehicle, VehicleSlotVehicleData data, Action<int> onVehicleSelected)

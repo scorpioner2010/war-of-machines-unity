@@ -67,11 +67,12 @@ namespace Game.Scripts.UI.MainMenu
             }
 
             int buildVersion = ++view._buildVersion;
-            view.DespawnContent();
+            view.DespawnPreviewRobot();
 
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
             if (clientInfo?.Profile == null)
             {
+                view.ClearVehicleSlots();
                 return;
             }
 
@@ -205,8 +206,6 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            view.ClearVehicleSlots();
-
             if (view.vehicleSlotPrefab == null)
             {
                 Debug.LogWarning("Cannot build vehicle slots because VehicleSlot prefab is not assigned.");
@@ -214,26 +213,51 @@ namespace Game.Scripts.UI.MainMenu
             }
 
             int slotCount = view.GetVisibleSlotCount(vehicles.Count);
-            for (int i = 0; i < slotCount; i++)
+            List<VehicleSlotView> availableSlots = new List<VehicleSlotView>(view._slots);
+            List<VehicleSlotView> updatedSlots = new List<VehicleSlotView>(slotCount);
+
+            for (int i = 0; i < vehicles.Count; i++)
             {
-                VehicleSlotView slot = Instantiate(view.vehicleSlotPrefab, view.vehicleContainer.transform);
-                slot.InitEmpty(i);
-                view._slots.Add(slot);
-
-                if (i >= vehicles.Count)
+                VehicleSlotVehicleData vehicleData = vehicles[i];
+                VehicleSlotView slot = TakeSlotForVehicle(availableSlots, vehicleData.VehicleId);
+                if (slot == null)
                 {
-                    continue;
+                    slot = TakeAnySlot(availableSlots);
                 }
 
-                if (view.vehiclePrefab == null)
+                if (slot == null)
                 {
-                    Debug.LogWarning("Cannot place vehicle in slot because Vehicle prefab is not assigned.");
-                    continue;
+                    slot = view.CreateVehicleSlot();
                 }
 
-                VehicleItemView vehicle = Instantiate(view.vehiclePrefab);
-                slot.PlaceVehicle(vehicle, vehicles[i], view.OnVehicleSelected);
+                view.UpdateVehicleSlot(slot, i, vehicleData);
+                slot.transform.SetSiblingIndex(i);
+                updatedSlots.Add(slot);
             }
+
+            for (int i = vehicles.Count; i < slotCount; i++)
+            {
+                VehicleSlotView slot = TakeAnySlot(availableSlots);
+                if (slot == null)
+                {
+                    slot = view.CreateVehicleSlot();
+                }
+
+                slot.InitEmpty(i);
+                slot.transform.SetSiblingIndex(i);
+                updatedSlots.Add(slot);
+            }
+
+            for (int i = 0; i < availableSlots.Count; i++)
+            {
+                if (availableSlots[i] != null)
+                {
+                    Destroy(availableSlots[i].gameObject);
+                }
+            }
+
+            view._slots.Clear();
+            view._slots.AddRange(updatedSlots);
 
             VehicleSlotVehicleData selectedVehicle = null;
             for (int i = 0; i < vehicles.Count; i++)
@@ -248,10 +272,70 @@ namespace Game.Scripts.UI.MainMenu
             MainMenu.In?.UpdateVehicleInfo(selectedVehicle);
         }
 
+        private static VehicleSlotView TakeSlotForVehicle(List<VehicleSlotView> slots, int vehicleId)
+        {
+            for (int i = 0; i < slots.Count; i++)
+            {
+                VehicleSlotView slot = slots[i];
+                if (slot == null || !slot.HasVehicle || slot.VehicleId != vehicleId)
+                {
+                    continue;
+                }
+
+                slots.RemoveAt(i);
+                return slot;
+            }
+
+            return null;
+        }
+
+        private static VehicleSlotView TakeAnySlot(List<VehicleSlotView> slots)
+        {
+            for (int i = 0; i < slots.Count; i++)
+            {
+                VehicleSlotView slot = slots[i];
+                slots.RemoveAt(i);
+                if (slot != null)
+                {
+                    return slot;
+                }
+
+                i--;
+            }
+
+            return null;
+        }
+
         private int GetVisibleSlotCount(int vehicleCount)
         {
             int configuredSlots = Mathf.Max(0, unlockedVehicleSlots);
             return Mathf.Max(configuredSlots, vehicleCount);
+        }
+
+        private VehicleSlotView CreateVehicleSlot()
+        {
+            VehicleSlotView slot = Instantiate(vehicleSlotPrefab, vehicleContainer);
+            slot.InitEmpty(_slots.Count);
+            return slot;
+        }
+
+        private void UpdateVehicleSlot(VehicleSlotView slot, int slotIndex, VehicleSlotVehicleData vehicleData)
+        {
+            slot.SetSlotIndex(slotIndex);
+            if (slot.TryUpdateVehicle(vehicleData, OnVehicleSelected))
+            {
+                return;
+            }
+
+            slot.InitEmpty(slotIndex);
+            if (vehiclePrefab == null)
+            {
+                Debug.LogWarning("Cannot place vehicle in slot because Vehicle prefab is not assigned.");
+                return;
+            }
+
+            VehicleItemView vehicle = Instantiate(vehiclePrefab);
+            slot.PlaceVehicle(vehicle, vehicleData, OnVehicleSelected);
         }
 
         private static VehicleLite FindVehicleStats(VehicleLite[] vehicles, string code, int vehicleId)
@@ -418,22 +502,15 @@ namespace Game.Scripts.UI.MainMenu
             }
 
             _in._buildVersion++;
-            _in.DespawnContent();
+            _in.DespawnContent(hidePreviewPlatform: true);
         }
 
-        private void DespawnContent()
+        private void DespawnContent(bool hidePreviewPlatform)
         {
-            _spawnVersion++;
-
-            if (_vehicleRoot != null)
-            {
-                Destroy(_vehicleRoot.gameObject);
-                _vehicleRoot = null;
-            }
-
+            DespawnPreviewRobot();
             ClearVehicleSlots();
 
-            if (rootSpawnPlace != null)
+            if (hidePreviewPlatform && rootSpawnPlace != null)
             {
                 rootSpawnPlace.SetActive(false);
             }
@@ -450,6 +527,17 @@ namespace Game.Scripts.UI.MainMenu
             }
 
             _slots.Clear();
+        }
+
+        private void DespawnPreviewRobot()
+        {
+            _spawnVersion++;
+
+            if (_vehicleRoot != null)
+            {
+                Destroy(_vehicleRoot.gameObject);
+                _vehicleRoot = null;
+            }
         }
 
         private async UniTask<bool> ActivateAndInitNextFrame(VehicleRoot go, int spawnVersion)
