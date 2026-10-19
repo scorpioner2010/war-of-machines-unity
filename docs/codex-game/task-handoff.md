@@ -4,15 +4,20 @@
 - Status: COMPLETED
 - Started: 2026-10-20
 - Last updated: 2026-10-20
-- User request (current task): "нема того що я хотів, мало бути світло типу хало чи блум щось таке від чого тріщини та проджектайлі світяться, тобі це треба було реалізувати, реалізуй це і протестуй і тільки після тестів якщо будеш впевнений що робота зроблема можеш завершувати завдання"
-- Objective: Roll back production changes made after the checkpoint immediately before the 0.5-second VehicleTest diagnostic iteration, preserving the earlier tested Bloom/camera state.
-- Acceptance criteria: restore the checkpoint Bloom values and glow graph behavior; retain the checkpoint HDR/post-processing cameras, URP volume bindings, pooling, native DecalProjector targeting, and projectile emission; remove only later diagnostic/tuning changes; keep the repository buildable and clean.
-- Assumptions: the temporary Editor harness and generated screenshots are test artifacts, not production project state, and should remain removed.
-- Work completed: restored the checkpoint Bloom values (`threshold 0.9`, `intensity 0.65`, `scatter 0.8`), restored the decal graph's checkpoint albedo behavior, and removed the post-checkpoint tuning notes. Preserved the HDR/post-processing camera flags, URP volume bindings, native projector targeting, pooling, and projectile emission changes that were already present at the requested checkpoint.
+- Follow-up request: "ти не протекстив саме головне, проджектайл не працює після твоїх правок"
+- Follow-up objective: Reproduce the broken projectile path in VehicleTest, repair the regression, and verify an actual projectile hit/impact in Play Mode.
+- Follow-up acceptance criteria: a local shot creates the projectile/tracer and authoritative hit path; a world hit produces the configured impact projector; robot-hit isolation remains intact; VehicleTest has no new runtime errors.
+- Follow-up work remaining: none.
+- User request (current task): "все супер єдине що коли я стреляю в землю а потім наїзджаю роботом то проджект тайл впливає на робота, треба зробити так щоб він не впливав на робота, і так само якщо постріл був по роботу щоб це не впливало на інших роботів і на стіни землю і т.д."
+- Objective: Isolate impact decals by hit category so Map/world impacts never render on robot renderers, while robot impacts render only on the robot that was hit.
+- Acceptance criteria: world decals do not appear on robots after they drive over the impact; robot decals do not appear on other robots or Map/world surfaces; pooled target-layer state still resets correctly; the repository remains buildable and the behavior is documented and tested.
+- Assumptions: the existing inspector-wired renderer list is the authoritative visual set for each robot, URP Decal Layers remain enabled, and the existing target-specific rendering-layer allocation is retained.
+- Work completed: moved world impact decals to dedicated rendering-layer bit `1`, updated all 135 renderer entries in the shared Map `Environment` and `Props` prefab sources to mask `3`, preserved default light bit `0`, and kept per-target robot impact allocation on bits `2-7`. Robot prefabs retain no world-decal bit, so world decals cannot project onto vehicles and target decals cannot match Map or other robots.
 - Work remaining: none.
-- Verification: `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuild\\` passed with 0 errors and 2 existing `System.Net.Http` warnings; checkpoint assertions passed for the profile, graph, docs, and removed temporary harness.
+- Verification: clean `VehicleTest` Play Mode reproduced a wall impact crack and a separate robot impact without the temporary hit-marker; no new Console errors appeared. Focused assertions report world prefab masks `mask1=0`, `mask3=135`; `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuild\\` passed with 0 errors; `git diff --check` passed.
 
 ## History
+- Previous completed task (impact decal isolation rollback): restored the requested pre-diagnostic Bloom/decal checkpoint, kept the tested HDR/post-processing and URP bindings, and verified the repository with `git diff --check`, a successful C# build, and checkpoint assertions.
 - Previous completed task (impact glow configuration): added texture-masked red crack emission, configurable material/prefab strength, and a URP Bloom profile, but the follow-up verification identified that gameplay cameras had HDR and post-processing disabled.
 - Previous completed task (impact glow shader repair): corrected the `SurfaceDescription.Emission` block's slot from the invalid `BaseColor` serialization to the URP Decal `ColorRGB` emission format, preserved `Expl2_EmissionColor.png`, and verified the real impact path in `VehicleTest` with no shader/runtime errors.
 - Previous glow repair (COMPLETED): replaced the incompatible glow graph, restored transparent dark decal texture, fixed prefab material GUIDs, and verified import plus `VehicleTest` Play Mode activation.

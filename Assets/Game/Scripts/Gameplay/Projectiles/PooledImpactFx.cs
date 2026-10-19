@@ -7,8 +7,8 @@ using UnityEngine.Rendering.Universal;
 
 public sealed class PooledImpactFx : MonoBehaviour
 {
-    private const uint DefaultRenderingLayerMask = 1u;
-    private const int FirstImpactRenderingLayerBit = 1;
+    private const uint WorldImpactRenderingLayerMask = 1u << 1;
+    private const int FirstImpactRenderingLayerBit = 2;
     private const int LastImpactRenderingLayerBit = 7;
     private const float CameraShakeFullStrengthDistance = 10f;
     private const float CameraShakeMaxDistance = 90f;
@@ -138,7 +138,7 @@ public sealed class PooledImpactFx : MonoBehaviour
         float projectionDepth = Mathf.Max(0.01f, impactDecalProjectionDepth);
         uint renderingLayerMask = _impactRenderingLayerMask != 0
             ? _impactRenderingLayerMask
-            : DefaultRenderingLayerMask;
+            : WorldImpactRenderingLayerMask;
         ConfigureImpactDecal(impactDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
         ConfigureImpactDecal(impactGlowDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
         if (impactGlowDecal != null)
@@ -319,7 +319,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     private void ResetImpactDecalProjector(DecalProjector projector)
     {
-        projector.renderingLayerMask = DefaultRenderingLayerMask;
+        projector.renderingLayerMask = WorldImpactRenderingLayerMask;
         projector.fadeFactor = 0f;
         if (projector.gameObject.activeSelf)
         {

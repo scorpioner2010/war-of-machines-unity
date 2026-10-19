@@ -28,6 +28,7 @@ Current owner scripts:
 
 Rendering prerequisites:
 - The serialized `VehicleTest` camera uses HDR and URP post-processing. This is required for the impact crack emission and projectile/tracer emission to reach the default Bloom profile during Play Mode verification.
+- Map and Map2 world renderers use rendering-layer mask `3`: bit `0` remains the default light layer and bit `1` is reserved for world impact decals. The shared world prefab sources under `Assets/Game/Content/Map_v100_v200/Environment` and `Props` also carry mask `3`, so prefab instances receive the projector. Robot renderers keep bit `0` and receive temporary target-only impact bits `2-7`, preventing decals from crossing between world geometry and vehicles.
 - `Assets/Editor/VehicleTestRuntimeSettingsEditor.cs`
   - Custom Unity inspector for `VehicleTestRuntimeSettings`.
   - Shows a Ukrainian explanation with a practical example as a tooltip when hovering every test parameter.
