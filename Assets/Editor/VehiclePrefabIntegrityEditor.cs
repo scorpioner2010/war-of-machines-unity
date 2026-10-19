@@ -378,6 +378,7 @@ namespace Game.Scripts.Editor
             changed |= SynchronizeReference(entry, "botBrain", root.botBrain, GetUniqueComponent<VehicleBotBrain>(entry, root, report), value => root.botBrain = value, repair, report);
             changed |= SynchronizeReference(entry, "hoverOutline", root.hoverOutline, GetUniqueComponent<VehicleHoverOutline>(entry, root, report), value => root.hoverOutline = value, repair, report);
 
+            changed |= RepairClientVisibilityRenderers(entry, root, repair, report);
             changed |= RepairHoverOutlineRenderers(entry, root, repair, report);
             changed |= RepairMovementController(entry, root.objectMover, root, repair, report);
             changed |= RepairBotNavigator(entry, root.botBrain, root, repair, report);
@@ -385,6 +386,69 @@ namespace Game.Scripts.Editor
             changed |= RepairRootAwareLinks(entry, root, repair, report);
             changed |= RepairMissingMeshReferences(entry, root, repair, report);
             return changed;
+        }
+
+        private static bool RepairClientVisibilityRenderers(RegisteredPrefab entry, VehicleRoot root, bool repair, IntegrityReport report)
+        {
+            if (root.clientVisibility == null)
+            {
+                return false;
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            List<Renderer> expectedRenderers = new List<Renderer>(renderers.Length);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (IsVehiclePresentationRenderer(root, renderer))
+                {
+                    expectedRenderers.Add(renderer);
+                }
+            }
+
+            if (expectedRenderers.Count == 0)
+            {
+                report.AddError($"Robot '{entry.Code}' has no non-armor renderers available for {nameof(VehicleClientVisibility)}.");
+                return false;
+            }
+
+            VehicleClientVisibility clientVisibility = root.clientVisibility;
+            if (ClientVisibilityRenderersMatch(clientVisibility, expectedRenderers))
+            {
+                return false;
+            }
+
+            string description = $"Robot '{entry.Code}' {nameof(VehicleClientVisibility)}.visualRenderers";
+            if (!repair)
+            {
+                report.AddRepairable(description);
+                return false;
+            }
+
+            clientVisibility.visualRenderers = expectedRenderers.ToArray();
+            report.AddAppliedRepair(description);
+            return true;
+        }
+
+        private static bool ClientVisibilityRenderersMatch(
+            VehicleClientVisibility clientVisibility,
+            List<Renderer> expectedRenderers)
+        {
+            if (clientVisibility.visualRenderers == null
+                || clientVisibility.visualRenderers.Length != expectedRenderers.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < expectedRenderers.Count; i++)
+            {
+                if (clientVisibility.visualRenderers[i] != expectedRenderers[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool RepairHoverOutlineRenderers(RegisteredPrefab entry, VehicleRoot root, bool repair, IntegrityReport report)

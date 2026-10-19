@@ -679,18 +679,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleClientVisibility
   vehicleRoot: {fileID: 5226239542433404041}
   visualRenderers:
-  - {fileID: 7103603927942996204}
+  - {fileID: 2438689651683638384}
+  - {fileID: 6998016952790830318}
+  - {fileID: 5806684555509978756}
+  - {fileID: 1937876484953198038}
+  - {fileID: 5494208309952069312}
   - {fileID: 5631983313107557927}
+  - {fileID: 3000809466685401589}
+  - {fileID: 3173128009927343174}
+  - {fileID: 1273890802329429340}
+  - {fileID: 5044726102888334686}
+  - {fileID: 7103603927942996204}
   - {fileID: 8648540660035609702}
   - {fileID: 1934726509878613238}
   - {fileID: 7732944334019434279}
   - {fileID: 2598458623447662133}
-  - {fileID: 3000809466685401589}
-  - {fileID: 3173128009927343174}
-  - {fileID: 1273890802329429340}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
 --- !u!114 &8596980151992932862
 MonoBehaviour:
   m_ObjectHideFlags: 0

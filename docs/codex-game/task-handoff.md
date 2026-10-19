@@ -5,6 +5,46 @@
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-19
 - Last updated: 2026-10-19
+- Original user wording: "помітив баг видимості, робот має зникати повністю коли його не бачать але чатина меша не зникає, спочатку точно розберися в чому проблема і потім виправ баг."
+- Objective: ensure every non-armor robot renderer is hidden whenever `VehicleClientVisibility` marks the vehicle invisible.
+
+### Acceptance criteria
+
+1. The visibility list on every registered IA/NV prefab contains every non-armor `MeshRenderer` and `SkinnedMeshRenderer`, excluding HUD and armor geometry.
+2. Hiding an enemy applies to every model renderer, so no mesh remains visible when its map visibility is false.
+3. Server-only visual stripping and existing death visibility freeze continue using the same complete renderer list.
+4. All eight registered prefabs pass integrity validation after the repair.
+
+### Investigation findings
+
+- `VehicleClientVisibility.SetRenderersVisible` only iterates its serialized `visualRenderers` array; it does not discover child renderers at runtime.
+- The registered prefab arrays contain null slots and only partial renderer coverage, while `VehiclePrefabIntegrityEditor` already rebuilds the complete non-armor renderer set for `VehicleHoverOutline`.
+- This mismatch explains the symptom: renderers omitted from `visualRenderers` never receive `forceRenderingOff = true`, so part of the robot remains visible.
+
+### Work recorded
+
+- Added an editor repair pass that rebuilds `VehicleClientVisibility.visualRenderers` from every non-armor model renderer, excluding the vehicle HUD.
+- Repaired all eight registered IA/NV prefabs, removing stale null/partial visibility entries and assigning the complete renderer lists.
+- Updated `robot-control.md` so visibility, server stripping, and hover outline share the same renderer ownership contract.
+- Edited: `Assets/Editor/VehiclePrefabIntegrityEditor.cs`, all eight registered IA/NV prefab files under `Assets/Game/Content/Robots`, and `docs/codex-game/robot-control.md`.
+
+### Verification
+
+- Read `VehicleClientVisibility`, `VehicleRoot`, `VehicleHoverOutline`, and `VehiclePrefabIntegrityEditor` ownership paths.
+- Static inspection of all eight registered IA/NV prefab visibility arrays confirmed incomplete coverage and null entries before the repair.
+- Unity batch `Game.Scripts.Editor.VehiclePrefabIntegrityBatch.RepairAndValidate` repaired 8 bindings across 8 prefabs and passed post-repair validation with zero errors.
+- Static scan confirms every repaired visibility list is non-null, contains only mesh/skinned renderer references, and matches its prefab's outline renderer list: IA `23/13/15/13`, NV `10/11/10/10`.
+- `git diff --check` passed; no runtime compiler errors were reported by the batch validation log.
+
+### Remaining work
+
+- Run a Play Mode visibility test with an enemy leaving map visibility and confirm no model mesh remains rendered.
+
+## Previous completed task (armor cleanup)
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-19
+- Last updated: 2026-10-19
 - Original user wording: "броня має бути бронею, її mesh не повинен потрапляти в список деталей робота й ніколи не має ставати видимим; він потрібен тільки для редагування броні"
 - Objective: exclude all armor mesh objects from robot death debris and remove debris physics from editor-only armor meshes.
 

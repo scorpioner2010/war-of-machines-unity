@@ -3479,33 +3479,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleClientVisibility
   vehicleRoot: {fileID: 901996468296691208}
   visualRenderers:
+  - {fileID: 5520333632477488661}
+  - {fileID: 4769198240519585646}
+  - {fileID: 5591947684651095298}
+  - {fileID: 2720632283951324547}
+  - {fileID: 952751184823915784}
   - {fileID: 8055744890484631355}
+  - {fileID: 3489067822005479382}
+  - {fileID: 891816929640850989}
+  - {fileID: 7427479199507004900}
+  - {fileID: 3609246814820851953}
+  - {fileID: 1095778590467409295}
+  - {fileID: 1996786798798284009}
+  - {fileID: 7093902965720621703}
+  - {fileID: 5333305698537430656}
   - {fileID: 1300806574265684783}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   - {fileID: 8999919860708879966}
   - {fileID: 8217706469022661429}
   - {fileID: 1847080672367468868}
   - {fileID: 2775494803733999618}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 7870188292697107108}
+  - {fileID: 2644297909933447256}
+  - {fileID: 1609214754103566027}
+  - {fileID: 1211407473669035473}
 --- !u!114 &2629207002919779925
 MonoBehaviour:
   m_ObjectHideFlags: 0
