@@ -28,7 +28,10 @@ namespace Game.Scripts.UI.HUD
             }
 
             _instance._lastShownTime = shownTime;
-            _instance.timerText.SetText("{0}", shownTime);
+            int hours = shownTime / 3600;
+            int minutes = shownTime / 60 % 60;
+            int seconds = shownTime % 60;
+            _instance.timerText.SetText("{0:00}:{1:00}:{2:00}", hours, minutes, seconds);
         }
     }
 }

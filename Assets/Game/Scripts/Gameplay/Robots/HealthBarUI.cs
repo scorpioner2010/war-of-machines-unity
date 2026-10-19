@@ -1,7 +1,6 @@
 using Game.Scripts.Core.Services;
 using Game.Scripts.Client;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -11,7 +10,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private float _display01;
         private HealthBar _healthBar;
-        private Image _fillImage;
         private bool _active;
         private int _lastLabelCurrent = int.MinValue;
         private int _lastLabelMax = int.MinValue;
@@ -74,16 +72,14 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (vehicleRoot.health == null)
+            if (vehicleRoot.health == null || (_healthBar.slider == null && _healthBar.fillImage == null))
             {
                 return;
             }
 
             float cur01 = Mathf.Clamp01(vehicleRoot.health.Current / vehicleRoot.health.MaxHealth);
             _display01 = cur01;
-            _healthBar.slider.value = _display01;
-            _fillImage = _healthBar.fillImage;
-            ApplyHealthColor();
+            _healthBar.SetNormalizedValue(_display01);
             RefreshLabel();
             RefreshVehicleName();
 
@@ -120,21 +116,20 @@ namespace Game.Scripts.Gameplay.Robots
                 _display01 = target01;
             }
 
-            _healthBar.slider.value = _display01;
-            ApplyHealthColor();
+            _healthBar.SetNormalizedValue(_display01);
             RefreshLabel();
             RefreshVehicleName();
         }
 
         private void OnHealthChanged(float currentHealth, float maxHealth)
         {
-            if (!_active || _healthBar == null || _healthBar.slider == null)
+            if (!_active || _healthBar == null || (_healthBar.slider == null && _healthBar.fillImage == null))
             {
                 return;
             }
 
             _display01 = Mathf.Clamp01(currentHealth / Mathf.Max(1f, maxHealth));
-            _healthBar.slider.value = _display01;
+            _healthBar.SetNormalizedValue(_display01);
             RefreshLabel();
         }
 
@@ -198,14 +193,5 @@ namespace Game.Scripts.Gameplay.Robots
             return vehicleRoot.name;
         }
 
-        private void ApplyHealthColor()
-        {
-            if (_fillImage == null)
-            {
-                return;
-            }
-
-            _fillImage.color = GameplayRuntimeSettingsProvider.Get().alliedHpColor;
-        }
     }
 }

@@ -5,6 +5,56 @@
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-19
 - Last updated: 2026-10-19
+- Original user wording: "я переробив юай GameplayHUD  на новий, тобі треба тепер підключити всі не підключені елементи, також виправити відображення часу тепер треба в часах. також модливо винести попапи які не треба щоб були там наприклад попап паузи краще щоб це був окремий попап а не в меню хад. тобі дозволяється перейменовувати, виправляти, давати чіткі назви, змінювати ієрархію якщо ти вважаєш що так краще. також тобі треба підключити щоб весь хад працював, після того як робота буде виконана я сам протестую тому тестити не треба."
+- Objective: integrate the user-created `GameplayHUD` layout with all existing gameplay HUD behavior, display match time in hours, and keep pause/popups outside the gameplay HUD root where appropriate.
+- Follow-up request: stop forcing the local GameplayHUD HP fill color and preserve the color authored on the new HUD image.
+
+### Acceptance criteria
+
+1. Every required gameplay HUD presenter has a valid inspector-wired target in the new `GameplayHUD` hierarchy, including timer, local vehicle status, weapon/reticle, map, player list, performance, and damage feedback where those presenters are used.
+2. Match time is formatted in hours, minutes, and seconds without changing the authoritative timer source.
+3. Pause UI is routed as a separate popup/menu layer and is not owned by the gameplay HUD presentation root.
+4. Existing `MenuManager`, input-blocking, VehicleTest, and runtime HUD binding paths remain valid with the new hierarchy.
+5. Documentation identifies the new hierarchy and the owner of every changed HUD binding.
+
+### Assumptions
+
+- The current `Client.unity` diff and untracked `Assets/Game/Content/UI/New` assets are the user's new HUD work and must be preserved unless a broken reference requires a focused correction.
+- Unity/Play Mode verification is intentionally deferred to the user; this task will use static serialization and source inspection only.
+
+### Work recorded
+
+- Read `docs/codex-game/README.md`, `ui-hud.md`, `weapons-damage.md`, `menus-settings-progression.md`, `vehicle-test-scene.md`, and the persistent UI asset workflow instructions.
+- Confirmed the working tree contains a large `Client.unity` HUD diff and a new UI asset folder before implementation.
+- Renamed the new HUD containers to `GameplayHudContent`, `GameplayHudPanels`, `VehicleStatusPanel`, `MatchTimerPanel`, `AmmoCountText`, `ReloadStatusText`, and `MatchTimerText`.
+- Rewired the local HP presenter to the new image fill, HP/name labels, and vehicle status panel; rewired weapon ammo/reload/scope targets and map marker sprites.
+- Updated both initial and event-driven local HP paths to support the new `Image` fill when no `Slider` is present.
+- Formatted the authoritative match timer as `HH:MM:SS`.
+- Moved the pause visual root to `Client.unity/Canvas/GameplayPausePopup` and retained `GameplayPauseController` as its separate menu registration point.
+- Updated `docs/codex-game/ui-hud.md` with the new hierarchy and ownership map.
+- Updated `docs/codex-game/weapons-damage.md` with the weapon HUD target names and scope-root ownership.
+- User reported that the local HP fill color is being forced at runtime; `HealthBarUI.ApplyHealthColor` is the identified owner and must be removed from the local HUD update path.
+- Removed the runtime local-HP color assignment and the now-unused color helper/state; HP amount updates remain active through `SetNormalizedValue`.
+
+### Verification
+
+- Static serialization/source review completed for the changed scene references and HUD owner scripts.
+- No Unity, Play Mode, build, or runtime tests run by request.
+
+### Remaining work
+
+- User Play Mode verification remains: confirm timer, local HP/name/ammo/reload, crosshairs/scope, map markers, player list, performance text, damage flash, and pause routing in the rebuilt HUD.
+- Follow-up verification: confirm in Play Mode that the Inspector-authored `barHp` color remains unchanged while HP amount still updates.
+
+## Previous active task carried forward
+
+- The previous active task was left at `IMPLEMENTED_NEEDS_VERIFICATION` and required a Play Mode visibility check for robot renderer hiding. Its code/prefab changes are preserved below as historical context rather than silently discarded.
+
+## Previous task: robot renderer visibility
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-19
+- Last updated: 2026-10-19
 - Original user wording: "помітив баг видимості, робот має зникати повністю коли його не бачать але чатина меша не зникає, спочатку точно розберися в чому проблема і потім виправ баг."
 - Objective: ensure every non-armor robot renderer is hidden whenever `VehicleClientVisibility` marks the vehicle invisible.
 

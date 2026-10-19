@@ -71,7 +71,10 @@ Fire flow:
 - `NetworkWeaponShooter` prepares the authoritative projectile pool only for the server phase. Client projectile, impact, muzzle-flash, and muzzle-smoke pools are prepared only from client visual paths.
 - A matching authoritative hit completes the waiting visual without replaying the same impact. A divergent authoritative hit may add a correction impact. A server miss releases the waiting visual; an already-played cosmetic prediction is not rolled back.
 - The authoritative projectile catches up by the elapsed client tick time, capped at 0.30 seconds, so server damage timing stays close to client projectile timing.
-- Server validates reload/ammo in `WeaponReloadController` before `NetworkWeaponShooter` creates the authoritative projectile.
+  - Server validates reload/ammo in `WeaponReloadController` before `NetworkWeaponShooter` creates the authoritative projectile.
+- `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
+  - Presents the owner weapon state in `Client.unity/Canvas/GameplayHUD/GameplayHudContent`: `AmmoCountText` is the remaining-ammo label, `ReloadStatusText` is the reload label, and `AimStatus` is the aim-status label.
+  - Uses the serialized `GameplayHudContent` regular-HUD root and `SniperScopeOverlay` scope root when switching between regular and sniper presentation.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Impact particles are spawned one Unity unit toward the local gameplay camera, keeping their screen position aligned with the actual hit point even at an oblique shot angle. If no gameplay camera exists, they fall back to the collision-surface normal.
 - Damage should be applied only through authoritative server hit resolution, not directly from bot AI.

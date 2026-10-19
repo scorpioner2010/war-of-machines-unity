@@ -15,6 +15,8 @@ namespace Game.Scripts.UI.HUD
         public RectTransform localPlayerIconMini;
         public RectTransform localPlayerIconFull;
         public GameObject fullMapRoot;
+        public Sprite alliedVehicleIcon;
+        public Sprite enemyVehicleIcon;
         public Vector2 worldMin = Vector2.zero;
         public Vector2 worldMax = new Vector2(256f, 256f);
         public bool useActiveTerrainBounds = true;
@@ -293,8 +295,27 @@ namespace Game.Scripts.UI.HUD
                 : enemy
                     ? _runtimeSettings.mapEnemyIconColor
                     : _runtimeSettings.mapAllyIconColor;
+            Sprite sprite = enemy || relation == MapVehicleVisibilityRelation.Destroyed
+                ? enemyVehicleIcon
+                : alliedVehicleIcon;
+            ApplyIconSprite(icon.MiniGraphic, sprite);
+            ApplyIconSprite(icon.FullGraphic, sprite);
             ApplyIconColor(icon.MiniGraphic, color);
             ApplyIconColor(icon.FullGraphic, color);
+        }
+
+        private static void ApplyIconSprite(Graphic target, Sprite sprite)
+        {
+            if (target == null || sprite == null)
+            {
+                return;
+            }
+
+            Image image = target as Image;
+            if (image != null)
+            {
+                image.sprite = sprite;
+            }
         }
 
         private static bool TryGetIconGraphicAndColor(RectTransform iconRect, out Graphic graphic, out Color color)

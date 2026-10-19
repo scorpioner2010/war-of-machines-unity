@@ -24,10 +24,12 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`
   - Initializes HUD for a vehicle owner.
 - `Assets/Game/Scripts/Gameplay/HealthBar.cs`
-  - Inspector-wired holder for the local vehicle HP slider, fill image, HP value, and vehicle-name label in `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab`.
+  - Inspector-wired holder for the local vehicle HP slider/fill image, HP value, and vehicle-name label in `Client.unity/Canvas/GameplayHUD/GameplayHudContent/GameplayHudPanels/VehicleStatusPanel`.
+  - `SetNormalizedValue` updates either the legacy `Slider` or the new `Image` fill, so the `VehicleStatusPanel/barHp` image can replace the removed slider without changing the health presenter.
 - `Assets/Game/Scripts/Gameplay/Robots/HealthBarUI.cs`
   - Drives the local owner's screen-space HP panel.
   - Shows the runtime vehicle name above the HP bar, falling back to the vehicle code and then the prefab instance name until runtime stats are available.
+  - Updates only the HP amount on `VehicleStatusPanel/barHp`; it does not override the `Image.color` authored in the HUD Inspector.
 - `Assets/Game/Scripts/UI/HUD/DamageScreen.cs`
   - Fullscreen local hit indicator in `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab`.
   - Subscribes to `VehicleRoot.LocalPlayerVehicleChanged`, then to the local vehicle `VehicleHealth.OnDamaged`.
@@ -35,6 +37,7 @@ Current owner scripts:
   - On damage, enables the image immediately at canvas group alpha 1, fades alpha to 0 over 1 second, then disables the image object. It is visual only and does not affect gameplay.
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Gun crosshair UI, reload/ammo text, dispersion display target for weapon systems.
+  - The new `GameplayHudContent` wiring uses `AmmoCountText` for remaining ammunition, `ReloadStatusText` for reload status, `AimStatus` for the aim label, `GameplayHudContent` as the regular HUD root, and `SniperScopeOverlay` as the scope overlay.
 - `Assets/Game/Scenes/Client.unity/SniperScopeOverlay/SniperScopeMask`
   - Fullscreen procedural sniper-scope vignette. Its standard UI `Image` is tinted black at alpha `0.72`, uses `Assets/Game/Content/UI/Materials/ProceduralSniperScopeMask.mat`, and intentionally has no sprite.
   - The material uses `Assets/Game/Content/Rendering/Shaders/ProceduralSniperScopeMask.shader`, which calculates a signed-distance circular aperture per pixel rather than sampling a scope PNG. `Aperture Radius (Screen Height)` is the radius normalized to the display height; the default `0.373` matches the former `Hud_Aim_Bracket.png` opening. `Aperture Center (UV)` moves the opening, and `Extra Edge Softness (Pixels)` adds optional softness beyond the shader's one-pixel antialiasing.
@@ -51,6 +54,7 @@ Current owner scripts:
   - Gameplay GUI root.
 - `Assets/Game/Scripts/UI/HUD/GameplayHudRuntimeBinder.cs`
   - Runtime HUD binding support. `Client.unity/Canvas/GameplayHUD` has the serialized root Canvas reference, so its crosshair uses the same Canvas as the other client menus.
+  - The active gameplay hierarchy is `GameplayHUD/GameplayHudContent`; its panels are grouped under `GameplayHudPanels`, with `VehicleStatusPanel` and `MatchTimerPanel` as named status groups.
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - VehicleTest bootstrap that instantiates `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab` under the scene Canvas.
   - Registers and opens the HUD through `MenuManager` when present; otherwise opens the HUD `Menu` directly because VehicleTest has no scene `MenuManager`.
@@ -58,7 +62,8 @@ Current owner scripts:
   - Rebinds `GunCrosshair` canvas references after instantiation.
   - When VehicleTest spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`
-  - Gameplay map HUD.
+  - Gameplay map HUD for `MiniMapRoot` and `FullMapRoot`.
+  - Cloned tracked-vehicle markers receive the serialized `friendly_marker.png` or `enemy_marker.png` sprite while visibility, relation color, and destroyed-state behavior continue to come from `GameplayMapVisibilityState`.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapVisibilityState.cs`
   - Shared client visibility snapshot state used by both the map and vehicle visibility presenters.
   - Stores `Enemy` for direct team spotting and `EnemyLastKnown` for spotted-memory map markers.
@@ -75,14 +80,16 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleNetworkInitializer.cs`
   - Synchronizes each spawned vehicle's current kill count from the authoritative server so every client player-list row can display it.
 - `Assets/Game/Scripts/UI/HUD/GameplayTimerDisplay.cs`
-  - Match timer display.
+  - Match timer display. It consumes the existing authoritative seconds value and formats it as `HH:MM:SS`; hours are not limited to a 24-hour clock.
 - `Assets/Game/Scripts/UI/HUD/PauseMenu.cs`
   - Pause menu behavior.
+  - `GameplayPausePopup` is a separate direct child of `Client.unity/Canvas`, not a child of `GameplayHUD/GameplayHudContent`. `GameplayPauseController` remains the serialized `MenuType.GameplayPause` registration point and still targets that popup's `Menu` component.
   - Suppresses normal gameplay pause handling whenever the `VehicleTest` scene is loaded, not only when it is the active scene, so additive test maps do not open centered pause UI or hide `GameplayHUD`.
 - `Assets/Game/Scripts/MenuController/MenuManager.cs`
   - Global menu state; also affects gameplay input blocking.
   - Registers only inspector-wired scene menus during `Awake`; it does not instantiate menu prefabs at runtime.
   - `Client.unity/Canvas/GameplayHUD` is the inspector-wired `MenuType.GameplayHUD` route and owns the live gameplay crosshair, map, player list, damage screen, and local HP display.
+  - `GameplayPauseController` registers the separate `GameplayPausePopup` route, so opening pause does not require nesting the popup under the gameplay HUD presentation root.
 - `Assets/Game/Scripts/MenuController/Menu.cs`
   - Menu presentation controller used by HUD/pause/settings menus. It fades its inspector-wired `CanvasGroup` alpha without moving the UI layout; each component's `fadeDuration` controls both directions and defaults to `0.5` seconds.
   - Provides `CloseImmediate()` for VehicleTest to hide `GameplayHUD` instantly without a fade animation fighting the test overlay visibility.
@@ -95,5 +102,6 @@ Rules when editing HUD/UI:
 - For local hit feedback, use `DamageScreen` and `VehicleHealth.OnDamaged`; do not poll health or search for the local vehicle from the scene.
 - VehicleTest uses the same `GameplayHUD.prefab` as the main gameplay UI through `VehicleTestSceneController.clientGameplayHudPrefab`; keep this scene field assigned when changing HUD prefabs.
 - Keep the existing `Client.unity/Canvas/GameplayHUD` assigned to the `GameplayHUD` entry of the scene `MenuManager`; do not add a second HUD prefab instance or spawn one at runtime.
+- Keep `Client.unity/Canvas/GameplayPausePopup` outside `GameplayHUD`; its `GameplayPauseController` owns the pause menu registration and `GameplayHUD` remains the gameplay presentation layer.
 - If weapon HUD changes, update `weapons-damage.md` too.
 - If menu input blocking changes, update `robot-control.md` too.
