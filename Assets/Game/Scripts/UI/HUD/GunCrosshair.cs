@@ -1,6 +1,7 @@
 using TMPro;
 using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
 using UnityEngine;
@@ -22,6 +23,27 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private GameObject sniperOverlay;
         [SerializeField] private GameObject sniperReticleOnlyRoot;
 
+        [Header("Faction Reticles")]
+        [SerializeField] private GameObject ironAllianceCrosshairRoot;
+        [SerializeField] private GameObject novaSyndicateCrosshairRoot;
+        [SerializeField] private RectTransform ironAllianceReticle;
+        [SerializeField] private RectTransform novaSyndicateReticle;
+        [SerializeField] private RectTransform ironAllianceServerReticle;
+        [SerializeField] private RectTransform novaSyndicateServerReticle;
+
+        [Header("Faction Weapon Parameters")]
+        [SerializeField] private Image ironAllianceFillImage;
+        [SerializeField] private Image novaSyndicateFillImage;
+        [SerializeField] private TMP_Text ironAllianceReloadText;
+        [SerializeField] private TMP_Text novaSyndicateReloadText;
+        [SerializeField] private TMP_Text ironAllianceAmmoLeftText;
+        [SerializeField] private TMP_Text novaSyndicateAmmoLeftText;
+        [SerializeField] private TMP_Text ironAllianceAimStatusText;
+        [SerializeField] private TMP_Text novaSyndicateAimStatusText;
+
+        [Header("Nova Charge Indicators")]
+        [SerializeField] private Image[] novaChargeLightElements = System.Array.Empty<Image>();
+
         private Vector2 _crosshairBaseSize;
         private Vector2 _serverCrosshairBaseSize;
         private bool _crosshairBaseSizeCached;
@@ -41,9 +63,19 @@ namespace Game.Scripts.UI.HUD
         private bool _hasAimStatus;
         private string _lastAimStatusPrefix;
         private string _lastAimReadyText;
+        private float _lastChargeProgress = -1f;
+        private bool _serverCrosshairEnabled;
+        private Image _ironAllianceFillFallback;
+        private TMP_Text _ironAllianceReloadFallback;
+        private TMP_Text _ironAllianceAmmoLeftFallback;
+        private TMP_Text _ironAllianceAimStatusFallback;
 
         private void Awake()
         {
+            _ironAllianceFillFallback = fillImage;
+            _ironAllianceReloadFallback = reloadText;
+            _ironAllianceAmmoLeftFallback = ammoLeftText;
+            _ironAllianceAimStatusFallback = aimStatusText;
             ResolveCanvasReference();
         }
 
@@ -90,6 +122,116 @@ namespace Game.Scripts.UI.HUD
                 ref _serverCrosshairBaseSizeCached,
                 ref _serverCrosshairDiameter,
                 ref _serverCrosshairDiameterCached);
+        }
+
+        public bool SetFaction(RobotFaction faction)
+        {
+            bool useNovaReticle = faction == RobotFaction.NovaSyndicate;
+            RectTransform nextReticle = useNovaReticle ? novaSyndicateReticle : ironAllianceReticle;
+            RectTransform nextServerReticle = useNovaReticle
+                ? novaSyndicateServerReticle
+                : ironAllianceServerReticle;
+            Image nextFillImage = useNovaReticle ? novaSyndicateFillImage : ironAllianceFillImage;
+            TMP_Text nextReloadText = useNovaReticle ? novaSyndicateReloadText : ironAllianceReloadText;
+            TMP_Text nextAmmoLeftText = useNovaReticle ? novaSyndicateAmmoLeftText : ironAllianceAmmoLeftText;
+            TMP_Text nextAimStatusText = useNovaReticle ? novaSyndicateAimStatusText : ironAllianceAimStatusText;
+
+            if (nextReticle == null)
+            {
+                nextReticle = useNovaReticle ? null : crosshair;
+            }
+
+            if (nextServerReticle == null)
+            {
+                nextServerReticle = useNovaReticle ? null : serverCrosshair;
+            }
+
+            if (!useNovaReticle)
+            {
+                nextFillImage ??= _ironAllianceFillFallback;
+                nextReloadText ??= _ironAllianceReloadFallback;
+                nextAmmoLeftText ??= _ironAllianceAmmoLeftFallback;
+                nextAimStatusText ??= _ironAllianceAimStatusFallback;
+            }
+
+            if (ironAllianceCrosshairRoot != null)
+            {
+                ironAllianceCrosshairRoot.SetActive(!useNovaReticle);
+            }
+
+            if (novaSyndicateCrosshairRoot != null)
+            {
+                novaSyndicateCrosshairRoot.SetActive(useNovaReticle);
+            }
+
+            bool bindingsChanged = crosshair != nextReticle
+                                   || serverCrosshair != nextServerReticle
+                                   || fillImage != nextFillImage
+                                   || reloadText != nextReloadText
+                                   || ammoLeftText != nextAmmoLeftText
+                                   || aimStatusText != nextAimStatusText;
+            if (!bindingsChanged)
+            {
+                return false;
+            }
+
+            crosshair = nextReticle;
+            serverCrosshair = nextServerReticle;
+            fillImage = nextFillImage;
+            reloadText = nextReloadText;
+            ammoLeftText = nextAmmoLeftText;
+            aimStatusText = nextAimStatusText;
+            ApplyServerCrosshairSetting(_serverCrosshairEnabled);
+            _crosshairBaseSizeCached = false;
+            _serverCrosshairBaseSizeCached = false;
+            _crosshairDiameterCached = false;
+            _serverCrosshairDiameterCached = false;
+            _lastChargeProgress = -1f;
+            _hasAimStatus = false;
+            _lastAimStatusReady = false;
+            _lastAimStatusPercent = int.MinValue;
+            _lastAimStatusPrefix = null;
+            _lastAimReadyText = null;
+            if (_sniperModeApplied)
+            {
+                ClearSniperHiddenObjects();
+                ApplySniperHudVisibility(true);
+            }
+
+            return true;
+        }
+
+        public void SetWeaponChargeProgress(float progress)
+        {
+            float safeProgress = Mathf.Clamp01(progress);
+            if (safeProgress >= 0.999f)
+            {
+                safeProgress = 1f;
+            }
+
+            if (Mathf.Abs(_lastChargeProgress - safeProgress) <= 0.001f)
+            {
+                return;
+            }
+
+            _lastChargeProgress = safeProgress;
+            if (novaChargeLightElements == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < novaChargeLightElements.Length; i++)
+            {
+                Image lightElement = novaChargeLightElements[i];
+                if (lightElement == null)
+                {
+                    continue;
+                }
+
+                Color color = lightElement.color;
+                color.a = safeProgress;
+                lightElement.color = color;
+            }
         }
 
         private static void ApplyAimingDiameter(
@@ -147,6 +289,7 @@ namespace Game.Scripts.UI.HUD
 
         private void ApplyServerCrosshairSetting(bool enabled)
         {
+            _serverCrosshairEnabled = enabled;
             if (serverCrosshair != null)
             {
                 serverCrosshair.gameObject.SetActive(enabled);

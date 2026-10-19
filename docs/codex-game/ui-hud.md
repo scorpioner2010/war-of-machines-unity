@@ -38,6 +38,10 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Gun crosshair UI, reload/ammo text, dispersion display target for weapon systems.
   - The new `GameplayHudContent` wiring uses `AmmoCountText` for remaining ammunition, `ReloadStatusText` for reload status, `AimStatus` for the aim label, `GameplayHudContent` as the regular HUD root, and `SniperScopeOverlay` as the scope overlay.
+  - Owns the inspector-wired faction reticle bindings: `CrosshairType1` for `RobotFaction.IronAlliance` and `CrosshairType2` for `RobotFaction.NovaSyndicate`; the active local reticle, optional server reticle, reload fill, reload text, ammo text, and aim-status text are switched together so every HUD calculation follows the selected robot.
+  - `WeaponReloadController` receives a binding-change result and forces the current ammo/reload values into the newly selected target, preventing cached IA values from leaving the NV UI stale. Aim-status caches are also invalidated when the target text changes.
+  - Owns the serialized `CrosshairType2` `lightElement` image list and changes only those images' alpha from the local weapon charge progress. It preserves each element's authored RGB color.
+  - The bindings are serialized on the scene `GunCrosshair` presenter and target `Client.unity/Canvas/GameplayHUD/GameplayHudContent/CrosshairType1` and `CrosshairType2`; the scene assigns all 12 Nova `lightElement` `Image` components explicitly.
 - `Assets/Game/Scenes/Client.unity/SniperScopeOverlay/SniperScopeMask`
   - Fullscreen procedural sniper-scope vignette. Its standard UI `Image` is tinted black at alpha `0.72`, uses `Assets/Game/Content/UI/Materials/ProceduralSniperScopeMask.mat`, and intentionally has no sprite.
   - The material uses `Assets/Game/Content/Rendering/Shaders/ProceduralSniperScopeMask.shader`, which calculates a signed-distance circular aperture per pixel rather than sampling a scope PNG. `Aperture Radius (Screen Height)` is the radius normalized to the display height; the default `0.373` matches the former `Hud_Aim_Bracket.png` opening. `Aperture Center (UV)` moves the opening, and `Extra Edge Softness (Pixels)` adds optional softness beyond the shader's one-pixel antialiasing.
@@ -48,6 +52,7 @@ Current owner scripts:
   - Positions/presents reticle based on weapon aim.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`
   - Updates reload/ammo HUD state for owner.
+  - Passes the selected vehicle faction to `GunCrosshair` and presents the local predicted/server-reconciled reload progress to the Nova Syndicate `lightElement` indicators; this is presentation only and does not alter fire validation.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
   - Applies crosshair dispersion to owner HUD.
 - `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`

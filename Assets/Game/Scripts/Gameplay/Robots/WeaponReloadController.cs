@@ -30,6 +30,7 @@ namespace Game.Scripts.Gameplay.Robots
         private int _lastHudAmmo = int.MinValue;
         private ReloadHudState _lastHudState = ReloadHudState.Unknown;
         private int _lastReloadTenths = int.MinValue;
+        private RobotFaction _faction = RobotFaction.Unknown;
 
         private enum ReloadHudState : byte
         {
@@ -63,12 +64,17 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            _faction = stats.Faction;
             if (stats.ReloadTime > 0f)
             {
                 reloadTime = stats.ReloadTime;
             }
 
             ApplyTotalAmmo(stats.ShellsCount);
+            if (IsOwner && _initialized)
+            {
+                ApplyHud();
+            }
         }
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
@@ -164,6 +170,7 @@ namespace Game.Scripts.Gameplay.Robots
                 if (!localGate && !_isReloading.Value && _ammoLeft.Value > 0 && vehicleRoot.inputManager.Shoot)
                 {
                     _clientReloadRemain = Mathf.Max(_clientReloadRemain, reloadTime);
+                    ApplyHud();
                     vehicleRoot.shooterNet.PredictAndRequest();
                 }
             }
@@ -247,12 +254,15 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            bool factionBindingsChanged = _crosshair.SetFaction(_faction);
+
             int ammoLeft = _ammoLeft.Value;
             bool isReloading = _isReloading.Value;
             float reloadRemain = _reloadRemain.Value;
+            _crosshair.SetWeaponChargeProgress(GetWeaponChargeProgress(ammoLeft, isReloading, reloadRemain));
 
             int safeAmmoLeft = Mathf.Max(0, ammoLeft);
-            if (_crosshair.ammoLeftText != null && _lastHudAmmo != safeAmmoLeft)
+            if (_crosshair.ammoLeftText != null && (factionBindingsChanged || _lastHudAmmo != safeAmmoLeft))
             {
                 _lastHudAmmo = safeAmmoLeft;
                 _crosshair.ammoLeftText.SetText("{0}", safeAmmoLeft);
@@ -266,7 +276,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 if (_crosshair.reloadText != null)
                 {
-                    ApplyReloadText(ReloadHudState.Empty, 0);
+                    ApplyReloadText(ReloadHudState.Empty, 0, factionBindingsChanged);
                 }
                 return;
             }
@@ -284,7 +294,7 @@ namespace Game.Scripts.Gameplay.Robots
                 if (_crosshair.reloadText != null)
                 {
                     int reloadTenths = Mathf.CeilToInt(Mathf.Max(0f, reloadRemain) * 10f);
-                    ApplyReloadText(ReloadHudState.Reloading, reloadTenths);
+                    ApplyReloadText(ReloadHudState.Reloading, reloadTenths, factionBindingsChanged);
                 }
                 return;
             }
@@ -295,18 +305,38 @@ namespace Game.Scripts.Gameplay.Robots
             }
             if (_crosshair.reloadText != null)
             {
-                ApplyReloadText(ReloadHudState.Ready, 0);
+                ApplyReloadText(ReloadHudState.Ready, 0, factionBindingsChanged);
             }
         }
 
-        private void ApplyReloadText(ReloadHudState state, int reloadTenths)
+        private float GetWeaponChargeProgress(int ammoLeft, bool isReloading, float reloadRemain)
+        {
+            bool hasLocalReload = IsOwner && _clientReloadRemain > 0f;
+            bool hasReload = hasLocalReload || isReloading;
+            if (!hasReload)
+            {
+                return ammoLeft > 0 ? 1f : 0f;
+            }
+
+            float effectiveReloadRemain = hasLocalReload
+                ? Mathf.Max(_clientReloadRemain, reloadRemain)
+                : reloadRemain;
+            if (reloadTime <= 0.0001f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp01(1f - (Mathf.Max(0f, effectiveReloadRemain) / reloadTime));
+        }
+
+        private void ApplyReloadText(ReloadHudState state, int reloadTenths, bool force = false)
         {
             if (_crosshair == null || _crosshair.reloadText == null)
             {
                 return;
             }
 
-            if (_lastHudState == state && _lastReloadTenths == reloadTenths)
+            if (!force && _lastHudState == state && _lastReloadTenths == reloadTenths)
             {
                 return;
             }

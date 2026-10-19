@@ -15,6 +15,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private RectTransform _serverCrosshair;
         private RectTransform _reticleRect;
+        private GunCrosshair _gunCrosshair;
         private Canvas _canvas;
         private RectTransform _canvasRect;
         private float _nextHudResolveTime;
@@ -73,10 +74,18 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
+            bool reticleChanged = _reticleRect != gunCrosshair.crosshair;
+            _gunCrosshair = gunCrosshair;
             _reticleRect = gunCrosshair.crosshair;
             _serverCrosshair = gunCrosshair.serverCrosshair;
             _canvas = gunCrosshair.ResolveCanvasReference();
             _canvasRect = gunCrosshair.canvasRect;
+
+            if (reticleChanged)
+            {
+                _hasVisualAimPoint = false;
+                _curLocal = _reticleRect != null ? _reticleRect.anchoredPosition : default;
+            }
 
             if (_reticleRect != null)
             {
@@ -102,9 +111,10 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                if (_canvasRect == null || _reticleRect == null)
+                bool reticleTargetChanged = _gunCrosshair != null && _reticleRect != _gunCrosshair.crosshair;
+                if (_canvasRect == null || _reticleRect == null || reticleTargetChanged)
                 {
-                    if (!TryResolveHudReferences(false))
+                    if (!TryResolveHudReferences(reticleTargetChanged || _canvasRect == null || _reticleRect == null))
                     {
                         return;
                     }

@@ -1,6 +1,69 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: IMPLEMENTED_NEEDS_VERIFICATION
+- Started: 2026-10-20
+- Last updated: 2026-10-20
+- Original user wording: "потестив, перероби юай, і помітив що ти не підключив параметри для другого прицілу, ти мав підтянути параметри від другого приціду якщо він використовуєтьс, тоїсть щоб там все рахувалдося відображалося так як на першому прицілі, виправ це"
+- Objective: Підключити всі динамічні HUD-параметри до активного приціла фракції: для IA використовувати CrosshairType1, для NV — CrosshairType2, щоб боєзапас, статус/прогрес перезарядки, статус наведення та пов'язані візуальні стани оновлювалися однаково.
+- Acceptance criteria:
+  1. Перемикання фракції вибирає повний набір UI-посилань відповідного приціла, а не лише його графіку.
+  2. CrosshairType2 отримує ті самі значення боєзапасу, перезарядки, наведення та серверного/активного приціла, що й CrosshairType1.
+  3. Після вибору NV старі IA-елементи не продовжують отримувати динамічні оновлення.
+  4. Посилання на обидва набори UI задані в сцені через Inspector-серіалізацію; runtime не шукає об'єкти.
+  5. Механічна документація та цей handoff оновлені, а збірка/статичні перевірки проходять.
+- Assumptions: Існуюча ієрархія CrosshairType1/CrosshairType2 та поточні користувацькі зміни зберігаються; Play Mode буде перевірено після цього виправлення.
+- Work completed: Зіставлено відповідні Image/TMP-поля CrosshairType1 і CrosshairType2 у Client.unity.
+- Work remaining: Розширити GunCrosshair повними фракційними bindings, підключити їх у сцені, оновити docs та виконати build/static verification.
+- Verification: Початковий аналіз YAML виконано; runtime verification ще не виконано.
+
+- Latest implementation: GunCrosshair switches reticle, server reticle, reload fill, reload text, ammo text, and aim-status text for the active faction. WeaponReloadController forces current cached ammo/reload values into a newly selected target.
+- Remaining work: Play Mode verification with IA and NV robots, including firing, reload progress, aim status, and switching between robot factions.
+- Verification update: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors; all eight faction parameter references were checked in `Client.unity`. Runtime verification is still pending.
+
+## Previous active task carried forward
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-20
+- Last updated: 2026-10-20
+- Original user wording: "Я зробив окремо приціли для різних фракцій роботів, в GameplayHUD, для IA буде використовуватися CrosshairType1, а для NV буде використовуватися CrosshairType2, тобі треба підключити запрограмувати ці приціли, для кожної фракції окремо, в мене буде приціл в грі в залежності якого робота я вибрав. також для приціла CrosshairType2 є додаткова логіка, там є обьекти lightElement, вони мають тухнути якщо ми вистрілили (прозорість 0) а по мірі заряджання нашої зрої альфа повертається на 1, тоєть коли пушка заряжана альфа елементів lightElement 1, короче альфа залежить від статуса зарядки пушки. реалізуй цю логіку, зроби все максимально чітко та розуміно і напиши коли можна буде тестувати."
+- Objective: select `CrosshairType1` for Iron Alliance vehicles and `CrosshairType2` for Nova Syndicate vehicles, then drive every `CrosshairType2/lightElement` alpha from the local weapon reload state.
+
+### Acceptance criteria
+
+1. The local gameplay HUD activates only the crosshair assigned to the selected vehicle faction: IA uses `CrosshairType1`, NV uses `CrosshairType2`.
+2. Crosshair selection updates when the local vehicle changes and does not affect authoritative gameplay or other HUD presenters.
+3. `CrosshairType2` light elements are alpha `0` immediately after a successful shot and return smoothly to alpha `1` as the weapon reloads; a fully loaded weapon shows alpha `1`.
+4. The behavior works through the existing main gameplay HUD and VehicleTest HUD binding paths without runtime component discovery.
+5. The relevant HUD and weapon mechanic documentation records the new inspector-wired references and state ownership.
+
+### Assumptions
+
+- `GameplayHUD` already contains the user-authored `CrosshairType1` and `CrosshairType2` objects under the existing `GunCrosshair` presenter, with `lightElement` objects under `CrosshairType2`.
+- `WeaponReloadController` remains the single source of truth for local ammo/reload state; the crosshair only presents that state.
+- Existing unrelated working-tree changes, including the authored font asset, are user-owned and must be preserved.
+
+### Work recorded
+
+- Read `docs/codex-game/README.md`, `ui-hud.md`, `weapons-damage.md`, `robot-control.md`, `api-resources.md`, and the persistent UI asset instructions.
+- Inspected the current HUD presenter, local vehicle root/stat flow, and weapon reload ownership before implementation.
+- Added inspector-wired IA/NV reticle roots, local/server reticle targets, and all 12 `CrosshairType2` `lightElement` images to the `GunCrosshair` component in `Client.unity`.
+- Added faction selection in `GunCrosshair`, local reload-progress presentation in `WeaponReloadController`, and active-reticle refresh handling in `WeaponReticlePresenter`.
+- Updated `ui-hud.md` and `weapons-damage.md` with the new ownership and state flow.
+
+### Verification
+
+- `git diff --check` passed.
+- Static scene scan confirmed all IA/NV roots, reticles, server reticles, and 12 light-element image references resolve to objects in `Client.unity`.
+- `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors; only existing FishNet/dependency deprecation and assembly-version warnings remain.
+- Runtime Play Mode visual verification is still pending.
+
+### Remaining work
+
+- Run Play Mode with an IA robot and an NV robot: verify the selected reticle, reticle movement, server-reticle toggle, immediate alpha `0` after firing, and smooth alpha recovery to `1` when ready.
+- Verify the same behavior through VehicleTest if its configured HUD prefab is available in the current Unity project.
+
+## Previous active task carried forward
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-19
