@@ -1,6 +1,21 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: COMPLETED
+- Started: 2026-10-20
+- Last updated: 2026-10-20
+- Original user wording: "Failed to load ImpactGlowDecal.shadergraph; летять помилки, свічіння немає, декаль без прозорості і фон білий; виправ це все і протестуй в сцені VehicleTest, зупиняйся коли все працює."
+- Objective: Remove the broken glow ShaderGraph, restore transparent dark impact decals, implement a Unity-version-compatible self-lit crack glow, and verify the complete impact flow in `VehicleTest`.
+- Acceptance criteria: no ShaderGraph load errors during pooled FX prewarm; dark decal keeps transparent background; red cracks are self-lit; glow follows target filtering, moving-robot attachment, pooling and fade; Map impacts remain correct; `VehicleTest` has a reproducible Play Mode verification result.
+- Assumptions: keep the native URP projector for the dark decal and target filtering; prefer a valid built-in/package-compatible asset or a lightweight inspector-wired fallback over hand-edited incompatible ShaderGraph serialization; no runtime component discovery or per-impact light.
+- Work completed: replaced the invalid hand-edited glow graph with a Unity 6000.3.13f1/URP 17.3-compatible Point Light decal graph and material; corrected `ImpactDecal.mat` to use the transparent `Expl2_DarkScorch_Decal.png`; repaired the `Impact Glow Decal` prefab material GUID; preserved target-only rendering layers, moving-robot attachment, pooling, fade, and Map behavior.
+- Work remaining: none for the requested fix.
+- Verification: Unity batch import of `ImpactGlowDecal.shadergraph`, both materials, and the explosion prefab passed with exit code 0 and no `Failed to load` output. A temporary editor validation opened `VehicleTest`, validated all serialized projector/material/texture references, and passed. A separate temporary Play Mode validation started the real `VehicleTest` scene, started its local FishNet host/client, instantiated the impact prefab, called `PlayImpact`, confirmed both projectors activated, then exited with code 0. `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors, and `git diff --check` passed. Temporary validation scripts were removed afterward.
+
+## History
+- Previous impact-projector task: restored native URP DecalProjector targeting with per-vehicle rendering-layer filtering, moving-robot attachment, Map support, pooling cleanup, and updated weapon documentation. Build passed; Unity import and Play Mode verification remained pending.
+
+## Previous active task
 - Status: IMPLEMENTED_NEEDS_VERIFICATION
 - Started: 2026-10-20
 - Last updated: 2026-10-20

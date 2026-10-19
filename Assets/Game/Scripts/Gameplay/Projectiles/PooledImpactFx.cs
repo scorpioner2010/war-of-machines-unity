@@ -24,6 +24,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     public ParticleSystem[] particles = System.Array.Empty<ParticleSystem>();
     public CFXR_Effect[] cartoonFxEffects = System.Array.Empty<CFXR_Effect>();
     public DecalProjector impactDecal;
+    public DecalProjector impactGlowDecal;
     [Min(0.1f)] public float impactDecalLifetime = 30f;
     [Min(0f)] public float impactDecalFadeDuration = 5f;
     [Min(0.01f)] public float impactDecalWidth = 1.2f;
@@ -108,7 +109,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     public void PlayImpact(Vector3 impactPoint, Vector3 impactNormal, VehicleRoot impactTarget = null)
     {
         Play();
-        if (impactDecal == null)
+        if (impactDecal == null && impactGlowDecal == null)
         {
             return;
         }
@@ -133,20 +134,12 @@ public sealed class PooledImpactFx : MonoBehaviour
         rotation = Quaternion.AngleAxis(Random.Range(0f, 360f), safeNormal) * rotation;
 
         Vector3 surfacePosition = impactPoint + safeNormal * Mathf.Max(0f, impactDecalSurfaceOffset);
-        Transform decalTransform = impactDecal.transform;
-        decalTransform.SetPositionAndRotation(surfacePosition, rotation);
-
         float projectionDepth = Mathf.Max(0.01f, impactDecalProjectionDepth);
-        impactDecal.size = new Vector3(
-            Mathf.Max(0.01f, impactDecalWidth),
-            Mathf.Max(0.01f, impactDecalHeight),
-            projectionDepth);
-        impactDecal.pivot = Vector3.zero;
-        impactDecal.renderingLayerMask = _impactRenderingLayerMask != 0
+        uint renderingLayerMask = _impactRenderingLayerMask != 0
             ? _impactRenderingLayerMask
             : DefaultRenderingLayerMask;
-        impactDecal.fadeFactor = 1f;
-        impactDecal.gameObject.SetActive(true);
+        ConfigureImpactDecal(impactDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
+        ConfigureImpactDecal(impactGlowDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
 
         float lifetime = Mathf.Max(0.1f, impactDecalLifetime);
         float fadeDuration = Mathf.Clamp(impactDecalFadeDuration, 0f, lifetime);
@@ -262,18 +255,18 @@ public sealed class PooledImpactFx : MonoBehaviour
         _impactDecalReleaseTime = 0f;
         if (impactDecal != null)
         {
-            impactDecal.renderingLayerMask = DefaultRenderingLayerMask;
-            impactDecal.fadeFactor = 0f;
-            if (impactDecal.gameObject.activeSelf)
-            {
-                impactDecal.gameObject.SetActive(false);
-            }
+            ResetImpactDecalProjector(impactDecal);
+        }
+
+        if (impactGlowDecal != null)
+        {
+            ResetImpactDecalProjector(impactGlowDecal);
         }
     }
 
     private void UpdateImpactDecalFade()
     {
-        if (!_impactDecalPlaying || impactDecal == null)
+        if (!_impactDecalPlaying || (impactDecal == null && impactGlowDecal == null))
         {
             return;
         }
@@ -287,12 +280,59 @@ public sealed class PooledImpactFx : MonoBehaviour
         float fadeDuration = _impactDecalReleaseTime - _impactDecalFadeStartTime;
         if (fadeDuration <= 0.0001f)
         {
-            impactDecal.fadeFactor = 0f;
+            SetImpactDecalFade(0f);
             return;
         }
 
         float fade = Mathf.Clamp01((now - _impactDecalFadeStartTime) / fadeDuration);
-        impactDecal.fadeFactor = 1f - fade;
+        SetImpactDecalFade(1f - fade);
+    }
+
+    private void ConfigureImpactDecal(
+        DecalProjector projector,
+        Vector3 surfacePosition,
+        Quaternion rotation,
+        float projectionDepth,
+        uint renderingLayerMask)
+    {
+        if (projector == null)
+        {
+            return;
+        }
+
+        Transform decalTransform = projector.transform;
+        decalTransform.SetPositionAndRotation(surfacePosition, rotation);
+        projector.size = new Vector3(
+            Mathf.Max(0.01f, impactDecalWidth),
+            Mathf.Max(0.01f, impactDecalHeight),
+            projectionDepth);
+        projector.pivot = Vector3.zero;
+        projector.renderingLayerMask = renderingLayerMask;
+        projector.fadeFactor = 1f;
+        projector.gameObject.SetActive(true);
+    }
+
+    private void ResetImpactDecalProjector(DecalProjector projector)
+    {
+        projector.renderingLayerMask = DefaultRenderingLayerMask;
+        projector.fadeFactor = 0f;
+        if (projector.gameObject.activeSelf)
+        {
+            projector.gameObject.SetActive(false);
+        }
+    }
+
+    private void SetImpactDecalFade(float fadeFactor)
+    {
+        if (impactDecal != null)
+        {
+            impactDecal.fadeFactor = fadeFactor;
+        }
+
+        if (impactGlowDecal != null)
+        {
+            impactGlowDecal.fadeFactor = fadeFactor;
+        }
     }
 
     private bool TryAcquireImpactLayer(VehicleRoot targetRoot, List<Renderer> targetRenderers)
