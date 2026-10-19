@@ -5094,8 +5094,8 @@ MonoBehaviour:
   impactDecal: {fileID: 7310000000000000003}
   impactDecalLifetime: 30
   impactDecalFadeDuration: 5
-  impactDecalWidth: 1.2
-  impactDecalHeight: 1.2
+  impactDecalWidth: 0.2
+  impactDecalHeight: 0.2
   impactDecalProjectionDepth: 0.6
   impactDecalSurfaceOffset: 0.003
 --- !u!1 &2433282508753476420
@@ -24215,7 +24215,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
   m_Material: {fileID: 2100000, guid: 8d2e3d4b2c9e46a68c6c5a2e1e4a0d71, type: 2}
   m_DrawDistance: 1000
