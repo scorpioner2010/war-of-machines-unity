@@ -19,6 +19,7 @@ namespace Game.Scripts.UI.HUD
         public TMP_Text reloadText; 
         public TMP_Text ammoLeftText;
         public TMP_Text aimStatusText;
+        public TMP_Text penetrationStatusText;
         [SerializeField] private GameObject regularHudRoot;
         [SerializeField] private GameObject sniperOverlay;
         [SerializeField] private GameObject sniperReticleOnlyRoot;
@@ -40,6 +41,8 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private TMP_Text novaSyndicateAmmoLeftText;
         [SerializeField] private TMP_Text ironAllianceAimStatusText;
         [SerializeField] private TMP_Text novaSyndicateAimStatusText;
+        [SerializeField] private TMP_Text ironAlliancePenetrationStatusText;
+        [SerializeField] private TMP_Text novaSyndicatePenetrationStatusText;
 
         [Header("Nova Charge Indicators")]
         [SerializeField] private Image[] novaChargeLightElements = System.Array.Empty<Image>();
@@ -69,6 +72,9 @@ namespace Game.Scripts.UI.HUD
         private TMP_Text _ironAllianceReloadFallback;
         private TMP_Text _ironAllianceAmmoLeftFallback;
         private TMP_Text _ironAllianceAimStatusFallback;
+        private TMP_Text _ironAlliancePenetrationStatusFallback;
+        private const string DefaultPenetrationStatusText = "PENETRATION STATUS";
+        private string _lastPenetrationStatus = DefaultPenetrationStatusText;
 
         private void Awake()
         {
@@ -76,13 +82,16 @@ namespace Game.Scripts.UI.HUD
             _ironAllianceReloadFallback = reloadText;
             _ironAllianceAmmoLeftFallback = ammoLeftText;
             _ironAllianceAimStatusFallback = aimStatusText;
+            _ironAlliancePenetrationStatusFallback = penetrationStatusText;
             ResolveCanvasReference();
+            ApplyPenetrationStatusToActiveTarget();
         }
 
         private void OnEnable()
         {
             Singleton<GunCrosshair>.Register(this);
             ResolveCanvasReference();
+            ApplyPenetrationStatusToActiveTarget();
             ClientGameplaySettings.ServerCrosshairChanged += OnServerCrosshairSettingChanged;
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
             ApplySniperPresentation(false);
@@ -135,6 +144,9 @@ namespace Game.Scripts.UI.HUD
             TMP_Text nextReloadText = useNovaReticle ? novaSyndicateReloadText : ironAllianceReloadText;
             TMP_Text nextAmmoLeftText = useNovaReticle ? novaSyndicateAmmoLeftText : ironAllianceAmmoLeftText;
             TMP_Text nextAimStatusText = useNovaReticle ? novaSyndicateAimStatusText : ironAllianceAimStatusText;
+            TMP_Text nextPenetrationStatusText = useNovaReticle
+                ? novaSyndicatePenetrationStatusText
+                : ironAlliancePenetrationStatusText;
 
             if (nextReticle == null)
             {
@@ -152,6 +164,7 @@ namespace Game.Scripts.UI.HUD
                 nextReloadText ??= _ironAllianceReloadFallback;
                 nextAmmoLeftText ??= _ironAllianceAmmoLeftFallback;
                 nextAimStatusText ??= _ironAllianceAimStatusFallback;
+                nextPenetrationStatusText ??= _ironAlliancePenetrationStatusFallback;
             }
 
             if (ironAllianceCrosshairRoot != null)
@@ -169,7 +182,8 @@ namespace Game.Scripts.UI.HUD
                                    || fillImage != nextFillImage
                                    || reloadText != nextReloadText
                                    || ammoLeftText != nextAmmoLeftText
-                                   || aimStatusText != nextAimStatusText;
+                                   || aimStatusText != nextAimStatusText
+                                   || penetrationStatusText != nextPenetrationStatusText;
             if (!bindingsChanged)
             {
                 return false;
@@ -181,6 +195,7 @@ namespace Game.Scripts.UI.HUD
             reloadText = nextReloadText;
             ammoLeftText = nextAmmoLeftText;
             aimStatusText = nextAimStatusText;
+            penetrationStatusText = nextPenetrationStatusText;
             ApplyServerCrosshairSetting(_serverCrosshairEnabled);
             _crosshairBaseSizeCached = false;
             _serverCrosshairBaseSizeCached = false;
@@ -192,6 +207,7 @@ namespace Game.Scripts.UI.HUD
             _lastAimStatusPercent = int.MinValue;
             _lastAimStatusPrefix = null;
             _lastAimReadyText = null;
+            ApplyPenetrationStatusToActiveTarget();
             if (_sniperModeApplied)
             {
                 ClearSniperHiddenObjects();
@@ -199,6 +215,26 @@ namespace Game.Scripts.UI.HUD
             }
 
             return true;
+        }
+
+        public Transform PenetrationStatusTextTransform => penetrationStatusText != null
+            ? penetrationStatusText.transform
+            : null;
+
+        public void SetPenetrationStatus(string status)
+        {
+            _lastPenetrationStatus = string.IsNullOrWhiteSpace(status)
+                ? DefaultPenetrationStatusText
+                : status;
+            ApplyPenetrationStatusToActiveTarget();
+        }
+
+        private void ApplyPenetrationStatusToActiveTarget()
+        {
+            if (penetrationStatusText != null && penetrationStatusText.text != _lastPenetrationStatus)
+            {
+                penetrationStatusText.text = _lastPenetrationStatus;
+            }
         }
 
         public void SetWeaponChargeProgress(float progress)
@@ -605,6 +641,14 @@ namespace Game.Scripts.UI.HUD
 
             Transform aimStatusTransform = aimStatusText != null ? aimStatusText.transform : null;
             if (IsSameOrParentOf(child, aimStatusTransform))
+            {
+                return true;
+            }
+
+            Transform penetrationStatusTransform = penetrationStatusText != null
+                ? penetrationStatusText.transform
+                : null;
+            if (IsSameOrParentOf(child, penetrationStatusTransform))
             {
                 return true;
             }

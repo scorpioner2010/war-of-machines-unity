@@ -1414,22 +1414,23 @@ namespace Game.Scripts.Gameplay.Robots
         [TargetRpc]
         private void ShowShotResultTargetRpc(NetworkConnection conn, byte status)
         {
-            if (GameplayGUI.In == null)
+            GunCrosshair activeCrosshair = Singleton<GunCrosshair>.CurrentOrNull;
+            if (activeCrosshair == null)
             {
                 return;
             }
 
             if (status == (byte)ShotHudStatus.Penetrated)
             {
-                GameplayGUI.In.ShowShotResult("Penetrated");
+                activeCrosshair.SetPenetrationStatus("Penetrated");
             }
             else if (status == (byte)ShotHudStatus.NotPenetrated)
             {
-                GameplayGUI.In.ShowShotResult("No penetration");
+                activeCrosshair.SetPenetrationStatus("No penetration");
             }
             else
             {
-                GameplayGUI.In.ShowShotResult("Miss");
+                activeCrosshair.SetPenetrationStatus("Miss");
             }
         }
     }

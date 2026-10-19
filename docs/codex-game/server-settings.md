@@ -40,6 +40,7 @@ Important settings classes currently used by recent gameplay work:
   - Accuracy/dispersion conversion, UI/network smoothing, and global on/off behavior for the current speed/turret/shot dispersion model.
   - Runtime spread itself is not configured with old reference traverse speeds anymore: `GunDispersionModel` derives it from normalized vehicle speed, normalized turret-local yaw speed, and fixed post-shot spread.
   - Weapon prefabs keep the per-weapon range through `minDispersionDeg`, `maxDispersionDeg`, and `aimTime`; the server settings prefab no longer serializes hull/gun/camera reference traverse fields.
+- `GameplayRuntimeSettings.shotResultVisibleTime` was removed because the faction-aware penetration status is now persistent and is replaced only by the next shot result.
 - `ProjectileBallisticsSettings`
   - Projectile gravity/ballistic settings.
 - `MatchVisibilityGlobalSettings`

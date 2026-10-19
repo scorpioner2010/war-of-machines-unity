@@ -2709,7 +2709,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &117176390
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3795,8 +3795,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -7.1123, y: -20.679}
-  m_SizeDelta: {x: 155.78, y: 41.358}
+  m_AnchoredPosition: {x: 18.678715, y: -20.679}
+  m_SizeDelta: {x: 104.198, y: 41.358}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &160632437
 MonoBehaviour:
@@ -8946,8 +8946,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -8.8395, y: 21}
-  m_SizeDelta: {x: 152.32, y: 42}
+  m_AnchoredPosition: {x: 14.181, y: 21}
+  m_SizeDelta: {x: 106.28, y: 42}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &413461957
 MonoBehaviour:
@@ -31761,6 +31761,7 @@ MonoBehaviour:
   reloadText: {fileID: 160632437}
   ammoLeftText: {fileID: 1959930501}
   aimStatusText: {fileID: 8871297653}
+  penetrationStatusText: {fileID: 1916821299}
   regularHudRoot: {fileID: 765982652}
   sniperOverlay: {fileID: 2003448332}
   sniperReticleOnlyRoot: {fileID: 0}
@@ -31778,6 +31779,8 @@ MonoBehaviour:
   novaSyndicateAmmoLeftText: {fileID: 1247590377}
   ironAllianceAimStatusText: {fileID: 8871297653}
   novaSyndicateAimStatusText: {fileID: 413461957}
+  ironAlliancePenetrationStatusText: {fileID: 1916821299}
+  novaSyndicatePenetrationStatusText: {fileID: 2069997480}
   novaChargeLightElements:
   - {fileID: 0}
   - {fileID: 0}
@@ -43878,8 +43881,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -8.84, y: -20.679}
-  m_SizeDelta: {x: 152.3246, y: 41.358}
+  m_AnchoredPosition: {x: 14.1815, y: -20.679}
+  m_SizeDelta: {x: 106.2816, y: 41.358}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1846425064
 MonoBehaviour:
@@ -46252,8 +46255,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 8.4563, y: -22}
-  m_SizeDelta: {x: 153.0874, y: 28.781}
+  m_AnchoredPosition: {x: -15.6472, y: -22}
+  m_SizeDelta: {x: 104.8805, y: 28.781}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1916821299
 MonoBehaviour:
@@ -48914,8 +48917,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 9.0932, y: -22}
-  m_SizeDelta: {x: 151.8136, y: 28.781}
+  m_AnchoredPosition: {x: -14.6208, y: -22}
+  m_SizeDelta: {x: 104.3857, y: 28.781}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2069997480
 MonoBehaviour:
@@ -50558,8 +50561,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -7.1112, y: 21}
-  m_SizeDelta: {x: 155.78, y: 42}
+  m_AnchoredPosition: {x: 18.679, y: 21}
+  m_SizeDelta: {x: 104.2, y: 42}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &8871297653
 MonoBehaviour:
@@ -51582,7 +51585,6 @@ MonoBehaviour:
     speedHudSampleInterval: 0.12
     speedHudSmoothRate: 8
     speedHudStopSnapThreshold: 0.05
-    shotResultVisibleTime: 4
     floatingDamageTextDuration: 4
     floatingDamageTextMoveUp: 2
     floatingDamageTextEndScale: 1.5

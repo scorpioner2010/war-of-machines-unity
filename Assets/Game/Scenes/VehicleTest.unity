@@ -957,7 +957,6 @@ MonoBehaviour:
     speedHudSampleInterval: 0.12
     speedHudSmoothRate: 8
     speedHudStopSnapThreshold: 0.05
-    shotResultVisibleTime: 4
     floatingDamageTextDuration: 4
     floatingDamageTextMoveUp: 2
     floatingDamageTextEndScale: 1.5

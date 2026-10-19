@@ -171,8 +171,6 @@ namespace Game.Scripts.Client
         public float speedHudSmoothRate = 8f;
         [Tooltip("Поріг, нижче якого швидкість на HUD одразу стає нулем.")]
         public float speedHudStopSnapThreshold = 0.05f;
-        [Tooltip("Скільки секунд показувати текст результату пострілу на HUD.")]
-        public float shotResultVisibleTime = 4f;
         [Tooltip("Тривалість анімації плаваючого тексту шкоди.")]
         public float floatingDamageTextDuration = 0.8f;
         [Tooltip("На скільки метрів плаваючий текст шкоди піднімається вгору.")]
@@ -258,7 +256,6 @@ namespace Game.Scripts.Client
             speedHudSampleInterval = ClampFinite(speedHudSampleInterval, 0.02f, Default.speedHudSampleInterval);
             speedHudSmoothRate = ClampFinite(speedHudSmoothRate, 0.01f, Default.speedHudSmoothRate);
             speedHudStopSnapThreshold = ClampFinite(speedHudStopSnapThreshold, 0f, Default.speedHudStopSnapThreshold);
-            shotResultVisibleTime = ClampFinite(shotResultVisibleTime, 0f, Default.shotResultVisibleTime);
             floatingDamageTextDuration = ClampFinite(floatingDamageTextDuration, 0f, Default.floatingDamageTextDuration);
             floatingDamageTextMoveUp = ClampFinite(floatingDamageTextMoveUp, Default.floatingDamageTextMoveUp);
             floatingDamageTextEndScale = ClampFinite(floatingDamageTextEndScale, 0f, Default.floatingDamageTextEndScale);
@@ -325,7 +322,6 @@ namespace Game.Scripts.Client
             speedHudSampleInterval = source.speedHudSampleInterval;
             speedHudSmoothRate = source.speedHudSmoothRate;
             speedHudStopSnapThreshold = source.speedHudStopSnapThreshold;
-            shotResultVisibleTime = source.shotResultVisibleTime;
             floatingDamageTextDuration = source.floatingDamageTextDuration;
             floatingDamageTextMoveUp = source.floatingDamageTextMoveUp;
             floatingDamageTextEndScale = source.floatingDamageTextEndScale;

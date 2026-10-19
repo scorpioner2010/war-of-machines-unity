@@ -13,6 +13,7 @@ Current owner scripts:
   - Owns the single human fire RPC. The server validates finite shot data, limits the client muzzle offset to 8 meters, requests ammo/reload approval, and only then creates the authoritative projectile.
   - Rejected owner shots cancel the predicted projectile and reconcile the local reload timer to the server value.
   - `ServerFireAuthoritative` is used by bots and other server-authoritative fire paths.
+  - The owner shot-result `TargetRpc` writes `Miss`, `Penetrated`, or `No penetration` directly to the active `GunCrosshair`; the status remains visible until another shot result replaces it.
 - `Assets/Game/Scripts/Gameplay/Robots/ServerHitResolver.cs`
   - Server-side raycast/hit resolution helper.
 - `Assets/Game/Scripts/Gameplay/Robots/DamageService.cs`
@@ -74,7 +75,7 @@ Fire flow:
 - The authoritative projectile catches up by the elapsed client tick time, capped at 0.30 seconds, so server damage timing stays close to client projectile timing.
   - Server validates reload/ammo in `WeaponReloadController` before `NetworkWeaponShooter` creates the authoritative projectile.
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
-  - Presents the owner weapon state in `Client.unity/Canvas/GameplayHUD/GameplayHudContent`. It selects the matching `AmmoCountText`, `ReloadStatusText`, reload fill `Image`, and `AimStatus` bindings for the active faction; switching bindings forces the current cached ammo/reload state into the new UI target.
+  - Presents the owner weapon state in `Client.unity/Canvas/GameplayHUD/GameplayHudContent`. It selects the matching `AmmoCountText`, `ReloadStatusText`, reload fill `Image`, `AimStatus`, and penetration-status bindings for the active faction; switching bindings forces the current cached ammo/reload state and last penetration result into the new UI target.
   - Uses the serialized `GameplayHudContent` regular-HUD root and `SniperScopeOverlay` scope root when switching between regular and sniper presentation.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Impact particles are spawned one Unity unit toward the local gameplay camera, keeping their screen position aligned with the actual hit point even at an oblique shot angle. If no gameplay camera exists, they fall back to the collision-surface normal.

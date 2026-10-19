@@ -38,8 +38,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Gun crosshair UI, reload/ammo text, dispersion display target for weapon systems.
   - The new `GameplayHudContent` wiring uses `AmmoCountText` for remaining ammunition, `ReloadStatusText` for reload status, `AimStatus` for the aim label, `GameplayHudContent` as the regular HUD root, and `SniperScopeOverlay` as the scope overlay.
-  - Owns the inspector-wired faction reticle bindings: `CrosshairType1` for `RobotFaction.IronAlliance` and `CrosshairType2` for `RobotFaction.NovaSyndicate`; the active local reticle, optional server reticle, reload fill, reload text, ammo text, and aim-status text are switched together so every HUD calculation follows the selected robot.
+  - Owns the inspector-wired faction reticle bindings: `CrosshairType1` for `RobotFaction.IronAlliance` and `CrosshairType2` for `RobotFaction.NovaSyndicate`; the active local reticle, optional server reticle, reload fill, reload text, ammo text, aim-status text, and penetration-status text are switched together so every HUD calculation follows the selected robot.
   - `WeaponReloadController` receives a binding-change result and forces the current ammo/reload values into the newly selected target, preventing cached IA values from leaving the NV UI stale. Aim-status caches are also invalidated when the target text changes.
+  - Initializes the active penetration-status label to `PENETRATION STATUS` and preserves the last `Miss`, `Penetrated`, or `No penetration` result when the faction reticle changes; the text is intentionally not cleared by a timer.
   - Owns the serialized `CrosshairType2` `lightElement` image list and changes only those images' alpha from the local weapon charge progress. It preserves each element's authored RGB color.
   - The bindings are serialized on the scene `GunCrosshair` presenter and target `Client.unity/Canvas/GameplayHUD/GameplayHudContent/CrosshairType1` and `CrosshairType2`; the scene assigns all 12 Nova `lightElement` `Image` components explicitly.
 - `Assets/Game/Scenes/Client.unity/SniperScopeOverlay/SniperScopeMask`
@@ -57,6 +58,7 @@ Current owner scripts:
   - Applies crosshair dispersion to owner HUD.
 - `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`
   - Gameplay GUI root.
+  - Keeps the legacy shot-result entry point compatible, but forwards results to the active `GunCrosshair`; it no longer clears the penetration label after a timeout.
 - `Assets/Game/Scripts/UI/HUD/GameplayHudRuntimeBinder.cs`
   - Runtime HUD binding support. `Client.unity/Canvas/GameplayHUD` has the serialized root Canvas reference, so its crosshair uses the same Canvas as the other client menus.
   - The active gameplay hierarchy is `GameplayHUD/GameplayHudContent`; its panels are grouped under `GameplayHudPanels`, with `VehicleStatusPanel` and `MatchTimerPanel` as named status groups.

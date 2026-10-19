@@ -4,6 +4,23 @@
 - Status: IMPLEMENTED_NEEDS_VERIFICATION
 - Started: 2026-10-20
 - Last updated: 2026-10-20
+- Original user wording: "помітив що ти не підключив статус пробиття на другому прицілі, підключи його + додай логіку щоб він не зникав а показував останій статус, наприклад я скосив там пише міс, то щоб міс не зникав, а по замовчуваню там має бути дефолтний текст статус пробитя на англ"
+- Objective: Підключити статус результату пострілу до CrosshairType1 і CrosshairType2 та зберігати останній статус постійно видимим. При старті показувати дефолтний англійський статус пробиття.
+- Acceptance criteria:
+  1. IA і NV приціли мають власні inspector-wired поля статусу пробиття.
+  2. Результати `Miss`, `Penetrated` і `No penetration` оновлюють активний приціл.
+  3. Останній статус не очищається через таймер і залишається видимим до наступного пострілу.
+  4. До першого результату показується дефолтний англійський текст статусу пробиття.
+  5. Документація оновлена, збірка проходить, runtime lookup UI не використовується.
+- Assumptions: Поточний `GameplayGUI` є власником старого тексту результату пострілу; його legacy-поведінка буде замінена постійним faction-aware HUD статусом.
+- Work completed: Додані IA/NV penetration-status bindings, постійне збереження останнього результату та дефолтний `PENETRATION STATUS`. `NetworkWeaponShooter` тепер пише результат напряму в активний `GunCrosshair`; старий shot-result timer і його settings field видалені.
+- Work remaining: Play Mode verification для IA/NV після пострілу, включно з перемиканням фракції та перевіркою що `Miss`, `Penetrated`, `No penetration` не зникають.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors; both faction penetration component references exist in `Client.unity`; no obsolete timer references remain in runtime/editor code.
+
+## Previous active task carried forward
+- Status: IMPLEMENTED_NEEDS_VERIFICATION
+- Started: 2026-10-20
+- Last updated: 2026-10-20
 - Original user wording: "потестив, перероби юай, і помітив що ти не підключив параметри для другого прицілу, ти мав підтянути параметри від другого приціду якщо він використовуєтьс, тоїсть щоб там все рахувалдося відображалося так як на першому прицілі, виправ це"
 - Objective: Підключити всі динамічні HUD-параметри до активного приціла фракції: для IA використовувати CrosshairType1, для NV — CrosshairType2, щоб боєзапас, статус/прогрес перезарядки, статус наведення та пов'язані візуальні стани оновлювалися однаково.
 - Acceptance criteria:
