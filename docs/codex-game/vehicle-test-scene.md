@@ -25,6 +25,9 @@ Current owner scripts:
   - Builds test runtime stats for reload/ammo overrides.
   - Applies test-only weapon accuracy debug mode to the spawned vehicle.
   - Creates optional hit marker spheres in `VehicleTest`.
+
+Rendering prerequisites:
+- The serialized `VehicleTest` camera uses HDR and URP post-processing. This is required for the impact crack emission and projectile/tracer emission to reach the default Bloom profile during Play Mode verification.
 - `Assets/Editor/VehicleTestRuntimeSettingsEditor.cs`
   - Custom Unity inspector for `VehicleTestRuntimeSettings`.
   - Shows a Ukrainian explanation with a practical example as a tooltip when hovering every test parameter.

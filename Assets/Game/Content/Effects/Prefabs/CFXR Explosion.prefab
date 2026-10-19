@@ -108,7 +108,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -5094,10 +5094,11 @@ MonoBehaviour:
   - {fileID: 2883620193154939874}
   impactDecal: {fileID: 7310000000000000003}
   impactGlowDecal: {fileID: 7310000000000000103}
+  impactGlowStrength: 1
   impactDecalLifetime: 30
   impactDecalFadeDuration: 5
-  impactDecalWidth: 0.2
-  impactDecalHeight: 0.2
+  impactDecalWidth: 1
+  impactDecalHeight: 1
   impactDecalProjectionDepth: 0.6
   impactDecalSurfaceOffset: 0.003
 --- !u!1 &2433282508753476420

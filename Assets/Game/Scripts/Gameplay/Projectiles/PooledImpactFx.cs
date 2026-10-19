@@ -25,6 +25,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     public CFXR_Effect[] cartoonFxEffects = System.Array.Empty<CFXR_Effect>();
     public DecalProjector impactDecal;
     public DecalProjector impactGlowDecal;
+    [Range(0f, 1f)] public float impactGlowStrength = 1f;
     [Min(0.1f)] public float impactDecalLifetime = 30f;
     [Min(0f)] public float impactDecalFadeDuration = 5f;
     [Min(0.01f)] public float impactDecalWidth = 1.2f;
@@ -140,6 +141,10 @@ public sealed class PooledImpactFx : MonoBehaviour
             : DefaultRenderingLayerMask;
         ConfigureImpactDecal(impactDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
         ConfigureImpactDecal(impactGlowDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
+        if (impactGlowDecal != null)
+        {
+            impactGlowDecal.fadeFactor = Mathf.Clamp01(impactGlowStrength);
+        }
 
         float lifetime = Mathf.Max(0.1f, impactDecalLifetime);
         float fadeDuration = Mathf.Clamp(impactDecalFadeDuration, 0f, lifetime);
@@ -331,7 +336,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
         if (impactGlowDecal != null)
         {
-            impactGlowDecal.fadeFactor = fadeFactor;
+            impactGlowDecal.fadeFactor = fadeFactor * Mathf.Clamp01(impactGlowStrength);
         }
     }
 
