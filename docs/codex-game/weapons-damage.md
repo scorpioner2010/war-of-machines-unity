@@ -24,11 +24,11 @@ Current owner scripts:
   - Disables configured gameplay/armor colliders on death and releases configured visual debris.
   - Disables the root tracked, suspension, walker, ground-alignment, and gun-recoil presentation controllers before detaching debris, preventing post-death transform writes against deactivated or detached renderers.
   - In Editor play mode only, scans the full multi-selection and clears it when any selected object belongs to the dying vehicle before hierarchy mutation, avoiding Unity SceneView selection-outline renderer assertions. Player builds contain no editor-selection code.
-  - `T2-RM` has exactly 11 configured detachable visuals: three major assemblies and eight wheels. Its serialized list must not contain null placeholder entries.
+  - Every registered IA/NV robot prefab has one configured detachable visual per non-armor `MeshRenderer` object. Meshes below `Armor` remain editor-only and are excluded from the serialized death list. The list contains only valid mesh-renderer roots and has no null placeholder entries.
   - `detachableVisuals` separates each visual debris root, debris collider, rigidbody, and renderer from the colliders that receive gameplay hits.
   - Fully empty `detachableVisuals` slots are ignored so prefab inspector capacity does not produce runtime errors; a slot with any assigned collider, rigidbody, renderer, mesh collider, or behaviour but no root still logs a configuration error.
   - Optional `behavioursToDisable` entries stop visual animation before a detached rigidbody becomes dynamic.
-  - The legacy parallel debris arrays remain as a fallback for prefabs that have not moved to `detachableVisuals`.
+  - The legacy parallel debris arrays are empty on registered IA/NV robot prefabs; all death debris uses `detachableVisuals`.
   - Detached parts are registered with `MapScopedObjectRegistry`, remain for `5` seconds, fade over the following `1` second, then have their colliders disabled and are destroyed locally. The registry remains the fallback cleanup path for map unload or an external despawn before the timer finishes.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleArmorController.cs`
   - Single root-level armor owner for a vehicle prefab.
@@ -80,9 +80,8 @@ Fire flow:
 T2 armor and destruction prefab contract:
 - Registered IA robot prefabs under `Assets/Game/Content/Robots/IA` register only colliders below objects named `Armor` as armor damage surfaces.
 - Its single root `VehicleArmorController` contains six hull colliders and seven turret/gun colliders. `ChassisT2` is the one registry-only non-armor collider.
-- `CabineReal`, `WeaponReal`, and `MeshReal` are functional debris parents with inspector-wired disabled convex `MeshCollider` and kinematic `Rigidbody` components. Their direct `VisualMesh` child owns only the rendered mesh.
-- All 22 centered `WheelA1_*`/`WheelA2_*` parent pivots use the same debris pattern: the parent owns a disabled `BoxCollider` fitted to its mesh bounds and a kinematic `Rigidbody`; the direct `a1`/`a2` child owns the mesh components. Every wheel debris entry explicitly references those components. Wheel animation is centralized on the vehicle root.
-- On death, all 13 armor colliders are disabled, then 25 configured visual parents detach, move recursively to the `Chassis` layer, enable their debris colliders, and become non-kinematic. Wheel spin behaviours are disabled before physics starts.
+- `CabineReal`, `WeaponReal`, `MeshReal`, and wheel holders are transform/animation parents only. Each non-armor `MeshRenderer` child owns the matching disabled convex `MeshCollider` and kinematic `Rigidbody`, using that object's `MeshFilter.sharedMesh`. Armor mesh objects remain editor-only and keep their armor-controller collider setup.
+- On death, all configured mesh-renderer objects detach, move recursively to the `Chassis` layer, enable their mesh colliders, and become non-kinematic. Wheel and body presentation behaviours are disabled before physics starts.
 - `CaterpillarTrackLeft` and `CaterpillarTrackRight` remain visual-only and are deactivated on death instead of detaching.
 - `VehicleClientVisibility` releases the death renderers from future spotting changes while preserving whether the vehicle was visible at the death moment. Visible debris stays visible until map unload; already-hidden enemies do not reveal debris.
 
@@ -91,9 +90,8 @@ T1 Hunter destruction prefab contract:
 - The root `VehicleArmorController` contains three turret/gun colliders and five hull/leg colliders. Child armor objects contain only Unity collider/renderer components.
 - Their local position, rotation, and scale are authored independently. Adding or duplicating an armor cube requires adding its collider to the matching root armor array and the health collider list.
 - On death, `DeathLogic` asks the centralized armor controller to disable all configured armor surfaces.
-- The legacy debris arrays keep colliders and rigidbodies on the existing functional parent objects while `debrisRenderers` points to their direct `VisualMesh` children.
-- All 15 legacy debris colliders remain disabled while the robot is alive. The lower-right leg parent now has its own disabled `BoxCollider` and kinematic `Rigidbody`; the other debris keeps its existing convex mesh colliders.
-- Death detaches and simulates each functional parent, so every visual body/gun/turret/leg part can remain in the map scene and local mesh corrections on `VisualMesh` stay intact.
+- The previous legacy debris arrays and parent-level rigidbodies/mesh colliders are removed. Each NV mesh-renderer object is directly assigned as a `DeathLogic.detachableVisuals` root and remains disabled physically until death.
+- Death detaches and simulates each rendered mesh object, so every visual body/gun/turret/leg part uses its own mesh-aligned center of mass and collider shape.
 
 Dispersion and aim:
 - `NetworkWeaponShooter` updates server and owner dispersion in `Update`.

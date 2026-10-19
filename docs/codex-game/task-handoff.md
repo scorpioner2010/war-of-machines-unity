@@ -1,8 +1,80 @@
 # Codex Task Handoff
 
+## Active task
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-19
+- Last updated: 2026-10-19
+- Original user wording: "броня має бути бронею, її mesh не повинен потрапляти в список деталей робота й ніколи не має ставати видимим; він потрібен тільки для редагування броні"
+- Objective: exclude all armor mesh objects from robot death debris and remove debris physics from editor-only armor meshes.
+
+### Acceptance criteria
+
+1. `DeathLogic.detachableVisuals` contains no object whose hierarchy is under `Armor`.
+2. Armor mesh objects remain editor-only and do not receive debris `Rigidbody` or `MeshCollider` components.
+3. Armor colliders and armor-controller references remain unchanged.
+4. All eight registered IA/NV prefabs pass integrity validation.
+
+### Work recorded
+
+- Removed 56 armor mesh objects from `DeathLogic.detachableVisuals` across the eight registered IA/NV prefabs.
+- Removed the 112 debris `Rigidbody`/`MeshCollider` components previously added to those armor mesh objects; armor collider arrays and controller references were left unchanged.
+- Updated `robot-control.md` and `weapons-damage.md` to document armor as editor-only geometry excluded from death debris.
+
+### Verification
+
+- Static scan confirms all armor paths have zero debris physics and zero `DeathLogic.detachableVisuals` entries.
+- Static scan confirms non-armor debris counts remain aligned: each configured death entry has a kinematic `Rigidbody` and convex `MeshCollider`; legacy arrays remain empty.
+- Removed component IDs have no remaining serialized references, so armor controller and armor collider bindings are not dangling.
+- The open Unity editor reimported the changed prefab assets without compiler errors; full integrity menu validation after this cleanup remains pending.
+
+### Remaining work
+
+- Reimport changed prefabs and run the registered-prefab integrity validation.
+
+## Previous completed task (mesh debris physics)
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-19
+- Last updated: 2026-10-19
+- Original user wording: "видали ріджід баді з усіх парентів мешів, прибери вимкнені меш колайдери, додай Rigidbody і convex MeshCollider на всі об'єкти з MeshRenderer та активуй саме ці об'єкти при знищенні"
+- Objective: rebuild robot death debris so each rendered mesh object owns its own disabled-kinematic Rigidbody and convex MeshCollider, and DeathLogic activates those objects on destruction.
+
+### Acceptance criteria
+
+1. Registered IA and NV robot prefabs no longer use Rigidbody/MeshCollider on obsolete mesh parents.
+2. Every configured death debris object with a MeshRenderer has a kinematic Rigidbody and a convex MeshCollider while alive.
+3. DeathLogic activates the configured mesh debris objects when the robot dies and no longer depends on the removed parent-level physics objects.
+4. Existing visual/death timing behavior remains intact and prefab references are valid.
+
+### Assumptions
+
+- The change applies to the eight registered IA/NV robot prefabs and their existing configured/legacy debris lists.
+- Existing visual meshes and transforms are preserved; only physics ownership and serialized debris references are rebuilt.
+- No compatibility path for the obsolete parent-level physics setup is required.
+
+### Work recorded
+
+- Rebuilt all eight registered IA/NV robot prefabs so every `MeshRenderer` object owns a disabled convex `MeshCollider` and kinematic `Rigidbody` using its own `MeshFilter.sharedMesh`.
+- Removed non-renderer parent-level `Rigidbody` and `MeshCollider` components and cleared the legacy parallel debris arrays.
+- Rebuilt `DeathLogic.detachableVisuals` with one entry per mesh-renderer object and updated `robot-control.md` and `weapons-damage.md` to document the new ownership contract.
+
+### Verification
+
+- Isolated Unity batch migration imported all eight prefabs successfully and saved 153 configured non-armor mesh debris objects.
+- Static prefab scan passed: `MeshRenderer`, `Rigidbody`, `MeshCollider`, convex, kinematic, and non-null `DeathLogic` entry counts match for every registered prefab.
+- `Game.Scripts.Editor.VehiclePrefabIntegrityBatch.RepairAndValidate` passed for all 8 registered prefabs with zero repairs and zero validation errors.
+- The open Unity editor reimported the changed prefab assets and completed script compilation without compiler errors.
+- Unity emitted 14 convex-hull polygon-limit warnings for high-poly meshes; Unity still created partial convex hulls as requested. Play Mode death behavior remains pending.
+
+### Remaining work
+
+- Let the open Unity editor reimport the eight changed prefab files.
+- Run a Play Mode death test and confirm each mesh object detaches, renders, and fades without parent-level physics or missing references.
+
 This is the durable state for one active Codex task. A new Codex chat must read this file and inspect the working-tree changes before acting on a request to continue.
 
-## Active task
+## Previous completed task (settings)
 
 - Status: `COMPLETED`
 - Started: 2026-10-19
