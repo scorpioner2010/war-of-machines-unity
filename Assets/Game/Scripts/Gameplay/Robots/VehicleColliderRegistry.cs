@@ -7,6 +7,33 @@ namespace Game.Scripts.Gameplay.Robots
     {
         private static readonly Dictionary<Collider, VehicleColliderData> DataByCollider =
             new Dictionary<Collider, VehicleColliderData>(512);
+        private static readonly Dictionary<int, VehicleRoot> RootsByObjectId =
+            new Dictionary<int, VehicleRoot>(64);
+        private static readonly Dictionary<VehicleRoot, List<Renderer>> ImpactRenderersByRoot =
+            new Dictionary<VehicleRoot, List<Renderer>>(64);
+
+        public static void RegisterRenderers(VehicleRoot root, Renderer[] renderers)
+        {
+            if (root == null || renderers == null)
+            {
+                return;
+            }
+
+            if (!ImpactRenderersByRoot.TryGetValue(root, out List<Renderer> registeredRenderers))
+            {
+                registeredRenderers = new List<Renderer>(renderers.Length);
+                ImpactRenderersByRoot.Add(root, registeredRenderers);
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer != null && !registeredRenderers.Contains(renderer))
+                {
+                    registeredRenderers.Add(renderer);
+                }
+            }
+        }
 
         public static void RegisterArmor(
             Collider collider,
@@ -20,6 +47,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             DataByCollider[collider] = new VehicleColliderData(root, armor, zone, true);
+            RegisterRoot(root);
         }
 
         public static void RegisterVehicle(Collider collider, VehicleRoot root)
@@ -34,6 +62,7 @@ namespace Game.Scripts.Gameplay.Robots
                 null,
                 VehicleArmorController.ArmorZone.Turret,
                 false);
+            RegisterRoot(root);
         }
 
         public static void Unregister(Collider collider, VehicleRoot root)
@@ -47,6 +76,7 @@ namespace Game.Scripts.Gameplay.Robots
             if (data.Root == root)
             {
                 DataByCollider.Remove(collider);
+                UnregisterRootIfUnused(root);
             }
         }
 
@@ -61,6 +91,51 @@ namespace Game.Scripts.Gameplay.Robots
 
             root = data.Root;
             return root != null;
+        }
+
+        public static bool TryGetRoot(int networkObjectId, out VehicleRoot root)
+        {
+            root = null;
+            if (!RootsByObjectId.TryGetValue(networkObjectId, out VehicleRoot registeredRoot))
+            {
+                return false;
+            }
+
+            if (registeredRoot == null)
+            {
+                RootsByObjectId.Remove(networkObjectId);
+                return false;
+            }
+
+            root = registeredRoot;
+            return true;
+        }
+
+        public static bool TryGetImpactRenderers(
+            VehicleRoot root,
+            out List<Renderer> renderers)
+        {
+            renderers = null;
+            if (root == null || !ImpactRenderersByRoot.TryGetValue(root, out List<Renderer> registeredRenderers))
+            {
+                return false;
+            }
+
+            renderers = registeredRenderers;
+            return renderers.Count > 0;
+        }
+
+        public static bool TryGetImpactRenderers(
+            int networkObjectId,
+            out List<Renderer> renderers)
+        {
+            renderers = null;
+            if (!TryGetRoot(networkObjectId, out VehicleRoot root))
+            {
+                return false;
+            }
+
+            return TryGetImpactRenderers(root, out renderers);
         }
 
         public static bool TryGetArmor(
@@ -94,6 +169,42 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return DataByCollider.TryGetValue(collider, out data);
+        }
+
+        private static void RegisterRoot(VehicleRoot root)
+        {
+            if (root == null || root.networkObject == null)
+            {
+                return;
+            }
+
+            RootsByObjectId[root.networkObject.ObjectId] = root;
+        }
+
+        private static void UnregisterRootIfUnused(VehicleRoot root)
+        {
+            if (root == null || root.networkObject == null)
+            {
+                return;
+            }
+
+            int networkObjectId = root.networkObject.ObjectId;
+            if (!RootsByObjectId.TryGetValue(networkObjectId, out VehicleRoot registeredRoot)
+                || registeredRoot != root)
+            {
+                return;
+            }
+
+            foreach (VehicleColliderData data in DataByCollider.Values)
+            {
+                if (data.Root == root)
+                {
+                    return;
+                }
+            }
+
+            RootsByObjectId.Remove(networkObjectId);
+            ImpactRenderersByRoot.Remove(root);
         }
     }
 

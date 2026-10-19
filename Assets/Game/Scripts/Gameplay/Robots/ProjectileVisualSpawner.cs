@@ -161,7 +161,12 @@ namespace Game.Scripts.Gameplay.Robots
                 Quaternion.identity);
         }
 
-        public static void SpawnImpactFx(Projectile projectilePrefab, Vector3 impactPoint, Vector3 impactNormal)
+        public static void SpawnImpactFx(
+            Projectile projectilePrefab,
+            Vector3 impactPoint,
+            Vector3 impactNormal,
+            Transform attachmentParent = null,
+            VehicleRoot impactTarget = null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             using (ImpactFxMarker.Auto())
@@ -174,7 +179,12 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 Vector3 normal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal : Vector3.up;
-                ProjectileRuntimePool.SpawnImpactFx(projectilePrefab.explosionFX, impactPoint, Quaternion.LookRotation(normal));
+                ProjectileRuntimePool.SpawnImpactFx(
+                    projectilePrefab.explosionFX,
+                    impactPoint,
+                    Quaternion.LookRotation(normal),
+                    attachmentParent,
+                    impactTarget);
             }
         }
     }

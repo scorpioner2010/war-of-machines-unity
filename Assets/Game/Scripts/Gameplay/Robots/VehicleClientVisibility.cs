@@ -24,6 +24,7 @@ namespace Game.Scripts.Gameplay.Robots
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
+            VehicleColliderRegistry.RegisterRenderers(vehicleRoot, visualRenderers);
             _refreshRequested = true;
         }
 

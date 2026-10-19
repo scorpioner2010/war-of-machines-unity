@@ -136,6 +136,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            VehicleColliderRegistry.RegisterRenderers(_vehicleRoot, serverEditorArmorRenderers);
             RegisterArmorColliders(turretColliders, ArmorZone.Turret);
             RegisterArmorColliders(hullColliders, ArmorZone.Hull);
             RegisterAdditionalColliders(additionalVehicleColliders);

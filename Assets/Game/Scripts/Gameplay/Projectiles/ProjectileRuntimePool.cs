@@ -165,7 +165,12 @@ public static class ProjectileRuntimePool
         }
     }
 
-    public static void SpawnImpactFx(PooledImpactFx prefab, Vector3 position, Quaternion rotation)
+    public static void SpawnImpactFx(
+        PooledImpactFx prefab,
+        Vector3 position,
+        Quaternion rotation,
+        Transform attachmentParent = null,
+        VehicleRoot impactTarget = null)
     {
         if (prefab == null || IsServerOnlyProcess())
         {
@@ -177,7 +182,14 @@ public static class ProjectileRuntimePool
 #endif
         {
             Vector3 cameraFacingPosition = GetCameraFacingImpactPosition(position, rotation);
-            SpawnVisualFxInternal(prefab, cameraFacingPosition, rotation, 1f);
+            SpawnImpactFxInternal(
+                prefab,
+                cameraFacingPosition,
+                rotation,
+                position,
+                rotation * Vector3.forward,
+                attachmentParent,
+                impactTarget);
         }
     }
 
@@ -229,6 +241,8 @@ public static class ProjectileRuntimePool
             return false;
         }
 
+        pool.RemoveActive(fx);
+
         if (pool.Inactive.Count >= pool.MaxInactive)
         {
             ImpactFxOwners.Remove(instanceId);
@@ -245,22 +259,86 @@ public static class ProjectileRuntimePool
     private static void SpawnVisualFxInternal(PooledImpactFx prefab, Vector3 position, Quaternion rotation, float scaleMultiplier)
     {
         ImpactFxPool pool = GetImpactFxPool(prefab);
-        PooledImpactFx fx;
-        if (pool.Inactive.Count > 0)
-        {
-            fx = pool.Inactive.Pop();
-        }
-        else
-        {
-            fx = CreateImpactFxInstance(pool);
-            ImpactFxOverflowInstantiates++;
-        }
+        PooledImpactFx fx = RentImpactFx(pool);
 
         Transform fxTransform = fx.transform;
         fxTransform.SetParent(null, false);
         fxTransform.SetPositionAndRotation(position, rotation);
         fxTransform.localScale = ScaleVector(pool.DefaultScale, Mathf.Max(0.01f, scaleMultiplier));
         fx.Play();
+    }
+
+    private static void SpawnImpactFxInternal(
+        PooledImpactFx prefab,
+        Vector3 visualPosition,
+        Quaternion visualRotation,
+        Vector3 impactPosition,
+        Vector3 impactNormal,
+        Transform attachmentParent,
+        VehicleRoot impactTarget)
+    {
+        ImpactFxPool pool = GetImpactFxPool(prefab);
+        PooledImpactFx fx = RentImpactFx(pool);
+
+        Transform fxTransform = fx.transform;
+        fxTransform.SetParent(null, false);
+        fxTransform.SetPositionAndRotation(visualPosition, visualRotation);
+        fxTransform.localScale = pool.DefaultScale;
+        if (attachmentParent != null)
+        {
+            fxTransform.SetParent(attachmentParent, true);
+        }
+
+        fx.PlayImpact(impactPosition, impactNormal, impactTarget);
+    }
+
+    private static PooledImpactFx RentImpactFx(ImpactFxPool pool)
+    {
+        for (int i = pool.Active.Count - 1; i >= 0; i--)
+        {
+            if (pool.Active[i] == null)
+            {
+                pool.Active.RemoveAt(i);
+            }
+        }
+
+        PooledImpactFx fx = null;
+        if (pool.Active.Count >= pool.MaxActive && pool.Active.Count > 0)
+        {
+            fx = pool.Active[0];
+            pool.Active.RemoveAt(0);
+            fx.PrepareForPoolRelease();
+        }
+
+        while (fx == null && pool.Inactive.Count > 0)
+        {
+            PooledImpactFx candidate = pool.Inactive.Pop();
+            if (candidate != null)
+            {
+                fx = candidate;
+            }
+        }
+
+        if (fx == null)
+        {
+            fx = CreateImpactFxInstance(pool);
+            ImpactFxOverflowInstantiates++;
+        }
+
+        pool.Active.Add(fx);
+        return fx;
+    }
+
+    internal static void NotifyImpactFxDestroyed(PooledImpactFx fx)
+    {
+        int instanceId = fx.GetInstanceID();
+        if (!ImpactFxOwners.TryGetValue(instanceId, out ImpactFxPool pool))
+        {
+            return;
+        }
+
+        pool.RemoveActive(fx);
+        ImpactFxOwners.Remove(instanceId);
     }
 
     private static Vector3 ScaleVector(Vector3 value, float scale)
@@ -332,17 +410,25 @@ public static class ProjectileRuntimePool
     {
         public readonly PooledImpactFx Prefab;
         public readonly Stack<PooledImpactFx> Inactive;
+        public readonly List<PooledImpactFx> Active;
         public readonly Transform Root;
         public readonly Vector3 DefaultScale;
         public int MaxInactive;
+        public int MaxActive => MaxInactive;
 
         public ImpactFxPool(PooledImpactFx prefab, int maxInactive)
         {
             Prefab = prefab;
             MaxInactive = Mathf.Max(1, maxInactive);
             Inactive = new Stack<PooledImpactFx>(MaxInactive);
+            Active = new List<PooledImpactFx>(MaxInactive);
             Root = CreateRoot("ImpactFxPool_" + prefab.name);
             DefaultScale = prefab.transform.localScale;
+        }
+
+        public void RemoveActive(PooledImpactFx fx)
+        {
+            Active.Remove(fx);
         }
     }
 

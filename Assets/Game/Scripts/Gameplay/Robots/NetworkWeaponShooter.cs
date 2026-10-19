@@ -1274,7 +1274,7 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 if (hit)
                 {
-                    SpawnImpactFx(impactPoint, impactNormal);
+                    SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
                 }
                 return;
             }
@@ -1284,14 +1284,19 @@ namespace Game.Scripts.Gameplay.Robots
                 _predictedProjectiles.Remove(shotId);
                 if (hit)
                 {
-                    SpawnImpactFx(impactPoint, impactNormal);
+                    SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
                 }
                 return;
             }
 
             if (hit)
             {
-                projectile.ResolveImpactNow(impactPoint, impactNormal, targetObjectId);
+                projectile.ResolveImpactNow(
+                    impactPoint,
+                    impactNormal,
+                    targetObjectId,
+                    GetImpactAttachmentTransform(targetObjectId),
+                    GetImpactTargetRoot(targetObjectId));
             }
             else
             {
@@ -1314,7 +1319,7 @@ namespace Game.Scripts.Gameplay.Robots
                 if (hit)
                 {
                     _observedResolvedHitShots.Add(shotId);
-                    SpawnImpactFx(impactPoint, impactNormal);
+                    SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
                 }
                 return;
             }
@@ -1325,14 +1330,19 @@ namespace Game.Scripts.Gameplay.Robots
                 if (hit)
                 {
                     _observedResolvedHitShots.Add(shotId);
-                    SpawnImpactFx(impactPoint, impactNormal);
+                    SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
                 }
                 return;
             }
 
             if (hit)
             {
-                projectile.ResolveImpactNow(impactPoint, impactNormal, targetObjectId);
+                projectile.ResolveImpactNow(
+                    impactPoint,
+                    impactNormal,
+                    targetObjectId,
+                    GetImpactAttachmentTransform(targetObjectId),
+                    GetImpactTargetRoot(targetObjectId));
             }
             else
             {
@@ -1342,13 +1352,36 @@ namespace Game.Scripts.Gameplay.Robots
             _observedProjectiles.Remove(shotId);
         }
 
-        private void SpawnImpactFx(Vector3 impactPoint, Vector3 impactNormal)
+        private void SpawnImpactFx(Vector3 impactPoint, Vector3 impactNormal, int targetObjectId)
         {
             ClientProjectileVisualSettings visualSettings = GetClientProjectileVisualSettings();
             Projectile visualProjectilePrefab = visualSettings != null && visualSettings.projectilePrefab != null
                 ? visualSettings.projectilePrefab
                 : projectilePrefab;
-            ProjectileVisualSpawner.SpawnImpactFx(visualProjectilePrefab, impactPoint, impactNormal);
+            ProjectileVisualSpawner.SpawnImpactFx(
+                visualProjectilePrefab,
+                impactPoint,
+                impactNormal,
+                GetImpactAttachmentTransform(targetObjectId),
+                GetImpactTargetRoot(targetObjectId));
+        }
+
+        private static Transform GetImpactAttachmentTransform(int targetObjectId)
+        {
+            VehicleRoot targetRoot = GetImpactTargetRoot(targetObjectId);
+            return targetRoot != null ? targetRoot.transform : null;
+        }
+
+        private static VehicleRoot GetImpactTargetRoot(int targetObjectId)
+        {
+            if (targetObjectId == NO_NETWORK_OBJECT_ID
+                || !VehicleColliderRegistry.TryGetRoot(targetObjectId, out VehicleRoot targetRoot)
+                || targetRoot == null)
+            {
+                return null;
+            }
+
+            return targetRoot;
         }
 
         private void SpawnMuzzleFx(Vector3 startPos, Vector3 targetPoint)

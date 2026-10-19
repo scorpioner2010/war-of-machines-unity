@@ -746,7 +746,12 @@ public class Projectile : MonoBehaviour
     {
     }
 
-    public void ResolveImpactNow(Vector3 impactPoint, Vector3 impactNormal, int targetObjectId)
+    public void ResolveImpactNow(
+        Vector3 impactPoint,
+        Vector3 impactNormal,
+        int targetObjectId,
+        Transform attachmentParent = null,
+        VehicleRoot impactTarget = null)
     {
         bool shouldPlayAuthoritativeImpact = ShouldPlayAuthoritativeImpact(impactPoint, targetObjectId);
         _waitingForAuthoritativeResolution = false;
@@ -758,7 +763,7 @@ public class Projectile : MonoBehaviour
         DrawDebugHit(impactPoint, _lastHitNormal);
         if (shouldPlayAuthoritativeImpact)
         {
-            Explode(impactPoint, _lastHitNormal);
+            Explode(impactPoint, _lastHitNormal, attachmentParent, impactTarget);
         }
 
         CompleteFlight();
@@ -932,7 +937,11 @@ public class Projectile : MonoBehaviour
             _predictedImpactTargetObjectId = GetImpactTargetObjectId(hit.collider);
             _predictedImpactPlayed = _visualsEnabled && explosionFX != null;
             DrawDebugHit(hit.point, _lastHitNormal);
-            Explode(hit.point, _lastHitNormal);
+            Explode(
+                hit.point,
+                _lastHitNormal,
+                hit.collider != null ? hit.collider.transform : null,
+                GetImpactTargetRoot(hit.collider));
             StopClientVisualAtCollision();
             return;
         }
@@ -944,7 +953,11 @@ public class Projectile : MonoBehaviour
         }
 
         DrawDebugHit(hit.point, _lastHitNormal);
-        Explode(hit.point, _lastHitNormal);
+        Explode(
+            hit.point,
+            _lastHitNormal,
+            hit.collider != null ? hit.collider.transform : null,
+            GetImpactTargetRoot(hit.collider));
         CompleteFlight();
     }
 
@@ -993,6 +1006,13 @@ public class Projectile : MonoBehaviour
         }
 
         return targetRoot.networkObject.ObjectId;
+    }
+
+    private static VehicleRoot GetImpactTargetRoot(Collider hitCollider)
+    {
+        return VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot targetRoot)
+            ? targetRoot
+            : null;
     }
 
     private bool HasExceededLimits()
@@ -1163,12 +1183,21 @@ public class Projectile : MonoBehaviour
         }
     }
 
-    private void Explode(Vector3 position, Vector3 normal)
+    private void Explode(
+        Vector3 position,
+        Vector3 normal,
+        Transform attachmentParent = null,
+        VehicleRoot impactTarget = null)
     {
         if (_visualsEnabled && explosionFX != null)
         {
             Vector3 safeNormal = normal.sqrMagnitude > 0.000001f ? normal.normalized : Vector3.up;
-            ProjectileRuntimePool.SpawnImpactFx(explosionFX, position, Quaternion.LookRotation(safeNormal));
+            ProjectileRuntimePool.SpawnImpactFx(
+                explosionFX,
+                position,
+                Quaternion.LookRotation(safeNormal),
+                attachmentParent,
+                impactTarget);
         }
     }
 

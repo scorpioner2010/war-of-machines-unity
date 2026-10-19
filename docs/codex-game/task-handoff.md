@@ -4,18 +4,59 @@
 - Status: IMPLEMENTED_NEEDS_VERIFICATION
 - Started: 2026-10-20
 - Last updated: 2026-10-20
-- Original user wording: "помітив що ти не підключив статус пробиття на другому прицілі, підключи його + додай логіку щоб він не зникав а показував останій статус, наприклад я скосив там пише міс, то щоб міс не зникав, а по замовчуваню там має бути дефолтний текст статус пробитя на англ"
-- Objective: Підключити статус результату пострілу до CrosshairType1 і CrosshairType2 та зберігати останній статус постійно видимим. При старті показувати дефолтний англійський статус пробиття.
+- Original user wording (current request): "стало гырше бо тепер це виглядаэ як просто спрайт прилип до 3д моделі, прожектор не працює тепер треба щоб прожектор працював як і раніше але проектувався тільки на обьект по якому було попадання"
+- Objective: Restore the native URP DecalProjector for robot impacts and isolate each robot impact to the hit target object with rendering-layer filtering, while preserving robot-following and static Map behavior.
+- Acceptance criteria: robot hits use the native projector; nearby ground and unrelated meshes do not receive the robot decal; the mark follows moving robots; Map hits remain projector-based; pooled FX clears target filtering; docs and build verification are updated.
+- Assumptions: URP Decal Layers are enabled on every project renderer profile; existing inspector-wired vehicle renderer lists are the explicit target source; no runtime component discovery is added.
+- Work completed: restored projector-only impact FX, removed the mesh-sprite fallback, registered inspector-wired robot renderer lists, added per-target reference-counted Decal Layers, enabled `decalLayers: 1` on all URP renderer profiles, and updated `weapons-damage.md`.
+- Work remaining: verify in Play Mode that robot projectors do not appear on ground/neighbor meshes, that moving robots keep the decal attached, and that Map decals still render after pool reuse.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors and the existing dependency/API warnings. `git diff --check` passes. Unity import and Play Mode verification remain pending.
+
+## Previous active task carried forward
+- Status: IMPLEMENTED_NEEDS_VERIFICATION
+- Started: 2026-10-20
+- Last updated: 2026-10-20
+- Original user wording: "помітив прожектор цей проекцирується не тільки на деталь робота а ще й на землю на інші меші, це можна якось виправити щоб проектування було тільки на обьект по якому було попадання?"
+- Objective: Restrict each impact decal to the renderer that was hit, preventing the projector from appearing on nearby ground or other meshes while preserving robot-following behavior and static Map impacts.
 - Acceptance criteria:
-  1. IA і NV приціли мають власні inspector-wired поля статусу пробиття.
-  2. Результати `Miss`, `Penetrated` і `No penetration` оновлюють активний приціл.
-  3. Останній статус не очищається через таймер і залишається видимим до наступного пострілу.
-  4. До першого результату показується дефолтний англійський текст статусу пробиття.
-  5. Документація оновлена, збірка проходить, runtime lookup UI не використовується.
-- Assumptions: Поточний `GameplayGUI` є власником старого тексту результату пострілу; його legacy-поведінка буде замінена постійним faction-aware HUD статусом.
-- Work completed: Додані IA/NV penetration-status bindings, постійне збереження останнього результату та дефолтний `PENETRATION STATUS`. `NetworkWeaponShooter` тепер пише результат напряму в активний `GunCrosshair`; старий shot-result timer і його settings field видалені.
-- Work remaining: Play Mode verification для IA/NV після пострілу, включно з перемиканням фракції та перевіркою що `Miss`, `Penetrated`, `No penetration` не зникають.
-- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors; both faction penetration component references exist in `Client.unity`; no obsolete timer references remain in runtime/editor code.
+  1. A robot impact decal renders on the hit renderer but not on nearby ground or unrelated meshes.
+  2. The decal still follows a moving robot mesh/collider after the previous parent fix.
+  3. Static Map impacts retain their current behavior without requiring Map-wide manual setup.
+  4. Pool reuse clears any per-hit filtering state and does not leak a previous target renderer.
+  5. Authoritative/predicted hit flow stays intact; mechanic docs and build verification are updated.
+- Assumptions: URP 17.3 supports DecalProjector rendering-layer filtering in the current project; renderer masks can be assigned per hit without runtime component discovery. If a renderer does not support rendering layers, the code falls back to the existing volume behavior rather than hiding the impact.
+- Work completed: Confirmed native URP projector volume behavior and verified URP 17.3 rendering-layer support. Added an inspector-wired disk mesh mark and lightweight transparent shader/material to the pooled impact prefab. Robot hits now use the mesh mark under the moving hit FX root; Map hits continue using the native projector. The mark fades through a cached `MaterialPropertyBlock`, and pool reset disables both visual modes. Updated `weapons-damage.md`.
+- Work remaining: Verify in Unity Play Mode that robot hits never appear on ground or neighboring meshes, that hull/turret movement keeps the mesh mark attached, and that static Map projector hits still render correctly after pool reuse.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors and the existing 4 warnings. Static prefab references and call paths were inspected. Unity shader import and Play Mode verification are still pending.
+
+## Previous active task carried forward
+- Status: IMPLEMENTED_NEEDS_VERIFICATION
+- Started: 2026-10-20
+- Last updated: 2026-10-20
+- Original user wording: "окей реалізуй варіант 1, використай поки якусь рандомну текстуру а я потім налаштую"
+- Objective: Додати до нативного URP Decal Projector логіку сліду попадання в стіну з тимчасовою текстурою, pooling, лімітом активних слідів і без обходу авторитетної логіки урону.
+- Acceptance criteria:
+  1. Потрапляння снаряда у світову поверхню створює видимий decal у `hit.point` з орієнтацією по `hit.normal`.
+  2. Decal Projector працює через інспекторні prefab/material references, без runtime `Find*` або обов'язкових `AddComponent`.
+  3. Сліди використовують pooling, обмежений lifetime і ліміт активних об'єктів; серверний процес не створює клієнтські FX.
+  4. Існуючі передбачені impact FX та authoritative hit/damage flow не ламаються.
+  5. `weapons-damage.md` і цей handoff описують нового власника поведінки; статична перевірка/збірка проходять.
+- Assumptions: Проєкт використовує Unity 6000.3.13f1 з URP 17.3.0; тимчасовий fallback-material буде створений як ресурс лише якщо в проєкті немає готової decal-конфігурації.
+- Work completed: `PooledImpactFx` тепер підтримує inspector-wired URP `DecalProjector` з точним `hit.point`/`hit.normal`, random roll, fade і окремим lifetime. `ProjectileRuntimePool` передає точну точку попадання та повторно використовує найстаріший активний impact FX при досягненні pool cap. `CFXR Explosion.prefab` отримав дочірній `Impact Decal` з тимчасовими `ImpactDecal.mat` та `Effect_Fire_Bulk.png`; `weapons-damage.md` оновлено.
+- Work remaining: Перевірити імпорт prefab/material у Unity, компіляцію і, за можливості, Play Mode влучання в стіну; перевірити відсутність дублювання/небезпечного runtime lookup.
+- Verification: Кодова/static перевірка та збірка ще не виконані.
+
+## Current verification update
+- `git diff --check` passes after adding the prefab child and material.
+- `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal` passed with 0 errors; only the existing dependency/version warnings remain.
+- Static wiring checks confirm the `PooledImpactFx` decal fields, pool cap, `Impact Decal` prefab child, URP decal material, and placeholder texture references.
+- Unity import and Play Mode wall-hit verification remain pending; the open Unity editor should be used to confirm the decal renders with the configured renderer feature.
+- `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset` remains an unrelated pre-existing working-tree modification and was not changed by this task.
+
+## Previous active task carried forward
+- Status: IMPLEMENTED_NEEDS_VERIFICATION
+- Summary: UI penetration-status task додала faction-aware `GunCrosshair` bindings, постійний останній shot result і дефолтний `PENETRATION STATUS`; build пройшов, але Play Mode verification залишилась невиконаною.
+- Remaining: Перевірити IA/NV приціли, `Miss`, `Penetrated`, `No penetration` і перемикання фракцій у Play Mode.
 
 ## Previous active task carried forward
 - Status: IMPLEMENTED_NEEDS_VERIFICATION

@@ -40,6 +40,8 @@ Current owner scripts:
   - `highlightArmorInPrefab` enables or disables the red Prefab Mode armor overlay for that vehicle.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`
   - Static runtime lookup from a configured collider to its vehicle root and optional centralized armor controller/zone.
+  - Also indexes registered vehicle roots by FishNet `NetworkObject.ObjectId` so an authoritative impact RPC can attach its visual to the moving robot without scene-wide lookup.
+  - Merges the inspector-wired vehicle visibility and armor renderer lists per root so robot decals can target only the hit robot through URP rendering layers.
 - `Assets/Game/Scripts/Editor/ArmorPrefabHighlighter.cs`
   - In Prefab Mode, draws the red overlay for active objects referenced by the root `VehicleArmorController` turret/hull arrays; an object disabled with `GameObject.SetActive(false)` is not highlighted.
   - Respects the prefab-owned `highlightArmorInPrefab` checkbox.
@@ -51,14 +53,22 @@ Current owner scripts:
   - Projectile visual/simulation component.
   - Authoritative projectiles own hit callbacks and damage-resolution timing.
   - Client visual projectiles sweep against the configured hit mask while flying. A local collision immediately spawns cosmetic impact FX, stops the shell/tracer head, and waits for the authoritative result without applying damage.
+  - A predicted impact passes `RaycastHit.collider.transform` through the visual path so the impact FX root follows the exact moving mesh/collider object.
   - Client projectiles retain their `shotId` while pooled references are tracked, preventing a late RPC from resolving a reused projectile instance.
   - Authoritative confirmation suppresses a duplicate impact when the predicted and server target object IDs match. If a target ID is unavailable, world impacts within 2 meters are treated as the same impact. A different target or farther point produces a corrective authoritative impact.
 - `Assets/Game/Scripts/Gameplay/Projectiles/ProjectileRuntimePool.cs`
   - Runtime pooling for projectiles.
   - Rejects impact and muzzle FX configuration, prewarming, and spawning in a server-only process. Hosts retain client FX because they also run a local client.
+  - Keeps impact FX bounded by the configured inactive-pool size: when all pooled impact FX are active, the oldest active instance is reused instead of instantiating an unbounded number of persistent decals.
+  - Removes destroyed impact FX from the active ownership list and skips destroyed inactive entries before reuse, preventing a destroyed Unity object from reaching `PrepareForPoolRelease`.
+  - Accepts an optional attachment parent. Robot hits use the hit collider transform (or the registered `VehicleRoot` for an RPC fallback); static Map hits remain unparented. The FX is reparented to the pool root on release.
+  - Robot hits pass the registered target `VehicleRoot` into the pooled FX. Map hits pass no target and continue using the default projector layer.
 - `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`
   - Impact FX pooling.
   - Applies local impact camera shake through CFXR effects with the gameplay camera, distance falloff, the client camera-shake setting, and a runtime strength scale of `0.3` so pooled impact shake is 70% weaker than prefab-authored CFXR strength.
+  - Owns the inspector-wired URP `DecalProjector` on the impact FX prefab. `PlayImpact` positions the decal at the authoritative or predicted `hit.point`, projects along `-hit.normal`, randomizes roll around the surface normal, fades through `DecalProjector.fadeFactor`, and releases it after the configured decal lifetime.
+  - Robot impacts acquire one shared temporary Decal Layer per target `VehicleRoot`, add that layer to the registered robot renderers, and assign it to the projector. The layer is reference-counted and all renderer masks are restored on pool release or external destruction; Map impacts keep the default layer.
+  - Notifies `ProjectileRuntimePool` when an instance is destroyed externally and ignores a destroyed component if a release race reaches `PrepareForPoolRelease`.
 - `Assets/Game/Scripts/Gameplay/Robots/ProjectileVisualSpawner.cs`
   - Visual projectile spawning support.
 
@@ -79,6 +89,11 @@ Fire flow:
   - Uses the serialized `GameplayHudContent` regular-HUD root and `SniperScopeOverlay` scope root when switching between regular and sniper presentation.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Impact particles are spawned one Unity unit toward the local gameplay camera, keeping their screen position aligned with the actual hit point even at an oblique shot angle. If no gameplay camera exists, they fall back to the collision-surface normal.
+- The existing `Assets/Game/Content/Effects/Prefabs/CFXR Explosion.prefab` has an inspector-wired child `Impact Decal` with a URP `DecalProjector`. Its temporary `ImpactDecal.mat` uses `Effect_Fire_Bulk.png` as a placeholder texture; replace that material texture and tune the serialized `PooledImpactFx` decal size/lifetime fields when the final art is ready.
+- The impact projector uses a `0.4`-unit depth centered on the hit point, with angle fade from `0` to `90` degrees. Centering the volume prevents thin flat Map meshes such as `Concrete_fence_v1_wall_set_v2` from being clipped when the physics hit lies on the projection boundary; its mesh and `BoxCollider` bounds are aligned and do not require a heavier `MeshCollider`.
+- The impact FX root may remain camera-facing, but robot hits are parented with world position/rotation/scale preserved to the hit mesh/collider transform so the projector follows hull/turret movement. Static Map hits use the world-space projector with no attachment parent and remain world-static. Pool release always returns the root to the FX pool hierarchy and restores target renderer masks.
+- `Assets/Game/Content/Effects/Prefabs/CFXR Explosion.prefab` contains the disabled `Impact Decal` child with the URP projector and temporary `ImpactDecal.mat` texture. There is no mesh-sprite fallback for robot hits.
+- `Assets/Settings/URP-HighFidelity-Renderer.asset`, `URP-Balanced-Renderer.asset`, and `URP-Performant-Renderer.asset` all contain the active URP `DecalRendererFeature` with `decalLayers: 1`; this is required for target-only projector filtering.
 - Damage should be applied only through authoritative server hit resolution, not directly from bot AI.
 - Local damage feedback is client-side UI only: `VehicleHealth.OnDamaged` drives `DamageScreen` without affecting damage calculation.
 
