@@ -1,5 +1,21 @@
 # Codex Task Handoff
 
+## Active task
+- Status: `COMPLETED`
+- Started: 2026-10-21
+- User request (verbatim): "я під час тестування помітив баг поки по роботу я не вистрілю роботи всі невидимі"
+- Objective: Diagnose and fix the regression where robots remain invisible until the first projectile is fired at a robot.
+- Acceptance criteria:
+  - Identify the code path that hides robot renderers before the first shot.
+  - Restore initial robot visibility without breaking intentional map visibility, server stripping, death visibility, or projectile impact rendering layers.
+  - Add deterministic regression coverage for initial robot visibility when practical.
+  - Update the relevant mechanic documentation and verify the fix with build/tests or a reproducible editor check.
+- Assumptions: The symptom affects robot presentation/visibility initialization rather than projectile hit detection; existing visibility rules for hidden enemies must remain unchanged.
+- Current work: Corrected the rendering-layer regression in `VehicleColliderRegistry`: world impact FX use bit `1`, while robot renderers retain the default lighting bit `0`. The visibility path remains unchanged, so intentional team visibility, server stripping, and death visibility rules are preserved.
+- Work remaining: None.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: Unity PlayMode regression suite passed `4/4` in `C:\Users\TorasPC\AppData\LocalLow\Toras\war-of-machines\TestResults.xml`; the tests covered robot and world impact rendering-layer isolation and visual-surface placement. `dotnet build Assembly-CSharp.csproj` and `dotnet build Game.PlayMode.Tests.csproj` passed with `0` errors. `git diff --check` passed. The test run emitted the existing convex-mesh polygon-limit warning for `tripo_node_b7d6146a`, but all tests passed.
+
 ## Archived task (separate robot and non-robot impact FX profiles)
  - Status: `COMPLETED`
 - Started: 2026-10-21
@@ -35,8 +51,40 @@
  - Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Tests/PlayMode/Game.PlayMode.Tests.asmdef`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, `docs/codex-game/task-history.md`.
  - Verification: Selected Unity PlayMode test passed against the real prefab. Measured `proxy=(-1.05, 0.07, -0.58)`, `mesh=(-0.52, 0.07, -0.58)`, `resolved=(-0.52, 0.07, -0.58)`, `halo=(-0.52, 0.07, -0.58)`, `haloToMesh=0.00000`, and `haloToProxy=0.52875`; target-only rendering layer was applied and pool release restored masks and disabled the halo. `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildDeterministicImpactFinal2\\` passed with 0 errors. The PlayMode run emitted the existing convex-mesh polygon-limit warning for `tripo_node_b7d6146a`, but the test passed.
 
-## Active task
-- Status: `IN_PROGRESS`
+## Archived task (ground impact projection regression)
+- Status: `COMPLETED`
+- Started: 2026-10-21
+- User request (verbatim): "я зробив постріл по землі, потім роботом наступив на землю та побачив на нозі проджектайл, а раніше я вже тобі давав такс виправити це і ти виправив цйей баг, чому він зараз знову є?"
+- Objective: Diagnose and fix the regression where a persistent ground impact projector becomes visible on a robot's foot after the robot walks over the impact location.
+- Acceptance criteria:
+  - Identify the actual ownership/rendering path that lets a world impact project onto a moving robot.
+  - Ground and other non-robot impact FX remain world-static and do not appear on robot renderers later entering the projector volume.
+  - Robot impact FX keeps its target-only rendering-layer isolation and existing robot Halo toggle.
+  - Add deterministic PlayMode regression coverage for a ground impact followed by a robot entering its volume, update mechanic documentation, and run build/static validation.
+- Assumptions: The reported “projectile on the foot” is the persistent regular impact decal/FX, not a newly spawned damage projectile; the visual regression must be prevented without changing authoritative hit or damage logic.
+- Current work: Confirmed the regression was caused by world projectors using rendering layer bit `0` while registered robot renderers still retained bit `0`; the robot-only target layer was added only for robot hits. The follow-up visibility regression showed that removing bit `0` also removed the default lighting layer from robots, so the corrected implementation uses world impact bit `1`, removes only bit `1` from robot renderers, and keeps `Projectile` world impact FX unparented while retaining collider attachment for robot hits.
+- Work remaining: None.
+- Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/Projectile.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: Previous fresh targeted PlayMode test passed before this visibility follow-up. New bit-selection assertions and build/test verification are pending.
+
+## Archived task (robot Impact Glow Halo toggle)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-21
+- User request (verbatim): "на роботах все ще працює погано але на стінах вже краще, я прийняв рішення не вмикати Impact Glow Halo саме по попаданю по роботах, додай таке налаштування і вимкни для попадання по роботах щоб Impact Glow Halo не зявлявся при попадані по роботах"
+- Objective: Add a serialized per-profile setting that controls whether `Impact Glow Halo` is enabled for robot hits, disable it in the active impact prefab's robot profile, preserve the Halo for non-robot/world hits, and verify the branch through PlayMode tests.
+- Acceptance criteria:
+  - `PooledImpactFx` exposes a clear robot-profile Halo toggle in the existing Inspector configuration.
+  - Robot impacts do not enable `Impact Glow Halo` when the toggle is disabled, while regular/glow decals and robot layer cleanup remain intact.
+  - Non-robot impacts continue to enable their configured Halo.
+  - Fresh PlayMode tests assert both robot-disabled and non-robot-enabled behavior; the C# build, static checks, documentation, and handoff/history pass.
+- Assumptions: The setting is profile-specific, so only `robotImpactProfile` is disabled; `otherObjectImpactProfile` remains enabled for walls and other world objects.
+- Current work: The serialized toggle, active prefab value, and regression assertions were implemented. Fresh PlayMode execution was not completed after the Unity test assembly recompile.
+- Work remaining: Run a fresh Unity PlayMode test pass and record its result.
+- Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, and `docs/codex-game/task-handoff.md`.
+- Verification: `dotnet build` passed before the final test-source adjustment; Unity recompiled `Game.PlayMode.Tests.dll` successfully. A fresh PlayMode result remains pending.
+
+## Archived task (visual-mesh Impact Glow Halo alignment)
+- Status: `COMPLETED`
 - Started: 2026-10-21
 - User request (verbatim): "я тільки що тестував попадання по роботах , на деяких роботах Impact Glow Halo взагалі не показується, потім я тестував на різних обьектах, і на деякихз обьектах наприклад на Concrete_fence_v1_wall_set_v2 (12) Impact Glow Halo лежить не на мешові а на колайдеру, або десь між ними, якщо збоку подивитися то чітко відно як Impact Glow Halo в воздусі вимить перед проджектайлом, до проджектайлів питань нема все чітко а от до Impact Glow Halo є, він лягає не на маш а на колайдер і це створює баги, ось це головне завдання яке ти маєш пофіксити використавши свої PlayMode-тести, якщо твоїх тестів для виправлення цього таска не достатньо створи додаткові тестування і так поки не закриєш цей таск повністю"
 - Objective: Make `Impact Glow Halo` use the same correct visual surface as the projectile/projector for both registered robots and non-robot world objects, including thin or proxy-collider geometry such as `Concrete_fence_v1_wall_set_v2 (12)`, and prove the fix with deterministic PlayMode tests instead of manual sky shots.

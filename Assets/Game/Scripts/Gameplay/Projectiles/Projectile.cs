@@ -940,7 +940,7 @@ public class Projectile : MonoBehaviour
             Explode(
                 hit.point,
                 _lastHitNormal,
-                hit.collider != null ? hit.collider.transform : null,
+                GetImpactAttachmentParent(hit.collider),
                 GetImpactTargetRoot(hit.collider),
                 hit.collider);
             StopClientVisualAtCollision();
@@ -957,7 +957,7 @@ public class Projectile : MonoBehaviour
         Explode(
             hit.point,
             _lastHitNormal,
-            hit.collider != null ? hit.collider.transform : null,
+            GetImpactAttachmentParent(hit.collider),
             GetImpactTargetRoot(hit.collider),
             hit.collider);
         CompleteFlight();
@@ -1014,6 +1014,14 @@ public class Projectile : MonoBehaviour
     {
         return VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot targetRoot)
             ? targetRoot
+            : null;
+    }
+
+    private static Transform GetImpactAttachmentParent(Collider hitCollider)
+    {
+        return VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot targetRoot)
+            && targetRoot != null
+            ? hitCollider.transform
             : null;
     }
 

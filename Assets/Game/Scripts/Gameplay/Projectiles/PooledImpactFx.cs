@@ -20,6 +20,8 @@ public sealed class PooledImpactFx : MonoBehaviour
         public MeshRenderer impactGlowHaloRenderer;
 
         [Header("Impact Glow")]
+        [Tooltip("Enables the broad Impact Glow Halo for this impact profile.")]
+        public bool enableImpactGlowHalo = true;
         [Tooltip("Shared multiplier for the crack decal and the broad halo. Values above 1 are allowed.")]
         [Min(0f)] public float impactGlowStrength = 1f;
         [Tooltip("Additional multiplier for the broad halo Bloom source only.")]
@@ -46,7 +48,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     private const string ImpactGlowEmissionStrengthPropertyName = "Emission_Strength";
     private const string ImpactGlowHaloBaseColorPropertyName = "_BaseColor";
     private const string ImpactGlowHaloEmissionColorPropertyName = "_EmissionColor";
-    private const uint WorldImpactRenderingLayerMask = 1u;
+    private const uint WorldImpactRenderingLayerMask = 2u;
     private const int FirstImpactRenderingLayerBit = 2;
     private const int LastImpactRenderingLayerBit = 7;
     private const float CameraShakeFullStrengthDistance = 10f;
@@ -195,7 +197,8 @@ public sealed class PooledImpactFx : MonoBehaviour
         float fadeDuration = Mathf.Max(0f, profile.impactGlowFadeDuration);
         _impactGlowFadeStartTime = now;
         _impactGlowFadeEndTime = now + fadeDuration;
-        _impactGlowPlaying = profile.impactGlowDecal != null || profile.impactGlowHaloRenderer != null;
+        _impactGlowPlaying = profile.impactGlowDecal != null
+            || (profile.enableImpactGlowHalo && profile.impactGlowHaloRenderer != null);
         if (profile.impactDecal != null)
         {
             _releaseTime = float.PositiveInfinity;
@@ -727,6 +730,17 @@ public sealed class PooledImpactFx : MonoBehaviour
             return;
         }
 
+        if (!profile.enableImpactGlowHalo)
+        {
+            profile.impactGlowHaloRenderer.enabled = false;
+            if (profile.impactGlowHaloRenderer.gameObject.activeSelf)
+            {
+                profile.impactGlowHaloRenderer.gameObject.SetActive(false);
+            }
+
+            return;
+        }
+
         Transform haloTransform = profile.impactGlowHaloRenderer.transform;
         haloTransform.SetPositionAndRotation(surfacePosition, rotation);
         haloTransform.localScale = new Vector3(
@@ -736,7 +750,9 @@ public sealed class PooledImpactFx : MonoBehaviour
             * Mathf.Max(0.01f, profile.impactGlowHaloSizeMultiplier),
             1f);
         profile.impactGlowHaloRenderer.renderingLayerMask = renderingLayerMask;
-        bool haloEnabled = profile.impactGlowStrength > 0f && profile.impactGlowHaloStrength > 0f;
+        bool haloEnabled = profile.enableImpactGlowHalo
+            && profile.impactGlowStrength > 0f
+            && profile.impactGlowHaloStrength > 0f;
         profile.impactGlowHaloRenderer.enabled = haloEnabled;
         if (haloEnabled && !profile.impactGlowHaloRenderer.gameObject.activeSelf)
         {

@@ -12,6 +12,29 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-21 - Robots invisible before first shot
+
+- Status: `COMPLETED`
+- Scope: diagnose and fix robot renderers remaining invisible until a projectile is fired at a robot, while preserving intentional visibility culling and impact FX behavior.
+- Root cause: the impact-layer cleanup removed rendering-layer bit `0` from robot renderers; that bit is the default lighting layer, so robots lost their normal lighting before any shot occurred.
+- Verification: corrected cleanup to remove only world-impact bit `1`; Unity PlayMode regression suite passed `4/4`, production and PlayMode C# builds passed with `0` errors, and `git diff --check` passed.
+- Detail: active task in `task-handoff.md`.
+
+### 2026-10-21 - Ground impact projection regression
+
+- Status: `COMPLETED`
+- Scope: stop persistent world impact projectors from rendering on robot renderers after a robot walks into the impact volume, and keep world FX unparented.
+- Root cause: registered robot renderers still contained world rendering layer bit `0`, while world impact projectors intentionally use bit `0`; the robot-only target layer was applied only on robot hits.
+- Verification: fresh Unity PlayMode fixture passed `4/4`, including the robot movement regression; production and PlayMode C# builds passed with 0 errors; `git diff --check` passed.
+- Detail: completed in `task-handoff.md`.
+
+### 2026-10-21 - Robot Impact Glow Halo toggle follow-up
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add a per-profile `Impact Glow Halo` toggle, disable it for robot hits in the active impact prefab, and preserve it for non-robot hits.
+- Verification: the script/prefab/test implementation compiled and the Unity PlayMode test assembly recompiled; a fresh PlayMode run was still pending when this regression task started.
+- Detail: archived in `task-handoff.md`.
+
 ### 2026-10-21 — Deterministic robot impact surface PlayMode verification
 
 - Status: `COMPLETED`

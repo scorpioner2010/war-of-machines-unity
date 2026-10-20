@@ -5,6 +5,7 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public static class VehicleColliderRegistry
     {
+        private const uint WorldImpactRenderingLayerMask = 2u;
         private const float ImpactSurfaceDistanceEpsilon = 0.0001f;
         private const float ImpactSurfaceRaycastDistance = 100f;
 
@@ -35,7 +36,13 @@ namespace Game.Scripts.Gameplay.Robots
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer != null && !registeredRenderers.Contains(renderer))
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.renderingLayerMask &= ~WorldImpactRenderingLayerMask;
+                if (!registeredRenderers.Contains(renderer))
                 {
                     registeredRenderers.Add(renderer);
                 }

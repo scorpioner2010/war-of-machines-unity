@@ -25,7 +25,7 @@ namespace Game.Tests.PlayMode
         private readonly List<GameObject> _createdObjects = new List<GameObject>(4);
 
         [UnityTest]
-        public IEnumerator SpawnRobotAndShootFromSide_UsesVisualMeshForImpactHalo()
+        public IEnumerator SpawnRobotAndShootFromSide_DisablesImpactGlowHaloForRobotProfile()
         {
             Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
             Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
@@ -54,6 +54,10 @@ namespace Game.Tests.PlayMode
             for (int i = 0; i < targetRenderers.Count; i++)
             {
                 originalRenderingLayerMasks[i] = targetRenderers[i].renderingLayerMask;
+                Assert.AreNotEqual(
+                    0u,
+                    originalRenderingLayerMasks[i] & 1u,
+                    $"Robot renderer {targetRenderers[i].name} lost the default lighting layer before impact FX setup.");
             }
 
             Assert.IsTrue(
@@ -161,38 +165,28 @@ namespace Game.Tests.PlayMode
             MeshRenderer haloRenderer = (MeshRenderer)profileType
                 .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(robotImpactProfile);
-            float surfaceOffset = (float)profileType
-                .GetField("impactDecalSurfaceOffset", BindingFlags.Instance | BindingFlags.Public)
+            bool enableImpactGlowHalo = (bool)profileType
+                .GetField("enableImpactGlowHalo", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(robotImpactProfile);
+            Component impactDecal = (Component)profileType
+                .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(robotImpactProfile);
             Assert.IsNotNull(haloRenderer, "The robot impact profile has no Impact Glow Halo renderer.");
-            Assert.IsTrue(haloRenderer.enabled, "The robot Impact Glow Halo was not enabled after the hit.");
+            Assert.IsFalse(enableImpactGlowHalo, "The robot impact profile unexpectedly enables the Impact Glow Halo.");
+            Assert.IsFalse(haloRenderer.enabled, "The robot Impact Glow Halo was enabled after the hit.");
+            Assert.IsFalse(haloRenderer.gameObject.activeSelf, "The robot Impact Glow Halo object was activated after the hit.");
+            Assert.IsNotNull(impactDecal, "The robot impact profile has no regular impact decal.");
+            Assert.IsTrue(impactDecal.gameObject.activeSelf, "Disabling the robot Halo also disabled the regular impact decal.");
 
-            Vector3 expectedHaloPosition = resolvedVisualPosition + resolvedVisualNormal * surfaceOffset;
-            float haloToMeshDistance = Vector3.Distance(
-                haloRenderer.transform.position,
-                expectedHaloPosition);
-            float haloToProxyDistance = Vector3.Distance(
-                haloRenderer.transform.position,
-                physicsHit.point);
             Debug.Log(
                 $"Deterministic robot shot: proxy={physicsHit.point}, mesh={expectedVisualHit.point}, "
-                + $"resolved={resolvedVisualPosition}, halo={haloRenderer.transform.position}, "
-                + $"haloToMesh={haloToMeshDistance:F5}, haloToProxy={haloToProxyDistance:F5}.");
+                + $"resolved={resolvedVisualPosition}, robotHaloEnabled={haloRenderer.enabled}.");
 
-            Assert.Less(
-                haloToMeshDistance,
-                SurfacePositionTolerance,
-                "Impact Glow Halo is not placed on the visual mesh surface.");
-            Assert.Greater(
-                haloToProxyDistance,
-                SurfacePositionTolerance,
-                "Impact Glow Halo still uses the oversized proxy collider point.");
-
-            uint robotImpactRenderingLayerMask = haloRenderer.renderingLayerMask;
+            uint robotImpactRenderingLayerMask = GetUIntProperty(impactDecal, "renderingLayerMask");
             Assert.AreNotEqual(
                 1u,
                 robotImpactRenderingLayerMask,
-                "Robot impact FX did not acquire a target-only rendering layer.");
+                "Robot impact decal did not acquire a target-only rendering layer.");
 
             InvokeInstance(
                 pooledImpactFxType,
@@ -202,7 +196,7 @@ namespace Game.Tests.PlayMode
                 Array.Empty<object>());
             Assert.IsFalse(haloRenderer.enabled, "Pool release did not disable the Impact Glow Halo.");
             Assert.AreEqual(
-                1u,
+                2u,
                 haloRenderer.renderingLayerMask,
                 "Pool release did not reset the Impact Glow Halo rendering layer.");
             for (int i = 0; i < targetRenderers.Count; i++)
@@ -221,7 +215,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator RobotVariants_AlwaysShowImpactHaloWhenShotFromSide()
+        public IEnumerator RobotVariants_DoNotShowImpactHaloWhenShotFromSide()
         {
             Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
             Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
@@ -313,11 +307,16 @@ namespace Game.Tests.PlayMode
                 MeshRenderer haloRenderer = (MeshRenderer)robotImpactProfile.GetType()
                     .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
                     .GetValue(robotImpactProfile);
+                bool enableImpactGlowHalo = (bool)robotImpactProfile.GetType()
+                    .GetField("enableImpactGlowHalo", BindingFlags.Instance | BindingFlags.Public)
+                    .GetValue(robotImpactProfile);
                 Assert.IsNotNull(haloRenderer, $"Robot profile has no Halo: {prefabPath}.");
-                Assert.IsTrue(haloRenderer.enabled, $"Robot Halo is invisible after hit: {prefabPath}.");
+                Assert.IsFalse(enableImpactGlowHalo, $"Robot profile unexpectedly enables Halo: {prefabPath}.");
+                Assert.IsFalse(haloRenderer.enabled, $"Robot Halo was enabled after hit: {prefabPath}.");
+                Assert.IsFalse(haloRenderer.gameObject.activeSelf, $"Robot Halo object was activated: {prefabPath}.");
                 Debug.Log(
                     $"Robot impact regression: prefab={prefabPath}, mesh={visualHit.point}, "
-                    + $"halo={haloRenderer.transform.position}.");
+                    + $"haloEnabled={haloRenderer.enabled}.");
 
                 InvokeInstance(
                     pooledImpactFxType,
@@ -327,6 +326,119 @@ namespace Game.Tests.PlayMode
                     Array.Empty<object>());
                 Assert.IsFalse(haloRenderer.enabled, $"Pool reset left Halo enabled: {prefabPath}.");
             }
+        }
+
+        [UnityTest]
+        public IEnumerator PersistentWorldImpactDoesNotProjectOntoRobotAfterItEntersImpactVolume()
+        {
+            Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
+            Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
+            Type pooledImpactFxType = FindGameType("PooledImpactFx");
+            Type projectileType = FindGameType("Projectile");
+            GameObject robotPrefab = LoadAsset<GameObject>(RobotPrefabPath, "IA_L1_Starter");
+            Assert.IsNotNull(robotPrefab, $"Missing robot prefab at {RobotPrefabPath}.");
+
+            GameObject robotObject = UnityEngine.Object.Instantiate(robotPrefab);
+            _createdObjects.Add(robotObject);
+            robotObject.SetActive(true);
+            yield return null;
+            MeshCollider[] visualMeshColliders = robotObject.GetComponentsInChildren<MeshCollider>(true);
+            ActivateVisualMeshColliderObjects(visualMeshColliders);
+            Physics.SyncTransforms();
+
+            Component vehicleRoot = robotObject.GetComponent(vehicleRootType);
+            Assert.IsNotNull(vehicleRoot, "The spawned robot has no VehicleRoot.");
+            List<Renderer> targetRenderers = GetImpactRenderers(
+                colliderRegistryType,
+                vehicleRootType,
+                vehicleRoot);
+            Assert.IsNotNull(targetRenderers, "The spawned robot did not register its impact renderers.");
+            Assert.IsNotEmpty(targetRenderers, "The spawned robot has no registered impact renderers.");
+
+            robotObject.transform.position = new Vector3(-5f, 0f, 0f);
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.IsTrue(
+                TryGetVisualBounds(robotObject, out Bounds visualBounds),
+                "The spawned robot has no visual renderer bounds.");
+            Vector3 groundImpactPosition = new Vector3(
+                0f,
+                visualBounds.min.y,
+                visualBounds.center.z);
+
+            GameObject groundObject = new GameObject("Persistent World Impact Test Ground");
+            _createdObjects.Add(groundObject);
+            groundObject.transform.position = groundImpactPosition + Vector3.down * 0.1f;
+            BoxCollider groundCollider = groundObject.AddComponent<BoxCollider>();
+            groundCollider.size = new Vector3(6f, 0.2f, 6f);
+            Assert.IsNull(
+                InvokeStatic(
+                    projectileType,
+                    "GetImpactAttachmentParent",
+                    new[] { typeof(Collider) },
+                    new object[] { groundCollider }),
+                "A world impact unexpectedly kept an attachment parent.");
+
+            GameObject impactFxPrefabObject =
+                LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+            GameObject impactFxObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
+            _createdObjects.Add(impactFxObject);
+            Component impactFx = impactFxObject.GetComponent(pooledImpactFxType);
+            InvokeInstance(
+                pooledImpactFxType,
+                impactFx,
+                "Initialize",
+                new[] { typeof(float) },
+                new object[] { 5f });
+            InvokeInstance(
+                pooledImpactFxType,
+                impactFx,
+                "PlayImpact",
+                new[] { typeof(Vector3), typeof(Vector3), vehicleRootType, typeof(Collider) },
+                new object[] { groundImpactPosition, Vector3.up, null, groundCollider });
+            yield return null;
+
+            object otherObjectImpactProfile = pooledImpactFxType
+                .GetField("otherObjectImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(impactFx);
+            Component impactDecal = (Component)otherObjectImpactProfile.GetType()
+                .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(otherObjectImpactProfile);
+            Assert.IsNotNull(impactDecal, "The world impact profile has no regular impact decal.");
+            Assert.IsTrue(impactDecal.gameObject.activeSelf, "The world impact decal was not activated.");
+            Assert.AreEqual(
+                2u,
+                GetUIntProperty(impactDecal, "renderingLayerMask"),
+                "The world impact decal did not use the world rendering layer.");
+
+            robotObject.transform.position = new Vector3(0f, 0f, 0f);
+            Physics.SyncTransforms();
+            yield return null;
+
+            for (int i = 0; i < targetRenderers.Count; i++)
+            {
+                Renderer targetRenderer = targetRenderers[i];
+                if (targetRenderer == null)
+                {
+                    continue;
+                }
+
+                Assert.AreEqual(
+                    0u,
+                    targetRenderer.renderingLayerMask & 2u,
+                    $"World impact layer leaked onto robot renderer {targetRenderer.name} after the robot entered the impact volume.");
+                Assert.AreNotEqual(
+                    0u,
+                    targetRenderer.renderingLayerMask & 1u,
+                    $"World impact isolation removed the default lighting layer from robot renderer {targetRenderer.name}.");
+            }
+
+            Debug.Log(
+                $"Persistent world impact regression: impact={groundImpactPosition}, "
+                + $"robotBefore=(-5, 0, 0), robotAfter={robotObject.transform.position}, "
+                + $"worldMask={GetUIntProperty(impactDecal, "renderingLayerMask")}.");
         }
 
         [UnityTest]
@@ -421,6 +533,9 @@ namespace Game.Tests.PlayMode
             float surfaceOffset = (float)profileType
                 .GetField("impactDecalSurfaceOffset", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(otherObjectImpactProfile);
+            bool enableImpactGlowHalo = (bool)profileType
+                .GetField("enableImpactGlowHalo", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(otherObjectImpactProfile);
             Vector3 expectedHaloPosition = resolvedVisualPosition + resolvedVisualNormal * surfaceOffset;
             float haloToMeshDistance = Vector3.Distance(haloRenderer.transform.position, expectedHaloPosition);
             float haloToPhysicsDistance = Vector3.Distance(haloRenderer.transform.position, physicsHit.point);
@@ -430,6 +545,7 @@ namespace Game.Tests.PlayMode
                 + $"origin={shotOrigin}, direction={shotDirection}, "
                 + $"haloToMesh={haloToMeshDistance:F5}, haloToPhysics={haloToPhysicsDistance:F5}.");
 
+            Assert.IsTrue(enableImpactGlowHalo, "The other-object profile unexpectedly disables the Impact Glow Halo.");
             Assert.IsTrue(haloRenderer.enabled, "Fence Impact Glow Halo was not enabled.");
             Assert.Less(haloToMeshDistance, SurfacePositionTolerance, "Fence Halo is not on the visual mesh.");
             Assert.Greater(
@@ -458,6 +574,45 @@ namespace Game.Tests.PlayMode
             Type type = Type.GetType(typeName + ", Assembly-CSharp");
             Assert.IsNotNull(type, $"Game type {typeName} is not available in Assembly-CSharp.");
             return type;
+        }
+
+        private static uint GetUIntProperty(Component component, string propertyName)
+        {
+            Assert.IsNotNull(component, $"Cannot read {propertyName} from a missing component.");
+            PropertyInfo property = component.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.IsNotNull(property, $"Component {component.GetType().FullName} has no {propertyName} property.");
+            object value = property.GetValue(component);
+            if (value is IConvertible)
+            {
+                return Convert.ToUInt32(value);
+            }
+
+            FieldInfo[] fields = value.GetType().GetFields(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            for (int i = 0; i < fields.Length; i++)
+            {
+                if (fields[i].FieldType == typeof(uint)
+                    || fields[i].FieldType == typeof(int))
+                {
+                    return Convert.ToUInt32(fields[i].GetValue(value));
+                }
+            }
+
+            PropertyInfo[] properties = value.GetType().GetProperties(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            for (int i = 0; i < properties.Length; i++)
+            {
+                if (properties[i].PropertyType == typeof(uint)
+                    || properties[i].PropertyType == typeof(int))
+                {
+                    return Convert.ToUInt32(properties[i].GetValue(value));
+                }
+            }
+
+            Assert.Fail($"Property {propertyName} on {component.GetType().FullName} has unsupported type {value.GetType().FullName}.");
+            return 0u;
         }
 
         private static T LoadAsset<T>(string assetPath, string resourcesPath)
