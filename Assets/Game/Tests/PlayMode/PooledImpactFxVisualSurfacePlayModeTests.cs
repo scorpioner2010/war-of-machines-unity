@@ -215,6 +215,175 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator TurretImpactLayerDoesNotAffectGunRenderer()
+        {
+            Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
+            Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
+            Type pooledImpactFxType = FindGameType("PooledImpactFx");
+            GameObject impactFxPrefabObject = LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+
+            GameObject robotObject = new GameObject("Per-part impact test robot");
+            _createdObjects.Add(robotObject);
+            Component vehicleRoot = robotObject.AddComponent(vehicleRootType);
+
+            GameObject turretObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            _createdObjects.Add(turretObject);
+            turretObject.name = "Turret visual part";
+            turretObject.transform.SetParent(robotObject.transform, false);
+            BoxCollider turretBoxCollider = turretObject.GetComponent<BoxCollider>();
+            turretBoxCollider.enabled = false;
+            MeshCollider turretMeshCollider = turretObject.AddComponent<MeshCollider>();
+            turretMeshCollider.sharedMesh = turretObject.GetComponent<MeshFilter>().sharedMesh;
+            turretMeshCollider.convex = true;
+            turretMeshCollider.enabled = false;
+            MeshRenderer turretRenderer = turretObject.GetComponent<MeshRenderer>();
+
+            GameObject gunObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            _createdObjects.Add(gunObject);
+            gunObject.name = "Gun visual part";
+            gunObject.transform.SetParent(robotObject.transform, false);
+            gunObject.transform.localPosition = Vector3.right * 3f;
+            BoxCollider gunBoxCollider = gunObject.GetComponent<BoxCollider>();
+            gunBoxCollider.enabled = false;
+            MeshCollider gunMeshCollider = gunObject.AddComponent<MeshCollider>();
+            gunMeshCollider.sharedMesh = gunObject.GetComponent<MeshFilter>().sharedMesh;
+            gunMeshCollider.convex = true;
+            gunMeshCollider.enabled = false;
+            MeshRenderer gunRenderer = gunObject.GetComponent<MeshRenderer>();
+
+            InvokeStatic(
+                colliderRegistryType,
+                "RegisterRenderers",
+                new[] { vehicleRootType, typeof(Renderer[]) },
+                new object[] { vehicleRoot, new Renderer[] { turretRenderer, gunRenderer } });
+            InvokeStatic(
+                colliderRegistryType,
+                "RegisterImpactMeshColliders",
+                new[] { vehicleRootType, typeof(List<MeshCollider>) },
+                new object[]
+                {
+                    vehicleRoot,
+                    new List<MeshCollider> { turretMeshCollider, gunMeshCollider }
+                });
+            InvokeStatic(
+                colliderRegistryType,
+                "RegisterImpactVisualPart",
+                new[] { vehicleRootType, typeof(MeshCollider), typeof(Renderer) },
+                new object[] { vehicleRoot, turretMeshCollider, turretRenderer });
+            InvokeStatic(
+                colliderRegistryType,
+                "RegisterImpactVisualPart",
+                new[] { vehicleRootType, typeof(MeshCollider), typeof(Renderer) },
+                new object[] { vehicleRoot, gunMeshCollider, gunRenderer });
+
+            Physics.SyncTransforms();
+            uint originalTurretMask = turretRenderer.renderingLayerMask;
+            uint originalGunMask = gunRenderer.renderingLayerMask;
+
+            GameObject turretImpactObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
+            _createdObjects.Add(turretImpactObject);
+            Component turretImpact = turretImpactObject.GetComponent(pooledImpactFxType);
+            InvokeInstance(
+                pooledImpactFxType,
+                turretImpact,
+                "Initialize",
+                new[] { typeof(float) },
+                new object[] { 5f });
+            InvokeInstance(
+                pooledImpactFxType,
+                turretImpact,
+                "PlayImpact",
+                new[] { typeof(Vector3), typeof(Vector3), vehicleRootType, typeof(Collider) },
+                new object[]
+                {
+                    turretObject.transform.position + Vector3.right * 0.5f,
+                    Vector3.right,
+                    vehicleRoot,
+                    turretMeshCollider
+                });
+            yield return null;
+
+            object robotImpactProfile = pooledImpactFxType
+                .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(turretImpact);
+            Component turretImpactDecal = (Component)robotImpactProfile.GetType()
+                .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(robotImpactProfile);
+            uint turretImpactLayer = GetUIntProperty(turretImpactDecal, "renderingLayerMask");
+            Assert.GreaterOrEqual(turretImpactLayer, 4u, "Turret impact did not acquire a target-only layer.");
+            Assert.AreNotEqual(
+                0u,
+                turretRenderer.renderingLayerMask & turretImpactLayer,
+                "The turret renderer did not receive its impact layer.");
+            Assert.AreEqual(
+                0u,
+                gunRenderer.renderingLayerMask & turretImpactLayer,
+                "The turret impact layer leaked onto the gun renderer.");
+
+            GameObject gunImpactObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
+            _createdObjects.Add(gunImpactObject);
+            Component gunImpact = gunImpactObject.GetComponent(pooledImpactFxType);
+            InvokeInstance(
+                pooledImpactFxType,
+                gunImpact,
+                "Initialize",
+                new[] { typeof(float) },
+                new object[] { 5f });
+            InvokeInstance(
+                pooledImpactFxType,
+                gunImpact,
+                "PlayImpact",
+                new[] { typeof(Vector3), typeof(Vector3), vehicleRootType, typeof(Collider) },
+                new object[]
+                {
+                    gunObject.transform.position - Vector3.right * 0.5f,
+                    Vector3.left,
+                    vehicleRoot,
+                    gunMeshCollider
+                });
+            yield return null;
+
+            object gunImpactProfile = pooledImpactFxType
+                .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(gunImpact);
+            Component gunImpactDecal = (Component)gunImpactProfile.GetType()
+                .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(gunImpactProfile);
+            uint gunImpactLayer = GetUIntProperty(gunImpactDecal, "renderingLayerMask");
+            Assert.GreaterOrEqual(gunImpactLayer, 4u, "Gun impact did not acquire a target-only layer.");
+            Assert.AreNotEqual(turretImpactLayer, gunImpactLayer, "Different robot parts shared one impact layer.");
+            Assert.AreNotEqual(
+                0u,
+                gunRenderer.renderingLayerMask & gunImpactLayer,
+                "The gun renderer did not receive its own impact layer.");
+            Assert.AreEqual(
+                0u,
+                turretRenderer.renderingLayerMask & gunImpactLayer,
+                "The gun impact layer leaked onto the turret renderer.");
+
+            InvokeInstance(
+                pooledImpactFxType,
+                turretImpact,
+                "PrepareForPoolRelease",
+                Array.Empty<Type>(),
+                Array.Empty<object>());
+            InvokeInstance(
+                pooledImpactFxType,
+                gunImpact,
+                "PrepareForPoolRelease",
+                Array.Empty<Type>(),
+                Array.Empty<object>());
+            Assert.AreEqual(originalTurretMask, turretRenderer.renderingLayerMask);
+            Assert.AreEqual(originalGunMask, gunRenderer.renderingLayerMask);
+            InvokeStatic(
+                colliderRegistryType,
+                "UnregisterImpactMeshColliders",
+                new[] { vehicleRootType },
+                new object[] { vehicleRoot });
+        }
+
+        [UnityTest]
         public IEnumerator RobotVariants_DoNotShowImpactHaloWhenShotFromSide()
         {
             Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");

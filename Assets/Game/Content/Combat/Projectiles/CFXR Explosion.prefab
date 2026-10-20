@@ -5104,7 +5104,7 @@ MonoBehaviour:
     impactGlowHaloBaseColor: {r: 1, g: 1, b: 1, a: 1}
     impactGlowHaloSizeMultiplier: 1
     impactGlowDecalEmissionStrength: 1
-    impactGlowFadeDuration: 5
+    impactGlowFadeDuration: 2
     impactDecalWidth: 0.2
     impactDecalHeight: 0.2
     impactDecalProjectionDepth: 0.6
@@ -5129,7 +5129,7 @@ MonoBehaviour:
     impactGlowHaloBaseColor: {r: 1, g: 1, b: 1, a: 1}
     impactGlowHaloSizeMultiplier: 1
     impactGlowDecalEmissionStrength: 1
-    impactGlowFadeDuration: 5
+    impactGlowFadeDuration: 2
     impactDecalWidth: 1
     impactDecalHeight: 1
     impactDecalProjectionDepth: 0.6

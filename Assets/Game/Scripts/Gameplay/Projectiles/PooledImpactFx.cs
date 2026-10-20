@@ -58,8 +58,6 @@ public sealed class PooledImpactFx : MonoBehaviour
         CameraShakeFullStrengthDistance * CameraShakeFullStrengthDistance;
     private const float CameraShakeMaxDistanceSqr = CameraShakeMaxDistance * CameraShakeMaxDistance;
 
-    private static readonly Dictionary<VehicleRoot, ImpactLayerState> ImpactLayerStates =
-        new Dictionary<VehicleRoot, ImpactLayerState>(16);
     private static readonly int ImpactGlowEmissionStrengthPropertyId =
         Shader.PropertyToID(ImpactGlowEmissionStrengthPropertyName);
     private static readonly int ImpactGlowHaloBaseColorPropertyId =
@@ -87,8 +85,8 @@ public sealed class PooledImpactFx : MonoBehaviour
     private Material _impactGlowHaloSourceMaterial;
     private MeshRenderer _impactGlowHaloMaterialRenderer;
     private float _baseImpactGlowEmissionStrength = 1f;
-    private VehicleRoot _impactTargetRoot;
     private uint _impactRenderingLayerMask;
+    private ImpactLayerState _impactLayerState;
 
     public void Initialize(float fallbackLifetime)
     {
@@ -118,23 +116,19 @@ public sealed class PooledImpactFx : MonoBehaviour
             return;
         }
 
-        _impactRenderingLayerMask = 0u;
-        if (impactTarget != null
-            && VehicleColliderRegistry.TryGetImpactRenderers(impactTarget, out List<Renderer> targetRenderers))
-        {
-            TryAcquireImpactLayer(impactTarget, targetRenderers);
-        }
-
         Vector3 safeNormal = impactNormal.sqrMagnitude > 0.000001f
             ? impactNormal.normalized
             : Vector3.up;
+        _impactRenderingLayerMask = 0u;
+        Renderer visualSurfaceRenderer = null;
         if (impactTarget != null
             && VehicleColliderRegistry.TryGetImpactVisualSurface(
                 impactTarget,
                 impactPoint,
                 safeNormal,
                 out Vector3 visualSurfacePosition,
-                out Vector3 visualSurfaceNormal))
+                out Vector3 visualSurfaceNormal,
+                out visualSurfaceRenderer))
         {
             impactPoint = visualSurfacePosition;
             safeNormal = visualSurfaceNormal;
@@ -149,6 +143,22 @@ public sealed class PooledImpactFx : MonoBehaviour
         {
             impactPoint = visualSurfacePosition;
             safeNormal = visualSurfaceNormal;
+        }
+
+        if (impactTarget != null)
+        {
+            if (visualSurfaceRenderer != null)
+            {
+                TryAcquireImpactLayer(impactTarget, visualSurfaceRenderer);
+            }
+
+            if (_impactRenderingLayerMask == 0u
+                && VehicleColliderRegistry.TryGetImpactRenderers(
+                    impactTarget,
+                    out List<Renderer> targetRenderers))
+            {
+                TryAcquireImpactLayer(impactTarget, targetRenderers);
+            }
         }
 
         Vector3 up = Vector3.Cross(safeNormal, Vector3.up);
@@ -767,14 +777,6 @@ public sealed class PooledImpactFx : MonoBehaviour
             return false;
         }
 
-        if (ImpactLayerStates.TryGetValue(targetRoot, out ImpactLayerState existingState))
-        {
-            existingState.ReferenceCount++;
-            _impactTargetRoot = targetRoot;
-            _impactRenderingLayerMask = existingState.LayerMask;
-            return true;
-        }
-
         uint freeLayerMask = FindFreeImpactLayerMask();
         if (freeLayerMask == 0u)
         {
@@ -800,44 +802,58 @@ public sealed class PooledImpactFx : MonoBehaviour
             return false;
         }
 
-        state.ReferenceCount = 1;
-        ImpactLayerStates.Add(targetRoot, state);
         ActiveImpactRenderingLayerMask |= freeLayerMask;
-        _impactTargetRoot = targetRoot;
         _impactRenderingLayerMask = freeLayerMask;
+        _impactLayerState = state;
+        return true;
+    }
+
+    private bool TryAcquireImpactLayer(VehicleRoot targetRoot, Renderer targetRenderer)
+    {
+        if (targetRoot == null || targetRenderer == null)
+        {
+            return false;
+        }
+
+        uint freeLayerMask = FindFreeImpactLayerMask();
+        if (freeLayerMask == 0u)
+        {
+            return false;
+        }
+
+        ImpactLayerState state = new ImpactLayerState(freeLayerMask);
+        state.Renderers.Add(targetRenderer);
+        state.OriginalMasks.Add(targetRenderer.renderingLayerMask);
+        targetRenderer.renderingLayerMask |= freeLayerMask;
+        ActiveImpactRenderingLayerMask |= freeLayerMask;
+        _impactRenderingLayerMask = freeLayerMask;
+        _impactLayerState = state;
         return true;
     }
 
     private void ReleaseImpactLayer()
     {
-        if (_impactTargetRoot == null || _impactRenderingLayerMask == 0u)
+        if (_impactLayerState == null || _impactRenderingLayerMask == 0u)
         {
-            _impactTargetRoot = null;
             _impactRenderingLayerMask = 0u;
+            _impactLayerState = null;
             return;
         }
 
-        if (ImpactLayerStates.TryGetValue(_impactTargetRoot, out ImpactLayerState state))
+        ImpactLayerState state = _impactLayerState;
+        for (int i = 0; i < state.Renderers.Count; i++)
         {
-            state.ReferenceCount--;
-            if (state.ReferenceCount <= 0)
+            Renderer renderer = state.Renderers[i];
+            if (renderer != null)
             {
-                for (int i = 0; i < state.Renderers.Count; i++)
-                {
-                    Renderer renderer = state.Renderers[i];
-                    if (renderer != null)
-                    {
-                        renderer.renderingLayerMask = state.OriginalMasks[i];
-                    }
-                }
-
-                ImpactLayerStates.Remove(_impactTargetRoot);
-                ActiveImpactRenderingLayerMask &= ~state.LayerMask;
+                renderer.renderingLayerMask = state.OriginalMasks[i];
             }
         }
 
-        _impactTargetRoot = null;
+        ActiveImpactRenderingLayerMask &= ~state.LayerMask;
+
         _impactRenderingLayerMask = 0u;
+        _impactLayerState = null;
     }
 
     private static uint FindFreeImpactLayerMask()
@@ -859,7 +875,6 @@ public sealed class PooledImpactFx : MonoBehaviour
         public readonly uint LayerMask;
         public readonly List<Renderer> Renderers = new List<Renderer>(16);
         public readonly List<uint> OriginalMasks = new List<uint>(16);
-        public int ReferenceCount;
 
         public ImpactLayerState(uint layerMask)
         {

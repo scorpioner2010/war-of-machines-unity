@@ -3,6 +3,22 @@
 ## Active task
 - Status: `COMPLETED`
 - Started: 2026-10-21
+- User request (verbatim): "а можеш ще таким чамим чином розділити меші робота, щоб при попадані по башні це невпливало на пушку якщо пушка попадає в область проджектайлу? але так щоб не поломати нічого"
+- Objective: Isolate robot impact projectors to the visual mesh part that was hit, so a turret impact does not project onto the gun when the gun overlaps the projector volume.
+- Acceptance criteria:
+  - A robot impact layer is applied only to the resolved visual mesh renderer(s) for the hit part when that mapping exists.
+  - Existing robot/world rendering-layer isolation, projectile attachment, damage, pooling, and fallback behavior remain intact.
+  - Multiple simultaneous impacts on different robot parts do not share one whole-robot layer.
+  - Add deterministic PlayMode coverage for turret-versus-gun isolation when practical, update mechanic documentation, and verify with build/tests.
+- Assumptions: Existing `DeathLogic.detachableVisuals` entries are the authoritative mesh-collider-to-renderer pairs for robot presentation; armor-only or unmapped hits retain the safe whole-robot fallback.
+- Current work: `DeathLogic` now registers each detachable mesh collider with its matching renderer. `VehicleColliderRegistry` resolves and returns the visual part hit by the impact, and `PooledImpactFx` assigns a unique temporary rendering layer only to that renderer. Unmapped armor hits retain the whole-robot fallback.
+- Work remaining: None.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: Unity PlayMode regression suite passed `5/5`, including `TurretImpactLayerDoesNotAffectGunRenderer`, which verified separate simultaneous turret/gun layers and pool restoration. `dotnet build Assembly-CSharp.csproj` and `dotnet build Game.PlayMode.Tests.csproj` passed with `0` errors. `git diff --check` passed. The PlayMode run emitted the existing convex-mesh polygon-limit warning for high-poly robot meshes, but all tests passed.
+
+## Archived task (robots invisible before first shot)
+- Status: `COMPLETED`
+- Started: 2026-10-21
 - User request (verbatim): "я під час тестування помітив баг поки по роботу я не вистрілю роботи всі невидимі"
 - Objective: Diagnose and fix the regression where robots remain invisible until the first projectile is fired at a robot.
 - Acceptance criteria:

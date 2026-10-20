@@ -12,6 +12,14 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-21 - Per-part robot impact projector isolation
+
+- Status: `COMPLETED`
+- Scope: isolate a robot impact projector to the turret/body mesh that was hit, so another overlapping part such as the gun does not receive the turret impact.
+- Implementation: `DeathLogic` registers detachable mesh-collider/renderer pairs; `VehicleColliderRegistry` resolves the hit pair; `PooledImpactFx` assigns one temporary layer per active impact and restores every mask on release.
+- Verification: Unity PlayMode regression suite passed `5/5`, including simultaneous turret/gun isolation; production and PlayMode C# builds passed with `0` errors; `git diff --check` passed.
+- Detail: active task in `task-handoff.md`.
+
 ### 2026-10-21 - Robots invisible before first shot
 
 - Status: `COMPLETED`

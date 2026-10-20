@@ -122,6 +122,11 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                 {
                     _impactMeshColliders.Add(meshCollider);
                 }
+
+                VehicleColliderRegistry.RegisterImpactVisualPart(
+                    vehicleRoot,
+                    meshCollider,
+                    visual.renderer);
             }
         }
 

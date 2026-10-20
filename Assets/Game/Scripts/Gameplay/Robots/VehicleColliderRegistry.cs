@@ -17,6 +17,8 @@ namespace Game.Scripts.Gameplay.Robots
             new Dictionary<VehicleRoot, List<Renderer>>(64);
         private static readonly Dictionary<VehicleRoot, List<MeshCollider>> ImpactMeshCollidersByRoot =
             new Dictionary<VehicleRoot, List<MeshCollider>>(64);
+        private static readonly Dictionary<VehicleRoot, List<ImpactVisualPart>> ImpactVisualPartsByRoot =
+            new Dictionary<VehicleRoot, List<ImpactVisualPart>>(64);
         private static readonly Dictionary<Collider, ImpactVisualSurfaceData> ImpactSurfacesByCollider =
             new Dictionary<Collider, ImpactVisualSurfaceData>(256);
 
@@ -177,11 +179,40 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
+        public static void RegisterImpactVisualPart(
+            VehicleRoot root,
+            MeshCollider meshCollider,
+            Renderer renderer)
+        {
+            if (root == null || (meshCollider == null && renderer == null))
+            {
+                return;
+            }
+
+            if (!ImpactVisualPartsByRoot.TryGetValue(root, out List<ImpactVisualPart> visualParts))
+            {
+                visualParts = new List<ImpactVisualPart>(16);
+                ImpactVisualPartsByRoot.Add(root, visualParts);
+            }
+
+            for (int i = 0; i < visualParts.Count; i++)
+            {
+                ImpactVisualPart existingPart = visualParts[i];
+                if (existingPart.MeshCollider == meshCollider && existingPart.Renderer == renderer)
+                {
+                    return;
+                }
+            }
+
+            visualParts.Add(new ImpactVisualPart(meshCollider, renderer));
+        }
+
         public static void UnregisterImpactMeshColliders(VehicleRoot root)
         {
             if (root != null)
             {
                 ImpactMeshCollidersByRoot.Remove(root);
+                ImpactVisualPartsByRoot.Remove(root);
             }
         }
 
@@ -232,10 +263,12 @@ namespace Game.Scripts.Gameplay.Robots
             return TryResolveImpactVisualSurface(
                 data.MeshColliders,
                 data.Renderers,
+                null,
                 impactPoint,
                 surfaceNormal,
                 out surfacePosition,
-                out surfaceNormal);
+                out surfaceNormal,
+                out _);
         }
 
         public static bool TryGetImpactVisualSurface(
@@ -245,11 +278,29 @@ namespace Game.Scripts.Gameplay.Robots
             out Vector3 surfacePosition,
             out Vector3 surfaceNormal)
         {
+            return TryGetImpactVisualSurface(
+                root,
+                impactPoint,
+                impactNormal,
+                out surfacePosition,
+                out surfaceNormal,
+                out _);
+        }
+
+        public static bool TryGetImpactVisualSurface(
+            VehicleRoot root,
+            Vector3 impactPoint,
+            Vector3 impactNormal,
+            out Vector3 surfacePosition,
+            out Vector3 surfaceNormal,
+            out Renderer surfaceRenderer)
+        {
             Vector3 safeNormal = impactNormal.sqrMagnitude > 0.000001f
                 ? impactNormal.normalized
                 : Vector3.up;
             surfacePosition = impactPoint;
             surfaceNormal = safeNormal;
+            surfaceRenderer = null;
             if (root == null)
             {
                 return false;
@@ -257,22 +308,27 @@ namespace Game.Scripts.Gameplay.Robots
 
             ImpactMeshCollidersByRoot.TryGetValue(root, out List<MeshCollider> meshColliders);
             ImpactRenderersByRoot.TryGetValue(root, out List<Renderer> renderers);
+            ImpactVisualPartsByRoot.TryGetValue(root, out List<ImpactVisualPart> visualParts);
             return TryResolveImpactVisualSurface(
                 meshColliders,
                 renderers,
+                visualParts,
                 impactPoint,
                 safeNormal,
                 out surfacePosition,
-                out surfaceNormal);
+                out surfaceNormal,
+                out surfaceRenderer);
         }
 
         private static bool TryResolveImpactVisualSurface(
             List<MeshCollider> meshColliders,
             List<Renderer> renderers,
+            List<ImpactVisualPart> visualParts,
             Vector3 impactPoint,
             Vector3 safeNormal,
             out Vector3 surfacePosition,
-            out Vector3 surfaceNormal)
+            out Vector3 surfaceNormal,
+            out Renderer surfaceRenderer)
         {
             Vector3 rayDirection = -safeNormal;
             Ray surfaceRay = new Ray(
@@ -281,7 +337,46 @@ namespace Game.Scripts.Gameplay.Robots
             float closestDistance = float.PositiveInfinity;
             surfacePosition = impactPoint;
             surfaceNormal = safeNormal;
+            surfaceRenderer = null;
             bool foundSurface = false;
+
+            if (visualParts != null)
+            {
+                for (int i = 0; i < visualParts.Count; i++)
+                {
+                    ImpactVisualPart visualPart = visualParts[i];
+                    MeshCollider meshCollider = visualPart.MeshCollider;
+                    if (meshCollider == null || meshCollider.sharedMesh == null)
+                    {
+                        continue;
+                    }
+
+                    if (TryGetMeshColliderSurface(
+                        meshCollider,
+                        impactPoint,
+                        safeNormal,
+                        surfaceRay,
+                        out RaycastHit meshHit))
+                    {
+                        float distance = (meshHit.point - impactPoint).magnitude;
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            surfacePosition = meshHit.point;
+                            surfaceNormal = meshHit.normal.sqrMagnitude > 0.000001f
+                                ? meshHit.normal.normalized
+                                : safeNormal;
+                            if (Vector3.Dot(surfaceNormal, safeNormal) < 0f)
+                            {
+                                surfaceNormal = -surfaceNormal;
+                            }
+
+                            surfaceRenderer = visualPart.Renderer;
+                            foundSurface = true;
+                        }
+                    }
+                }
+            }
 
             if (meshColliders != null)
             {
@@ -313,6 +408,7 @@ namespace Game.Scripts.Gameplay.Robots
                                 surfaceNormal = -surfaceNormal;
                             }
 
+                            surfaceRenderer = null;
                             foundSurface = true;
                         }
                     }
@@ -329,7 +425,8 @@ namespace Game.Scripts.Gameplay.Robots
                     renderers,
                     impactPoint,
                     safeNormal,
-                    out surfacePosition);
+                    out surfacePosition,
+                    out surfaceRenderer);
         }
 
         private static bool TryGetMeshColliderSurface(
@@ -514,15 +611,18 @@ namespace Game.Scripts.Gameplay.Robots
             RootsByObjectId.Remove(networkObjectId);
             ImpactRenderersByRoot.Remove(root);
             ImpactMeshCollidersByRoot.Remove(root);
+            ImpactVisualPartsByRoot.Remove(root);
         }
 
         private static bool TryGetRendererBoundsSurface(
             List<Renderer> renderers,
             Vector3 impactPoint,
             Vector3 safeNormal,
-            out Vector3 surfacePosition)
+            out Vector3 surfacePosition,
+            out Renderer surfaceRenderer)
         {
             surfacePosition = impactPoint;
+            surfaceRenderer = null;
             if (renderers == null)
             {
                 return false;
@@ -564,6 +664,7 @@ namespace Game.Scripts.Gameplay.Robots
                 Vector3 candidate = boundsRay.origin + boundsRay.direction * distance;
                 closestDistance = distance;
                 surfacePosition = candidate;
+                surfaceRenderer = renderer;
                 foundSurface = true;
             }
 
@@ -597,6 +698,18 @@ namespace Game.Scripts.Gameplay.Robots
                         destination.Add(item);
                     }
                 }
+            }
+        }
+
+        private sealed class ImpactVisualPart
+        {
+            public readonly MeshCollider MeshCollider;
+            public readonly Renderer Renderer;
+
+            public ImpactVisualPart(MeshCollider meshCollider, Renderer renderer)
+            {
+                MeshCollider = meshCollider;
+                Renderer = renderer;
             }
         }
     }
