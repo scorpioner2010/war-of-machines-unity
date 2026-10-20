@@ -12,6 +12,20 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-20 — Remove unused projectile assets
+
+- Status: `COMPLETED`
+- Scope: remove only unreferenced resources from `Assets/Game/Content/Combat/Projectiles`, preserving active projectile, muzzle, impact, material, texture, and shader dependencies.
+- Verification: four unused legacy textures were archived with GUIDs preserved; all remaining projectile assets are reached by active dependency closure; archived assets have no active references; the active folder contains no legacy files; documentation diff check passed.
+- Detail: `task-handoff.md`, active task.
+
+### 2026-10-20 — Projectile asset organization
+
+- Status: `COMPLETED`
+- Scope: group active projectile, impact, muzzle, tracer, material, texture, shader, and related shot FX assets under `Assets/Game/Content/Combat/Projectiles` without breaking Unity references.
+- Verification: five moved assets retained their original GUIDs, active shot dependencies are contained in the target folder, scene/prefab references resolve, old Effects paths are absent, and `git diff --check` passed.
+- Detail: `task-handoff.md`, active task.
+
 ### 2026-10-20 — Client Test Mode bloom and VFX glow
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

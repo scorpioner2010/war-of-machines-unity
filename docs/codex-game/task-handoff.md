@@ -1,6 +1,38 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `COMPLETED`
+- Started: 2026-10-20
+- User request (verbatim): "прибери ресурси які не використовуються з папки Projectiles залиш тільки те що використовується"
+- Objective: Remove only unused assets from `Assets/Game/Content/Combat/Projectiles`, keeping every resource required by active scenes, prefabs, materials, and runtime projectile configuration.
+- Acceptance criteria:
+  - Only assets proven unused by recursive dependency and explicit runtime-reference checks are removed.
+  - Required projectile prefabs, materials, textures, shader graph, muzzle/impact FX, and their `.meta` files remain intact.
+  - The existing unrelated `Client.unity` working-tree change is preserved.
+  - Asset-organization documentation and task verification record the cleanup.
+- Assumptions: `Client.unity`, `VehicleTest.unity`, `Server.unity`, and `Map.unity` remain the supported scene roots; active Cartoon FX vendor assets outside `Combat/Projectiles` are not duplicated or moved.
+- Current work: Archived the four confirmed-unused legacy textures in `Assets/Game/Content/Unused/Gameplay/Projectiles` and documented the cleanup. `Combat/Projectiles` now contains only active shot resources.
+- Work remaining: none.
+- Edited files: `Assets/Game/Content/Unused/Gameplay/Projectiles/Expl.png`, `Expl2.png`, `Expl2_EmissionMask.png`, `ExplEmission.png`, the corresponding old-path deletions, `docs/codex-game/asset-organization.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: all remaining projectile-folder assets are reached by active scene/runtime dependency closure; all four archived assets retained their original GUIDs and have no active references; the four old files are absent from `Combat/Projectiles`; documentation diff check passed. The pre-existing `Client.unity` working-tree change was preserved and excluded from cleanup.
+
+## Previous active task (Projectile asset organization)
+- Status: `COMPLETED`
+- Started: 2026-10-20
+- User request (verbatim): "файли які відносяться до пострілів такі як CFXR Explosion, матеріали текстури які відносяться до проджектайлів і т.д. треба в одну папку помістити щоб зручно було налаштовувати"
+- Objective: Group the active projectile, impact, muzzle, tracer, material, texture, shader, and related shot FX assets into one convenient project-owned folder without breaking serialized Unity references.
+- Acceptance criteria:
+  - All active shot-related assets have one clear canonical folder under `Assets/Game/Content/Combat/Projectiles`.
+  - `CFXR Explosion`, projectile prefabs, projectile/tracer materials, impact materials/shaders, and their project-owned textures are grouped there.
+  - Serialized references remain valid after the move; no runtime code or package/vendor layout is changed unnecessarily.
+  - Asset-organization and projectile documentation record the final ownership/layout.
+- Assumptions: `Assets/Game/Content/Combat/Projectiles` is the canonical folder; third-party Cartoon FX source assets remain in their vendor folder unless a project-owned copy is required.
+- Current work: Moved the active project-owned shot FX assets into `Assets/Game/Content/Combat/Projectiles`, removed the now-empty `Effects` folders, and documented the canonical layout. Third-party Cartoon FX source assets remain in `Assets/JMO Assets`.
+- Work remaining: none.
+- Edited files: `Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab`, `CFX3_Fire_Shoot.prefab`, `Effect_Fire_Bulk.png`, `Effect_Smoke_Puff.png`, `Effect_Triangle_Frame.png`, the corresponding old-path deletions, `docs/codex-game/asset-organization.md`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: all five moved assets retained their original `.meta` GUIDs; active shot dependency closure contains no project-owned `Content` assets outside `Combat/Projectiles`; required scene/prefab GUID references resolve to the new paths; old `Assets/Game/Content/Effects` references are absent; `git diff --check` passed.
+
+## Previous active task (Client scene bloom and VFX glow)
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-20
 - User request (verbatim): "помітив в тестовому режімі немає блума, не світяться снаряди та CFXR Explosion не працює як треба нема свічіння, виправ це"
