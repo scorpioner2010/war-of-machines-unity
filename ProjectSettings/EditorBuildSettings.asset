@@ -8,14 +8,14 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Game/Scenes/Client.unity
     guid: b813628accd629c458ee2dc6cbfb55d9
-  - enabled: 1
-    path: Assets/Game/Scenes/Map.unity
+  - enabled: 0
+    path: Assets/Game/Scenes/Map1.unity
     guid: 59e0cd6bfcc04124fbdaf7d0692da22b
   - enabled: 0
     path: Assets/Game/Scenes/Server.unity
     guid: cbc98448b3060534490c89572f65107a
-  - enabled: 0
-    path: Assets/Game/Scenes/Map2.unity
+  - enabled: 1
+    path: Assets/Game/Scenes/Map.unity
     guid: 6b0b553174046644d83fa418205d4fa7
   - enabled: 1
     path: Assets/Game/Scenes/VehicleTest.unity

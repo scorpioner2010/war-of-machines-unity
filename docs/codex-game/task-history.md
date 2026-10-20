@@ -12,6 +12,21 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-21 - Reproduce Hangar impact alignment in Client
+
+- Status: `IN_PROGRESS`
+- Scope: reproduce the requested `Target1` shot against `Hangar_v1_full (2)` in Client, identify the actual collider/mesh mismatch, and verify the correct impact placement.
+- Acceptance: exact Unity reproduction, measured root-cause fix, repeated shot verification, build, and documentation.
+- Detail: `task-handoff.md`, active task.
+
+### 2026-10-21 - Align impact FX with deeper visual mesh
+
+- Status: `COMPLETED`
+- Scope: correct impact FX placement when `RaycastHit.point` lands on a proxy collider outside the visible mesh, using a signed `PooledImpactFx` surface offset.
+- Acceptance: inward/outward tuning, consistent decal/halo placement, preserved defaults, documentation, and build validation.
+- Verification: signed offset is applied to all impact visual layers and the FX root; the prefab default remains `0.003`; build, static assertions, and `git diff --check` passed.
+- Detail: completed in `task-handoff.md`.
+
 ### 2026-10-21 - Centralize projectile glow settings
 
 - Status: `COMPLETED`
@@ -156,3 +171,10 @@ This is the canonical, append-only index of project tasks. It is separate from t
 ## Important limitation
 
 The repository can preserve task state and verification notes, but it cannot control or recover the external Codex/ChatGPT chat list. If a conversation disappears from the sidebar, check the same account/workspace, archived chats, and client sync; use this file as the project-side recovery record.
+
+### 2026-10-21 — Hangar impact surface alignment
+
+- Status: `COMPLETED`
+- Scope: fix the Client projectile and impact FX position on `Hangar_v1_full (2)` by replacing its oversized convex hull with a non-convex static MeshCollider that follows the visible mesh.
+- Verification: Client Play Mode reproduced the requested `target1` shot with `IA Skirmisher`; the persistent decal and temporary red glow landed on the Hangar front door mesh, the projectile/FX hit-point path remained unchanged, Inspector showed `Convex` disabled, and Unity Console ended with `0` errors.
+- Detail: `task-handoff.md`, active task.

@@ -54,7 +54,8 @@ public sealed class PooledImpactFx : MonoBehaviour
     [Min(0.01f)] public float impactDecalWidth = 1.2f;
     [Min(0.01f)] public float impactDecalHeight = 1.2f;
     [Min(0.01f)] public float impactDecalProjectionDepth = 0.4f;
-    [Min(0f)] public float impactDecalSurfaceOffset = 0.003f;
+    [Tooltip("Signed world-space correction from the physics hit point. Positive moves toward the hit normal; negative moves inward toward a deeper visual mesh.")]
+    public float impactDecalSurfaceOffset = 0.003f;
 
     private float _fallbackLifetime;
     private float _releaseTime;
@@ -165,7 +166,14 @@ public sealed class PooledImpactFx : MonoBehaviour
         Quaternion rotation = Quaternion.LookRotation(-safeNormal, up.normalized);
         rotation = Quaternion.AngleAxis(Random.Range(0f, 360f), safeNormal) * rotation;
 
-        Vector3 surfacePosition = impactPoint + safeNormal * Mathf.Max(0f, impactDecalSurfaceOffset);
+        float surfaceOffset = impactDecalSurfaceOffset;
+        if (float.IsNaN(surfaceOffset) || float.IsInfinity(surfaceOffset))
+        {
+            surfaceOffset = 0f;
+        }
+
+        Vector3 surfacePosition = impactPoint + safeNormal * surfaceOffset;
+        transform.position += safeNormal * surfaceOffset;
         float projectionDepth = Mathf.Max(0.01f, impactDecalProjectionDepth);
         uint renderingLayerMask = _impactRenderingLayerMask != 0
             ? _impactRenderingLayerMask
