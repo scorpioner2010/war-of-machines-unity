@@ -31,7 +31,7 @@ Current owner scripts:
   - Shows the runtime vehicle name above the HP bar, falling back to the vehicle code and then the prefab instance name until runtime stats are available.
   - Updates only the HP amount on `VehicleStatusPanel/barHp`; it does not override the `Image.color` authored in the HUD Inspector.
 - `Assets/Game/Scripts/UI/HUD/DamageScreen.cs`
-  - Fullscreen local hit indicator in `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab`.
+  - Fullscreen local hit indicator in the scene-owned `Client.unity/Canvas/GameplayHUD` hierarchy.
   - Subscribes to `VehicleRoot.LocalPlayerVehicleChanged`, then to the local vehicle `VehicleHealth.OnDamaged`.
   - Flashes a red fullscreen `Image` through a serialized `CanvasGroup`.
   - On damage, enables the image immediately at canvas group alpha 1, fades alpha to 0 over 1 second, then disables the image object. It is visual only and does not affect gameplay.
@@ -63,11 +63,11 @@ Current owner scripts:
   - Runtime HUD binding support. `Client.unity/Canvas/GameplayHUD` has the serialized root Canvas reference, so its crosshair uses the same Canvas as the other client menus.
   - The active gameplay hierarchy is `GameplayHUD/GameplayHudContent`; its panels are grouped under `GameplayHudPanels`, with `VehicleStatusPanel` and `MatchTimerPanel` as named status groups.
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
-  - VehicleTest bootstrap that instantiates `Assets/Game/Content/UI/Prefabs/GameplayHUD.prefab` under the scene Canvas.
+  - Legacy `VehicleTest` bootstrap can instantiate its configured HUD prefab, while Client test mode binds directly to the existing scene-owned `Client.unity/Canvas/GameplayHUD` object and never instantiates or destroys UI.
   - Registers and opens the HUD through `MenuManager` when present; otherwise opens the HUD `Menu` directly because VehicleTest has no scene `MenuManager`.
-  - Hides the instantiated `GameplayHUD` while the centered expanded VehicleTest panel is open, then reopens it when the panel is collapsed or vehicle control resumes. The test panel is responsive: it scales with the screen and switches its vehicle catalog/statistics card from two columns to a vertical layout on narrow screens.
-  - Rebinds `GunCrosshair` canvas references after instantiation.
-  - When VehicleTest spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
+  - Hides the scene-owned `GameplayHUD` while the centered expanded test panel is open, then reopens it when the panel is collapsed or vehicle control resumes. The test panel is responsive: it scales with the screen and switches its vehicle catalog/statistics card from two columns to a vertical layout on narrow screens.
+  - Rebinds `GunCrosshair` canvas references against the scene Canvas.
+  - When the test controller spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`
   - Gameplay map HUD for `MiniMapRoot` and `FullMapRoot`.
   - Cloned tracked-vehicle markers receive the serialized `friendly_marker.png` or `enemy_marker.png` sprite while visibility, relation color, and destroyed-state behavior continue to come from `GameplayMapVisibilityState`.
@@ -78,7 +78,7 @@ Current owner scripts:
   - Rejects duplicate or older unreliable snapshot versions so an out-of-order packet cannot restore an already hidden enemy.
   - Stores a local deadline for finite enemy entries. Remaining server lifetime is reduced by FishNet snapshot age, and expired entries are removed even if the final empty snapshot is dropped.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListHud.cs`
-  - Player list HUD for ally/enemy rows under the `GameplayHUD` prefab containers.
+  - Player list HUD for ally/enemy rows under the scene-owned `GameplayHUD` containers.
   - Auto-tracks active non-menu `VehicleRoot` instances, binds each row to `VehicleHealth`, and refreshes names, vehicle type, synchronized kill count, HP, death state, and team relation.
   - A row that has received a dead state remains in its ally/enemy list after the server despawns that robot; it keeps the final name, vehicle type, kill count, and zero-HP/dead presentation for the rest of the active HUD session. The row releases its destroyed vehicle/health binding, while a missing row that was not dead is removed.
   - Clears instantiated row items when the HUD is disabled or the local player vehicle becomes null, so rows from a completed battle do not persist into the next battle.
@@ -107,8 +107,8 @@ Rules when editing HUD/UI:
 - Prefer inspector-wired references for UI components.
 - Keep map markers, enemy model visibility, and `NameCanvas` activation on the same authoritative snapshot. Rendering through walls applies only while that snapshot still contains the robot.
 - For local hit feedback, use `DamageScreen` and `VehicleHealth.OnDamaged`; do not poll health or search for the local vehicle from the scene.
-- VehicleTest uses the same `GameplayHUD.prefab` as the main gameplay UI through `VehicleTestSceneController.clientGameplayHudPrefab`; keep this scene field assigned when changing HUD prefabs.
-- Keep the existing `Client.unity/Canvas/GameplayHUD` assigned to the `GameplayHUD` entry of the scene `MenuManager`; do not add a second HUD prefab instance or spawn one at runtime.
+- Keep Client menus and HUD in their owning scene. Client test mode must use its serialized `sceneGameplayHud` and `sceneGameplayCanvas` references; do not split one menu between scene objects and prefabs.
+- Keep the existing `Client.unity/Canvas/GameplayHUD` assigned to the `GameplayHUD` entry of the scene `MenuManager`; do not add a second HUD instance or spawn UI at runtime.
 - Keep `Client.unity/Canvas/GameplayPausePopup` outside `GameplayHUD`; its `GameplayPauseController` owns the pause menu registration and `GameplayHUD` remains the gameplay presentation layer.
 - If weapon HUD changes, update `weapons-damage.md` too.
 - If menu input blocking changes, update `robot-control.md` too.

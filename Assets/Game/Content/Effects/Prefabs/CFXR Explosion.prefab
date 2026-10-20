@@ -5097,8 +5097,8 @@ MonoBehaviour:
   impactGlowStrength: 1
   impactDecalLifetime: 30
   impactDecalFadeDuration: 5
-  impactDecalWidth: 0.2
-  impactDecalHeight: 0.2
+  impactDecalWidth: 1
+  impactDecalHeight: 1
   impactDecalProjectionDepth: 0.6
   impactDecalSurfaceOffset: 0.003
 --- !u!1 &2433282508753476420

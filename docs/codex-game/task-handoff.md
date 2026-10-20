@@ -1,6 +1,39 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-20
+- User request (verbatim): "помітив в тестовому режімі немає блума, не світяться снаряди та CFXR Explosion не працює як треба нема свічіння, виправ це"
+- Objective: Restore the Client scene Test Mode rendering path so bloom, projectile/tracer emission, and CFXR Explosion glow are visible without changing normal gameplay rendering when Test Mode is disabled.
+- Acceptance criteria:
+  - The test camera uses the same HDR, URP post-processing, and volume path required by the existing bloom setup.
+  - Projectiles/tracers and CFXR Explosion produce visible bloom/glow in Client Test Mode.
+  - Test Mode disabled leaves normal Client startup and build behavior unchanged.
+  - No menu or HUD prefab is introduced; scene-owned UI remains in `Client.unity`.
+  - Relevant rendering/projectile documentation and verification results are updated.
+- Assumptions: The first suspect is the dedicated test camera's missing URP post-processing configuration; existing scene/prefab glow assets should be reused unless inspection proves their serialized setup is broken.
+- Current work: Added the missing serialized URP `UniversalAdditionalCameraData` to the dedicated Client Test Mode camera, matching the existing `VehicleTest`, Client, and Map gameplay camera post-processing settings. Updated the VehicleTest and weapons mechanic documentation.
+- Work remaining: In Unity Editor, enable `ClientVehicleTestMode/enableVehicleTestMode`, spawn a vehicle, fire a projectile at the world and a robot, and visually confirm projectile/tracer emission, CFXR Explosion crack glow, and Bloom halo. Leave the checkbox disabled before normal builds.
+- Edited files: `Assets/Game/Scenes/Client.unity`, `docs/codex-game/vehicle-test-scene.md`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, `docs/codex-game/task-history.md`.
+- Verification: Client scene camera assertions passed for the explicit URP camera component, HDR, post-processing, Default volume layer, and disabled-by-default test mode; CFXR glow reference and active Bloom profile assertions passed; `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildClientBloom\\` passed with 0 errors; `git diff --check` passed. Visual Play Mode confirmation remains pending.
+
+## Previous active task (Client scene vehicle test mode)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- User request (verbatim): "реалізуй цей варіант Test Mode у Client.unity — рекомендую, добре все продумай особливо архітектуру, щоб це було оптимізовано та чітко і якщо він вимкнутий то він взагалі не має працювати щоб не підтягувало нічого в білд нормальної гри"
+- Objective: Add an explicitly enabled, scene-owned test mode to `Client.unity` that reuses the existing in-scene HUD/menu hierarchy, starts the vehicle test flow only when enabled, and has no test-mode runtime behavior when disabled.
+- Acceptance criteria:
+  - All Client menus and HUD remain authored in `Client.unity`; no menu/HUD prefab is introduced.
+  - Vehicle test mode is controlled by a clear serialized checkbox and does not interfere with normal Client startup when disabled.
+  - Test mode uses explicit scene references and avoids runtime object discovery for required dependencies.
+  - Vehicle test HUD, timer, camera, spawn, and visibility flow are wired coherently.
+  - Relevant mechanic documentation and verification results are updated.
+- Assumptions: The existing `VehicleTestSceneController` and normal Client gameplay systems should be reused where possible instead of duplicating vehicle spawning/network logic.
+- Current work: Implementation is complete; manual Client Play Mode verification with the checkbox enabled remains.
+- Edited files: `Assets/Game/Scenes/Client.unity`, `Assets/Game/Scripts/Testing/ClientVehicleTestMode.cs`, `Assets/Game/Scripts/Testing/ClientVehicleTestMode.cs.meta`, `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`, `Assets/Game/Scripts/UI/Helpers/StartServerButtons.cs`, `Assets/Game/Scripts/API/ServerManagers/RegisterServer.cs`, `Assets/Game/Scripts/Networking/Lobby/LobbyManager.cs`, `Assets/Game/Scripts/Networking/Lobby/GameplaySpawner.cs`, `Assembly-CSharp.csproj`, `docs/codex-game/ui-hud.md`, `docs/codex-game/vehicle-test-scene.md`, `docs/codex-game/match-lobby-spawn.md`, `docs/codex-game/task-handoff.md`, `docs/codex-game/task-history.md`.
+- Work remaining: Open `Client.unity`, enable `ClientVehicleTestMode/Enable Vehicle Test Mode`, enter Play Mode, spawn a vehicle, and verify scene HUD, timer, map visibility, and bots. Disable the checkbox before normal builds.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildClientTestModeFinal\\` passed with 0 errors and only existing warnings; `git diff --check` passed; Client scene reference assertions passed (`7/7`); Unity batch import/script compilation completed with no project compile or scene import errors. The editor-defined dotnet build could not be used because pre-existing FishNet/Edgegap editor-project errors stop that generated multi-project build before the game assembly.
+
+## Previous completed task (bot AI improvements)
 - Status: COMPLETED
 - Started: 2026-10-20
 - Last updated: 2026-10-20

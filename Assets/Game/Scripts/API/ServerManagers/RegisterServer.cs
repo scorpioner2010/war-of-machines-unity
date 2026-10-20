@@ -5,6 +5,7 @@ using FishNet.Transporting;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
+using Game.Scripts.Testing;
 using Game.Scripts.UI.Helpers;
 using TMPro;
 using UnityEngine;
@@ -56,6 +57,13 @@ namespace Game.Scripts.API.ServerManagers
         public override void OnStartClient()
         {
             base.OnStartClient();
+
+#if UNITY_EDITOR
+            if (ClientVehicleTestMode.IsEnabled)
+            {
+                return;
+            }
+#endif
             
             loginButton.onClick.AddListener(LoginButtonClicked);
             registerButton.onClick.AddListener(RegisterButtonClicked);

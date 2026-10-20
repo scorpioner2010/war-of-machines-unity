@@ -44,8 +44,13 @@ namespace Game.Scripts.Testing
         public Vector3 spawnRotationEuler = Vector3.zero;
         public Transform spawnPoint;
         public Camera testCamera;
+        public CameraSync testCameraSync;
         public NetworkManager networkManager;
         public GameObject clientGameplayHudPrefab;
+        public GameObject sceneGameplayHud;
+        public Canvas sceneGameplayCanvas;
+        public bool useSceneGameplayHud;
+        public GameResourceManager resourceManager;
         public VehicleTestRuntimeSettings testRuntimeSettings;
         public bool replaceSceneGameplayHud = true;
         public bool autoStartHost = true;
@@ -1318,6 +1323,17 @@ namespace Game.Scripts.Testing
 
         private void EnsureGameResourceManager()
         {
+#if UNITY_EDITOR
+            if (this.resourceManager != null)
+            {
+                if (this.resourceManager.registry == null && registry != null)
+                {
+                    this.resourceManager.registry = registry;
+                }
+
+                return;
+            }
+
             GameResourceManager resourceManager = FindAnyObjectByType<GameResourceManager>();
             if (resourceManager == null)
             {
@@ -1330,6 +1346,12 @@ namespace Game.Scripts.Testing
             {
                 resourceManager.registry = registry;
             }
+#else
+            if (resourceManager == null)
+            {
+                _status = "Scene setup error: GameResourceManager is missing.";
+            }
+#endif
         }
 
         private async UniTask<Scene> EnsureGameplaySpawnSceneAsync(NetworkConnection ownerConnection, VehicleRuntimeStats stats)
@@ -1483,6 +1505,11 @@ namespace Game.Scripts.Testing
             RegisterTestProfile(ownerConnection, stats);
 
             _testRoom.roomId = "VehicleTest";
+            if (LobbyRooms.GetRoomById(_testRoom.roomId) != _testRoom)
+            {
+                LobbyRooms.AddRoom(_testRoom);
+            }
+
             _testRoom.roomName = "VehicleTest";
             _testRoom.selectedLocation = spawnScene.IsValid() ? spawnScene.name : gameplaySceneName;
             _testRoom.isInGame = true;
@@ -1492,6 +1519,13 @@ namespace Game.Scripts.Testing
             _testRoom.sceneOffsetX = 0;
             UpsertTestPlayer(ownerConnection, stats);
             UpdateTestRoomMaxPlayers(_testRoom);
+
+#if UNITY_EDITOR
+            if (spawnScene.IsValid() && networkManager != null && networkManager.IsServerStarted && GameplaySpawner.In != null)
+            {
+                GameplaySpawner.In.StartEditorTestMatch(_testRoom);
+            }
+#endif
 
             return _testRoom;
         }
@@ -1777,7 +1811,7 @@ namespace Game.Scripts.Testing
                 return;
             }
 
-            CameraSync cameraSync = testCamera.GetComponent<CameraSync>();
+            CameraSync cameraSync = testCameraSync != null ? testCameraSync : testCamera.GetComponent<CameraSync>();
             if (cameraSync == null)
             {
                 _status = "Scene setup error: MainCamera needs CameraSync.";
@@ -1794,7 +1828,7 @@ namespace Game.Scripts.Testing
                 return null;
             }
 
-            CameraSync cameraSync = testCamera.GetComponent<CameraSync>();
+            CameraSync cameraSync = testCameraSync != null ? testCameraSync : testCamera.GetComponent<CameraSync>();
             if (cameraSync == null)
             {
                 return null;
@@ -1856,6 +1890,23 @@ namespace Game.Scripts.Testing
 
         private void EnsureGameplayHud()
         {
+            if (useSceneGameplayHud)
+            {
+                if (sceneGameplayHud == null)
+                {
+                    _status = "Scene setup error: scene GameplayHUD is missing.";
+                    return;
+                }
+
+                _spawnedGameplayHud = sceneGameplayHud;
+                Canvas hudCanvas = sceneGameplayCanvas != null
+                    ? sceneGameplayCanvas
+                    : sceneGameplayHud.GetComponentInParent<Canvas>();
+                ConfigureGameplayHud(_spawnedGameplayHud, hudCanvas);
+                RefreshGameplayHudVisibilityForTest();
+                return;
+            }
+
             if (clientGameplayHudPrefab == null || _spawnedGameplayHud != null)
             {
                 return;

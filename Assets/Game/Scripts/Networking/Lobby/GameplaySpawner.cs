@@ -652,6 +652,22 @@ namespace Game.Scripts.Networking.Lobby
             ServerManager.Spawn(timer.networkObject, LocalConnection, roomScene);
             serverRoom.gameplayTimer =  timer;
         }
+
+#if UNITY_EDITOR
+        [Server]
+        public void StartEditorTestMatch(ServerRoom serverRoom)
+        {
+            if (serverRoom == null || serverRoom.spawnStarted || !serverRoom.IsActiveMatch)
+            {
+                return;
+            }
+
+            serverRoom.spawnStarted = true;
+            serverRoom.Visibility.Start(serverRoom);
+            LobbyRooms.UpdateRoomStatusInGame(serverRoom.roomId);
+            SpawnTimer(serverRoom);
+        }
+#endif
         
         private async UniTask SpawnBotAsync(ServerRoom serverRoom, Player player)
         {

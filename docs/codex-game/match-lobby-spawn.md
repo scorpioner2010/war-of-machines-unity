@@ -15,6 +15,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/GameplaySpawner.cs`
   - Server/client additive scene load flow, scene slot reservation, spawn lifecycle, visibility ticking, disconnect handling.
   - Ticks `ServerRoom.Visibility` for active matches so player map HUDs and bots share the same logical map spotting state.
+  - In the editor-only Client vehicle test path, `StartEditorTestMatch` registers the prepared test room as an active match, starts its visibility service, and spawns the normal network gameplay timer without changing the production match path.
   - Sends unreliable visibility snapshots with a monotonic state version, FishNet server tick, and per-entry remaining lifetime. The client uses the tick to subtract packet age before applying a deadline.
   - Receives `VehicleHealth.OnServerDeath` to evaluate battle end. Individual dead vehicles are later removed by the authoritative `VehicleHealth` FishNet despawn timer, not by local client presentation code.
   - When the last real player disconnects from a spawned/loading match, finishes the match as a draw, unloads that match scene on the server without affecting other room instances, and removes the room after result delivery. This prevents abandoned bot vehicles and their AI from accumulating across reconnects.
@@ -52,6 +53,7 @@ Current owner scripts:
   - Spawnpoint setup support.
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - Test-only local host spawn harness for `VehicleTest`.
+  - Also serves the editor-only Client vehicle test mode when enabled by `ClientVehicleTestMode`; it uses the scene-owned HUD and the existing Client `GameplaySpawner` for timer/visibility services.
   - Loads the configured gameplay scene through FishNet with automatic unload disabled and waits for the local owner connection to be present in that scene through FishNet's client-loaded acknowledgement before calling `MatchVehicleSpawner`.
   - Maintains a test `ServerRoom` with the local test player plus any VehicleTest-created bots, preserving bot entries when the player vehicle is respawned.
   - The VehicleTest `Bots` tab adds random ally/enemy bot `Player` records and uses `MatchVehicleSpawner.SpawnBotAsync` instead of custom bot instantiation.
@@ -68,7 +70,8 @@ Spawn flow:
 9. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
 10. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
 11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team. VehicleTest forces its spawned vehicles' client presentation visible because its test room does not receive the normal match visibility snapshots.
-12. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
+12. In Client editor test mode, the prepared `VehicleTest` room is added to `LobbyRooms`, marked active, and passed to `GameplaySpawner.StartEditorTestMatch`; this keeps the normal timer and visibility tick path active for the test session.
+13. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
 
 Post-battle result flow:
 1. `GameplaySpawner` finishes the room and `MatchResultService` posts the real-player inputs to `/matches/{matchId}/end`.

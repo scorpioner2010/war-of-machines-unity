@@ -10,6 +10,7 @@ using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
+using Game.Scripts.Testing;
 using UnityEngine;
 
 namespace Game.Scripts.Networking.Lobby
@@ -23,6 +24,14 @@ namespace Game.Scripts.Networking.Lobby
         public override void OnStartClient()
         {
             base.OnStartClient();
+
+#if UNITY_EDITOR
+            if (ClientVehicleTestMode.IsEnabled)
+            {
+                return;
+            }
+#endif
+
             RequestServerSettingsServerRpc();
         }
 

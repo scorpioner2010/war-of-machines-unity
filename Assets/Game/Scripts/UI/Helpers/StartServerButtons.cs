@@ -63,9 +63,11 @@ namespace Game.Scripts.UI.Helpers
 
         private void Awake()
         {
-            if (IsOfflineMenuTestEnabled())
+            if (IsOfflineMenuTestEnabled() || IsEditorVehicleTestModeEnabled())
             {
-                LastServerStatus = "Offline menu test mode is active. Networking was not started.";
+                LastServerStatus = IsOfflineMenuTestEnabled()
+                    ? "Offline menu test mode is active. Networking was not started."
+                    : "Client vehicle test mode is active. Normal networking startup was skipped.";
                 return;
             }
 
@@ -102,7 +104,7 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnDestroy()
         {
-            if (IsOfflineMenuTestEnabled())
+            if (IsOfflineMenuTestEnabled() || IsEditorVehicleTestModeEnabled())
             {
                 return;
             }
@@ -129,7 +131,7 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnApplicationQuit()
         {
-            if (IsOfflineMenuTestEnabled())
+            if (IsOfflineMenuTestEnabled() || IsEditorVehicleTestModeEnabled())
             {
                 return;
             }
@@ -141,6 +143,11 @@ namespace Game.Scripts.UI.Helpers
         private IEnumerator AutoStart()
         {
             yield return null;
+
+            if (IsEditorVehicleTestModeEnabled())
+            {
+                yield break;
+            }
 
             if (autoStartDelaySeconds > 0f)
             {
@@ -191,7 +198,7 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnConnectClicked()
         {
-            if (IsOfflineMenuTestEnabled())
+            if (IsOfflineMenuTestEnabled() || IsEditorVehicleTestModeEnabled())
             {
                 return;
             }
@@ -548,9 +555,11 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnServerClicked()
         {
-            if (IsOfflineMenuTestEnabled())
+            if (IsOfflineMenuTestEnabled() || IsEditorVehicleTestModeEnabled())
             {
-                LastServerStatus = "Offline menu test mode is active. Networking was not started.";
+                LastServerStatus = IsOfflineMenuTestEnabled()
+                    ? "Offline menu test mode is active. Networking was not started."
+                    : "Client vehicle test mode is active. Normal networking startup was skipped.";
                 return;
             }
 
@@ -813,6 +822,15 @@ namespace Game.Scripts.UI.Helpers
         private bool IsOfflineMenuTestEnabled()
         {
             return menuTestMode != null && menuTestMode.IsOfflineMenuTestEnabled;
+        }
+
+        private bool IsEditorVehicleTestModeEnabled()
+        {
+#if UNITY_EDITOR
+            return ClientVehicleTestMode.IsEnabled;
+#else
+            return false;
+#endif
         }
 
         private void RefreshControls()

@@ -12,6 +12,19 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-20 — Client Test Mode bloom and VFX glow
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: restore bloom/post-processing for Client scene Test Mode so projectiles/tracers and CFXR Explosion glow correctly, while keeping disabled Test Mode out of normal runtime behavior.
+- Verification: explicit Client test-camera URP/HDR/post-processing assertions, active Bloom/CFXR references, C# build with 0 errors, and `git diff --check` passed; Play Mode visual confirmation remains pending.
+- Detail: `task-handoff.md`.
+
+### 2026-10-20 — Client scene vehicle test mode
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add an editor-gated, scene-owned vehicle test mode using the existing Client HUD/menu hierarchy while leaving normal Client startup unchanged when disabled.
+- Detail: `task-handoff.md`.
+
 ### 2026-10-20 — Bot AI improvements
 
 - Status: `COMPLETED`
