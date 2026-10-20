@@ -1,6 +1,24 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `IN_PROGRESS`
+- Started: 2026-10-21
+- User request (verbatim): "треба зробити 2 варіанти, 1 для попаданю по роботах інший по попаданю по любих інших обьектах, зараз 1 варіант а треба 2 і щоб вони повністю налаштовувалися в одному місці [@PooledImpactFx.cs](file:///D:/Programing/UnityProjects/war-of-machines-unity/Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs)PooledImpactFx.cs"
+- Objective: Add two fully independent, inspector-configurable impact FX profiles to `PooledImpactFx`: one selected for robot hits and one selected for all non-robot impacts, while preserving pooling, rendering-layer isolation, and existing generic visual FX playback.
+- Acceptance criteria:
+  - Robot hits use a dedicated profile selected from the registered `VehicleRoot` target.
+  - World and other non-robot hits use a separate profile selected when no `VehicleRoot` is supplied.
+  - Both profiles expose all impact particles, camera-shake effects, projectors, halo, glow, decal, offset, size, HDR, and fade settings in the same `PooledImpactFx` Inspector component.
+  - Pool reuse resets every profile-owned renderer, particle, material, and target rendering-layer state without leaking the previous profile.
+  - The active impact prefab and other serialized `PooledImpactFx` prefabs remain wired after the serialization change.
+  - Mechanic documentation, handoff/history, build, and static validation are updated.
+- Assumptions: `impactTarget != null` is the authoritative runtime distinction for a robot hit; `null` means a world or other non-robot object. The two profiles may intentionally reference the same child components when the visual asset is shared.
+- Current work: `PooledImpactFx` now owns two complete impact profiles and selects them from the optional `VehicleRoot` target; all five serialized prefab instances were migrated to the nested profile fields.
+- Work remaining: Optional Unity Play Mode shot verification of both a robot and a non-robot object with intentionally different profile values.
+- Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab`, `Assets/Game/Content/Combat/Projectiles/CFX3_Fire_Shoot.prefab`, `Assets/Game/Content/Unused/Prefabs/FX/CFX3_Fire_Explosion.prefab`, `Assets/Game/Content/Unused/Prefabs/FX/CFXR3 Fire Explosion B.prefab`, `Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Explosions/CFXR Explosion Smoke 2 Solo (HDR).prefab`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildImpactProfiles\\` passed with `0` errors and only existing warnings. Static assertions confirmed every serialized `PooledImpactFx` prefab has both profiles and the active prefab has the complete nested settings; targeted `git diff --check` passed. Unity Editor remained open on `Client` after script import; a two-target Play Mode comparison remains pending.
+
+## Archived task (Hangar mesh collider impact alignment)
 - Status: `COMPLETED`
 - Started: 2026-10-21
 - User request (verbatim): "ні в тебе не вийшло, запусти сцену клієнт, зайди в гру вибери любого робота і наведися на target1, тоді ти вистрелиш по обьекту Hangar_v1_full (2), і в нього якраз колайдер трохи більший чим меш, ти помітиш що світло спавниться не на мешу, і скоріше за все проджектайл теж не там де треба. [@PooledImpactFx.cs](file:///D:/Programing/UnityProjects/war-of-machines-unity/Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs)PooledImpactFx.cs"

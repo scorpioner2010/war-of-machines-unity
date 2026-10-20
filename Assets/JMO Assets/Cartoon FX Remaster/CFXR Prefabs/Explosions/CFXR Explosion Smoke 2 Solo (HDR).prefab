@@ -9949,13 +9949,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b375f9fe4520fd64ea6e8f687dc6d200, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PooledImpactFx
-  particles:
-  - {fileID: 725748389856807712}
-  - {fileID: 725748390055121439}
-  - {fileID: 725748390129463915}
-  - {fileID: 725748389098120093}
-  cartoonFxEffects:
-  - {fileID: 725748389856807726}
+  robotImpactProfile:
+    particles: []
+    cartoonFxEffects: []
+  otherObjectImpactProfile:
+    particles:
+    - {fileID: 725748389856807712}
+    - {fileID: 725748390055121439}
+    - {fileID: 725748390129463915}
+    - {fileID: 725748389098120093}
+    cartoonFxEffects:
+    - {fileID: 725748389856807726}
 --- !u!1 &725748390055121426
 GameObject:
   m_ObjectHideFlags: 0

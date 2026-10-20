@@ -43,6 +43,8 @@ Important settings classes currently used by recent gameplay work:
 - `GameplayRuntimeSettings.shotResultVisibleTime` was removed because the faction-aware penetration status is now persistent and is replaced only by the next shot result.
 - `ProjectileBallisticsSettings`
   - Projectile gravity/ballistic settings.
+- `PooledImpactFx.ImpactFxProfile`
+  - Robot and non-robot impact presentation profiles are prefab-local client FX settings, not server-authoritative `ServerSettings` values and are configured on the impact prefab's `PooledImpactFx` component.
 - `MatchVisibilityGlobalSettings`
   - Logical map spotting for teams, including tick interval, fallback/max view range, guaranteed detection range, line-of-sight mask, and spotted-memory duration.
   - Bot target acquisition uses this visibility state through `MatchVisibilityService`, not an omniscient room player scan.

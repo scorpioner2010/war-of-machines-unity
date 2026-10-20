@@ -24558,11 +24558,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b375f9fe4520fd64ea6e8f687dc6d200, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PooledImpactFx
-  particles:
-  - {fileID: 8194992990867289333}
-  - {fileID: 6392491402937755024}
-  - {fileID: 60604069881325041}
-  - {fileID: 5817596349614910629}
-  - {fileID: 294364003325551391}
-  cartoonFxEffects:
-  - {fileID: 1347780276449787774}
+  robotImpactProfile:
+    particles: []
+    cartoonFxEffects: []
+  otherObjectImpactProfile:
+    particles:
+    - {fileID: 8194992990867289333}
+    - {fileID: 6392491402937755024}
+    - {fileID: 60604069881325041}
+    - {fileID: 5817596349614910629}
+    - {fileID: 294364003325551391}
+    cartoonFxEffects:
+    - {fileID: 1347780276449787774}

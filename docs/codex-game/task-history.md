@@ -172,6 +172,13 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 The repository can preserve task state and verification notes, but it cannot control or recover the external Codex/ChatGPT chat list. If a conversation disappears from the sidebar, check the same account/workspace, archived chats, and client sync; use this file as the project-side recovery record.
 
+### 2026-10-21 - Separate robot and non-robot impact FX profiles
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: split `PooledImpactFx` into complete `robotImpactProfile` and `otherObjectImpactProfile` inspector profiles, selected by the presence of a registered `VehicleRoot`, and migrated all five serialized prefab instances.
+- Verification: C# build passed with `0` errors, all five prefab instances passed profile-serialization assertions, and targeted `git diff --check` passed; Play Mode comparison with intentionally different values remains pending.
+- Detail: `task-handoff.md`, active task.
+
 ### 2026-10-21 — Hangar impact surface alignment
 
 - Status: `COMPLETED`
