@@ -7,7 +7,10 @@ using UnityEngine.Rendering.Universal;
 
 public sealed class PooledImpactFx : MonoBehaviour
 {
-    private const uint WorldImpactRenderingLayerMask = 1u << 1;
+    private const string ImpactGlowEmissionStrengthPropertyName = "Emission_Strength";
+    private const string ImpactGlowHaloBaseColorPropertyName = "_BaseColor";
+    private const string ImpactGlowHaloEmissionColorPropertyName = "_EmissionColor";
+    private const uint WorldImpactRenderingLayerMask = 1u;
     private const int FirstImpactRenderingLayerBit = 2;
     private const int LastImpactRenderingLayerBit = 7;
     private const float CameraShakeFullStrengthDistance = 10f;
@@ -19,15 +22,21 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     private static readonly Dictionary<VehicleRoot, ImpactLayerState> ImpactLayerStates =
         new Dictionary<VehicleRoot, ImpactLayerState>(16);
+    private static readonly int ImpactGlowEmissionStrengthPropertyId =
+        Shader.PropertyToID(ImpactGlowEmissionStrengthPropertyName);
+    private static readonly int ImpactGlowHaloBaseColorPropertyId =
+        Shader.PropertyToID(ImpactGlowHaloBaseColorPropertyName);
+    private static readonly int ImpactGlowHaloEmissionColorPropertyId =
+        Shader.PropertyToID(ImpactGlowHaloEmissionColorPropertyName);
     private static uint ActiveImpactRenderingLayerMask;
 
     public ParticleSystem[] particles = System.Array.Empty<ParticleSystem>();
     public CFXR_Effect[] cartoonFxEffects = System.Array.Empty<CFXR_Effect>();
     public DecalProjector impactDecal;
     public DecalProjector impactGlowDecal;
-    [Range(0f, 1f)] public float impactGlowStrength = 1f;
-    [Min(0.1f)] public float impactDecalLifetime = 30f;
-    [Min(0f)] public float impactDecalFadeDuration = 5f;
+    public MeshRenderer impactGlowHaloRenderer;
+    [Min(0f)] public float impactGlowStrength = 1f;
+    [Min(0f)] public float impactGlowFadeDuration = 2f;
     [Min(0.01f)] public float impactDecalWidth = 1.2f;
     [Min(0.01f)] public float impactDecalHeight = 1.2f;
     [Min(0.01f)] public float impactDecalProjectionDepth = 0.4f;
@@ -35,16 +44,26 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     private float _fallbackLifetime;
     private float _releaseTime;
-    private float _impactDecalFadeStartTime;
-    private float _impactDecalReleaseTime;
-    private bool _impactDecalPlaying;
+    private float _impactGlowFadeStartTime;
+    private float _impactGlowFadeEndTime;
+    private bool _impactGlowPlaying;
+    private bool _persistentImpactDecal;
     private bool _playing;
+    private Material _impactGlowMaterialInstance;
+    private Material _impactGlowSourceMaterial;
+    private Material _impactGlowHaloMaterialInstance;
+    private Material _impactGlowHaloSourceMaterial;
+    private float _baseImpactGlowEmissionStrength = 1f;
+    private Color _baseImpactGlowHaloBaseColor = Color.white;
+    private Color _baseImpactGlowHaloEmissionColor = Color.white;
     private VehicleRoot _impactTargetRoot;
     private uint _impactRenderingLayerMask;
 
     public void Initialize(float fallbackLifetime)
     {
         _fallbackLifetime = Mathf.Max(0.1f, fallbackLifetime);
+        EnsureImpactGlowMaterial();
+        EnsureImpactGlowHaloMaterial();
         DisableExternalAutoDestroy();
     }
 
@@ -110,7 +129,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     public void PlayImpact(Vector3 impactPoint, Vector3 impactNormal, VehicleRoot impactTarget = null)
     {
         Play();
-        if (impactDecal == null && impactGlowDecal == null)
+        if (impactDecal == null && impactGlowDecal == null && impactGlowHaloRenderer == null)
         {
             return;
         }
@@ -139,19 +158,31 @@ public sealed class PooledImpactFx : MonoBehaviour
         uint renderingLayerMask = _impactRenderingLayerMask != 0
             ? _impactRenderingLayerMask
             : WorldImpactRenderingLayerMask;
+        EnsureImpactGlowMaterial();
+        EnsureImpactGlowHaloMaterial();
+        ApplyImpactGlowStrength();
         ConfigureImpactDecal(impactDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
         ConfigureImpactDecal(impactGlowDecal, surfacePosition, rotation, projectionDepth, renderingLayerMask);
+        ConfigureImpactGlowHalo(surfacePosition, rotation, renderingLayerMask);
         if (impactGlowDecal != null)
         {
-            impactGlowDecal.fadeFactor = Mathf.Clamp01(impactGlowStrength);
+            impactGlowDecal.fadeFactor = impactGlowStrength > 0f ? 1f : 0f;
         }
 
-        float lifetime = Mathf.Max(0.1f, impactDecalLifetime);
-        float fadeDuration = Mathf.Clamp(impactDecalFadeDuration, 0f, lifetime);
-        _impactDecalFadeStartTime = Time.unscaledTime + lifetime - fadeDuration;
-        _impactDecalReleaseTime = Time.unscaledTime + lifetime;
-        _releaseTime = Mathf.Max(_releaseTime, _impactDecalReleaseTime + 0.05f);
-        _impactDecalPlaying = true;
+        float now = Time.unscaledTime;
+        float fadeDuration = Mathf.Max(0f, impactGlowFadeDuration);
+        _impactGlowFadeStartTime = now;
+        _impactGlowFadeEndTime = now + fadeDuration;
+        _impactGlowPlaying = impactGlowDecal != null || impactGlowHaloRenderer != null;
+        _persistentImpactDecal = impactDecal != null;
+        if (_persistentImpactDecal)
+        {
+            _releaseTime = float.PositiveInfinity;
+        }
+        else
+        {
+            _releaseTime = Mathf.Max(_releaseTime, _impactGlowFadeEndTime + 0.05f);
+        }
     }
 
     private static Camera GetGameplayCamera()
@@ -218,6 +249,20 @@ public sealed class PooledImpactFx : MonoBehaviour
     {
         ReleaseImpactLayer();
         ProjectileRuntimePool.NotifyImpactFxDestroyed(this);
+        if (_impactGlowMaterialInstance != null)
+        {
+            Destroy(_impactGlowMaterialInstance);
+            _impactGlowMaterialInstance = null;
+        }
+
+        _impactGlowSourceMaterial = null;
+        if (_impactGlowHaloMaterialInstance != null)
+        {
+            Destroy(_impactGlowHaloMaterialInstance);
+            _impactGlowHaloMaterialInstance = null;
+        }
+
+        _impactGlowHaloSourceMaterial = null;
     }
 
     private void DisableExternalAutoDestroy()
@@ -239,7 +284,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     private void Update()
     {
-        UpdateImpactDecalFade();
+        UpdateImpactGlowFade();
 
         if (!_playing || Time.unscaledTime < _releaseTime)
         {
@@ -255,9 +300,10 @@ public sealed class PooledImpactFx : MonoBehaviour
     private void ResetImpactDecal()
     {
         ReleaseImpactLayer();
-        _impactDecalPlaying = false;
-        _impactDecalFadeStartTime = 0f;
-        _impactDecalReleaseTime = 0f;
+        _impactGlowPlaying = false;
+        _persistentImpactDecal = false;
+        _impactGlowFadeStartTime = 0f;
+        _impactGlowFadeEndTime = 0f;
         if (impactDecal != null)
         {
             ResetImpactDecalProjector(impactDecal);
@@ -267,30 +313,45 @@ public sealed class PooledImpactFx : MonoBehaviour
         {
             ResetImpactDecalProjector(impactGlowDecal);
         }
+
+        if (impactGlowHaloRenderer != null)
+        {
+            impactGlowHaloRenderer.enabled = false;
+            if (impactGlowHaloRenderer.gameObject.activeSelf)
+            {
+                impactGlowHaloRenderer.gameObject.SetActive(false);
+            }
+        }
     }
 
-    private void UpdateImpactDecalFade()
+    private void UpdateImpactGlowFade()
     {
-        if (!_impactDecalPlaying || (impactDecal == null && impactGlowDecal == null))
+        if (!_impactGlowPlaying || (impactGlowDecal == null && impactGlowHaloRenderer == null))
         {
             return;
         }
 
         float now = Time.unscaledTime;
-        if (now < _impactDecalFadeStartTime)
+        if (now < _impactGlowFadeStartTime)
         {
             return;
         }
 
-        float fadeDuration = _impactDecalReleaseTime - _impactDecalFadeStartTime;
+        float fadeDuration = _impactGlowFadeEndTime - _impactGlowFadeStartTime;
         if (fadeDuration <= 0.0001f)
         {
-            SetImpactDecalFade(0f);
+            SetImpactGlowFade(0f);
+            _impactGlowPlaying = false;
             return;
         }
 
-        float fade = Mathf.Clamp01((now - _impactDecalFadeStartTime) / fadeDuration);
-        SetImpactDecalFade(1f - fade);
+        float fade = Mathf.Clamp01((now - _impactGlowFadeStartTime) / fadeDuration);
+        float smoothFade = fade * fade * (3f - 2f * fade);
+        SetImpactGlowFade(1f - smoothFade);
+        if (fade >= 1f)
+        {
+            _impactGlowPlaying = false;
+        }
     }
 
     private void ConfigureImpactDecal(
@@ -327,16 +388,177 @@ public sealed class PooledImpactFx : MonoBehaviour
         }
     }
 
-    private void SetImpactDecalFade(float fadeFactor)
+    private void SetImpactGlowFade(float fadeFactor)
     {
-        if (impactDecal != null)
-        {
-            impactDecal.fadeFactor = fadeFactor;
-        }
-
+        float normalizedFade = impactGlowStrength > 0f ? Mathf.Clamp01(fadeFactor) : 0f;
         if (impactGlowDecal != null)
         {
-            impactGlowDecal.fadeFactor = fadeFactor * Mathf.Clamp01(impactGlowStrength);
+            impactGlowDecal.fadeFactor = normalizedFade;
+        }
+
+        if (_impactGlowMaterialInstance != null
+            && _impactGlowMaterialInstance.HasProperty(ImpactGlowEmissionStrengthPropertyId))
+        {
+            _impactGlowMaterialInstance.SetFloat(
+                ImpactGlowEmissionStrengthPropertyId,
+                _baseImpactGlowEmissionStrength * Mathf.Max(0f, impactGlowStrength) * normalizedFade);
+        }
+
+        SetImpactGlowHaloFade(normalizedFade);
+    }
+
+    private void EnsureImpactGlowMaterial()
+    {
+        if (impactGlowDecal == null)
+        {
+            return;
+        }
+
+        Material configuredMaterial = impactGlowDecal.material;
+        Material sourceMaterial = configuredMaterial == _impactGlowMaterialInstance
+            ? _impactGlowSourceMaterial
+            : configuredMaterial;
+        if (sourceMaterial == null)
+        {
+            return;
+        }
+
+        if (_impactGlowMaterialInstance != null && _impactGlowSourceMaterial == sourceMaterial)
+        {
+            return;
+        }
+
+        if (_impactGlowMaterialInstance != null)
+        {
+            Destroy(_impactGlowMaterialInstance);
+        }
+
+        _impactGlowMaterialInstance = new Material(sourceMaterial);
+        _impactGlowMaterialInstance.name = sourceMaterial.name + " (Runtime)";
+        _impactGlowSourceMaterial = sourceMaterial;
+        impactGlowDecal.material = _impactGlowMaterialInstance;
+    }
+
+    private void EnsureImpactGlowHaloMaterial()
+    {
+        if (impactGlowHaloRenderer == null)
+        {
+            return;
+        }
+
+        Material configuredMaterial = impactGlowHaloRenderer.sharedMaterial;
+        Material sourceMaterial = configuredMaterial == _impactGlowHaloMaterialInstance
+            ? _impactGlowHaloSourceMaterial
+            : configuredMaterial;
+        if (sourceMaterial == null)
+        {
+            return;
+        }
+
+        if (_impactGlowHaloMaterialInstance != null && _impactGlowHaloSourceMaterial == sourceMaterial)
+        {
+            return;
+        }
+
+        if (_impactGlowHaloMaterialInstance != null)
+        {
+            Destroy(_impactGlowHaloMaterialInstance);
+        }
+
+        _impactGlowHaloMaterialInstance = new Material(sourceMaterial);
+        _impactGlowHaloMaterialInstance.name = sourceMaterial.name + " (Runtime)";
+        _impactGlowHaloSourceMaterial = sourceMaterial;
+        impactGlowHaloRenderer.sharedMaterial = _impactGlowHaloMaterialInstance;
+    }
+
+    private void ApplyImpactGlowStrength()
+    {
+        EnsureImpactGlowMaterial();
+        if (_impactGlowMaterialInstance != null
+            && _impactGlowMaterialInstance.HasProperty(ImpactGlowEmissionStrengthPropertyId))
+        {
+            _baseImpactGlowEmissionStrength = _impactGlowSourceMaterial != null
+                && _impactGlowSourceMaterial.HasProperty(ImpactGlowEmissionStrengthPropertyId)
+                ? _impactGlowSourceMaterial.GetFloat(ImpactGlowEmissionStrengthPropertyId)
+                : 1f;
+            if (float.IsNaN(_baseImpactGlowEmissionStrength)
+                || float.IsInfinity(_baseImpactGlowEmissionStrength)
+                || _baseImpactGlowEmissionStrength < 0f)
+            {
+                _baseImpactGlowEmissionStrength = 1f;
+            }
+
+            _impactGlowMaterialInstance.SetFloat(
+                ImpactGlowEmissionStrengthPropertyId,
+                _baseImpactGlowEmissionStrength * Mathf.Max(0f, impactGlowStrength));
+        }
+
+        EnsureImpactGlowHaloMaterial();
+        if (_impactGlowHaloMaterialInstance == null)
+        {
+            return;
+        }
+
+        _baseImpactGlowHaloBaseColor = _impactGlowHaloSourceMaterial != null
+            && _impactGlowHaloSourceMaterial.HasProperty(ImpactGlowHaloBaseColorPropertyId)
+            ? _impactGlowHaloSourceMaterial.GetColor(ImpactGlowHaloBaseColorPropertyId)
+            : Color.white;
+        _baseImpactGlowHaloEmissionColor = _impactGlowHaloSourceMaterial != null
+            && _impactGlowHaloSourceMaterial.HasProperty(ImpactGlowHaloEmissionColorPropertyId)
+            ? _impactGlowHaloSourceMaterial.GetColor(ImpactGlowHaloEmissionColorPropertyId)
+            : Color.white;
+        float strength = Mathf.Max(0f, impactGlowStrength);
+        _impactGlowHaloMaterialInstance.SetColor(
+            ImpactGlowHaloBaseColorPropertyId,
+            _baseImpactGlowHaloBaseColor);
+        _impactGlowHaloMaterialInstance.SetColor(
+            ImpactGlowHaloEmissionColorPropertyId,
+            _baseImpactGlowHaloEmissionColor * strength);
+    }
+
+    private void SetImpactGlowHaloFade(float fadeFactor)
+    {
+        if (_impactGlowHaloMaterialInstance == null)
+        {
+            return;
+        }
+
+        float strength = Mathf.Max(0f, impactGlowStrength) * Mathf.Clamp01(fadeFactor);
+        Color baseColor = _baseImpactGlowHaloBaseColor * Mathf.Clamp01(fadeFactor);
+        Color emissionColor = _baseImpactGlowHaloEmissionColor * strength;
+        _impactGlowHaloMaterialInstance.SetColor(ImpactGlowHaloBaseColorPropertyId, baseColor);
+        _impactGlowHaloMaterialInstance.SetColor(ImpactGlowHaloEmissionColorPropertyId, emissionColor);
+        if (impactGlowHaloRenderer != null && fadeFactor <= 0f)
+        {
+            impactGlowHaloRenderer.enabled = false;
+            if (impactGlowHaloRenderer.gameObject.activeSelf)
+            {
+                impactGlowHaloRenderer.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private void ConfigureImpactGlowHalo(
+        Vector3 surfacePosition,
+        Quaternion rotation,
+        uint renderingLayerMask)
+    {
+        if (impactGlowHaloRenderer == null)
+        {
+            return;
+        }
+
+        Transform haloTransform = impactGlowHaloRenderer.transform;
+        haloTransform.SetPositionAndRotation(surfacePosition, rotation);
+        haloTransform.localScale = new Vector3(
+            Mathf.Max(0.01f, impactDecalWidth) * 2f,
+            Mathf.Max(0.01f, impactDecalHeight) * 2f,
+            1f);
+        impactGlowHaloRenderer.renderingLayerMask = renderingLayerMask;
+        impactGlowHaloRenderer.enabled = impactGlowStrength > 0f;
+        if (impactGlowStrength > 0f && !impactGlowHaloRenderer.gameObject.activeSelf)
+        {
+            impactGlowHaloRenderer.gameObject.SetActive(true);
         }
     }
 

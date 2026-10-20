@@ -2,19 +2,19 @@
 
 ## Active task
 - Status: `COMPLETED`
-- Started: 2026-10-20
-- User request (verbatim): "прибери ресурси які не використовуються з папки Projectiles залиш тільки те що використовується"
-- Objective: Remove only unused assets from `Assets/Game/Content/Combat/Projectiles`, keeping every resource required by active scenes, prefabs, materials, and runtime projectile configuration.
+- Started: 2026-10-21
+- User request (verbatim): "я дуже підняв параметри але так і не побачив ефека типу сильного блума"
+- Objective: Diagnose why very high projectile glow settings still do not produce a visibly strong Bloom halo, fix the actual HDR/Bloom path, and verify the stronger result in Unity Play Mode.
 - Acceptance criteria:
-  - Only assets proven unused by recursive dependency and explicit runtime-reference checks are removed.
-  - Required projectile prefabs, materials, textures, shader graph, muzzle/impact FX, and their `.meta` files remain intact.
-  - The existing unrelated `Client.unity` working-tree change is preserved.
-  - Asset-organization documentation and task verification record the cleanup.
-- Assumptions: `Client.unity`, `VehicleTest.unity`, `Server.unity`, and `Map.unity` remain the supported scene roots; active Cartoon FX vendor assets outside `Combat/Projectiles` are not duplicated or moved.
-- Current work: Archived the four confirmed-unused legacy textures in `Assets/Game/Content/Unused/Gameplay/Projectiles` and documented the cleanup. `Combat/Projectiles` now contains only active shot resources.
-- Work remaining: none.
-- Edited files: `Assets/Game/Content/Unused/Gameplay/Projectiles/Expl.png`, `Expl2.png`, `Expl2_EmissionMask.png`, `ExplEmission.png`, the corresponding old-path deletions, `docs/codex-game/asset-organization.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
-- Verification: all remaining projectile-folder assets are reached by active scene/runtime dependency closure; all four archived assets retained their original GUIDs and have no active references; the four old files are absent from `Combat/Projectiles`; documentation diff check passed. The pre-existing `Client.unity` working-tree change was preserved and excluded from cleanup.
+  - Reproduce the user's current high-value settings in a real Unity Play Mode shot.
+  - Identify whether the visible impact is emissive HDR input and whether the active camera/volume actually applies Bloom.
+  - Configure a projectile-only stronger halo without breaking the persistent regular impact or two-second glow fade.
+  - Verify the stronger halo visually in a second Play Mode shot and document the exact working settings.
+- Assumptions: Unity may be opened or closed as needed; the existing projectile impact path and camera/volume setup should be reused unless testing proves they cannot produce Bloom. Unrelated working-tree changes must be preserved.
+- Current work: Replaced the ineffective broad Bloom dependency on the sparse Decal emission with a project-owned additive soft halo on the impact prefab, while preserving the crack Decal and persistent regular impact.
+- Work remaining: None.
+- Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab`, `Assets/Game/Content/Combat/Projectiles/ImpactGlowHalo.mat`, `Assets/DefaultVolumeProfile.asset`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`; unrelated user texture/font/renderer changes were preserved.
+- Verification: Reproduced the old high settings (`Emission_Strength=50`, `Impact Glow Strength=5`) and confirmed the old sparse Decal produced no broad halo while a control HDR quad did. The final Unity runtime prefab probe produced a strong circular HDR/Bloom halo, and its same-runtime fade capture removed the halo while leaving the regular impact visible. The active Bloom profile logged `threshold=0.5`, `intensity=2`, `scatter=1`, `highQualityFiltering=true`; the final `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildProjectileHalo\\` passed with 0 errors and only existing `System.Net.Http` warnings.
 
 ## Previous active task (Projectile asset organization)
 - Status: `COMPLETED`

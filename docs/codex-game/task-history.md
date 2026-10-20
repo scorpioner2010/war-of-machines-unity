@@ -12,6 +12,58 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-21 - Follow-up: stronger projectile Bloom diagnosis completed
+
+- Status: `COMPLETED`
+- Scope: replace the ineffective sparse-Decal-only Bloom path with a projectile-owned soft HDR halo, preserve the regular impact, and verify the fade path.
+- Root cause: the Decal emission texture contains thin crack pixels, so increasing `Emission_Strength` made crack detail brighter but could not create the requested broad halo; the shared HDR/Bloom path itself was working.
+- Final settings: `ImpactGlowDecal.mat` emission `50`, prefab `Impact Glow Strength=5`, `Impact Glow Fade Duration=5` as currently saved, `ImpactGlowHalo.mat` with the soft radial mask, and Bloom profile `threshold=0.5`, `intensity=2`, `scatter=1`, high-quality filtering enabled.
+- Verification: Unity runtime prefab probe showed a strong circular Bloom halo; same-runtime fade capture removed the halo while the regular impact remained visible. C# build passed with 0 errors; `git diff --check` passed.
+- Detail: implementation and verification are archived in `task-handoff.md`.
+
+### 2026-10-21 — Follow-up: stronger projectile Bloom diagnosis
+
+- Status: `IN_PROGRESS`
+- Scope: diagnose why manually raising projectile glow values still does not produce the requested strong Bloom halo, then verify a corrected projectile-only HDR/Bloom path in Unity Play Mode.
+- Detail: `task-handoff.md`, active task.
+
+### 2026-10-21 — Projectile Bloom rendering-layer fix and Play Mode verification
+
+- Status: `COMPLETED`
+- Scope: identify why projectile Bloom did not respond to stronger values, restore the world decal rendering path, raise the projectile-only emission profile, and keep the regular impact persistent while the glow fades over two seconds.
+- Root cause: world impacts used rendering-layer mask `2`, but the active URP decal renderers accepted only mask `1`, filtering the glow projector before Bloom.
+- Final settings: `ImpactGlowDecal.mat` emission `8`, prefab multiplier `2` (effective `16`), projector size `1.2`, and glow fade `2` seconds; runtime fades the material emission and projector factor together.
+- Verification: Unity baseline shot showed no halo; the boosted/fixed Play Mode shot showed a visible immediate Bloom halo; a frame after more than two seconds showed the halo gone while the regular impact remained; Console had `0` errors; C# build and `git diff --check` passed.
+- Detail: archived in `task-handoff.md`, active task section.
+
+### 2026-10-21 — Refresh saved projectile Bloom emission
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: refresh the pooled glow material's source `Emission_Strength` before each impact and persist the screenshot's base value `22`, so editor changes reach the active URP decal and its Bloom input.
+- Verification: source inspection confirms refresh-before-activation ordering; Unity Play Mode visual confirmation remains pending.
+- Detail: `task-handoff.md`, active task.
+
+### 2026-10-21 — Fix cached Bloom emission strength
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: apply the per-instance HDR glow material strength before enabling the URP `DecalProjector`, ensuring the decal entity cache receives the configured emission intensity used by Bloom.
+- Verification: source ordering assertion passed and `git diff --check` passed; Unity Play Mode visual confirmation remains pending.
+- Detail: `task-handoff.md`, active task.
+
+### 2026-10-21 — HDR impact glow strength
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: allow `Impact Glow Strength` values above `1` by scaling each pooled glow material's `Emission_Strength`, while keeping normalized fade control and existing decal pooling behavior.
+- Verification: upper Inspector/runtime clamps were removed, the runtime material property path is present, and `git diff --check` passed; Unity Inspector/Play Mode visual confirmation remains pending.
+- Detail: `task-handoff.md`, active task.
+
+### 2026-10-21 — Impact glow fade and persistent scorch
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: keep the regular impact scorch visible while fading the emission impact glow with unscaled smooth-step timing over two seconds; preserve bounded pooling and reset behavior.
+- Verification: obsolete field/method search is clean, prefab serialization uses `impactGlowFadeDuration: 2`, and `git diff --check` passed; Unity Play Mode visual confirmation remains pending.
+- Detail: `task-handoff.md`, active task.
+
 ### 2026-10-20 — Remove unused projectile assets
 
 - Status: `COMPLETED`
