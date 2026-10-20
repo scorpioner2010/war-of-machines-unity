@@ -35,8 +35,22 @@ public sealed class PooledImpactFx : MonoBehaviour
     public DecalProjector impactDecal;
     public DecalProjector impactGlowDecal;
     public MeshRenderer impactGlowHaloRenderer;
+    [Header("Impact Glow")]
+    [Tooltip("Shared multiplier for the crack decal and the broad halo. Values above 1 are allowed.")]
     [Min(0f)] public float impactGlowStrength = 1f;
+    [Tooltip("Additional multiplier for the broad halo Bloom source only.")]
+    [Min(0f)] public float impactGlowHaloStrength = 1f;
+    [Tooltip("HDR emission color of the broad halo. Its RGB values are the actual HDR input sent to Bloom.")]
+    [ColorUsage(true, true)] public Color impactGlowHaloEmissionColor = new Color(4f, 0.25f, 0.02f, 1f);
+    [Tooltip("Base tint and alpha of the broad halo. Lower alpha reduces the visible soft disk without changing the crack decal.")]
+    [ColorUsage(true, false)] public Color impactGlowHaloBaseColor = Color.white;
+    [Tooltip("Size of the broad halo relative to the regular impact decal.")]
+    [Min(0.01f)] public float impactGlowHaloSizeMultiplier = 2f;
+    [Tooltip("Emission multiplier for the thin crack detail only.")]
+    [Min(0f)] public float impactGlowDecalEmissionStrength = 1f;
+    [Tooltip("Unscaled time used to fade the halo and crack glow after impact. The regular impact remains persistent.")]
     [Min(0f)] public float impactGlowFadeDuration = 2f;
+    [Header("Impact Decal")]
     [Min(0.01f)] public float impactDecalWidth = 1.2f;
     [Min(0.01f)] public float impactDecalHeight = 1.2f;
     [Min(0.01f)] public float impactDecalProjectionDepth = 0.4f;
@@ -54,8 +68,6 @@ public sealed class PooledImpactFx : MonoBehaviour
     private Material _impactGlowHaloMaterialInstance;
     private Material _impactGlowHaloSourceMaterial;
     private float _baseImpactGlowEmissionStrength = 1f;
-    private Color _baseImpactGlowHaloBaseColor = Color.white;
-    private Color _baseImpactGlowHaloEmissionColor = Color.white;
     private VehicleRoot _impactTargetRoot;
     private uint _impactRenderingLayerMask;
 
@@ -401,7 +413,10 @@ public sealed class PooledImpactFx : MonoBehaviour
         {
             _impactGlowMaterialInstance.SetFloat(
                 ImpactGlowEmissionStrengthPropertyId,
-                _baseImpactGlowEmissionStrength * Mathf.Max(0f, impactGlowStrength) * normalizedFade);
+                _baseImpactGlowEmissionStrength
+                * Mathf.Max(0f, impactGlowStrength)
+                * Mathf.Max(0f, impactGlowDecalEmissionStrength)
+                * normalizedFade);
         }
 
         SetImpactGlowHaloFade(normalizedFade);
@@ -490,7 +505,9 @@ public sealed class PooledImpactFx : MonoBehaviour
 
             _impactGlowMaterialInstance.SetFloat(
                 ImpactGlowEmissionStrengthPropertyId,
-                _baseImpactGlowEmissionStrength * Mathf.Max(0f, impactGlowStrength));
+                _baseImpactGlowEmissionStrength
+                * Mathf.Max(0f, impactGlowStrength)
+                * Mathf.Max(0f, impactGlowDecalEmissionStrength));
         }
 
         EnsureImpactGlowHaloMaterial();
@@ -499,21 +516,13 @@ public sealed class PooledImpactFx : MonoBehaviour
             return;
         }
 
-        _baseImpactGlowHaloBaseColor = _impactGlowHaloSourceMaterial != null
-            && _impactGlowHaloSourceMaterial.HasProperty(ImpactGlowHaloBaseColorPropertyId)
-            ? _impactGlowHaloSourceMaterial.GetColor(ImpactGlowHaloBaseColorPropertyId)
-            : Color.white;
-        _baseImpactGlowHaloEmissionColor = _impactGlowHaloSourceMaterial != null
-            && _impactGlowHaloSourceMaterial.HasProperty(ImpactGlowHaloEmissionColorPropertyId)
-            ? _impactGlowHaloSourceMaterial.GetColor(ImpactGlowHaloEmissionColorPropertyId)
-            : Color.white;
-        float strength = Mathf.Max(0f, impactGlowStrength);
+        float strength = Mathf.Max(0f, impactGlowStrength) * Mathf.Max(0f, impactGlowHaloStrength);
         _impactGlowHaloMaterialInstance.SetColor(
             ImpactGlowHaloBaseColorPropertyId,
-            _baseImpactGlowHaloBaseColor);
+            impactGlowHaloBaseColor);
         _impactGlowHaloMaterialInstance.SetColor(
             ImpactGlowHaloEmissionColorPropertyId,
-            _baseImpactGlowHaloEmissionColor * strength);
+            impactGlowHaloEmissionColor * strength);
     }
 
     private void SetImpactGlowHaloFade(float fadeFactor)
@@ -523,9 +532,12 @@ public sealed class PooledImpactFx : MonoBehaviour
             return;
         }
 
-        float strength = Mathf.Max(0f, impactGlowStrength) * Mathf.Clamp01(fadeFactor);
-        Color baseColor = _baseImpactGlowHaloBaseColor * Mathf.Clamp01(fadeFactor);
-        Color emissionColor = _baseImpactGlowHaloEmissionColor * strength;
+        float normalizedFade = Mathf.Clamp01(fadeFactor);
+        float strength = Mathf.Max(0f, impactGlowStrength)
+            * Mathf.Max(0f, impactGlowHaloStrength)
+            * normalizedFade;
+        Color baseColor = impactGlowHaloBaseColor * normalizedFade;
+        Color emissionColor = impactGlowHaloEmissionColor * strength;
         _impactGlowHaloMaterialInstance.SetColor(ImpactGlowHaloBaseColorPropertyId, baseColor);
         _impactGlowHaloMaterialInstance.SetColor(ImpactGlowHaloEmissionColorPropertyId, emissionColor);
         if (impactGlowHaloRenderer != null && fadeFactor <= 0f)
@@ -551,12 +563,13 @@ public sealed class PooledImpactFx : MonoBehaviour
         Transform haloTransform = impactGlowHaloRenderer.transform;
         haloTransform.SetPositionAndRotation(surfacePosition, rotation);
         haloTransform.localScale = new Vector3(
-            Mathf.Max(0.01f, impactDecalWidth) * 2f,
-            Mathf.Max(0.01f, impactDecalHeight) * 2f,
+            Mathf.Max(0.01f, impactDecalWidth) * Mathf.Max(0.01f, impactGlowHaloSizeMultiplier),
+            Mathf.Max(0.01f, impactDecalHeight) * Mathf.Max(0.01f, impactGlowHaloSizeMultiplier),
             1f);
         impactGlowHaloRenderer.renderingLayerMask = renderingLayerMask;
-        impactGlowHaloRenderer.enabled = impactGlowStrength > 0f;
-        if (impactGlowStrength > 0f && !impactGlowHaloRenderer.gameObject.activeSelf)
+        bool haloEnabled = impactGlowStrength > 0f && impactGlowHaloStrength > 0f;
+        impactGlowHaloRenderer.enabled = haloEnabled;
+        if (haloEnabled && !impactGlowHaloRenderer.gameObject.activeSelf)
         {
             impactGlowHaloRenderer.gameObject.SetActive(true);
         }

@@ -5097,9 +5097,14 @@ MonoBehaviour:
   impactGlowDecal: {fileID: 7310000000000000103}
   impactGlowHaloRenderer: {fileID: 1968993708421514810}
   impactGlowStrength: 1
+  impactGlowHaloStrength: 1
+  impactGlowHaloEmissionColor: {r: 4, g: 0.25, b: 0.02, a: 1}
+  impactGlowHaloBaseColor: {r: 1, g: 1, b: 1, a: 1}
+  impactGlowHaloSizeMultiplier: 1
+  impactGlowDecalEmissionStrength: 1
   impactGlowFadeDuration: 5
-  impactDecalWidth: 1.2
-  impactDecalHeight: 1.2
+  impactDecalWidth: 0.2
+  impactDecalHeight: 0.2
   impactDecalProjectionDepth: 0.6
   impactDecalSurfaceOffset: 0.003
 --- !u!1 &2433282508753476420

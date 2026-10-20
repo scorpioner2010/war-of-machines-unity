@@ -12,6 +12,14 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-21 - Centralize projectile glow settings
+
+- Status: `COMPLETED`
+- Scope: move projectile-local glow and Bloom-source tuning from impact materials into inspector fields on `PooledImpactFx`, while leaving global camera Bloom in the URP volume.
+- Acceptance: independent halo/crack/overall strength, HDR halo color, halo size, fade, prefab defaults, documentation, and build validation.
+- Verification: `PooledImpactFx` applies all new fields to its runtime material instances; the prefab serializes the current defaults; the C# build passed with 0 errors; static assertions and `git diff --check` passed.
+- Detail: completed in `task-handoff.md`.
+
 ### 2026-10-21 - Follow-up: stronger projectile Bloom diagnosis completed
 
 - Status: `COMPLETED`

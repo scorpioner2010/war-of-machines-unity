@@ -3,6 +3,24 @@
 ## Active task
 - Status: `COMPLETED`
 - Started: 2026-10-21
+- User request (verbatim): "додай всі налаштування в цей скрипт `PooledImpactFx` і потім напиши мені що за що відповідає [@PooledImpactFx.cs](file:///D:/Programing/UnityProjects/war-of-machines-unity/Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs)PooledImpactFx.cs"
+- Objective: Centralize the projectile impact glow tuning that currently lives in `PooledImpactFx`, `ImpactGlowDecal.mat`, and `ImpactGlowHalo.mat` into clear inspector fields on `PooledImpactFx`, without changing the persistent regular impact or fade behavior.
+- Acceptance criteria:
+  - `PooledImpactFx` exposes independent overall glow, crack emission, halo emission, HDR halo color, halo base color, halo size, and fade settings.
+  - Runtime applies the serialized script values to both pooled glow materials before enabling the impact visuals.
+  - The existing prefab keeps the current visual defaults and remains wired correctly.
+  - Global Bloom remains a camera/volume setting and is not incorrectly made per-impact.
+  - The relevant mechanic documentation, handoff, and task history are updated.
+  - The C# project build and whitespace validation pass.
+- Assumptions: The user wants projectile-local controls in the `PooledImpactFx` Inspector; global Bloom should continue to be configured in the URP volume because changing it per projectile would affect the whole camera view.
+- Current work: `PooledImpactFx` now owns projectile-local glow multipliers, HDR halo color/tint, halo size, crack emission, and fade settings; the runtime applies them to cloned materials before the impact is enabled.
+- Work remaining: None.
+- Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildProjectileGlowSettings\\` passed with 0 errors and only existing `System.Net.Http`/FishNet warnings; serialized field assertions passed for the script, prefab defaults, and documentation; `git diff --check` passed. Global Bloom remains in `Assets/DefaultVolumeProfile.asset` by design.
+
+## Archived task (stronger projectile Bloom diagnosis)
+- Status: `COMPLETED`
+- Started: 2026-10-21
 - User request (verbatim): "я дуже підняв параметри але так і не побачив ефека типу сильного блума"
 - Objective: Diagnose why very high projectile glow settings still do not produce a visibly strong Bloom halo, fix the actual HDR/Bloom path, and verify the stronger result in Unity Play Mode.
 - Acceptance criteria:
