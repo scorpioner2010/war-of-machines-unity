@@ -16,12 +16,12 @@
 - Keep mechanic docs short enough to scan, but complete enough that a future Codex can find the right scripts before coding.
 
 ## Task continuity
-- `docs/codex-game/task-handoff.md` is the durable handoff record for the one active Codex task in this repository.
+- `docs/codex-game/task-handoff.md` is the durable detailed handoff record for the one active Codex task in this repository; `docs/codex-game/task-history.md` is its canonical append-only status index.
 - Before starting any task that can change project files, scene state, settings, or runtime behavior, first create or replace its active record in that file. Record the user's task verbatim, its acceptance criteria, assumptions, and set its status to `IN_PROGRESS` before making the first change.
 - When the user says "continue", "продовжуй", or otherwise resumes work without restating it, read `task-handoff.md`, inspect the recorded files and the working-tree diff, then continue only the unfinished work described there.
 - Update the record after material progress: list edited files, work still required, blockers, and each verification command or manual test with its result.
 - Valid statuses are `IN_PROGRESS`, `IMPLEMENTED_NEEDS_VERIFICATION`, `BLOCKED`, and `COMPLETED`. Do not mark a task `COMPLETED` merely because code was written: record the successful verification that demonstrates every acceptance criterion. A task awaiting Play Mode, build, or user reproduction stays `IMPLEMENTED_NEEDS_VERIFICATION`.
-- Before beginning the next task, preserve a compact completed-task summary in the history section of `task-handoff.md`, then replace the active record. Never silently overwrite an unfinished record.
+- Before beginning the next task, preserve a compact task summary in `task-history.md`, retain the detailed record in `task-handoff.md`, then replace the active record. Never silently overwrite an unfinished record.
 
 ## Git workflow
 - Never run `git commit`, `git revert`, or `git reset`.

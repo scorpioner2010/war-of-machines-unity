@@ -108,7 +108,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -5097,8 +5097,8 @@ MonoBehaviour:
   impactGlowStrength: 1
   impactDecalLifetime: 30
   impactDecalFadeDuration: 5
-  impactDecalWidth: 1
-  impactDecalHeight: 1
+  impactDecalWidth: 0.2
+  impactDecalHeight: 0.2
   impactDecalProjectionDepth: 0.6
   impactDecalSurfaceOffset: 0.003
 --- !u!1 &2433282508753476420
@@ -24278,7 +24278,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
   m_Material: {fileID: 2100000, guid: 26f524f1eaa8b5440a9f1ccff2767e53, type: 2}
   m_DrawDistance: 1000

@@ -53,7 +53,13 @@ namespace Game.Scripts.AI.WaypointGraph
             float dt = Mathf.Max(0.001f, now - _lastTargetSampleTime);
             Vector3 velocity = (targetPosition - _lastTargetPosition) / dt;
             velocity.y = 0f;
-            _targetVelocity = velocity;
+            if (!BotCombatUtility.IsFinite(velocity))
+            {
+                velocity = Vector3.zero;
+            }
+
+            float smoothing = Mathf.Clamp01(settings.targetVelocitySmoothing);
+            _targetVelocity = Vector3.Lerp(_targetVelocity, velocity, smoothing);
             _lastTargetPosition = targetPosition;
             _lastTargetSampleTime = now;
         }
@@ -84,6 +90,20 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             float leadSeconds = Mathf.Clamp(distance / shellSpeed, 0f, settings.maxLeadSeconds);
+            Vector3 predictedAimPoint = aimPoint;
+            int iterations = Mathf.Clamp(settings.leadPredictionIterations, 1, 8);
+            for (int i = 0; i < iterations; i++)
+            {
+                predictedAimPoint = aimPoint + _targetVelocity * leadSeconds;
+                float predictedDistance = (predictedAimPoint - origin).magnitude;
+                if (float.IsNaN(predictedDistance) || float.IsInfinity(predictedDistance))
+                {
+                    break;
+                }
+
+                leadSeconds = Mathf.Clamp(predictedDistance / shellSpeed, 0f, settings.maxLeadSeconds);
+            }
+
             return aimPoint + _targetVelocity * leadSeconds * settings.leadPredictionMultiplier;
         }
     }

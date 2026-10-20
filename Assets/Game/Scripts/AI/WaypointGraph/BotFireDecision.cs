@@ -41,12 +41,22 @@ namespace Game.Scripts.AI.WaypointGraph
                 return false;
             }
 
-            return IsDispersionReady(settings);
+            return IsDispersionReady(vehicleRoot, settings);
         }
 
-        private static bool IsDispersionReady(BotCombatSettings settings)
+        private static bool IsDispersionReady(VehicleRoot vehicleRoot, BotCombatSettings settings)
         {
-            return true;
+            if (vehicleRoot == null || vehicleRoot.shooterNet == null)
+            {
+                return false;
+            }
+
+            float minimumDispersion = Mathf.Max(0f, vehicleRoot.shooterNet.MinDispersionDeg);
+            float currentDispersion = Mathf.Max(minimumDispersion, vehicleRoot.shooterNet.ServerCurrentDispersionDeg);
+            float allowedDispersion = Mathf.Max(
+                minimumDispersion * Mathf.Max(1f, settings.maxFireDispersionMultiplier),
+                minimumDispersion + Mathf.Max(0f, settings.maxFireDispersionAddDeg));
+            return currentDispersion <= allowedDispersion + 0.001f;
         }
     }
 }

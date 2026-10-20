@@ -81,10 +81,20 @@ MonoBehaviour:
     unstickTurnInput: 1
     dynamicAvoidanceRadius: 4
     dynamicAvoidanceWeight: 0.65
+    exploreUnvisitedNodes: 1
+    explorationVisitedPenalty: 80
+    proximityScanInterval: 0.5
+    proximityRayDistance: 8
+    proximityRayHeight: 1.1
+    proximityRayVerticalSpacing: 0.75
+    proximityAvoidanceWeight: 1.4
+    proximityMask:
+      serializedVersion: 2
+      m_Bits: 4294967295
   botCombat:
     enabled: 1
     thinkInterval: 0.12
-    targetScanInterval: 0.45
+    targetScanInterval: 0.35
     maxAcquireDistance: 800
     viewRangeMultiplier: 6
     forgetTargetDistanceMultiplier: 1.5
@@ -99,21 +109,23 @@ MonoBehaviour:
     fallbackTargetHeight: 1.2
     randomAimRadius: 0.25
     leadMovingTargets: 1
-    leadPredictionMultiplier: 0.75
-    maxLeadSeconds: 1.25
-    targetVelocitySampleInterval: 0.2
+    leadPredictionMultiplier: 1
+    maxLeadSeconds: 1.5
+    targetVelocitySampleInterval: 0.08
+    targetVelocitySmoothing: 0.75
+    leadPredictionIterations: 3
     aimAlongTravelDirectionWhenNoTarget: 1
     noTargetTravelAimDistance: 220
     noTargetTravelDirectionMaxAgeSeconds: 0.8
     aimForwardWhenNoTargetIdle: 1
-    maxAimYawErrorDeg: 4
-    maxAimPitchErrorDeg: 4
-    maxMuzzleAimErrorDeg: 5
-    maxFireDispersionMultiplier: 6
-    maxFireDispersionAddDeg: 1.75
-    minTargetHoldBeforeFire: 0.2
-    reactionDelayMin: 0.15
-    reactionDelayMax: 0.35
+    maxAimYawErrorDeg: 6
+    maxAimPitchErrorDeg: 6
+    maxMuzzleAimErrorDeg: 7
+    maxFireDispersionMultiplier: 8
+    maxFireDispersionAddDeg: 2.5
+    minTargetHoldBeforeFire: 0.08
+    reactionDelayMin: 0.08
+    reactionDelayMax: 0.18
   robotMovement:
     fallbackMaxSpeed: 10
     fallbackAcceleration: 30

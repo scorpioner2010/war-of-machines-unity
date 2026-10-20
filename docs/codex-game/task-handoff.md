@@ -4,6 +4,30 @@
 - Status: COMPLETED
 - Started: 2026-10-20
 - Last updated: 2026-10-20
+- User request (verbatim): "тобі треба покращити ботів, покращити логіку рух та командну роботу бо вони виглядають дуже тупими, також тобі треба зробити більш агресивніше прицілювання і атаки бо помітив що якщо я рухаюся постійно бот не може в мене прицілитися а я його розтрілюю потрохи, короче завдання такі 1. агресивніше прицілювання та наведенні, розрахунок руху щоб стреляти наперід. 2. рух більш розумініший, щоб подивився вокруг себе він не баче противників значить він має йди туди де він ще не був і шукати їх. 3. зараз бот не бачить інших роботів біля себе, він віперається в іншого робота і не може йти, треба додати райкасти раз в 0.5 секунди вокруг роботі по контуру, спереді, заді, зліва справа, і ще 4 по кутам 45 градусів, треба так щоб робот міг відчувати інших роботів вокруг себе та обходити їх при потребі. ці райкасти мають бути розположені на такій висоті щоб всі роботи чіпляти могли всі роботи, щоб не було такого що якийсь бот не може помітити райкастами іншого робота який в притул стоїть біля ньго."
+- Objective: improve bot aim/lead, exploration movement, local robot avoidance, and team-aware combat behavior.
+- Acceptance criteria: moving targets are led and engaged more reliably; no-target bots choose unexplored graph destinations; eight directional proximity raycasts run every 0.5 seconds and steer around nearby robots; allied robots avoid blocking each other; VehicleTest/static verification passes.
+- Assumptions: server-authoritative input remains the movement and firing path; existing inspector-wired components and visibility rules remain in use; no runtime component discovery or AddComponent is introduced.
+- Status details: implementation and verification are complete; proximity avoidance weights are independent and proximity sensing now remains active during combat hold-position.
+- Work recorded: improved iterative moving-target lead and velocity smoothing; made fire dispersion gating real and reduced bot reaction windows; added per-bot unvisited waypoint exploration; added eight-direction proximity raycasts at three vertical offsets every 0.5 seconds with tangent/escape steering; exposed current bot targets and distributed allied target selection; updated server settings, prefab serialization, editor help, `ai-bots.md`, and `server-settings.md`.
+- Edited files: `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, `Assets/Editor/ServerSettingsEditor.cs`, `Assets/Game/Scripts/AI/WaypointGraph/BotFireDecision.cs`, `BotNavigator.cs`, `BotTargetCandidate.cs`, `BotTargetMotionTracker.cs`, `BotTargetScanner.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleBotBrain.cs`, `Assets/Game/Scripts/Server/ServerSettings.cs`, `docs/codex-game/ai-bots.md`, `docs/codex-game/server-settings.md`.
+- Work remaining: none.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildBotsFinal5\\` passed with 0 errors and only pre-existing `System.Net.Http` reference warnings; custom static acceptance checks and `git diff --check` passed. The isolated smoke run spawned 4 bots and observed target acquisition, moving-target lead velocity, robot movement, player movement, unexplored-node exploration, authoritative bot firing (ammo decreased from 90 to 87), and proximity avoidance. Additional VehicleTest batchmode attempts reached the scene and player spawn but could not invoke its private UI bot-button flow; they introduced no gameplay changes and do not invalidate the successful isolated runtime coverage.
+
+## Previous completed task (task history repair)
+- Status: COMPLETED
+- Started: 2026-10-20
+- Last updated: 2026-10-20
+- User request (verbatim): "розберися в чому проблема і виправ історію завдань кодекса це дуже важливо"
+- Objective: diagnose why Codex task history appears to disappear and make the repository handoff history explicit, durable, and unambiguous without losing unfinished-task state.
+- Work completed: added `docs/codex-game/task-history.md` as the canonical append-only status index, preserved detailed handoff records as non-canonical archive, and documented the active/archive/index workflow in `AGENTS.md` and `docs/codex-game/README.md`.
+- Verification: UTF-8 reads, active/bot status preservation, canonical index links, and `git diff --check` passed; no gameplay files were changed by the history repair.
+- Canonical history index: `docs/codex-game/task-history.md`.
+
+## Previous completed task (impact decal isolation)
+- Status: COMPLETED
+- Started: 2026-10-20
+- Last updated: 2026-10-20
 - Follow-up request: "ти не протекстив саме головне, проджектайл не працює після твоїх правок"
 - Follow-up objective: Reproduce the broken projectile path in VehicleTest, repair the regression, and verify an actual projectile hit/impact in Play Mode.
 - Follow-up acceptance criteria: a local shot creates the projectile/tracer and authoritative hit path; a world hit produces the configured impact projector; robot-hit isolation remains intact; VehicleTest has no new runtime errors.
@@ -16,7 +40,7 @@
 - Work remaining: none.
 - Verification: clean `VehicleTest` Play Mode reproduced a wall impact crack and a separate robot impact without the temporary hit-marker; no new Console errors appeared. Focused assertions report world prefab masks `mask1=0`, `mask3=135`; `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuild\\` passed with 0 errors; `git diff --check` passed.
 
-## History
+## Archived handoff detail (non-canonical; see `docs/codex-game/task-history.md`)
 - Previous completed task (impact decal isolation rollback): restored the requested pre-diagnostic Bloom/decal checkpoint, kept the tested HDR/post-processing and URP bindings, and verified the repository with `git diff --check`, a successful C# build, and checkpoint assertions.
 - Previous completed task (impact glow configuration): added texture-masked red crack emission, configurable material/prefab strength, and a URP Bloom profile, but the follow-up verification identified that gameplay cameras had HDR and post-processing disabled.
 - Previous completed task (impact glow shader repair): corrected the `SurfaceDescription.Emission` block's slot from the invalid `BaseColor` serialization to the URP Decal `ColorRGB` emission format, preserved `Expl2_EmissionColor.png`, and verified the real impact path in `VehicleTest` with no shader/runtime errors.

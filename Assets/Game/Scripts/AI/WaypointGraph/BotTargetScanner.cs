@@ -3,6 +3,7 @@ using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Server;
 using UnityEngine;
+using LobbyPlayer = Game.Scripts.Networking.Lobby.Player;
 
 namespace Game.Scripts.AI.WaypointGraph
 {
@@ -74,7 +75,7 @@ namespace Game.Scripts.AI.WaypointGraph
                     continue;
                 }
 
-                BotTargetCandidate candidate = BuildCandidate(selfRoot, currentTarget, visibleEnemy, settings);
+                BotTargetCandidate candidate = BuildCandidate(selfRoot, room, currentTarget, visibleEnemy, settings);
                 if (!found || IsBetter(candidate, bestCandidate, settings))
                 {
                     bestCandidate = candidate;
@@ -104,6 +105,7 @@ namespace Game.Scripts.AI.WaypointGraph
 
         private BotTargetCandidate BuildCandidate(
             VehicleRoot selfRoot,
+            ServerRoom room,
             VehicleRoot currentTarget,
             MatchVisibleEnemy visibleEnemy,
             BotCombatSettings settings)
@@ -140,6 +142,7 @@ namespace Game.Scripts.AI.WaypointGraph
                 HasAimSolution = hasAimSolution,
                 IsCurrentTarget = visibleEnemy.Root == currentTarget,
                 IsDirectlySpotted = visibleEnemy.IsDirectlySpotted,
+                AlliedAttackers = CountAlliedAttackers(selfRoot, room, visibleEnemy.Root),
                 AimErrorDeg = aimErrorDeg,
                 DistanceSqr = delta.sqrMagnitude
             };
@@ -156,6 +159,13 @@ namespace Game.Scripts.AI.WaypointGraph
 
             if (candidate.HasLineOfFire && best.HasLineOfFire)
             {
+                if (!candidate.IsCurrentTarget
+                    && !best.IsCurrentTarget
+                    && candidate.AlliedAttackers != best.AlliedAttackers)
+                {
+                    return candidate.AlliedAttackers < best.AlliedAttackers;
+                }
+
                 float candidateAimError = ApplyCurrentTargetBonus(candidate.AimErrorDeg, candidate.IsCurrentTarget, 0.9f);
                 float bestAimError = ApplyCurrentTargetBonus(best.AimErrorDeg, best.IsCurrentTarget, 0.9f);
                 if (Mathf.Abs(candidateAimError - bestAimError) > 1f)
@@ -167,6 +177,62 @@ namespace Game.Scripts.AI.WaypointGraph
             float candidateDistance = ApplyCurrentTargetBonus(candidate.DistanceSqr, candidate.IsCurrentTarget, 0.75f);
             float bestDistance = ApplyCurrentTargetBonus(best.DistanceSqr, best.IsCurrentTarget, 0.75f);
             return candidateDistance < bestDistance;
+        }
+
+        private static int CountAlliedAttackers(VehicleRoot selfRoot, ServerRoom room, VehicleRoot targetRoot)
+        {
+            if (selfRoot == null || room == null || targetRoot == null)
+            {
+                return 0;
+            }
+
+            MatchTeam selfTeam = ResolveTeam(selfRoot, null);
+            if (!MatchTeamUtility.IsAssigned(selfTeam))
+            {
+                return 0;
+            }
+
+            List<LobbyPlayer> players = room.GetPlayers();
+            if (players == null)
+            {
+                return 0;
+            }
+
+            int attackers = 0;
+            for (int i = 0; i < players.Count; i++)
+            {
+                LobbyPlayer player = players[i];
+                VehicleRoot otherRoot = player != null ? player.playerRoot : null;
+                if (otherRoot == null || otherRoot == selfRoot || otherRoot.botBrain == null)
+                {
+                    continue;
+                }
+
+                if (otherRoot.health != null && otherRoot.health.IsDead)
+                {
+                    continue;
+                }
+
+                MatchTeam otherTeam = ResolveTeam(otherRoot, player);
+                if (MatchTeamUtility.AreSameAssignedTeam(selfTeam, otherTeam)
+                    && otherRoot.botBrain.CurrentTargetRoot == targetRoot)
+                {
+                    attackers++;
+                }
+            }
+
+            return attackers;
+        }
+
+        private static MatchTeam ResolveTeam(VehicleRoot root, LobbyPlayer player)
+        {
+            MatchTeam team = player != null ? player.team : MatchTeam.None;
+            if (!MatchTeamUtility.IsAssigned(team) && root != null && root.characterInit != null)
+            {
+                team = root.characterInit.Team.Value;
+            }
+
+            return team;
         }
 
         private static int GetPriority(BotTargetCandidate candidate, BotCombatSettings settings)

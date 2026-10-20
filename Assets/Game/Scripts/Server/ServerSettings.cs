@@ -217,6 +217,24 @@ namespace Game.Scripts.Server
         [Tooltip("Сила впливу динамічного обходу перешкод на напрямок руху бота.")]
         public float dynamicAvoidanceWeight = 0.65f;
 
+        [Header("Exploration")]
+        public bool exploreUnvisitedNodes = true;
+        [Tooltip("Additional score applied to waypoint nodes already visited by this bot.")]
+        public float explorationVisitedPenalty = 80f;
+
+        [Header("Robot proximity sensing")]
+        [Tooltip("How often the bot probes the eight horizontal directions for nearby robots.")]
+        public float proximityScanInterval = 0.5f;
+        [Tooltip("Maximum distance of each proximity ray in meters.")]
+        public float proximityRayDistance = 8f;
+        [Tooltip("Vertical offset of the middle proximity ray from the movement root.")]
+        public float proximityRayHeight = 1.1f;
+        [Tooltip("Vertical distance between the three rays used to cover different robot heights.")]
+        public float proximityRayVerticalSpacing = 0.75f;
+        [Tooltip("Strength of steering around robots detected by proximity rays.")]
+        public float proximityAvoidanceWeight = 1.4f;
+        public LayerMask proximityMask = ~0;
+
         public static BotWanderSettings Default
         {
             get
@@ -261,6 +279,12 @@ namespace Game.Scripts.Server
             unstickTurnInput = ClampInput(Mathf.Abs(unstickTurnInput), Default.unstickTurnInput);
             dynamicAvoidanceRadius = ClampFinite(dynamicAvoidanceRadius, 0f, Default.dynamicAvoidanceRadius);
             dynamicAvoidanceWeight = ClampFinite(dynamicAvoidanceWeight, 0f, Default.dynamicAvoidanceWeight);
+            explorationVisitedPenalty = ClampFinite(explorationVisitedPenalty, 0f, Default.explorationVisitedPenalty);
+            proximityScanInterval = ClampFinite(proximityScanInterval, 0.1f, Default.proximityScanInterval);
+            proximityRayDistance = ClampFinite(proximityRayDistance, 0.5f, Default.proximityRayDistance);
+            proximityRayHeight = ClampFinite(proximityRayHeight, 0f, Default.proximityRayHeight);
+            proximityRayVerticalSpacing = ClampFinite(proximityRayVerticalSpacing, 0f, Default.proximityRayVerticalSpacing);
+            proximityAvoidanceWeight = ClampFinite(proximityAvoidanceWeight, 0f, Default.proximityAvoidanceWeight);
         }
 
         public void CopyFrom(BotWanderSettings source)
@@ -299,6 +323,14 @@ namespace Game.Scripts.Server
             unstickTurnInput = source.unstickTurnInput;
             dynamicAvoidanceRadius = source.dynamicAvoidanceRadius;
             dynamicAvoidanceWeight = source.dynamicAvoidanceWeight;
+            exploreUnvisitedNodes = source.exploreUnvisitedNodes;
+            explorationVisitedPenalty = source.explorationVisitedPenalty;
+            proximityScanInterval = source.proximityScanInterval;
+            proximityRayDistance = source.proximityRayDistance;
+            proximityRayHeight = source.proximityRayHeight;
+            proximityRayVerticalSpacing = source.proximityRayVerticalSpacing;
+            proximityAvoidanceWeight = source.proximityAvoidanceWeight;
+            proximityMask = source.proximityMask;
         }
 
         private static float ClampFinite(float value, float minValue, float fallback)
@@ -338,7 +370,7 @@ namespace Game.Scripts.Server
         [Tooltip("Як часто бот оновлює бойові рішення.")]
         public float thinkInterval = 0.12f;
         [Tooltip("Як часто бот перевіряє кімнату в пошуку кращої ворожої цілі.")]
-        public float targetScanInterval = 0.45f;
+        public float targetScanInterval = 0.35f;
         [Tooltip("Жорстка верхня межа дистанції захоплення цілі.")]
         public float maxAcquireDistance = 800f;
         [Tooltip("Множник runtime-дальності огляду перед застосуванням maxAcquireDistance.")]
@@ -366,11 +398,15 @@ namespace Game.Scripts.Server
         [Tooltip("Прогнозувати позицію рухомої цілі з урахуванням швидкості снаряда.")]
         public bool leadMovingTargets = true;
         [Tooltip("Множник випередження рухомої цілі. 1 означає повне фізичне випередження.")]
-        public float leadPredictionMultiplier = 0.75f;
+        public float leadPredictionMultiplier = 1f;
         [Tooltip("Максимальний час прогнозування руху цілі в секундах.")]
-        public float maxLeadSeconds = 1.25f;
+        public float maxLeadSeconds = 1.5f;
         [Tooltip("Як часто вимірюється швидкість цілі.")]
-        public float targetVelocitySampleInterval = 0.2f;
+        public float targetVelocitySampleInterval = 0.08f;
+        [Tooltip("How strongly new target velocity samples replace the previous estimate.")]
+        public float targetVelocitySmoothing = 0.75f;
+        [Tooltip("Number of short intercept iterations used to solve target lead time.")]
+        public int leadPredictionIterations = 3;
         [Tooltip("Наводити башту вздовж напрямку руху бота, поки ворога не видно.")]
         public bool aimAlongTravelDirectionWhenNoTarget = true;
         [Tooltip("Запасна дистанція точки наведення, коли бот дивиться в напрямку руху.")]
@@ -382,21 +418,21 @@ namespace Game.Scripts.Server
 
         [Header("Дозвіл пострілу")]
         [Tooltip("Максимальна помилка yaw між поточним і бажаним поворотом башти перед пострілом.")]
-        public float maxAimYawErrorDeg = 4f;
+        public float maxAimYawErrorDeg = 6f;
         [Tooltip("Максимальна помилка pitch між поточним і бажаним нахилом гармати перед пострілом.")]
-        public float maxAimPitchErrorDeg = 4f;
+        public float maxAimPitchErrorDeg = 6f;
         [Tooltip("Максимальний кут між напрямком дула і вибраною точкою наведення перед пострілом.")]
-        public float maxMuzzleAimErrorDeg = 5f;
+        public float maxMuzzleAimErrorDeg = 7f;
         [Tooltip("Бот може стріляти, якщо поточний розкид не перевищує мінімальний розкид, помножений на це значення.")]
-        public float maxFireDispersionMultiplier = 6f;
+        public float maxFireDispersionMultiplier = 8f;
         [Tooltip("Додатковий абсолютний запас допустимого розкиду в градусах.")]
-        public float maxFireDispersionAddDeg = 1.75f;
+        public float maxFireDispersionAddDeg = 2.5f;
         [Tooltip("Мінімальний час утримання тієї самої цілі перед дозволом пострілу.")]
-        public float minTargetHoldBeforeFire = 0.2f;
+        public float minTargetHoldBeforeFire = 0.08f;
         [Tooltip("Мінімальна людоподібна затримка реакції після захоплення цілі.")]
-        public float reactionDelayMin = 0.15f;
+        public float reactionDelayMin = 0.08f;
         [Tooltip("Максимальна людоподібна затримка реакції після захоплення цілі.")]
-        public float reactionDelayMax = 0.35f;
+        public float reactionDelayMax = 0.18f;
 
         public static BotCombatSettings Default
         {
@@ -419,6 +455,8 @@ namespace Game.Scripts.Server
             leadPredictionMultiplier = ClampFinite(leadPredictionMultiplier, 0f, Default.leadPredictionMultiplier);
             maxLeadSeconds = ClampFinite(maxLeadSeconds, 0f, Default.maxLeadSeconds);
             targetVelocitySampleInterval = ClampFinite(targetVelocitySampleInterval, 0.03f, Default.targetVelocitySampleInterval);
+            targetVelocitySmoothing = Mathf.Clamp01(ClampFinite(targetVelocitySmoothing, 0f, Default.targetVelocitySmoothing));
+            leadPredictionIterations = Mathf.Clamp(leadPredictionIterations, 1, 8);
             noTargetTravelAimDistance = ClampFinite(noTargetTravelAimDistance, 1f, Default.noTargetTravelAimDistance);
             noTargetTravelDirectionMaxAgeSeconds = ClampFinite(noTargetTravelDirectionMaxAgeSeconds, 0.03f, Default.noTargetTravelDirectionMaxAgeSeconds);
             maxAimYawErrorDeg = ClampFinite(maxAimYawErrorDeg, 0f, Default.maxAimYawErrorDeg);
@@ -456,6 +494,8 @@ namespace Game.Scripts.Server
             leadPredictionMultiplier = source.leadPredictionMultiplier;
             maxLeadSeconds = source.maxLeadSeconds;
             targetVelocitySampleInterval = source.targetVelocitySampleInterval;
+            targetVelocitySmoothing = source.targetVelocitySmoothing;
+            leadPredictionIterations = source.leadPredictionIterations;
             aimAlongTravelDirectionWhenNoTarget = source.aimAlongTravelDirectionWhenNoTarget;
             noTargetTravelAimDistance = source.noTargetTravelAimDistance;
             noTargetTravelDirectionMaxAgeSeconds = source.noTargetTravelDirectionMaxAgeSeconds;

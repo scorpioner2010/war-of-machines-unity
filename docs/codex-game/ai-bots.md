@@ -6,12 +6,15 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleBotBrain.cs`
   - Server-side MonoBehaviour entry point for a bot vehicle.
   - Owns one `BotCombatController` instance.
+  - Exposes the current combat target to other server-side bots so target selection can distribute allied pressure instead of making every bot focus the same enemy.
   - Requires `VehicleRoot` and an inspector-wired `BotNavigator` reference on the vehicle prefab.
   - Starts navigator and combat controller from `StartBrain(root, room)`.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotNavigator.cs`
   - Server-side movement/path following controller.
   - Uses `WaypointGraphRuntime` and `WaypointAStarPathfinder` when a graph exists.
-  - Falls back to random movement if no graph is available.
+  - Tracks waypoint visits per bot and prefers unvisited graph nodes when no explicit combat target is active, then falls back to least-visited nodes.
+  - Falls back to random movement if no graph is available, with the same nearby-robot avoidance steering.
+  - Every `BotWanderSettings.proximityScanInterval` seconds, probes front/back/left/right and all four 45-degree diagonals. Each direction uses lower/middle/upper rays so different robot heights are detected; registered robot colliders are converted into a tangent/repulsion steering vector.
   - Sends movement through `IBotInputReceiver.ApplyBotInput`, currently implemented by `VehicleInputController`.
   - Does not create/find required runtime components.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatController.cs`
@@ -27,6 +30,7 @@ Current owner scripts:
   - Acquires candidates from `ServerRoom.Visibility` through `MatchVisibilityService.FillVisibleEnemiesFor(..., List<MatchVisibleEnemy>)`.
   - Starts/refreshes match visibility for server-side bot queries when needed; it does not send map RPCs to bots.
   - Scores only map-visible enemies. With `requireLineOfSightToAcquire` enabled, enemies with line of fire and an aim solution are preferred first, then lower aim error, then distance. If no clean firing candidate exists, the bot still selects a visible map target and moves toward its map/last-known position.
+  - Counts active allied bots already targeting each directly visible enemy and prefers an equally valid target with fewer allied attackers, spreading the team across available enemies without bypassing logical visibility.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotTargetValidator.cs`
   - Filters invalid targets: null, self, dead, or same assigned team.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotAimPointResolver.cs`
@@ -34,11 +38,11 @@ Current owner scripts:
 - `Assets/Game/Scripts/AI/WaypointGraph/BotLineOfFireChecker.cs`
   - Performs combat line-of-fire raycasts and accepts hits on the expected target while ignoring the shooter's own colliders.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotTargetMotionTracker.cs`
-  - Tracks target velocity samples and applies projectile lead prediction.
+  - Samples target movement at the combat settings interval, smooths the velocity estimate, and iteratively solves projectile travel time before applying lead prediction.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotAimController.cs`
   - Solves aim through `VehicleAimInputSolver` and estimates/validates yaw, pitch, and muzzle alignment.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotFireDecision.cs`
-  - Gates firing by target hold time, reaction delay, reload state, shooter availability, and aim alignment.
+  - Gates firing by target hold time, reaction delay, reload state, shooter availability, aim alignment, and the current dispersion threshold configured by `maxFireDispersionMultiplier`/`maxFireDispersionAddDeg`.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatNavigationController.cs`
   - Sends combat navigation intent to `BotNavigator`: move toward the visible map/last-known target position or suppress movement while holding a clean line of fire.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatInputWriter.cs`
@@ -70,7 +74,9 @@ Bot movement behavior:
 - Movement input is always sent as player-like input: forward and turn through `VehicleInputController.ApplyBotInput`.
 - Reverse bot input is still sent as normal negative movement input, but `VehicleMovementController` caps all reverse movement to 50% of the vehicle's forward max speed.
 - Navigator publishes a desired travel direction through `TryGetDesiredTravelDirection` so combat/idle aim can point the turret where the bot is driving.
-- Movement can be suppressed by combat via `SetMovementSuppressed(true)`. When suppressed, navigator sends zero movement input and clears travel direction.
+- Movement can be suppressed by combat via `SetMovementSuppressed(true)`. While suppressed, navigator still refreshes proximity sensing on its configured cadence and applies a local escape maneuver if another live robot is too close; otherwise it sends zero movement input.
+- Exploration is per-bot state: `BotNavigator` increments a visit count when the nearest graph node changes. With `exploreUnvisitedNodes` enabled, destination selection first searches unvisited nodes at least `minDestinationDistance` away, then least-visited nodes.
+- Proximity avoidance is server-side and does not use scene-wide searches or runtime component creation. It casts eight horizontal directions at three vertical offsets, ignores the bot's own hierarchy, respects `proximityMask`, and only steers for registered live `VehicleRoot` colliders. A forward hit adds a side-step based on the bot's stable turn bias so a robot does not simply reverse into a queue.
 - Combat navigation uses `BotNavigator.SetTargetPosition` for tactical/map positions. The navigator treats those position targets separately from transform targets, keeps them active after reaching the last waypoint node, and drives the final segment directly to the requested tactical position until combat clears or changes it.
 - `SetTarget` and `SetTargetPosition` clear the current path and allow an immediate repath so bots do not wait on `repathCooldown` before reacting to a new combat navigation command.
 
@@ -92,6 +98,7 @@ Bot combat behavior:
 - `requireLineOfSightToAcquire` now controls line-of-fire priority during target scoring; it no longer prevents the bot from moving toward an obstructed map-visible enemy when no better firing target exists.
 - Aim points prefer turret bounds, then health colliders/armor maps, then turret transform, then root fallback height.
 - Bot aim is solved with `VehicleAimInputSolver.SolveForAimPoint` so turret/gun constraints are respected.
+- Moving-target aim uses an iterative travel-time estimate (`leadPredictionIterations`, `maxLeadSeconds`) and the smoothed target velocity. Defaults now use full lead, a shorter velocity sample interval, and a smaller reaction window for more aggressive tracking.
 - Bot firing goes through reload and shooter systems, not direct damage calls.
 - Bot combat is now tactic-driven after target selection:
   - `CloseMobileAssault`: at close range, drives toward side/rear orbit points and may fire in motion with lower aim-readiness.
@@ -107,6 +114,7 @@ Bot combat behavior:
 - If a same-team robot blocks the bot's current firing lane, the bot will not keep `holdPosition`; it disables firing through that ally and drives to a side-step candidate so it can get a cleaner angle instead of sitting behind the ally.
 - If the current target disappears from logical map visibility, the target is cleared. Target forgetting is now driven by match visibility/spotted-memory settings instead of direct line-of-fire loss alone.
 - VehicleTest-created bots use the same combat scan. Enemy test bots are assigned to the opposing team from the test player; ally test bots use the same team and are ignored by same-team target filtering.
+- Team target spreading uses only `VehicleBotBrain.CurrentTargetRoot` from allied bots already in the room. It does not reveal hidden enemies or replace `MatchVisibilityService`.
 
 No-target turret behavior:
 - If no enemy target is selected, `BotCombatController.ApplyNoTargetTravelAim` points the turret along navigator travel direction.
@@ -124,12 +132,30 @@ Important settings:
 - `BotWanderSettings.waypointPassedAngle`
 - `BotWanderSettings.dynamicAvoidanceRadius`
 - `BotWanderSettings.dynamicAvoidanceWeight`
+- `BotWanderSettings.exploreUnvisitedNodes`
+- `BotWanderSettings.explorationVisitedPenalty`
+- `BotWanderSettings.proximityScanInterval`
+- `BotWanderSettings.proximityRayDistance`
+- `BotWanderSettings.proximityRayHeight`
+- `BotWanderSettings.proximityRayVerticalSpacing`
+- `BotWanderSettings.proximityAvoidanceWeight`
+- `BotWanderSettings.proximityMask`
 - `BotCombatSettings.enabled`
 - `BotCombatSettings.targetScanInterval`
 - `BotCombatSettings.maxAcquireDistance` (legacy combat cap; target visibility range is now owned by `MatchVisibilityGlobalSettings`)
 - `BotCombatSettings.requireLineOfSightToAcquire`
 - `BotCombatSettings.holdPositionWithLineOfFire`
 - `BotCombatSettings.aimAlongTravelDirectionWhenNoTarget`
+- `BotCombatSettings.leadPredictionMultiplier`
+- `BotCombatSettings.maxLeadSeconds`
+- `BotCombatSettings.targetVelocitySampleInterval`
+- `BotCombatSettings.targetVelocitySmoothing`
+- `BotCombatSettings.leadPredictionIterations`
+- `BotCombatSettings.maxFireDispersionMultiplier`
+- `BotCombatSettings.maxFireDispersionAddDeg`
+- `BotCombatSettings.minTargetHoldBeforeFire`
+- `BotCombatSettings.reactionDelayMin`
+- `BotCombatSettings.reactionDelayMax`
 - `MatchVisibilityGlobalSettings.enabled`
 - `MatchVisibilityGlobalSettings.tickInterval`
 - `MatchVisibilityGlobalSettings.guaranteedDetectionRange`

@@ -13,6 +13,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _isRunning;
 
         public bool IsRunning => _isRunning;
+        public VehicleRoot CurrentTargetRoot => _combatController.TargetRoot;
 
         public void SetVehicleRoot(VehicleRoot root)
         {

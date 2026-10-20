@@ -11,11 +11,26 @@ namespace Game.Scripts.AI.WaypointGraph
     public sealed class BotNavigator : MonoBehaviour
     {
         private const float FailedRepathBackoffSeconds = 2f;
+        private const int ProximityDirectionCount = 8;
+        private const int ProximityVerticalRayCount = 3;
+        private const int ProximityRaycastBufferSize = 32;
+        private static readonly Vector3[] ProximityDirections =
+        {
+            Vector3.forward,
+            Vector3.back,
+            Vector3.right,
+            Vector3.left,
+            new Vector3(1f, 0f, 1f).normalized,
+            new Vector3(-1f, 0f, 1f).normalized,
+            new Vector3(1f, 0f, -1f).normalized,
+            new Vector3(-1f, 0f, -1f).normalized
+        };
 
         [SerializeField] private Transform target;
         [SerializeField] private bool drawDebugGizmos = true;
 
         private readonly List<int> _path = new List<int>(32);
+        private readonly RaycastHit[] _proximityRaycastBuffer = new RaycastHit[ProximityRaycastBufferSize];
         private VehicleRoot _vehicleRoot;
         private ServerRoom _room;
         private WaypointGraphRuntime _graph;
@@ -31,8 +46,12 @@ namespace Game.Scripts.AI.WaypointGraph
         private float _nextStuckCheckTime;
         private float _unstickUntilTime;
         private float _nextFallbackInputChangeTime;
+        private float _nextProximityScanTime;
         private float _turnBias = 1f;
         private Vector3 _desiredTravelDirection;
+        private Vector3 _proximityAvoidance;
+        private int[] _nodeVisitCounts = System.Array.Empty<int>();
+        private int _lastVisitedNodeId = -1;
         private float _lastDesiredTravelDirectionTime;
         private bool _hasExplicitTarget;
         private bool _hasExplicitPositionTarget;
@@ -61,6 +80,9 @@ namespace Game.Scripts.AI.WaypointGraph
             _nextTickTime = now + Random.Range(0f, settings.thinkInterval);
             _nextRepathTime = now + Random.Range(0f, settings.repathCooldown);
             _nextStuckCheckTime = now + Random.Range(0.1f, settings.stuckCheckInterval);
+            _nextProximityScanTime = now + Random.Range(0f, settings.proximityScanInterval);
+            _proximityAvoidance = Vector3.zero;
+            InitializeExplorationMemory();
             _lastProgressPosition = GetMovePosition();
         }
 
@@ -147,20 +169,27 @@ namespace Game.Scripts.AI.WaypointGraph
                     return;
                 }
 
+                float now = Time.time;
+                BotWanderSettings settings = ServerSettings.GetBotWander();
+                RefreshProximityAvoidance(GetMovePosition(), settings, now);
+
                 if (_movementSuppressed)
                 {
-                    ApplyInput(0f, 0f);
+                    if (!TryApplyProximityEscape(settings))
+                    {
+                        ApplyInput(0f, 0f);
+                    }
+
                     return;
                 }
 
-                float now = Time.time;
                 if (now < _nextTickTime)
                 {
                     return;
                 }
 
-                BotWanderSettings settings = ServerSettings.GetBotWander();
                 _nextTickTime = now + settings.thinkInterval;
+                TrackVisitedNode();
 
                 if (_graph == null || !_graph.IsBuilt || _pathfinder == null)
                 {
@@ -262,7 +291,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private int PickRandomDestinationNode(int startNodeId, BotWanderSettings settings)
         {
             int fallbackNodeId = _graph.GetRandomNodeId();
-            if (startNodeId < 0)
+            if (startNodeId < 0 || !settings.exploreUnvisitedNodes || _nodeVisitCounts.Length != _graph.NodeCount)
             {
                 return fallbackNodeId;
             }
@@ -270,25 +299,86 @@ namespace Game.Scripts.AI.WaypointGraph
             Vector3 startPosition = _graph.GetNodePosition(startNodeId);
             float minDistanceSqr = settings.minDestinationDistance * settings.minDestinationDistance;
 
-            for (int i = 0; i < settings.destinationPickAttempts; i++)
+            int destinationNodeId = FindExplorationDestination(
+                startNodeId,
+                startPosition,
+                minDistanceSqr,
+                settings,
+                onlyUnvisited: true,
+                requireMinimumDistance: true);
+            if (destinationNodeId >= 0)
             {
-                int nodeId = _graph.GetRandomNodeId();
-                if (nodeId < 0)
+                return destinationNodeId;
+            }
+
+            destinationNodeId = FindExplorationDestination(
+                startNodeId,
+                startPosition,
+                minDistanceSqr,
+                settings,
+                onlyUnvisited: false,
+                requireMinimumDistance: true);
+            if (destinationNodeId >= 0)
+            {
+                return destinationNodeId;
+            }
+
+            destinationNodeId = FindExplorationDestination(
+                startNodeId,
+                startPosition,
+                minDistanceSqr,
+                settings,
+                onlyUnvisited: true,
+                requireMinimumDistance: false);
+            return destinationNodeId >= 0 ? destinationNodeId : fallbackNodeId;
+        }
+
+        private int FindExplorationDestination(
+            int startNodeId,
+            Vector3 startPosition,
+            float minDistanceSqr,
+            BotWanderSettings settings,
+            bool onlyUnvisited,
+            bool requireMinimumDistance)
+        {
+            int bestNodeId = -1;
+            float bestScore = float.PositiveInfinity;
+            for (int nodeId = 0; nodeId < _graph.NodeCount; nodeId++)
+            {
+                if (nodeId == startNodeId)
                 {
-                    return fallbackNodeId;
+                    continue;
+                }
+
+                int visitCount = _nodeVisitCounts[nodeId];
+                if (onlyUnvisited && visitCount > 0)
+                {
+                    continue;
                 }
 
                 Vector3 delta = _graph.GetNodePosition(nodeId) - startPosition;
                 delta.y = 0f;
-                if (delta.sqrMagnitude >= minDistanceSqr)
+                bool isFarEnough = delta.sqrMagnitude >= minDistanceSqr;
+                if (requireMinimumDistance && !isFarEnough)
                 {
-                    return nodeId;
+                    continue;
                 }
 
-                fallbackNodeId = nodeId;
+                float score = visitCount * settings.explorationVisitedPenalty;
+                if (!isFarEnough)
+                {
+                    score += settings.explorationVisitedPenalty;
+                }
+
+                score += Random.value * Mathf.Max(1f, settings.destinationPickAttempts);
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestNodeId = nodeId;
+                }
             }
 
-            return fallbackNodeId;
+            return bestNodeId;
         }
 
         private void FollowPath(BotWanderSettings settings, float now)
@@ -339,16 +429,16 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             Vector3 desiredDirection = toWaypoint / waypointDistance;
+            RefreshProximityAvoidance(position, settings, now);
 
-            Vector3 avoidance = CalculateDynamicAvoidance(position, settings);
-            if (avoidance.sqrMagnitude > 0.0001f)
+            Vector3 dynamicAvoidance = CalculateDynamicAvoidance(position, settings);
+            Vector3 adjustedDirection = desiredDirection
+                                      + dynamicAvoidance * settings.dynamicAvoidanceWeight
+                                      + _proximityAvoidance * settings.proximityAvoidanceWeight;
+            adjustedDirection.y = 0f;
+            if (adjustedDirection.sqrMagnitude > 0.0001f)
             {
-                Vector3 adjustedDirection = desiredDirection + avoidance * settings.dynamicAvoidanceWeight;
-                adjustedDirection.y = 0f;
-                if (adjustedDirection.sqrMagnitude > 0.0001f)
-                {
-                    desiredDirection = adjustedDirection.normalized;
-                }
+                desiredDirection = adjustedDirection.normalized;
             }
 
             SetDesiredTravelDirection(desiredDirection);
@@ -373,15 +463,15 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             Vector3 desiredDirection = toTarget / targetDistance;
-            Vector3 avoidance = CalculateDynamicAvoidance(position, settings);
-            if (avoidance.sqrMagnitude > 0.0001f)
+            RefreshProximityAvoidance(position, settings, Time.time);
+            Vector3 dynamicAvoidance = CalculateDynamicAvoidance(position, settings);
+            Vector3 adjustedDirection = desiredDirection
+                                      + dynamicAvoidance * settings.dynamicAvoidanceWeight
+                                      + _proximityAvoidance * settings.proximityAvoidanceWeight;
+            adjustedDirection.y = 0f;
+            if (adjustedDirection.sqrMagnitude > 0.0001f)
             {
-                Vector3 adjustedDirection = desiredDirection + avoidance * settings.dynamicAvoidanceWeight;
-                adjustedDirection.y = 0f;
-                if (adjustedDirection.sqrMagnitude > 0.0001f)
-                {
-                    desiredDirection = adjustedDirection.normalized;
-                }
+                desiredDirection = adjustedDirection.normalized;
             }
 
             SetDesiredTravelDirection(desiredDirection);
@@ -599,6 +689,25 @@ namespace Game.Scripts.AI.WaypointGraph
 
         private void TickFallbackWander(BotWanderSettings settings, float now)
         {
+            RefreshProximityAvoidance(GetMovePosition(), settings, now);
+            if (_proximityAvoidance.sqrMagnitude > 0.0001f)
+            {
+                Transform moveTransform = GetMoveTransform();
+                if (moveTransform != null)
+                {
+                    Vector3 desiredDirection = moveTransform.forward + _proximityAvoidance * settings.proximityAvoidanceWeight;
+                    desiredDirection.y = 0f;
+                    if (desiredDirection.sqrMagnitude > 0.0001f)
+                    {
+                        desiredDirection.Normalize();
+                        SetDesiredTravelDirection(desiredDirection);
+                        ApplyDirectionInput(desiredDirection, settings.proximityRayDistance, settings);
+                        _nextFallbackInputChangeTime = now + Mathf.Min(0.35f, settings.proximityScanInterval);
+                        return;
+                    }
+                }
+            }
+
             if (now < _nextFallbackInputChangeTime)
             {
                 return;
@@ -619,6 +728,33 @@ namespace Game.Scripts.AI.WaypointGraph
             SetDesiredTravelDirection(BuildInputTravelDirection(forward, turn));
             ApplyInput(forward, turn);
             _nextFallbackInputChangeTime = now + Random.Range(settings.minMoveDuration, settings.maxMoveDuration);
+        }
+
+        private bool TryApplyProximityEscape(BotWanderSettings settings)
+        {
+            if (_proximityAvoidance.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            Transform moveTransform = GetMoveTransform();
+            if (moveTransform == null)
+            {
+                return false;
+            }
+
+            Vector3 desiredDirection = moveTransform.forward
+                                     + _proximityAvoidance * settings.proximityAvoidanceWeight;
+            desiredDirection.y = 0f;
+            if (desiredDirection.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            desiredDirection.Normalize();
+            SetDesiredTravelDirection(desiredDirection);
+            ApplyDirectionInput(desiredDirection, settings.proximityRayDistance, settings);
+            return true;
         }
 
         private void ApplyInput(float forward, float turn)
@@ -734,6 +870,191 @@ namespace Game.Scripts.AI.WaypointGraph
             _pathIndex = 0;
             _destinationNodeId = -1;
             _isPivotTurning = false;
+        }
+
+        private void InitializeExplorationMemory()
+        {
+            _lastVisitedNodeId = -1;
+            if (_graph == null || !_graph.IsBuilt || _graph.NodeCount <= 0)
+            {
+                _nodeVisitCounts = System.Array.Empty<int>();
+                return;
+            }
+
+            _nodeVisitCounts = new int[_graph.NodeCount];
+            TrackVisitedNode();
+        }
+
+        private void TrackVisitedNode()
+        {
+            if (_graph == null || !_graph.IsBuilt || _nodeVisitCounts.Length != _graph.NodeCount)
+            {
+                return;
+            }
+
+            int nodeId = _graph.FindNearestNode(GetMovePosition());
+            if (nodeId < 0 || nodeId == _lastVisitedNodeId)
+            {
+                return;
+            }
+
+            _nodeVisitCounts[nodeId]++;
+            _lastVisitedNodeId = nodeId;
+        }
+
+        private void RefreshProximityAvoidance(Vector3 position, BotWanderSettings settings, float now)
+        {
+            if (now < _nextProximityScanTime)
+            {
+                return;
+            }
+
+            _nextProximityScanTime = now + Mathf.Max(0.1f, settings.proximityScanInterval);
+            _proximityAvoidance = Vector3.zero;
+            if (_vehicleRoot == null
+                || settings.proximityRayDistance <= 0f
+                || settings.proximityAvoidanceWeight <= 0f)
+            {
+                return;
+            }
+
+            Transform moveTransform = GetMoveTransform();
+            if (moveTransform == null)
+            {
+                return;
+            }
+
+            Vector3 forward = moveTransform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude <= 0.0001f)
+            {
+                forward = Vector3.forward;
+            }
+            else
+            {
+                forward.Normalize();
+            }
+
+            Vector3 totalAvoidance = Vector3.zero;
+            for (int directionIndex = 0; directionIndex < ProximityDirectionCount; directionIndex++)
+            {
+                Vector3 direction = moveTransform.TransformDirection(ProximityDirections[directionIndex]);
+                direction.y = 0f;
+                if (direction.sqrMagnitude <= 0.0001f)
+                {
+                    continue;
+                }
+
+                direction.Normalize();
+                for (int heightIndex = 0; heightIndex < ProximityVerticalRayCount; heightIndex++)
+                {
+                    float heightOffset = settings.proximityRayHeight
+                                         + (heightIndex - 1) * settings.proximityRayVerticalSpacing;
+                    Vector3 origin = position + Vector3.up * Mathf.Max(0.05f, heightOffset);
+                    if (!TryGetNearestRobotAlongRay(
+                            origin,
+                            direction,
+                            settings.proximityRayDistance,
+                            settings.proximityMask,
+                            out VehicleRoot otherRoot,
+                            out float hitDistance))
+                    {
+                        continue;
+                    }
+
+                    Vector3 away = position - BotCombatUtility.GetMovePosition(otherRoot);
+                    away.y = 0f;
+                    if (away.sqrMagnitude <= 0.0001f)
+                    {
+                        away = -direction;
+                    }
+                    else
+                    {
+                        away.Normalize();
+                    }
+
+                    float strength = 1f - Mathf.Clamp01(hitDistance / settings.proximityRayDistance);
+                    float forwardDot = Vector3.Dot(forward, direction);
+                    if (forwardDot > 0.25f)
+                    {
+                        Vector3 side = Vector3.Cross(Vector3.up, direction);
+                        side.y = 0f;
+                        if (side.sqrMagnitude > 0.0001f)
+                        {
+                            side.Normalize();
+                            totalAvoidance += (side * _turnBias + away * 0.35f) * strength * (0.75f + forwardDot);
+                        }
+                    }
+                    else
+                    {
+                        totalAvoidance += away * strength;
+                    }
+                }
+            }
+
+            totalAvoidance.y = 0f;
+            if (totalAvoidance.sqrMagnitude > 0.0001f)
+            {
+                _proximityAvoidance = totalAvoidance.normalized;
+            }
+        }
+
+        private bool TryGetNearestRobotAlongRay(
+            Vector3 origin,
+            Vector3 direction,
+            float distance,
+            LayerMask mask,
+            out VehicleRoot otherRoot,
+            out float hitDistance)
+        {
+            otherRoot = null;
+            hitDistance = float.PositiveInfinity;
+            int hitCount = Physics.RaycastNonAlloc(
+                origin,
+                direction,
+                _proximityRaycastBuffer,
+                distance,
+                mask,
+                QueryTriggerInteraction.Ignore);
+
+            float nearestColliderDistance = float.PositiveInfinity;
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider collider = _proximityRaycastBuffer[i].collider;
+                if (collider == null || BotCombatUtility.IsUnderRoot(collider.transform, _vehicleRoot.transform))
+                {
+                    continue;
+                }
+
+                float currentDistance = _proximityRaycastBuffer[i].distance;
+                if (currentDistance < nearestColliderDistance)
+                {
+                    nearestColliderDistance = currentDistance;
+                }
+
+                if (!VehicleColliderRegistry.TryGetRoot(collider, out VehicleRoot candidateRoot)
+                    || candidateRoot == null
+                    || candidateRoot == _vehicleRoot
+                    || (candidateRoot.health != null && candidateRoot.health.IsDead))
+                {
+                    continue;
+                }
+
+                if (currentDistance < hitDistance)
+                {
+                    otherRoot = candidateRoot;
+                    hitDistance = currentDistance;
+                }
+            }
+
+            if (otherRoot == null || hitDistance > nearestColliderDistance + 0.05f)
+            {
+                otherRoot = null;
+                hitDistance = 0f;
+                return false;
+            }
+
+            return true;
         }
 
         private void OnDrawGizmosSelected()

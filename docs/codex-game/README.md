@@ -8,6 +8,10 @@ Purpose:
 - Record current implementation rules and known data flow.
 - Keep future Codex sessions from rediscovering the same architecture repeatedly.
 
+Task continuity files:
+- `task-handoff.md` - the one active task plus detailed archived handoff context.
+- `task-history.md` - the canonical append-only task status and verification index.
+
 Required workflow for Codex:
 1. Read `AGENTS.md`.
 2. Read this index.

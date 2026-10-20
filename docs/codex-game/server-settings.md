@@ -29,9 +29,9 @@ Current owner files:
 
 Important settings classes currently used by recent gameplay work:
 - `BotWanderSettings`
-  - Bot movement cadence, waypoint arrival, pivot turning, stuck handling, dynamic avoidance.
+  - Bot movement cadence, waypoint arrival, pivot turning, stuck handling, per-bot exploration, dynamic avoidance, and eight-direction robot proximity sensing.
 - `BotCombatSettings`
-  - Bot combat scan cadence, line-of-fire target scoring, aim, fire gate, no-target turret aim.
+  - Bot combat scan cadence, line-of-fire target scoring, smoothed iterative lead aim, dispersion-aware fire gate, no-target turret aim, and reaction timing.
   - Target visibility range is now owned by `MatchVisibilityGlobalSettings`; bots select only enemies visible in logical map visibility.
 - `RobotMovementGlobalSettings`
   - Movement fallback speed/acceleration, braking, gravity, grounded snap.
@@ -68,9 +68,16 @@ Current bot settings added recently:
 - `BotCombatSettings.noTargetTravelAimDistance`
 - `BotCombatSettings.noTargetTravelDirectionMaxAgeSeconds`
 - `BotCombatSettings.aimForwardWhenNoTargetIdle`
+- `BotWanderSettings.exploreUnvisitedNodes`, `explorationVisitedPenalty`
+- `BotWanderSettings.proximityScanInterval`, `proximityRayDistance`, `proximityRayHeight`, `proximityRayVerticalSpacing`, `proximityAvoidanceWeight`, `proximityMask`
+- `BotCombatSettings.targetVelocitySmoothing`, `leadPredictionIterations`
 
 Current bot combat visibility notes:
 - `BotCombatSettings.targetScanInterval` still controls how often combat re-scores visible targets.
+- `BotCombatSettings.targetVelocitySampleInterval` and `targetVelocitySmoothing` control the smoothed velocity used for lead; `leadPredictionIterations` refines travel time against the current projectile speed.
+- `BotCombatSettings.maxFireDispersionMultiplier` and `maxFireDispersionAddDeg` are real fire gates: the bot may not request an authoritative shot until current server dispersion is within the configured allowance.
+- `BotWanderSettings.proximityScanInterval` defaults to `0.5` seconds. Each scan uses eight compass/diagonal directions and three vertical offsets, then steers around live registered robot colliders. The ray height fields are offsets from the movement root, not world-space absolute heights.
+- `BotWanderSettings.exploreUnvisitedNodes` makes no-target graph wandering prefer nodes that this individual bot has not visited; the visit memory is not shared between bots or persisted between spawns.
 - `BotCombatSettings.requireLineOfSightToAcquire` now makes line-of-fire candidates win target scoring when available; it does not block movement toward an obstructed target that is still visible on the logical map.
 - `BotCombatSettings.holdPositionWithLineOfFire` suppresses bot navigation only when the current tactic allows holding, line of fire is clean, and the target is within the tactic selector's far combat range. Targets beyond that range still pull bots forward so distant bots do not idle at long sight lines.
 - `BotCombatSettings.maxAcquireDistance`, `BotCombatSettings.viewRangeMultiplier`, and `BotCombatSettings.lostSightForgetSeconds` are legacy fields from the old direct room-scan acquisition path. Current bot target visibility and forgetting are controlled by `MatchVisibilityGlobalSettings` and spotted-memory state.

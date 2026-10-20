@@ -12,6 +12,7 @@ namespace Game.Scripts.AI.WaypointGraph
         public bool HasAimSolution;
         public bool IsCurrentTarget;
         public bool IsDirectlySpotted;
+        public int AlliedAttackers;
         public float AimErrorDeg;
         public float DistanceSqr;
     }
