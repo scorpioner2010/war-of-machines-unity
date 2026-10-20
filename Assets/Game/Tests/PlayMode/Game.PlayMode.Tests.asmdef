@@ -1,0 +1,10 @@
+{
+  "name": "Game.PlayMode.Tests",
+  "rootNamespace": "Game.Tests.PlayMode",
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -5,12 +5,19 @@ namespace Game.Scripts.Gameplay.Robots
 {
     public static class VehicleColliderRegistry
     {
+        private const float ImpactSurfaceDistanceEpsilon = 0.0001f;
+        private const float ImpactSurfaceRaycastDistance = 100f;
+
         private static readonly Dictionary<Collider, VehicleColliderData> DataByCollider =
             new Dictionary<Collider, VehicleColliderData>(512);
         private static readonly Dictionary<int, VehicleRoot> RootsByObjectId =
             new Dictionary<int, VehicleRoot>(64);
         private static readonly Dictionary<VehicleRoot, List<Renderer>> ImpactRenderersByRoot =
             new Dictionary<VehicleRoot, List<Renderer>>(64);
+        private static readonly Dictionary<VehicleRoot, List<MeshCollider>> ImpactMeshCollidersByRoot =
+            new Dictionary<VehicleRoot, List<MeshCollider>>(64);
+        private static readonly Dictionary<Collider, ImpactVisualSurfaceData> ImpactSurfacesByCollider =
+            new Dictionary<Collider, ImpactVisualSurfaceData>(256);
 
         public static void RegisterRenderers(VehicleRoot root, Renderer[] renderers)
         {
@@ -138,6 +145,300 @@ namespace Game.Scripts.Gameplay.Robots
             return TryGetImpactRenderers(root, out renderers);
         }
 
+        public static void RegisterImpactMeshColliders(
+            VehicleRoot root,
+            List<MeshCollider> meshColliders)
+        {
+            if (root == null || meshColliders == null)
+            {
+                return;
+            }
+
+            if (!ImpactMeshCollidersByRoot.TryGetValue(root, out List<MeshCollider> registeredColliders))
+            {
+                registeredColliders = new List<MeshCollider>(meshColliders.Count);
+                ImpactMeshCollidersByRoot.Add(root, registeredColliders);
+            }
+
+            for (int i = 0; i < meshColliders.Count; i++)
+            {
+                MeshCollider meshCollider = meshColliders[i];
+                if (meshCollider != null && !registeredColliders.Contains(meshCollider))
+                {
+                    registeredColliders.Add(meshCollider);
+                }
+            }
+        }
+
+        public static void UnregisterImpactMeshColliders(VehicleRoot root)
+        {
+            if (root != null)
+            {
+                ImpactMeshCollidersByRoot.Remove(root);
+            }
+        }
+
+        public static void RegisterImpactVisualSurface(
+            Collider physicsCollider,
+            MeshCollider[] meshColliders,
+            Renderer[] renderers)
+        {
+            if (physicsCollider == null)
+            {
+                return;
+            }
+
+            ImpactVisualSurfaceData data = new ImpactVisualSurfaceData(meshColliders, renderers);
+            if (data.MeshColliders.Count == 0 && data.Renderers.Count == 0)
+            {
+                return;
+            }
+
+            ImpactSurfacesByCollider[physicsCollider] = data;
+        }
+
+        public static void UnregisterImpactVisualSurface(Collider physicsCollider)
+        {
+            if (physicsCollider != null)
+            {
+                ImpactSurfacesByCollider.Remove(physicsCollider);
+            }
+        }
+
+        public static bool TryGetImpactVisualSurface(
+            Collider physicsCollider,
+            Vector3 impactPoint,
+            Vector3 impactNormal,
+            out Vector3 surfacePosition,
+            out Vector3 surfaceNormal)
+        {
+            surfacePosition = impactPoint;
+            surfaceNormal = impactNormal.sqrMagnitude > 0.000001f
+                ? impactNormal.normalized
+                : Vector3.up;
+            if (physicsCollider == null
+                || !ImpactSurfacesByCollider.TryGetValue(physicsCollider, out ImpactVisualSurfaceData data))
+            {
+                return false;
+            }
+
+            return TryResolveImpactVisualSurface(
+                data.MeshColliders,
+                data.Renderers,
+                impactPoint,
+                surfaceNormal,
+                out surfacePosition,
+                out surfaceNormal);
+        }
+
+        public static bool TryGetImpactVisualSurface(
+            VehicleRoot root,
+            Vector3 impactPoint,
+            Vector3 impactNormal,
+            out Vector3 surfacePosition,
+            out Vector3 surfaceNormal)
+        {
+            Vector3 safeNormal = impactNormal.sqrMagnitude > 0.000001f
+                ? impactNormal.normalized
+                : Vector3.up;
+            surfacePosition = impactPoint;
+            surfaceNormal = safeNormal;
+            if (root == null)
+            {
+                return false;
+            }
+
+            ImpactMeshCollidersByRoot.TryGetValue(root, out List<MeshCollider> meshColliders);
+            ImpactRenderersByRoot.TryGetValue(root, out List<Renderer> renderers);
+            return TryResolveImpactVisualSurface(
+                meshColliders,
+                renderers,
+                impactPoint,
+                safeNormal,
+                out surfacePosition,
+                out surfaceNormal);
+        }
+
+        private static bool TryResolveImpactVisualSurface(
+            List<MeshCollider> meshColliders,
+            List<Renderer> renderers,
+            Vector3 impactPoint,
+            Vector3 safeNormal,
+            out Vector3 surfacePosition,
+            out Vector3 surfaceNormal)
+        {
+            Vector3 rayDirection = -safeNormal;
+            Ray surfaceRay = new Ray(
+                impactPoint + safeNormal * ImpactSurfaceDistanceEpsilon,
+                rayDirection);
+            float closestDistance = float.PositiveInfinity;
+            surfacePosition = impactPoint;
+            surfaceNormal = safeNormal;
+            bool foundSurface = false;
+
+            if (meshColliders != null)
+            {
+                for (int i = 0; i < meshColliders.Count; i++)
+                {
+                    MeshCollider meshCollider = meshColliders[i];
+                    if (meshCollider == null || meshCollider.sharedMesh == null)
+                    {
+                        continue;
+                    }
+
+                    if (TryGetMeshColliderSurface(
+                        meshCollider,
+                        impactPoint,
+                        safeNormal,
+                        surfaceRay,
+                        out RaycastHit meshHit))
+                    {
+                        float distance = (meshHit.point - impactPoint).magnitude;
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            surfacePosition = meshHit.point;
+                            surfaceNormal = meshHit.normal.sqrMagnitude > 0.000001f
+                                ? meshHit.normal.normalized
+                                : safeNormal;
+                            if (Vector3.Dot(surfaceNormal, safeNormal) < 0f)
+                            {
+                                surfaceNormal = -surfaceNormal;
+                            }
+
+                            foundSurface = true;
+                        }
+                    }
+                }
+            }
+
+            if (foundSurface)
+            {
+                return true;
+            }
+
+            return renderers != null
+                && TryGetRendererBoundsSurface(
+                    renderers,
+                    impactPoint,
+                    safeNormal,
+                    out surfacePosition);
+        }
+
+        private static bool TryGetMeshColliderSurface(
+            MeshCollider meshCollider,
+            Vector3 impactPoint,
+            Vector3 safeNormal,
+            Ray normalRay,
+            out RaycastHit closestHit)
+        {
+            closestHit = default;
+            bool foundHit = TryRaycastMeshCollider(
+                meshCollider,
+                normalRay,
+                ImpactSurfaceRaycastDistance,
+                out RaycastHit normalHit);
+            if (foundHit)
+            {
+                closestHit = normalHit;
+                return true;
+            }
+
+            Vector3 towardVisualCenter = meshCollider.bounds.center - impactPoint;
+            float centerDistance = towardVisualCenter.magnitude;
+            if (centerDistance > ImpactSurfaceDistanceEpsilon)
+            {
+                Vector3 centerDirection = towardVisualCenter / centerDistance;
+                Ray centerRay = new Ray(
+                    impactPoint + centerDirection * ImpactSurfaceDistanceEpsilon,
+                    centerDirection);
+                float castDistance = centerDistance + meshCollider.bounds.extents.magnitude + 1f;
+                if (TryRaycastMeshCollider(meshCollider, centerRay, castDistance, out RaycastHit centerHit))
+                {
+                    closestHit = centerHit;
+                    foundHit = true;
+                }
+            }
+
+            if (!foundHit)
+            {
+                return false;
+            }
+
+            Vector3 hitNormal = closestHit.normal.sqrMagnitude > 0.000001f
+                ? closestHit.normal.normalized
+                : safeNormal;
+            if (Vector3.Dot(hitNormal, safeNormal) < 0f)
+            {
+                hitNormal = -hitNormal;
+            }
+
+            closestHit.normal = hitNormal;
+            return true;
+        }
+
+        private static bool TryRaycastMeshCollider(
+            MeshCollider meshCollider,
+            Ray ray,
+            float distance,
+            out RaycastHit hit)
+        {
+            List<GameObject> activatedObjects = null;
+            Transform currentTransform = meshCollider.transform;
+            while (currentTransform != null)
+            {
+                if (!currentTransform.gameObject.activeSelf)
+                {
+                    if (activatedObjects == null)
+                    {
+                        activatedObjects = new List<GameObject>(4);
+                    }
+
+                    activatedObjects.Add(currentTransform.gameObject);
+                }
+
+                currentTransform = currentTransform.parent;
+            }
+
+            if (activatedObjects != null)
+            {
+                for (int i = activatedObjects.Count - 1; i >= 0; i--)
+                {
+                    activatedObjects[i].SetActive(true);
+                }
+            }
+
+            bool wasEnabled = meshCollider.enabled;
+            if (!wasEnabled)
+            {
+                meshCollider.enabled = true;
+            }
+
+            try
+            {
+                Physics.SyncTransforms();
+                return meshCollider.Raycast(ray, out hit, Mathf.Max(ImpactSurfaceDistanceEpsilon, distance));
+            }
+            finally
+            {
+                if (!wasEnabled && meshCollider != null)
+                {
+                    meshCollider.enabled = false;
+                }
+
+                if (activatedObjects != null)
+                {
+                    for (int i = 0; i < activatedObjects.Count; i++)
+                    {
+                        if (activatedObjects[i] != null)
+                        {
+                            activatedObjects[i].SetActive(false);
+                        }
+                    }
+                }
+            }
+        }
+
         public static bool TryGetArmor(
             Collider collider,
             out VehicleArmorController armor,
@@ -205,6 +506,91 @@ namespace Game.Scripts.Gameplay.Robots
 
             RootsByObjectId.Remove(networkObjectId);
             ImpactRenderersByRoot.Remove(root);
+            ImpactMeshCollidersByRoot.Remove(root);
+        }
+
+        private static bool TryGetRendererBoundsSurface(
+            List<Renderer> renderers,
+            Vector3 impactPoint,
+            Vector3 safeNormal,
+            out Vector3 surfacePosition)
+        {
+            surfacePosition = impactPoint;
+            if (renderers == null)
+            {
+                return false;
+            }
+
+            float closestDistance = float.PositiveInfinity;
+            bool foundSurface = false;
+            for (int i = 0; i < renderers.Count; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                Bounds bounds = renderer.bounds;
+                Vector3 towardCenter = bounds.center - impactPoint;
+                float centerDistance = towardCenter.magnitude;
+                if (centerDistance <= ImpactSurfaceDistanceEpsilon)
+                {
+                    continue;
+                }
+
+                Vector3 direction = towardCenter / centerDistance;
+                Ray boundsRay = new Ray(
+                    impactPoint + direction * ImpactSurfaceDistanceEpsilon,
+                    direction);
+                if (!bounds.IntersectRay(boundsRay, out float distance))
+                {
+                    continue;
+                }
+
+                distance = Mathf.Max(0f, distance);
+                if (distance >= closestDistance)
+                {
+                    continue;
+                }
+
+                Vector3 candidate = boundsRay.origin + boundsRay.direction * distance;
+                closestDistance = distance;
+                surfacePosition = candidate;
+                foundSurface = true;
+            }
+
+            return foundSurface;
+        }
+
+        private sealed class ImpactVisualSurfaceData
+        {
+            public readonly List<MeshCollider> MeshColliders = new List<MeshCollider>(4);
+            public readonly List<Renderer> Renderers = new List<Renderer>(4);
+
+            public ImpactVisualSurfaceData(MeshCollider[] meshColliders, Renderer[] renderers)
+            {
+                AddUnique(meshColliders, MeshColliders);
+                AddUnique(renderers, Renderers);
+            }
+
+            private static void AddUnique<T>(T[] source, List<T> destination)
+                where T : Object
+            {
+                if (source == null)
+                {
+                    return;
+                }
+
+                for (int i = 0; i < source.Length; i++)
+                {
+                    T item = source[i];
+                    if (item != null && !destination.Contains(item))
+                    {
+                        destination.Add(item);
+                    }
+                }
+            }
         }
     }
 

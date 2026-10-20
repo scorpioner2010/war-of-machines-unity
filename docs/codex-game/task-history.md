@@ -12,6 +12,13 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-21 — Deterministic robot impact surface PlayMode verification
+
+- Status: `COMPLETED`
+- Scope: Replaced unreliable manual aiming with a deterministic real-prefab side-hit test; registered serialized robot visual mesh colliders, corrected robot impact points before FX setup, and verified pool rendering-layer cleanup.
+- Verification: Unity selected PlayMode test passed with `haloToMesh=0.00000` and `haloToProxy=0.52875`; the production assembly build passed with 0 errors.
+- Detail: The test uses `IA_L1_Starter`, an oversized proxy collider, a real `PooledImpactFx` prefab, and logs the measured proxy, visual mesh, resolved, and halo positions.
+
 ### 2026-10-21 - Reproduce Hangar impact alignment in Client
 
 - Status: `IN_PROGRESS`
@@ -178,6 +185,13 @@ The repository can preserve task state and verification notes, but it cannot con
 - Scope: split `PooledImpactFx` into complete `robotImpactProfile` and `otherObjectImpactProfile` inspector profiles, selected by the presence of a registered `VehicleRoot`, and migrated all five serialized prefab instances.
 - Verification: C# build passed with `0` errors, all five prefab instances passed profile-serialization assertions, and targeted `git diff --check` passed; Play Mode comparison with intentionally different values remains pending.
 - Detail: `task-handoff.md`, active task.
+
+### 2026-10-21 — Visual-mesh Impact Glow Halo alignment
+
+- Status: `COMPLETED`
+- Scope: resolve `Impact Glow Halo` against serialized visible meshes for robots and non-robot proxy colliders, carry the local hit collider into `PooledImpactFx`, map the five concrete fence prefabs, and preserve robot layer isolation/pool reset.
+- Verification: fresh Unity PlayMode run passed `3/3` tests, covering all eight IA/NV robot variants, the original oversized-proxy robot, and `Concrete_fence_v1_wall_set_v2`; the fence measured `haloToMesh=0.00000` versus `haloToPhysics=0.20009`. Final C# build passed with `0` errors; `git diff --check` passed.
+- Detail: archived in `task-handoff.md` under `Active task`.
 
 ### 2026-10-21 — Hangar impact surface alignment
 

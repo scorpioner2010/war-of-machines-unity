@@ -42,13 +42,31 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
     private readonly List<GameObject> _detachedDebrisObjects = new List<GameObject>(32);
     private readonly List<Collider> _detachedDebrisColliders = new List<Collider>(32);
     private readonly List<Renderer> _detachedDebrisRenderers = new List<Renderer>(32);
+    private readonly List<Renderer> _impactRenderers = new List<Renderer>(32);
+    private readonly List<MeshCollider> _impactMeshColliders = new List<MeshCollider>(32);
     private readonly List<FadeMaterial> _fadeMaterials = new List<FadeMaterial>(8);
     private bool _deathHandled;
     private bool _debrisDestroyed;
 
+    private void Awake()
+    {
+        RegisterImpactMeshColliders();
+    }
+
+    private void OnEnable()
+    {
+        RegisterImpactMeshColliders();
+    }
+
     public void SetVehicleRoot(VehicleRoot root)
     {
+        if (vehicleRoot != null && vehicleRoot != root)
+        {
+            VehicleColliderRegistry.UnregisterImpactMeshColliders(vehicleRoot);
+        }
+
         vehicleRoot = root;
+        RegisterImpactMeshColliders();
     }
 
     private void Start()
@@ -70,6 +88,45 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
 
         DestroyDetachedDebris();
+        VehicleColliderRegistry.UnregisterImpactMeshColliders(vehicleRoot);
+    }
+
+    private void RegisterImpactMeshColliders()
+    {
+        if (vehicleRoot == null)
+        {
+            return;
+        }
+
+        _impactRenderers.Clear();
+        _impactMeshColliders.Clear();
+        if (detachableVisuals != null)
+        {
+            for (int i = 0; i < detachableVisuals.Length; i++)
+            {
+                DetachableVisual visual = detachableVisuals[i];
+                if (visual == null)
+                {
+                    continue;
+                }
+
+                if (visual.renderer != null && !_impactRenderers.Contains(visual.renderer))
+                {
+                    _impactRenderers.Add(visual.renderer);
+                }
+
+                MeshCollider meshCollider = visual.meshCollider != null
+                    ? visual.meshCollider
+                    : visual.collider as MeshCollider;
+                if (meshCollider != null && !_impactMeshColliders.Contains(meshCollider))
+                {
+                    _impactMeshColliders.Add(meshCollider);
+                }
+            }
+        }
+
+        VehicleColliderRegistry.RegisterRenderers(vehicleRoot, _impactRenderers.ToArray());
+        VehicleColliderRegistry.RegisterImpactMeshColliders(vehicleRoot, _impactMeshColliders);
     }
 
     [Button]

@@ -1,0 +1,696 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using NUnit.Framework;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace Game.Tests.PlayMode
+{
+    public sealed class PooledImpactFxVisualSurfacePlayModeTests
+    {
+        private const string RobotPrefabPath =
+            "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab";
+        private const string FencePrefabPath =
+            "Assets/Game/Content/Map_v100_v200/Environment/Fences/Concrete_fences/Concrete_fence_v1/Concrete_fence_v1_wall_set_v2.prefab";
+        private const string ImpactFxPrefabPath =
+            "Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab";
+        private const float RaycastDistance = 100f;
+        private const float SurfacePositionTolerance = 0.01f;
+
+        private readonly List<GameObject> _createdObjects = new List<GameObject>(4);
+
+        [UnityTest]
+        public IEnumerator SpawnRobotAndShootFromSide_UsesVisualMeshForImpactHalo()
+        {
+            Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
+            Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
+            Type pooledImpactFxType = FindGameType("PooledImpactFx");
+
+            GameObject robotPrefab = LoadAsset<GameObject>(RobotPrefabPath, "IA_L1_Starter");
+            Assert.IsNotNull(robotPrefab, $"Missing robot prefab at {RobotPrefabPath}.");
+
+            GameObject robotObject = UnityEngine.Object.Instantiate(robotPrefab);
+            _createdObjects.Add(robotObject);
+            robotObject.SetActive(true);
+            yield return null;
+
+            MeshCollider[] visualMeshColliders = robotObject.GetComponentsInChildren<MeshCollider>(true);
+            ActivateVisualMeshColliderObjects(visualMeshColliders);
+            Physics.SyncTransforms();
+
+            Component vehicleRoot = robotObject.GetComponent(vehicleRootType);
+            Assert.IsNotNull(vehicleRoot, "The spawned test robot has no VehicleRoot.");
+            List<Renderer> targetRenderers = GetImpactRenderers(
+                colliderRegistryType,
+                vehicleRootType,
+                vehicleRoot);
+            Assert.IsNotNull(targetRenderers, "The spawned robot did not register its impact renderers.");
+            uint[] originalRenderingLayerMasks = new uint[targetRenderers.Count];
+            for (int i = 0; i < targetRenderers.Count; i++)
+            {
+                originalRenderingLayerMasks[i] = targetRenderers[i].renderingLayerMask;
+            }
+
+            Assert.IsTrue(
+                TryGetVisualBounds(robotObject, out Bounds visualBounds),
+                "The spawned robot has no visual renderer bounds.");
+
+            Assert.IsTrue(
+                TryFindSideVisualMeshHit(
+                    visualMeshColliders,
+                    visualBounds,
+                    out RaycastHit expectedVisualHit,
+                    out Vector3 shotOrigin,
+                    out Vector3 shotDirection),
+                "The spawned robot has no raycastable visual mesh for the deterministic side shot.");
+
+            GameObject proxyObject = new GameObject("Deterministic Impact Test Proxy Collider");
+            _createdObjects.Add(proxyObject);
+            proxyObject.transform.SetPositionAndRotation(visualBounds.center, Quaternion.identity);
+            BoxCollider proxyCollider = proxyObject.AddComponent<BoxCollider>();
+            proxyCollider.size = new Vector3(
+                Mathf.Max(visualBounds.size.x + 1f, 1f),
+                Mathf.Max(visualBounds.size.y + 1f, 1f),
+                Mathf.Max(visualBounds.size.z + 1f, 1f));
+            InvokeStatic(
+                colliderRegistryType,
+                "RegisterVehicle",
+                new[] { typeof(Collider), vehicleRootType },
+                new object[] { proxyCollider, vehicleRoot });
+
+            Physics.SyncTransforms();
+            Ray shotRay = new Ray(shotOrigin, shotDirection);
+            Assert.IsTrue(
+                Physics.Raycast(
+                    shotRay,
+                    out RaycastHit physicsHit,
+                    RaycastDistance,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Ignore),
+                $"The deterministic side shot did not hit the spawned robot. proxyBounds={proxyCollider.bounds}, origin={shotOrigin}, direction={shotDirection}, enabled={proxyCollider.enabled}, active={proxyObject.activeInHierarchy}.");
+            Assert.AreSame(
+                proxyCollider,
+                physicsHit.collider,
+                "The test shot did not hit the intentionally oversized proxy collider first.");
+
+            Component hitRoot = TryGetRoot(
+                colliderRegistryType,
+                vehicleRootType,
+                physicsHit.collider);
+            Assert.IsNotNull(hitRoot, "The physics hit did not resolve to a registered VehicleRoot.");
+            Assert.AreSame(vehicleRoot, hitRoot, "The side shot resolved to the wrong robot root.");
+
+            object[] surfaceArguments =
+            {
+                vehicleRoot,
+                physicsHit.point,
+                physicsHit.normal,
+                null,
+                null
+            };
+            bool resolved = (bool)InvokeStatic(
+                colliderRegistryType,
+                "TryGetImpactVisualSurface",
+                new[]
+                {
+                    vehicleRootType,
+                    typeof(Vector3),
+                    typeof(Vector3),
+                    typeof(Vector3).MakeByRefType(),
+                    typeof(Vector3).MakeByRefType()
+                },
+                surfaceArguments);
+            Assert.IsTrue(
+                resolved,
+                "The robot visual surface registry did not resolve a surface behind the proxy collider.");
+
+            Vector3 resolvedVisualPosition = (Vector3)surfaceArguments[3];
+            Vector3 resolvedVisualNormal = (Vector3)surfaceArguments[4];
+            Assert.Less(
+                Vector3.Distance(resolvedVisualPosition, expectedVisualHit.point),
+                SurfacePositionTolerance,
+                $"Resolved visual point {resolvedVisualPosition} differs from mesh point {expectedVisualHit.point}.");
+
+            GameObject impactFxPrefabObject =
+                LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+            Component impactFxPrefab = impactFxPrefabObject.GetComponent(pooledImpactFxType);
+            Assert.IsNotNull(impactFxPrefab, $"Prefab at {ImpactFxPrefabPath} has no PooledImpactFx component.");
+
+            GameObject impactFxObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
+            _createdObjects.Add(impactFxObject);
+            Component impactFx = impactFxObject.GetComponent(pooledImpactFxType);
+            InvokeInstance(pooledImpactFxType, impactFx, "Initialize", new[] { typeof(float) }, new object[] { 5f });
+            InvokeInstance(
+                pooledImpactFxType,
+                impactFx,
+                "PlayImpact",
+                new[] { typeof(Vector3), typeof(Vector3), vehicleRootType, typeof(Collider) },
+                new object[] { physicsHit.point, physicsHit.normal, vehicleRoot, physicsHit.collider });
+            yield return null;
+
+            object robotImpactProfile = pooledImpactFxType
+                .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(impactFx);
+            Type profileType = robotImpactProfile.GetType();
+            MeshRenderer haloRenderer = (MeshRenderer)profileType
+                .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(robotImpactProfile);
+            float surfaceOffset = (float)profileType
+                .GetField("impactDecalSurfaceOffset", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(robotImpactProfile);
+            Assert.IsNotNull(haloRenderer, "The robot impact profile has no Impact Glow Halo renderer.");
+            Assert.IsTrue(haloRenderer.enabled, "The robot Impact Glow Halo was not enabled after the hit.");
+
+            Vector3 expectedHaloPosition = resolvedVisualPosition + resolvedVisualNormal * surfaceOffset;
+            float haloToMeshDistance = Vector3.Distance(
+                haloRenderer.transform.position,
+                expectedHaloPosition);
+            float haloToProxyDistance = Vector3.Distance(
+                haloRenderer.transform.position,
+                physicsHit.point);
+            Debug.Log(
+                $"Deterministic robot shot: proxy={physicsHit.point}, mesh={expectedVisualHit.point}, "
+                + $"resolved={resolvedVisualPosition}, halo={haloRenderer.transform.position}, "
+                + $"haloToMesh={haloToMeshDistance:F5}, haloToProxy={haloToProxyDistance:F5}.");
+
+            Assert.Less(
+                haloToMeshDistance,
+                SurfacePositionTolerance,
+                "Impact Glow Halo is not placed on the visual mesh surface.");
+            Assert.Greater(
+                haloToProxyDistance,
+                SurfacePositionTolerance,
+                "Impact Glow Halo still uses the oversized proxy collider point.");
+
+            uint robotImpactRenderingLayerMask = haloRenderer.renderingLayerMask;
+            Assert.AreNotEqual(
+                1u,
+                robotImpactRenderingLayerMask,
+                "Robot impact FX did not acquire a target-only rendering layer.");
+
+            InvokeInstance(
+                pooledImpactFxType,
+                impactFx,
+                "PrepareForPoolRelease",
+                Array.Empty<Type>(),
+                Array.Empty<object>());
+            Assert.IsFalse(haloRenderer.enabled, "Pool release did not disable the Impact Glow Halo.");
+            Assert.AreEqual(
+                1u,
+                haloRenderer.renderingLayerMask,
+                "Pool release did not reset the Impact Glow Halo rendering layer.");
+            for (int i = 0; i < targetRenderers.Count; i++)
+            {
+                Assert.AreEqual(
+                    originalRenderingLayerMasks[i],
+                    targetRenderers[i].renderingLayerMask,
+                    $"Pool release did not restore renderer layer {i}.");
+            }
+
+            InvokeStatic(
+                colliderRegistryType,
+                "Unregister",
+                new[] { typeof(Collider), vehicleRootType },
+                new object[] { proxyCollider, vehicleRoot });
+        }
+
+        [UnityTest]
+        public IEnumerator RobotVariants_AlwaysShowImpactHaloWhenShotFromSide()
+        {
+            Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
+            Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
+            Type pooledImpactFxType = FindGameType("PooledImpactFx");
+            string[] robotPrefabPaths =
+            {
+                "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab",
+                "Assets/Game/Content/Robots/IA/IA_L2_Colossus/IA_L2_Colossus.prefab",
+                "Assets/Game/Content/Robots/IA/IA_L2_Guardian/IA_L2_Guardian.prefab",
+                "Assets/Game/Content/Robots/IA/IA_L2_Scout/IA_L2_Scout.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L1_Starter/NV_L1_Starter.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L2_Colossus/NV_L2_Colossus.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L2_Guardian/NV_L2_Guardian.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L2_Scout/NV_L2_Scout.prefab"
+            };
+
+            GameObject impactFxPrefabObject = LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+
+            for (int robotIndex = 0; robotIndex < robotPrefabPaths.Length; robotIndex++)
+            {
+                string prefabPath = robotPrefabPaths[robotIndex];
+                GameObject robotPrefab = LoadAsset<GameObject>(prefabPath, prefabPath);
+                Assert.IsNotNull(robotPrefab, $"Missing robot prefab at {prefabPath}.");
+
+                GameObject robotObject = UnityEngine.Object.Instantiate(robotPrefab);
+                _createdObjects.Add(robotObject);
+                robotObject.SetActive(true);
+                yield return null;
+
+                Component vehicleRoot = robotObject.GetComponent(vehicleRootType);
+                Assert.IsNotNull(vehicleRoot, $"The spawned robot has no VehicleRoot: {prefabPath}.");
+                MeshCollider[] visualMeshColliders = robotObject.GetComponentsInChildren<MeshCollider>(true);
+                ActivateVisualMeshColliderObjects(visualMeshColliders);
+                Assert.IsTrue(
+                    TryGetVisualBounds(robotObject, out Bounds visualBounds),
+                    $"The robot has no visual renderer bounds: {prefabPath}.");
+                Assert.IsTrue(
+                    TryFindSideVisualMeshHit(
+                        visualMeshColliders,
+                        visualBounds,
+                        out RaycastHit visualHit,
+                        out _,
+                        out _),
+                    $"The robot has no raycastable visual mesh: {prefabPath}.");
+
+                object[] surfaceArguments =
+                {
+                    vehicleRoot,
+                    visualHit.point,
+                    visualHit.normal,
+                    null,
+                    null
+                };
+                bool resolved = (bool)InvokeStatic(
+                    colliderRegistryType,
+                    "TryGetImpactVisualSurface",
+                    new[]
+                    {
+                        vehicleRootType,
+                        typeof(Vector3),
+                        typeof(Vector3),
+                        typeof(Vector3).MakeByRefType(),
+                        typeof(Vector3).MakeByRefType()
+                    },
+                    surfaceArguments);
+                Assert.IsTrue(resolved, $"Robot visual surface was not registered: {prefabPath}.");
+
+                GameObject impactFxObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
+                _createdObjects.Add(impactFxObject);
+                Component impactFx = impactFxObject.GetComponent(pooledImpactFxType);
+                InvokeInstance(
+                    pooledImpactFxType,
+                    impactFx,
+                    "Initialize",
+                    new[] { typeof(float) },
+                    new object[] { 5f });
+                InvokeInstance(
+                    pooledImpactFxType,
+                    impactFx,
+                    "PlayImpact",
+                    new[] { typeof(Vector3), typeof(Vector3), vehicleRootType, typeof(Collider) },
+                    new object[] { visualHit.point, visualHit.normal, vehicleRoot, visualHit.collider });
+                yield return null;
+
+                object robotImpactProfile = pooledImpactFxType
+                    .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                    .GetValue(impactFx);
+                MeshRenderer haloRenderer = (MeshRenderer)robotImpactProfile.GetType()
+                    .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
+                    .GetValue(robotImpactProfile);
+                Assert.IsNotNull(haloRenderer, $"Robot profile has no Halo: {prefabPath}.");
+                Assert.IsTrue(haloRenderer.enabled, $"Robot Halo is invisible after hit: {prefabPath}.");
+                Debug.Log(
+                    $"Robot impact regression: prefab={prefabPath}, mesh={visualHit.point}, "
+                    + $"halo={haloRenderer.transform.position}.");
+
+                InvokeInstance(
+                    pooledImpactFxType,
+                    impactFx,
+                    "PrepareForPoolRelease",
+                    Array.Empty<Type>(),
+                    Array.Empty<object>());
+                Assert.IsFalse(haloRenderer.enabled, $"Pool reset left Halo enabled: {prefabPath}.");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator FenceAndShootFromSide_UsesVisualMeshForImpactHalo()
+        {
+            Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
+            Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
+            Type pooledImpactFxType = FindGameType("PooledImpactFx");
+            Type impactVisualSurfaceType = FindGameType("ImpactVisualSurface");
+            GameObject fencePrefab = LoadAsset<GameObject>(FencePrefabPath, "Concrete_fence_v1_wall_set_v2");
+            Assert.IsNotNull(fencePrefab, $"Missing fence prefab at {FencePrefabPath}.");
+
+            GameObject fenceObject = UnityEngine.Object.Instantiate(fencePrefab);
+            _createdObjects.Add(fenceObject);
+            fenceObject.SetActive(true);
+            yield return null;
+
+            Assert.IsNotNull(
+                fenceObject.GetComponent(impactVisualSurfaceType),
+                "The reported fence prefab has no ImpactVisualSurface registration.");
+            BoxCollider physicsCollider = fenceObject.GetComponent<BoxCollider>();
+            MeshCollider visualMeshCollider = fenceObject.GetComponent<MeshCollider>();
+            MeshRenderer visualRenderer = fenceObject.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(physicsCollider, "The reported fence has no physics BoxCollider.");
+            Assert.IsNotNull(visualMeshCollider, "The reported fence has no visual MeshCollider.");
+            Assert.IsNotNull(visualRenderer, "The reported fence has no MeshRenderer.");
+
+            Assert.IsTrue(
+                TryFindColliderMismatch(
+                    physicsCollider,
+                    visualMeshCollider,
+                    visualRenderer.bounds,
+                    out RaycastHit physicsHit,
+                    out RaycastHit expectedVisualHit,
+                    out Vector3 shotOrigin,
+                    out Vector3 shotDirection),
+                "The reported fence did not produce a deterministic collider-versus-mesh mismatch.");
+
+            object[] surfaceArguments =
+            {
+                physicsCollider,
+                physicsHit.point,
+                physicsHit.normal,
+                null,
+                null
+            };
+            bool resolved = (bool)InvokeStatic(
+                colliderRegistryType,
+                "TryGetImpactVisualSurface",
+                new[]
+                {
+                    typeof(Collider),
+                    typeof(Vector3),
+                    typeof(Vector3),
+                    typeof(Vector3).MakeByRefType(),
+                    typeof(Vector3).MakeByRefType()
+                },
+                surfaceArguments);
+            Assert.IsTrue(resolved, "The fence visual surface registry did not resolve the visual mesh.");
+            Vector3 resolvedVisualPosition = (Vector3)surfaceArguments[3];
+            Vector3 resolvedVisualNormal = (Vector3)surfaceArguments[4];
+            Assert.Less(
+                Vector3.Distance(resolvedVisualPosition, expectedVisualHit.point),
+                SurfacePositionTolerance,
+                $"Fence resolved point {resolvedVisualPosition} differs from mesh point {expectedVisualHit.point}.");
+
+            GameObject impactFxPrefabObject = LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
+            GameObject impactFxObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
+            _createdObjects.Add(impactFxObject);
+            Component impactFx = impactFxObject.GetComponent(pooledImpactFxType);
+            InvokeInstance(
+                pooledImpactFxType,
+                impactFx,
+                "Initialize",
+                new[] { typeof(float) },
+                new object[] { 5f });
+            InvokeInstance(
+                pooledImpactFxType,
+                impactFx,
+                "PlayImpact",
+                new[] { typeof(Vector3), typeof(Vector3), vehicleRootType, typeof(Collider) },
+                new object[] { physicsHit.point, physicsHit.normal, null, physicsCollider });
+            yield return null;
+
+            object otherObjectImpactProfile = pooledImpactFxType
+                .GetField("otherObjectImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(impactFx);
+            Type profileType = otherObjectImpactProfile.GetType();
+            MeshRenderer haloRenderer = (MeshRenderer)profileType
+                .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(otherObjectImpactProfile);
+            float surfaceOffset = (float)profileType
+                .GetField("impactDecalSurfaceOffset", BindingFlags.Instance | BindingFlags.Public)
+                .GetValue(otherObjectImpactProfile);
+            Vector3 expectedHaloPosition = resolvedVisualPosition + resolvedVisualNormal * surfaceOffset;
+            float haloToMeshDistance = Vector3.Distance(haloRenderer.transform.position, expectedHaloPosition);
+            float haloToPhysicsDistance = Vector3.Distance(haloRenderer.transform.position, physicsHit.point);
+            Debug.Log(
+                $"Fence impact regression: physics={physicsHit.point}, mesh={expectedVisualHit.point}, "
+                + $"resolved={resolvedVisualPosition}, halo={haloRenderer.transform.position}, "
+                + $"origin={shotOrigin}, direction={shotDirection}, "
+                + $"haloToMesh={haloToMeshDistance:F5}, haloToPhysics={haloToPhysicsDistance:F5}.");
+
+            Assert.IsTrue(haloRenderer.enabled, "Fence Impact Glow Halo was not enabled.");
+            Assert.Less(haloToMeshDistance, SurfacePositionTolerance, "Fence Halo is not on the visual mesh.");
+            Assert.Greater(
+                haloToPhysicsDistance,
+                SurfacePositionTolerance,
+                "Fence Halo still uses the oversized BoxCollider hit point.");
+        }
+
+        [TearDown]
+        public void DestroyCreatedObjects()
+        {
+            for (int i = 0; i < _createdObjects.Count; i++)
+            {
+                GameObject createdObject = _createdObjects[i];
+                if (createdObject != null)
+                {
+                    UnityEngine.Object.Destroy(createdObject);
+                }
+            }
+
+            _createdObjects.Clear();
+        }
+
+        private static Type FindGameType(string typeName)
+        {
+            Type type = Type.GetType(typeName + ", Assembly-CSharp");
+            Assert.IsNotNull(type, $"Game type {typeName} is not available in Assembly-CSharp.");
+            return type;
+        }
+
+        private static T LoadAsset<T>(string assetPath, string resourcesPath)
+            where T : UnityEngine.Object
+        {
+#if UNITY_EDITOR
+            return AssetDatabase.LoadAssetAtPath<T>(assetPath);
+#else
+            return Resources.Load<T>(resourcesPath);
+#endif
+        }
+
+        private static object InvokeStatic(
+            Type declaringType,
+            string methodName,
+            Type[] parameterTypes,
+            object[] arguments)
+        {
+            MethodInfo method = declaringType.GetMethod(
+                methodName,
+                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic,
+                null,
+                parameterTypes,
+                null);
+            Assert.IsNotNull(method, $"Missing method {declaringType.FullName}.{methodName}.");
+            return method.Invoke(null, arguments);
+        }
+
+        private static void InvokeInstance(
+            Type declaringType,
+            object instance,
+            string methodName,
+            Type[] parameterTypes,
+            object[] arguments)
+        {
+            MethodInfo method = declaringType.GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                null,
+                parameterTypes,
+                null);
+            Assert.IsNotNull(method, $"Missing method {declaringType.FullName}.{methodName}.");
+            method.Invoke(instance, arguments);
+        }
+
+        private static List<Renderer> GetImpactRenderers(
+            Type registryType,
+            Type vehicleRootType,
+            Component vehicleRoot)
+        {
+            object[] arguments = { vehicleRoot, null };
+            bool result = (bool)InvokeStatic(
+                registryType,
+                "TryGetImpactRenderers",
+                new[] { vehicleRootType, typeof(List<Renderer>).MakeByRefType() },
+                arguments);
+            return result ? arguments[1] as List<Renderer> : null;
+        }
+
+        private static Component TryGetRoot(
+            Type registryType,
+            Type vehicleRootType,
+            Collider collider)
+        {
+            object[] arguments = { collider, null };
+            bool result = (bool)InvokeStatic(
+                registryType,
+                "TryGetRoot",
+                new[] { typeof(Collider), vehicleRootType.MakeByRefType() },
+                arguments);
+            return result ? arguments[1] as Component : null;
+        }
+
+        private static bool TryGetVisualBounds(GameObject robotObject, out Bounds bounds)
+        {
+            bounds = default;
+            bool foundRenderer = false;
+            Renderer[] renderers = robotObject.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (!foundRenderer)
+                {
+                    bounds = renderer.bounds;
+                    foundRenderer = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return foundRenderer;
+        }
+
+        private static bool TryFindSideVisualMeshHit(
+            MeshCollider[] meshColliders,
+            Bounds visualBounds,
+            out RaycastHit closestHit,
+            out Vector3 shotOrigin,
+            out Vector3 shotDirection)
+        {
+            closestHit = default;
+            shotDirection = Vector3.right;
+            shotOrigin = new Vector3(visualBounds.min.x - 2f, visualBounds.center.y, visualBounds.center.z);
+            const int sampleCount = 15;
+
+            for (int yIndex = 0; yIndex < sampleCount; yIndex++)
+            {
+                float y = Mathf.Lerp(visualBounds.min.y, visualBounds.max.y, (yIndex + 0.5f) / sampleCount);
+                for (int zIndex = 0; zIndex < sampleCount; zIndex++)
+                {
+                    float z = Mathf.Lerp(visualBounds.min.z, visualBounds.max.z, (zIndex + 0.5f) / sampleCount);
+                    shotOrigin = new Vector3(visualBounds.min.x - 2f, y, z);
+                    Ray visualRay = new Ray(shotOrigin, shotDirection);
+
+                    for (int i = 0; i < meshColliders.Length; i++)
+                    {
+                        MeshCollider meshCollider = meshColliders[i];
+                        if (meshCollider == null || meshCollider.sharedMesh == null)
+                        {
+                            continue;
+                        }
+
+                        bool wasEnabled = meshCollider.enabled;
+                        if (!wasEnabled)
+                        {
+                            meshCollider.enabled = true;
+                        }
+
+                        try
+                        {
+                            Physics.SyncTransforms();
+                            if (meshCollider.Raycast(visualRay, out RaycastHit visualHit, RaycastDistance))
+                            {
+                                closestHit = visualHit;
+                                return true;
+                            }
+                        }
+                        finally
+                        {
+                            if (!wasEnabled && meshCollider != null)
+                            {
+                                meshCollider.enabled = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryFindColliderMismatch(
+            BoxCollider physicsCollider,
+            MeshCollider visualMeshCollider,
+            Bounds visualBounds,
+            out RaycastHit physicsHit,
+            out RaycastHit visualHit,
+            out Vector3 shotOrigin,
+            out Vector3 shotDirection)
+        {
+            physicsHit = default;
+            visualHit = default;
+            shotDirection = Vector3.right;
+            shotOrigin = new Vector3(visualBounds.min.x - 2f, visualBounds.center.y, visualBounds.center.z);
+            const int sampleCount = 17;
+            bool wasEnabled = visualMeshCollider.enabled;
+            visualMeshCollider.enabled = true;
+            try
+            {
+                for (int side = 0; side < 2; side++)
+                {
+                    shotDirection = side == 0 ? Vector3.right : Vector3.left;
+                    float sideStart = side == 0 ? visualBounds.min.x - 2f : visualBounds.max.x + 2f;
+                    for (int yIndex = 0; yIndex < sampleCount; yIndex++)
+                    {
+                        float y = Mathf.Lerp(visualBounds.min.y, visualBounds.max.y, (yIndex + 0.5f) / sampleCount);
+                        for (int zIndex = 0; zIndex < sampleCount; zIndex++)
+                        {
+                            float z = Mathf.Lerp(visualBounds.min.z, visualBounds.max.z, (zIndex + 0.5f) / sampleCount);
+                            shotOrigin = new Vector3(sideStart, y, z);
+                            Ray ray = new Ray(shotOrigin, shotDirection);
+                            if (!physicsCollider.Raycast(ray, out RaycastHit candidatePhysicsHit, RaycastDistance)
+                                || !visualMeshCollider.Raycast(ray, out RaycastHit candidateVisualHit, RaycastDistance))
+                            {
+                                continue;
+                            }
+
+                            if (Vector3.Distance(candidatePhysicsHit.point, candidateVisualHit.point)
+                                <= SurfacePositionTolerance)
+                            {
+                                continue;
+                            }
+
+                            physicsHit = candidatePhysicsHit;
+                            visualHit = candidateVisualHit;
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            finally
+            {
+                visualMeshCollider.enabled = wasEnabled;
+            }
+        }
+
+        private static void ActivateVisualMeshColliderObjects(MeshCollider[] meshColliders)
+        {
+            for (int i = 0; i < meshColliders.Length; i++)
+            {
+                MeshCollider meshCollider = meshColliders[i];
+                if (meshCollider == null)
+                {
+                    continue;
+                }
+
+                Transform currentTransform = meshCollider.transform;
+                while (currentTransform != null)
+                {
+                    currentTransform.gameObject.SetActive(true);
+                    currentTransform = currentTransform.parent;
+                }
+            }
+        }
+
+    }
+}

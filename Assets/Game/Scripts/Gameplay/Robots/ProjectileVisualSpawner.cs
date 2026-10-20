@@ -166,7 +166,8 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 impactPoint,
             Vector3 impactNormal,
             Transform attachmentParent = null,
-            VehicleRoot impactTarget = null)
+            VehicleRoot impactTarget = null,
+            Collider impactCollider = null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             using (ImpactFxMarker.Auto())
@@ -184,7 +185,8 @@ namespace Game.Scripts.Gameplay.Robots
                     impactPoint,
                     Quaternion.LookRotation(normal),
                     attachmentParent,
-                    impactTarget);
+                    impactTarget,
+                    impactCollider);
             }
         }
     }

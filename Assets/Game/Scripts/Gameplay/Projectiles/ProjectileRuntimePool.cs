@@ -170,7 +170,8 @@ public static class ProjectileRuntimePool
         Vector3 position,
         Quaternion rotation,
         Transform attachmentParent = null,
-        VehicleRoot impactTarget = null)
+        VehicleRoot impactTarget = null,
+        Collider impactCollider = null)
     {
         if (prefab == null || IsServerOnlyProcess())
         {
@@ -189,7 +190,8 @@ public static class ProjectileRuntimePool
                 position,
                 rotation * Vector3.forward,
                 attachmentParent,
-                impactTarget);
+                impactTarget,
+                impactCollider);
         }
     }
 
@@ -275,7 +277,8 @@ public static class ProjectileRuntimePool
         Vector3 impactPosition,
         Vector3 impactNormal,
         Transform attachmentParent,
-        VehicleRoot impactTarget)
+        VehicleRoot impactTarget,
+        Collider impactCollider)
     {
         ImpactFxPool pool = GetImpactFxPool(prefab);
         PooledImpactFx fx = RentImpactFx(pool);
@@ -289,7 +292,7 @@ public static class ProjectileRuntimePool
             fxTransform.SetParent(attachmentParent, true);
         }
 
-        fx.PlayImpact(impactPosition, impactNormal, impactTarget);
+        fx.PlayImpact(impactPosition, impactNormal, impactTarget, impactCollider);
     }
 
     private static PooledImpactFx RentImpactFx(ImpactFxPool pool)

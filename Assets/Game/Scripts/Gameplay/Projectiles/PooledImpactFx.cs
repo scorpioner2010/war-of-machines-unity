@@ -99,7 +99,11 @@ public sealed class PooledImpactFx : MonoBehaviour
         PlayInternal(GetOtherObjectImpactProfile());
     }
 
-    public void PlayImpact(Vector3 impactPoint, Vector3 impactNormal, VehicleRoot impactTarget = null)
+    public void PlayImpact(
+        Vector3 impactPoint,
+        Vector3 impactNormal,
+        VehicleRoot impactTarget = null,
+        Collider impactCollider = null)
     {
         ImpactFxProfile profile = impactTarget != null
             ? GetRobotImpactProfile()
@@ -112,16 +116,39 @@ public sealed class PooledImpactFx : MonoBehaviour
             return;
         }
 
+        _impactRenderingLayerMask = 0u;
         if (impactTarget != null
-            && (!VehicleColliderRegistry.TryGetImpactRenderers(impactTarget, out List<Renderer> targetRenderers)
-                || !TryAcquireImpactLayer(impactTarget, targetRenderers)))
+            && VehicleColliderRegistry.TryGetImpactRenderers(impactTarget, out List<Renderer> targetRenderers))
         {
-            return;
+            TryAcquireImpactLayer(impactTarget, targetRenderers);
         }
 
         Vector3 safeNormal = impactNormal.sqrMagnitude > 0.000001f
             ? impactNormal.normalized
             : Vector3.up;
+        if (impactTarget != null
+            && VehicleColliderRegistry.TryGetImpactVisualSurface(
+                impactTarget,
+                impactPoint,
+                safeNormal,
+                out Vector3 visualSurfacePosition,
+                out Vector3 visualSurfaceNormal))
+        {
+            impactPoint = visualSurfacePosition;
+            safeNormal = visualSurfaceNormal;
+        }
+        else if (impactTarget == null
+            && VehicleColliderRegistry.TryGetImpactVisualSurface(
+                impactCollider,
+                impactPoint,
+                safeNormal,
+                out visualSurfacePosition,
+                out visualSurfaceNormal))
+        {
+            impactPoint = visualSurfacePosition;
+            safeNormal = visualSurfaceNormal;
+        }
+
         Vector3 up = Vector3.Cross(safeNormal, Vector3.up);
         if (up.sqrMagnitude <= 0.000001f)
         {
@@ -423,6 +450,7 @@ public sealed class PooledImpactFx : MonoBehaviour
         if (profile.impactGlowHaloRenderer != null)
         {
             profile.impactGlowHaloRenderer.enabled = false;
+            profile.impactGlowHaloRenderer.renderingLayerMask = WorldImpactRenderingLayerMask;
             if (profile.impactGlowHaloRenderer.gameObject.activeSelf)
             {
                 profile.impactGlowHaloRenderer.gameObject.SetActive(false);

@@ -1,7 +1,7 @@
 # Codex Task Handoff
 
-## Active task
-- Status: `IN_PROGRESS`
+## Archived task (separate robot and non-robot impact FX profiles)
+ - Status: `COMPLETED`
 - Started: 2026-10-21
 - User request (verbatim): "треба зробити 2 варіанти, 1 для попаданю по роботах інший по попаданю по любих інших обьектах, зараз 1 варіант а треба 2 і щоб вони повністю налаштовувалися в одному місці [@PooledImpactFx.cs](file:///D:/Programing/UnityProjects/war-of-machines-unity/Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs)PooledImpactFx.cs"
 - Objective: Add two fully independent, inspector-configurable impact FX profiles to `PooledImpactFx`: one selected for robot hits and one selected for all non-robot impacts, while preserving pooling, rendering-layer isolation, and existing generic visual FX playback.
@@ -17,6 +17,57 @@
 - Work remaining: Optional Unity Play Mode shot verification of both a robot and a non-robot object with intentionally different profile values.
 - Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab`, `Assets/Game/Content/Combat/Projectiles/CFX3_Fire_Shoot.prefab`, `Assets/Game/Content/Unused/Prefabs/FX/CFX3_Fire_Explosion.prefab`, `Assets/Game/Content/Unused/Prefabs/FX/CFXR3 Fire Explosion B.prefab`, `Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Explosions/CFXR Explosion Smoke 2 Solo (HDR).prefab`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
 - Verification: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildImpactProfiles\\` passed with `0` errors and only existing warnings. Static assertions confirmed every serialized `PooledImpactFx` prefab has both profiles and the active prefab has the complete nested settings; targeted `git diff --check` passed. Unity Editor remained open on `Client` after script import; a two-target Play Mode comparison remains pending.
+
+## Archived task (deterministic robot and world impact surface)
+ - Status: `COMPLETED`
+- Started: 2026-10-21
+- User request (verbatim): "я бачу ти тупо стреляєш в небо, тому напиши детермінований тестовий код, який стріляє збоку і попадає в заспавненого робота, щоб побачити реальний результат попадання"
+- Objective: Replace unreliable manual mouse aiming with an automated PlayMode reproduction that instantiates the real robot prefab, fires a physics ray from the side into a deliberately oversized proxy collider, and verifies that the robot Impact Glow Halo is placed on the registered visual mesh surface.
+- Acceptance criteria:
+  - A Unity PlayMode test spawns the real `IA_L1_Starter` robot prefab and fires a deterministic side shot through Unity physics.
+  - The shot resolves a registered robot target and invokes the real `PooledImpactFx.PlayImpact` path.
+  - The test proves the halo transform matches the visual mesh surface, not the outer proxy collider, and logs both positions for inspection.
+  - The fix works when `DeathLogic` is not listed in `VehicleRoot.rootAwareBehaviours`, and does not break pooling or renderer-layer cleanup.
+  - The test, C# build, static checks, mechanic documentation, and handoff/history are updated.
+- Assumptions: The real robot prefab and its serialized `DeathLogic.detachableVisuals` are the source of visual mesh colliders; the test may add only a temporary oversized proxy collider to reproduce the reported geometry mismatch.
+ - Current work: Added deterministic PlayMode coverage using the real `IA_L1_Starter` prefab and an oversized side-hit proxy collider. `DeathLogic` now registers serialized visual renderers/mesh colliders during its own lifecycle, `VehicleColliderRegistry` resolves robot impacts with a normal-first visual-mesh raycast, and `PooledImpactFx` consumes the corrected point before configuring all impact visuals. Pool reset also restores the halo renderer's world rendering layer.
+ - Work remaining: None.
+ - Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Tests/PlayMode/Game.PlayMode.Tests.asmdef`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, `docs/codex-game/task-history.md`.
+ - Verification: Selected Unity PlayMode test passed against the real prefab. Measured `proxy=(-1.05, 0.07, -0.58)`, `mesh=(-0.52, 0.07, -0.58)`, `resolved=(-0.52, 0.07, -0.58)`, `halo=(-0.52, 0.07, -0.58)`, `haloToMesh=0.00000`, and `haloToProxy=0.52875`; target-only rendering layer was applied and pool release restored masks and disabled the halo. `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildDeterministicImpactFinal2\\` passed with 0 errors. The PlayMode run emitted the existing convex-mesh polygon-limit warning for `tripo_node_b7d6146a`, but the test passed.
+
+## Active task
+- Status: `IN_PROGRESS`
+- Started: 2026-10-21
+- User request (verbatim): "я тільки що тестував попадання по роботах , на деяких роботах Impact Glow Halo взагалі не показується, потім я тестував на різних обьектах, і на деякихз обьектах наприклад на Concrete_fence_v1_wall_set_v2 (12) Impact Glow Halo лежить не на мешові а на колайдеру, або десь між ними, якщо збоку подивитися то чітко відно як Impact Glow Halo в воздусі вимить перед проджектайлом, до проджектайлів питань нема все чітко а от до Impact Glow Halo є, він лягає не на маш а на колайдер і це створює баги, ось це головне завдання яке ти маєш пофіксити використавши свої PlayMode-тести, якщо твоїх тестів для виправлення цього таска не достатньо створи додаткові тестування і так поки не закриєш цей таск повністю"
+- Objective: Make `Impact Glow Halo` use the same correct visual surface as the projectile/projector for both registered robots and non-robot world objects, including thin or proxy-collider geometry such as `Concrete_fence_v1_wall_set_v2 (12)`, and prove the fix with deterministic PlayMode tests instead of manual sky shots.
+- Acceptance criteria:
+  - Robot and non-robot PlayMode tests invoke the real `PooledImpactFx.PlayImpact` path with deterministic side hits.
+  - Every tested hit places the Halo on the visible mesh surface, not on an outer collider or in front of the projectile; tests record mesh, physics, resolved, and Halo positions.
+  - Coverage includes at least one robot with registered visual mesh colliders and the reported thin world-object geometry, plus a case where the visual mesh is inactive or not directly raycastable.
+  - Missing Halo on some robots is diagnosed and fixed without breaking robot target rendering-layer isolation or pool reset.
+  - C# build, PlayMode tests, static checks, mechanic documentation, and handoff/history are updated only after fresh results pass.
+- Assumptions: The projectile physics hit remains authoritative for damage and projectile placement; only cosmetic Halo/decal surface resolution may be corrected. Real prefab/scene visual meshes and their serialized colliders are preferred over scene-wide runtime searches.
+ - Current work: Added a serialized `ImpactVisualSurface` mapping for non-robot proxy colliders, passed the actual local `RaycastHit.collider` through projectile impact FX, extended the registry resolver to robots and mapped world prefabs, and kept Halo setup active when a robot-specific rendering layer cannot be acquired.
+ - Work remaining: None.
+ - Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/ImpactVisualSurface.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`, `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Scripts/Gameplay/Projectiles/Projectile.cs`, `Assets/Game/Scripts/Gameplay/Projectiles/ProjectileRuntimePool.cs`, `Assets/Game/Scripts/Gameplay/Robots/ProjectileVisualSpawner.cs`, the five `Concrete_fence_v1` prefabs, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+ - Verification: Fresh Unity PlayMode run passed `3/3` tests. The fence regression measured `physics=(-0.36, -1.55, -8.79)`, `mesh=(-0.16, -1.55, -8.79)`, `resolved=(-0.16, -1.55, -8.79)`, `halo=(-0.16, -1.55, -8.79)`, `haloToMesh=0.00000`, and `haloToPhysics=0.20009`. All eight IA/NV robot variants passed Halo placement and the existing robot test passed target rendering-layer cleanup/pool reset. `dotnet build Assembly-CSharp.csproj --no-restore --verbosity:minimal -p:BaseOutputPath=Temp\\CodexBuildImpactSurfaceFinal\\` passed with `0` errors and only existing `System.Net.Http` warnings; `git diff --check` passed.
+
+## Archived task (manual robot impact reproduction attempt)
+- Status: `IN_PROGRESS`
+- Started: 2026-10-21
+- User request (verbatim): "обьект Impact Glow Halo спавниться чомусь на колайдері а не перед мешом, можеш виправти це? для запускаєш сцену клієнт і спавниш 1 бьота потім стреляєш по ньому і ти все побачиш, виправ і протестуй нормально. заверши таск тільки тоді коли впевнений будеш що все виправлено"
+- Objective: Reproduce a Client shot against one spawned bot, determine why the `Impact Glow Halo` is positioned on the robot collider instead of the visible mesh, implement a geometry-correct alignment fix, and verify it in repeated Unity Play Mode shots.
+- Acceptance criteria:
+  - Client Play Mode is entered, one bot is spawned, and a shot is made against the bot while inspecting the Halo versus the visible mesh and collider.
+  - Robot `Impact Glow Halo` is placed on the visible hit mesh rather than floating at an outer proxy collider surface.
+  - Regular decal, glow decal, particles, robot rendering-layer isolation, pooling, and non-robot impacts remain intact.
+  - The same scenario is repeated after the fix, Unity Console has no new errors, and the build/static checks pass.
+  - `weapons-damage.md`, handoff, and history record the cause and verification.
+- Assumptions: The registered `VehicleRoot` renderers are the authoritative visual surface set for robot impacts; static world impacts keep their existing physics hit-point behavior. The fix must avoid per-frame scene-wide lookup and must use serialized/registry-provided runtime dependencies.
+- Current work: New task started; the previous profile split is archived above. Unity Client is open on the Client scene, and the robot impact path currently places the Halo at `impactPoint + impactNormal * impactDecalSurfaceOffset`.
+- Work remaining: Reproduce the robot shot, identify the visual-surface gap, implement the targeted alignment, repeat the shot, and update verification records.
+- Edited files: `docs/codex-game/task-handoff.md`.
+- Verification: Pending Play Mode reproduction and implementation.
 
 ## Archived task (Hangar mesh collider impact alignment)
 - Status: `COMPLETED`

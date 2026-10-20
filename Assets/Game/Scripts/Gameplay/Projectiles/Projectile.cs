@@ -941,7 +941,8 @@ public class Projectile : MonoBehaviour
                 hit.point,
                 _lastHitNormal,
                 hit.collider != null ? hit.collider.transform : null,
-                GetImpactTargetRoot(hit.collider));
+                GetImpactTargetRoot(hit.collider),
+                hit.collider);
             StopClientVisualAtCollision();
             return;
         }
@@ -957,7 +958,8 @@ public class Projectile : MonoBehaviour
             hit.point,
             _lastHitNormal,
             hit.collider != null ? hit.collider.transform : null,
-            GetImpactTargetRoot(hit.collider));
+            GetImpactTargetRoot(hit.collider),
+            hit.collider);
         CompleteFlight();
     }
 
@@ -1187,7 +1189,8 @@ public class Projectile : MonoBehaviour
         Vector3 position,
         Vector3 normal,
         Transform attachmentParent = null,
-        VehicleRoot impactTarget = null)
+        VehicleRoot impactTarget = null,
+        Collider impactCollider = null)
     {
         if (_visualsEnabled && explosionFX != null)
         {
@@ -1197,7 +1200,8 @@ public class Projectile : MonoBehaviour
                 position,
                 Quaternion.LookRotation(safeNormal),
                 attachmentParent,
-                impactTarget);
+                impactTarget,
+                impactCollider);
         }
     }
 
