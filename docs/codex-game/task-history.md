@@ -12,6 +12,12 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Center rusted_wheel FBX pivot
+
+- Status: `COMPLETED`
+- Scope: center the single mesh pivot in its geometry bounds and replace only the FBX while preserving world geometry, materials, importer metadata, and sibling files.
+- Verification: Blender 5.1.2 reimport preserved names, topology, UV data, material slots, and world bounds; max world-vertex delta `0.0`; pivot local center `(0, 0, 0)`; sibling files unchanged.
+- Detail: completed in `task-handoff.md`.
 ### 2026-10-21 - Per-part robot impact projector isolation
 
 - Status: `COMPLETED`

@@ -2,6 +2,24 @@
 
 ## Active task
 - Status: `COMPLETED`
+- Started: 2026-10-22
+- User request (verbatim): "D:\Programing\UnityProjects\war-of-machines-unity\Assets\Game\Content\Robots\IA\Shared\rusted_wheel тут лежить фбікс, тобі треба півот цього меша зробити в центрі і замінити 3д модель на виправлену, все інше має залишитися як було"
+- Objective: Center the pivot of the FBX mesh in the named Unity asset folder, replace that FBX in place, and preserve the visible geometry, mesh identity, material/texture links, Unity importer metadata, and sibling assets.
+- Acceptance criteria:
+  - The single mesh object's pivot is moved to the center of its geometry bounds.
+  - The mesh remains in the same world-space position and shape after the pivot change.
+  - The FBX keeps the same object and material names, mesh topology, UV layer, and texture/material linkage.
+  - The original filename and Unity `.meta` GUID/import settings are preserved; sibling files are unchanged.
+  - Reimported output is inspected and compared against the original for geometry bounds, topology, UVs, and material links.
+- Assumptions: "Center" means the mesh geometry's local bounding-box center. The target folder was untracked in Git before this task; replace only the user-named FBX.
+- Initial inspection: one mesh `tripo_node_4b2a365e-6ef1-4f2c-a84f-4681b04b7228`, 2,382 vertices, 7,140 edges, 4,760 polygons, one UV layer, one material; local bounds center `(0, 0.5, 0)` and object origin `(0, 0, 0)`.
+- Current work: Recentered the mesh origin to the geometry bounds center, compensated vertex coordinates to preserve the world-space mesh, exported over the original FBX, and kept the existing `.meta` and sibling assets unchanged.
+- Work remaining: None.
+- Edited files: `Assets/Game/Content/Robots/IA/Shared/rusted_wheel/rusted_wheel.fbx`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: Blender 5.1.2 reimport comparison passed: same mesh/object/material names, 2,382 vertices, 7,140 edges, 4,760 polygons, UV data and world bounds; maximum world-vertex delta was `0.0`. The local geometry bounds center is now `(0, 0, 0)` and the object origin is at the prior geometry center `(0, 0, 0.5)` in Blender coordinates. The FBX `.meta` GUID/importer settings, JPG, JPG `.meta`, MAT and MAT `.meta` hashes were unchanged during replacement; the folder listing is unchanged. Original FBX backup remains in the task `work/` directory.
+
+## Archived task (per-part robot impact projector isolation)
+- Status: `COMPLETED`
 - Started: 2026-10-21
 - User request (verbatim): "а можеш ще таким чамим чином розділити меші робота, щоб при попадані по башні це невпливало на пушку якщо пушка попадає в область проджектайлу? але так щоб не поломати нічого"
 - Objective: Isolate robot impact projectors to the visual mesh part that was hit, so a turret impact does not project onto the gun when the gun overlaps the projector volume.
