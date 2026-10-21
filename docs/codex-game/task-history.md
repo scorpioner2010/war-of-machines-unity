@@ -12,6 +12,15 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - AI robot wheel logic and references
+
+- Status: `COMPLETED`
+- Scope: restore rebuilt AI wheel collider/Rigidbody contracts, repair serialized wheel references, and correct left/right wheel rotation while preserving authored positions.
+- Acceptance: all affected wheel physics and references resolve; wheel animation directions are correct for forward/reverse and pivot turns; positions and unrelated geometry remain unchanged; documentation and build/static validation are updated.
+- Implementation: editor repair now restores IA wheel-side arrays, per-mesh disabled convex colliders, kinematic rigidbodies, and matching death entries without changing wheel transforms.
+- Verification: Unity batch repair/validation passed; static prefab checks confirmed actual left/right hierarchy ownership, side counts, `+900/-900` rotation signs, per-mesh physics, and unchanged transform properties. Production/editor builds and `git diff --check` passed.
+- Detail: active task in `task-handoff.md`.
+
 ### 2026-10-22 - Center rusted_wheel FBX pivot
 
 - Status: `COMPLETED`

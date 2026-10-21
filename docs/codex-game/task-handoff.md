@@ -3,6 +3,23 @@
 ## Active task
 - Status: `COMPLETED`
 - Started: 2026-10-22
+- User request (verbatim): "колеса у роботів АІ булим перероблені, твоє завдання налаштувати колайдера і ріджід боді кінематік як для інших мешів, налаштувати ссилки на всіх компонентах та класах де вони позлітали, а саме головне налаштувати правільне обертання цих коліс, тобі треба зрозуміти де ліві а де праві і налаштувати обертання щоб воно було вірним. позиції не повині поломатися твоє завдання пофіксити тільки логіку"
+- Objective: Restore the AI robot wheel contracts after the wheel mesh rebuild: configure per-mesh disabled convex colliders and kinematic rigidbodies like the other rendered meshes, repair serialized component references, and correct left/right wheel rotation without changing authored positions.
+- Acceptance criteria:
+  - Every affected AI robot wheel mesh has the same live/death physics setup as the other non-armor rendered mesh debris.
+  - All wheel references in suspension, animation, visibility, outline, death, and root-aware components resolve to the rebuilt wheel hierarchy.
+  - Left and right wheel animation directions are physically correct for forward/reverse motion and pivot turns.
+  - Wheel transforms/positions and unrelated robot geometry remain unchanged.
+  - Relevant mechanic documentation, handoff/history, static validation, and build checks are updated.
+- Assumptions: The affected scope is the registered IA/NV AI robot prefabs and their rebuilt wheel mesh objects; existing authored transform positions are authoritative and must not be rewritten.
+- Current work: Repaired `Assets/Editor/VehiclePrefabIntegrityEditor.cs` so IA tracked prefab repair rebuilds wheel animator arrays from the current `LeftWhels`/`RightWhels` hierarchy, adds disabled convex `MeshCollider` plus kinematic `Rigidbody` to every non-armor rendered mesh that lacks the debris contract, and rebuilds `DeathLogic.detachableVisuals` without changing transforms. Unity saved all four IA prefabs with the repaired serialized references.
+- Work remaining: None.
+- Edited files: `Assets/Editor/VehiclePrefabIntegrityEditor.cs`, `Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab`, `Assets/Game/Content/Robots/IA/IA_L2_Colossus/IA_L2_Colossus.prefab`, `Assets/Game/Content/Robots/IA/IA_L2_Guardian/IA_L2_Guardian.prefab`, `Assets/Game/Content/Robots/IA/IA_L2_Scout/IA_L2_Scout.prefab`, `docs/codex-game/robot-control.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: Unity `VehiclePrefabIntegrityBatch.RepairAndValidate` checked 8 registered prefabs, repaired 8 bindings across 4 IA prefabs, and passed post-repair validation. Static inspection found no null death renderers, all IA wheel arrays resolve (`4/4`, `4/4`, `4/4`, `6/6`), all left speeds are `+900`, all right speeds are `-900`, every rebuilt `rusted_wheel` instance has two added physics components, and the diff contains no changed `m_LocalPosition`, `m_LocalRotation`, or `m_LocalScale` lines. The validator resolves each wheel from its actual `LeftWhels`/`RightWhels` ancestor, proving the side assignment used by the rotation signs. Production and editor C# builds passed with 0 errors; `git diff --check` passed.
+
+## Archived task (center rusted_wheel FBX pivot)
+- Status: `COMPLETED`
+- Started: 2026-10-22
 - User request (verbatim): "D:\Programing\UnityProjects\war-of-machines-unity\Assets\Game\Content\Robots\IA\Shared\rusted_wheel тут лежить фбікс, тобі треба півот цього меша зробити в центрі і замінити 3д модель на виправлену, все інше має залишитися як було"
 - Objective: Center the pivot of the FBX mesh in the named Unity asset folder, replace that FBX in place, and preserve the visible geometry, mesh identity, material/texture links, Unity importer metadata, and sibling assets.
 - Acceptance criteria:

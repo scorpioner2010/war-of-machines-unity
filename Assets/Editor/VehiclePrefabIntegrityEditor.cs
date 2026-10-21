@@ -383,9 +383,338 @@ namespace Game.Scripts.Editor
             changed |= RepairMovementController(entry, root.objectMover, root, repair, report);
             changed |= RepairBotNavigator(entry, root.botBrain, root, repair, report);
             changed |= RepairRig(entry, root, repair, report);
+            changed |= RepairIaWheelContracts(entry, root, repair, report);
             changed |= RepairRootAwareLinks(entry, root, repair, report);
             changed |= RepairMissingMeshReferences(entry, root, repair, report);
             return changed;
+        }
+
+        private static bool RepairIaWheelContracts(
+            RegisteredPrefab entry,
+            VehicleRoot root,
+            bool repair,
+            IntegrityReport report)
+        {
+            if (!entry.Code.StartsWith("ia_", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            TrackedVehicleAnimator animator = root.trackedVehicleAnimator;
+            DeathLogic deathLogic = GetUniqueComponent<DeathLogic>(entry, root, report);
+            List<Transform> leftTransforms = GetWheelTransforms(root.transform, true);
+            List<Transform> rightTransforms = GetWheelTransforms(root.transform, false);
+            bool changed = false;
+
+            if (animator != null)
+            {
+                changed |= RepairWheelArray(entry, animator, true, leftTransforms, repair, report);
+                changed |= RepairWheelArray(entry, animator, false, rightTransforms, repair, report);
+            }
+
+            if (deathLogic == null)
+            {
+                return changed;
+            }
+
+            MeshRenderer[] renderers = root.GetComponentsInChildren<MeshRenderer>(true);
+            List<DeathLogic.DetachableVisual> expectedVisuals = new List<DeathLogic.DetachableVisual>(renderers.Length);
+            Dictionary<Renderer, Behaviour[]> existingBehaviours = GetExistingDeathBehaviours(deathLogic);
+            bool physicsNeedsRepair = false;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                MeshRenderer renderer = renderers[i];
+                if (!IsVehiclePresentationRenderer(root, renderer))
+                {
+                    continue;
+                }
+
+                MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+                MeshCollider meshCollider = renderer.GetComponent<MeshCollider>();
+                Rigidbody rigidbody = renderer.GetComponent<Rigidbody>();
+                if (meshFilter == null || meshFilter.sharedMesh == null
+                    || meshCollider == null || rigidbody == null
+                    || !meshCollider.convex || meshCollider.enabled
+                    || meshCollider.sharedMesh != meshFilter.sharedMesh || !rigidbody.isKinematic)
+                {
+                    physicsNeedsRepair = true;
+                }
+
+                if (!repair)
+                {
+                    continue;
+                }
+
+                if (meshFilter == null || meshFilter.sharedMesh == null)
+                {
+                    report.AddError($"Robot '{entry.Code}' wheel/mesh renderer '{GetHierarchyPath(renderer.transform)}' has no MeshFilter mesh.");
+                    continue;
+                }
+
+                if (meshCollider == null)
+                {
+                    meshCollider = renderer.gameObject.AddComponent<MeshCollider>();
+                }
+
+                if (rigidbody == null)
+                {
+                    rigidbody = renderer.gameObject.AddComponent<Rigidbody>();
+                }
+
+                meshCollider.sharedMesh = meshFilter.sharedMesh;
+                meshCollider.convex = true;
+                meshCollider.enabled = false;
+                rigidbody.isKinematic = true;
+                rigidbody.useGravity = true;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(meshCollider);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(rigidbody);
+
+                existingBehaviours.TryGetValue(renderer, out Behaviour[] behavioursToDisable);
+                expectedVisuals.Add(new DeathLogic.DetachableVisual
+                {
+                    root = renderer.gameObject,
+                    collider = meshCollider,
+                    rigidbody = rigidbody,
+                    renderer = renderer,
+                    meshCollider = meshCollider,
+                    behavioursToDisable = behavioursToDisable ?? Array.Empty<Behaviour>()
+                });
+            }
+
+            if (!repair)
+            {
+                if (physicsNeedsRepair)
+                {
+                    report.AddRepairable($"Robot '{entry.Code}' IA rendered mesh physics and DeathLogic wheel contracts");
+                }
+
+                if (!DeathVisualsMatch(deathLogic.detachableVisuals, renderers, root))
+                {
+                    report.AddRepairable($"Robot '{entry.Code}' DeathLogic.detachableVisuals");
+                }
+
+                return changed;
+            }
+
+            if (!DeathVisualsMatch(deathLogic.detachableVisuals, expectedVisuals))
+            {
+                deathLogic.detachableVisuals = expectedVisuals.ToArray();
+                report.AddAppliedRepair($"Robot '{entry.Code}' DeathLogic.detachableVisuals and IA rendered mesh physics");
+                changed = true;
+            }
+
+            if (physicsNeedsRepair)
+            {
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static List<Transform> GetWheelTransforms(Transform root, bool left)
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            List<Transform> result = new List<Transform>(transforms.Length);
+            string sidePrefix = left ? "LeftWhels" : "RightWhels";
+
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform transform = transforms[i];
+                if (!transform.name.StartsWith("WheelA", StringComparison.OrdinalIgnoreCase)
+                    || !HasAncestorWithPrefix(transform, sidePrefix))
+                {
+                    continue;
+                }
+
+                result.Add(transform);
+            }
+
+            return result;
+        }
+
+        private static bool HasAncestorWithPrefix(Transform transform, string prefix)
+        {
+            Transform current = transform.parent;
+            while (current != null)
+            {
+                if (current.name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool RepairWheelArray(
+            RegisteredPrefab entry,
+            TrackedVehicleAnimator animator,
+            bool left,
+            List<Transform> expectedTransforms,
+            bool repair,
+            IntegrityReport report)
+        {
+            TrackedVehicleAnimator.Wheel[] current = left ? animator.leftWheels : animator.rightWheels;
+            List<TrackedVehicleAnimator.Wheel> expected = new List<TrackedVehicleAnimator.Wheel>(expectedTransforms.Count);
+            HashSet<Transform> assigned = new HashSet<Transform>();
+            float defaultSpeed = left ? 900f : -900f;
+
+            if (current != null)
+            {
+                for (int i = 0; i < current.Length; i++)
+                {
+                    TrackedVehicleAnimator.Wheel wheel = current[i];
+                    if (wheel == null || wheel.transform == null || !expectedTransforms.Contains(wheel.transform) || !assigned.Add(wheel.transform))
+                    {
+                        continue;
+                    }
+
+                    float magnitude = Mathf.Abs(wheel.rotationSpeed);
+                    expected.Add(new TrackedVehicleAnimator.Wheel
+                    {
+                        transform = wheel.transform,
+                        rotationSpeed = magnitude > 0.001f ? Mathf.Sign(defaultSpeed) * magnitude : defaultSpeed
+                    });
+                }
+            }
+
+            for (int i = 0; i < expectedTransforms.Count; i++)
+            {
+                Transform transform = expectedTransforms[i];
+                if (assigned.Add(transform))
+                {
+                    expected.Add(new TrackedVehicleAnimator.Wheel
+                    {
+                        transform = transform,
+                        rotationSpeed = defaultSpeed
+                    });
+                }
+            }
+
+            bool matches = WheelArrayMatches(current, expected);
+            if (matches)
+            {
+                return false;
+            }
+
+            string sideName = left ? "leftWheels" : "rightWheels";
+            string description = $"Robot '{entry.Code}' TrackedVehicleAnimator.{sideName}";
+            if (!repair)
+            {
+                report.AddRepairable(description);
+                return false;
+            }
+
+            if (left)
+            {
+                animator.leftWheels = expected.ToArray();
+            }
+            else
+            {
+                animator.rightWheels = expected.ToArray();
+            }
+
+            report.AddAppliedRepair(description);
+            return true;
+        }
+
+        private static bool WheelArrayMatches(
+            TrackedVehicleAnimator.Wheel[] current,
+            List<TrackedVehicleAnimator.Wheel> expected)
+        {
+            if (current == null || current.Length != expected.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < expected.Count; i++)
+            {
+                if (current[i] == null
+                    || current[i].transform != expected[i].transform
+                    || !Mathf.Approximately(current[i].rotationSpeed, expected[i].rotationSpeed))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Dictionary<Renderer, Behaviour[]> GetExistingDeathBehaviours(DeathLogic deathLogic)
+        {
+            Dictionary<Renderer, Behaviour[]> result = new Dictionary<Renderer, Behaviour[]>();
+            if (deathLogic.detachableVisuals == null)
+            {
+                return result;
+            }
+
+            for (int i = 0; i < deathLogic.detachableVisuals.Length; i++)
+            {
+                DeathLogic.DetachableVisual visual = deathLogic.detachableVisuals[i];
+                if (visual != null && visual.renderer != null && !result.ContainsKey(visual.renderer))
+                {
+                    result.Add(visual.renderer, visual.behavioursToDisable ?? Array.Empty<Behaviour>());
+                }
+            }
+
+            return result;
+        }
+
+        private static bool DeathVisualsMatch(
+            DeathLogic.DetachableVisual[] current,
+            MeshRenderer[] renderers,
+            VehicleRoot root)
+        {
+            List<DeathLogic.DetachableVisual> expected = new List<DeathLogic.DetachableVisual>();
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                MeshRenderer renderer = renderers[i];
+                if (!IsVehiclePresentationRenderer(root, renderer))
+                {
+                    continue;
+                }
+
+                expected.Add(new DeathLogic.DetachableVisual
+                {
+                    renderer = renderer,
+                    root = renderer.gameObject,
+                    collider = renderer.GetComponent<MeshCollider>(),
+                    meshCollider = renderer.GetComponent<MeshCollider>(),
+                    rigidbody = renderer.GetComponent<Rigidbody>()
+                });
+            }
+
+            return DeathVisualsMatch(current, expected);
+        }
+
+        private static bool DeathVisualsMatch(
+            DeathLogic.DetachableVisual[] current,
+            List<DeathLogic.DetachableVisual> expected)
+        {
+            if (current == null || current.Length != expected.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < expected.Count; i++)
+            {
+                DeathLogic.DetachableVisual actual = current[i];
+                DeathLogic.DetachableVisual wanted = expected[i];
+                if (actual == null
+                    || actual.root != wanted.root
+                    || actual.collider != wanted.collider
+                    || actual.rigidbody != wanted.rigidbody
+                    || actual.renderer != wanted.renderer
+                    || actual.meshCollider != wanted.meshCollider)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool RepairClientVisibilityRenderers(RegisteredPrefab entry, VehicleRoot root, bool repair, IntegrityReport report)
