@@ -3,6 +3,73 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-22
+- User request: "я налаштував приціл вперед, чому на 2 та на 3 кроці не зявляється чорний круг вокруг приціла? я ж поставив галочки що не так?"
+- Objective: allow every forward zoom profile with `showReticle = true` to show the black sniper-scope overlay, while allowing the wheel to continue through multiple flagged profiles.
+- Acceptance criteria:
+  - Forward profiles with `showReticle = true` each activate the black `SniperScopeOverlay` and central sniper reticle.
+  - Scrolling forward/backward does not stop at the first flagged profile; adjacent flagged profiles remain reachable and keep the overlay active.
+  - Scrolling from a flagged profile to an unflagged profile hides the overlay and restores ordinary camera presentation.
+  - The Shift/toggle sniper shortcut still enters the first flagged forward profile and exits to the last non-sniper step.
+  - Runtime/editor builds, static checks, documentation, and `git diff --check` pass.
+- Assumptions: the screenshot's Element 2 and Element 3 are both intentional sniper presentation profiles; `showReticle` is therefore a per-profile presentation flag, not a single global sniper-step marker.
+- Current work: wheel navigation now advances and retreats through every forward profile regardless of its `showReticle` value; each checked profile independently keeps sniper presentation active. The explicit sniper toggle still targets the first checked profile and exits to the last ordinary step.
+- Work remaining: reproduce the two consecutive checked profiles in Client Play Mode with the user's native wheel input.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/ui-hud.md`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: multiple-profile traversal assertions passed; production and editor C# builds passed with 0 errors; relevant documentation and `git diff --check` passed. Manual Play Mode verification remains pending because the Client Unity Editor is already open and native input injection is unavailable.
+
+## Archived task (correct sniper-scope checkbox semantics)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "я ставлю галочку але круг не зявляється можливо ти мене не вірно зрозумів? це той круй який імітує снайперський приці, чорний фон а по сиридині наш приціл"
+- Objective: correct the meaning of the forward-profile checkbox so it controls the black sniper-scope overlay with the central reticle, not the ordinary dispersion ring.
+- Acceptance criteria:
+  - `showReticle = true` on a forward zoom profile selects sniper presentation.
+  - Sniper presentation activates the existing black `SniperScopeOverlay` and central sniper reticle through `GunCrosshair.SetSniperMode(true)`.
+  - `showReticle = false` leaves the profile in ordinary camera presentation and does not hide or change projectile dispersion.
+  - Default, normal forward, and backward profiles are serialized with `showReticle = false`; the migrated sniper profile is `true`.
+  - Runtime/editor builds, static checks, documentation, and `git diff --check` pass.
+- Assumptions: the user refers to the existing `SniperScopeOverlay` plus `sniperReticleOnlyRoot`; the ordinary dispersion ring remains controlled by its existing projection logic.
+- Current work: the checkbox now uses `true` for the existing black `SniperScopeOverlay` and central sniper reticle; `false` keeps ordinary camera presentation.
+- Work remaining: manually verify the checkbox in Client Play Mode by selecting a forward profile with `true` and scrolling into it.
+- Edited files: `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Editor/ClientSettingsEditor.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/robot-control.md`, `docs/codex-game/ui-hud.md`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: production and editor C# builds passed with 0 errors; static scene/source assertions passed; the generated font artifact is clean; relevant `git diff --check` passed. Manual Play Mode verification remains pending because the Client Unity Editor is already open and native input injection is unavailable.
+
+## Archived task (forward zoom profile controls sniper mode)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "я налаштовував зум і поняв що треба пофиксити дещо, там є 1 крок камера зум снайпер, але так не повино бути бо в снайперський режим він перейде ще під час кроків у перед, тому цю настройку треба прибрати як окреме поле і додати галочку в елемент масиву типу галочка якщо тру то показується круг прицілювання якщо галочка фолс він не показується, ти зрозумів ідею? так зроби це в коді"
+- Objective: remove the separate `cameraZoomSniper` profile and make sniper mode selectable from a forward zoom-array profile with a serialized `showReticle` checkbox.
+- Acceptance criteria:
+  - `CameraZoomProfile` contains `showReticle`; normal profiles show the reticle and the first forward profile with `showReticle = false` is the sniper profile.
+  - `cameraZoomSniper` is removed from runtime settings, editor documentation, scene serialization, cloning, validation, and camera lookup code.
+  - Forward scrolling can enter the flagged sniper profile during the forward array; sniper camera anchor, scope UI, reticle visibility, FOV, distance, and return-to-previous-step use that profile.
+  - Existing default/backward/forward zoom values remain configurable and projectile dispersion is unchanged.
+  - Production/editor builds, focused Unity tests, static migration checks, and relevant `git diff --check` pass.
+- Assumptions: the existing separate sniper values are migrated into a final forward-array profile with `showReticle = false`, preserving the current settings while allowing the checkbox to be moved to another forward element later.
+- Current work: `CameraZoomProfile.showReticle` now marks the first forward profile with `false` as sniper; the old standalone field is removed from runtime settings, editor docs, scene YAML, cloning, validation, and camera lookup. Existing sniper values were migrated into the final forward profile.
+- Work remaining: manually scroll through forward/backward steps and enter/exit the flagged sniper profile in Client Play Mode with native input.
+- Edited files: `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Editor/ClientSettingsEditor.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/robot-control.md`, `docs/codex-game/ui-hud.md`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: stale runtime/editor/scene references are removed; scene migration has exactly one `showReticle: 0` forward profile and six regular profile flags; production/editor C# builds passed with 0 errors; relevant `git diff --check` passed. Focused PlayMode could not start because a Client Unity Editor instance was already open and Unity exited batch mode with licensing/client code 1; no test result XML was produced.
+
+## Archived task (HUD ZoomLevel display)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "в юай хад я додав текст ZoomLevel, тобі треба запрограмувати це щначення, це буде відображення левела зуму 0 це дефоулт, -1 це 1 крок ролика назад, 1 крок вперед. додай щоб можна було чітко бачити рівень зуму"
+- Objective: connect the HUD `ZoomLevel` text to the live camera zoom state and display `0` for default, negative values for backward wheel steps, and positive values for forward wheel steps.
+- Acceptance criteria:
+  - The existing HUD `ZoomLevel` text is wired to a serialized/runtime `TMP_Text` reference without creating components or discovering objects at runtime.
+  - The displayed value is `0` at default, `-1`, `-2`, etc. for backward zoom steps, and `1`, `2`, etc. for forward zoom steps; sniper mode has an explicit documented value.
+  - The label updates immediately when zoom changes and is initialized correctly when the HUD/camera starts or the controlled vehicle changes.
+  - Existing zoom/FOV/distance/reticle behavior is unchanged; builds and focused checks pass.
+- Assumptions: the user-authored `ZoomLevel` object is already present in the HUD scene and should be wired through the existing HUD owner rather than recreated.
+- Current work: `GameplayGUI` owns the inspector-wired `zoomLevelTexts` array for both crosshair variants, initializes both labels to `0`, and receives the clamped signed step from `CameraController` whenever the profile changes.
+- Work remaining: visually confirm the label while scrolling backward/forward and entering sniper mode in Client Play Mode with native input.
+- Edited files: `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`, `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: production/editor C# builds passed with 0 errors; static scene/source checks passed; focused Unity PlayMode filter `Game.Tests.PlayMode.DispersionConeProjectionPlayModeTests` passed 2/2; relevant `git diff --check` passed. Native input injection is unavailable for the final visual label check.
+
+## Archived task (runtime zoom distance not applied)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
 - User request: "помітив не всі параметри працюють в рантаймі, параметри камери працюють а от відстань камери чомусь не працює, зроби щоб працювали всі параметри в рантаймі"
 - Objective: make every serialized zoom-profile field, including `cameraDistance`, affect the live camera at runtime for default, forward, backward, and sniper profiles.
 - Acceptance criteria:

@@ -57,6 +57,8 @@ namespace Game.Scripts.Client
         public float reticleBaseDiameter = 50f;
         [Min(0f)]
         public float reticleDiameterMultiplier = 1f;
+        [Tooltip("Показувати чорний круг снайперського прицілу з центральним прицілом. Для forward-профілю true позначає цей крок як снайперський.")]
+        public bool showReticle = false;
 
         public CameraZoomProfile Clone()
         {
@@ -65,7 +67,8 @@ namespace Game.Scripts.Client
                 cameraDistance = cameraDistance,
                 fieldOfView = fieldOfView,
                 reticleBaseDiameter = reticleBaseDiameter,
-                reticleDiameterMultiplier = reticleDiameterMultiplier
+                reticleDiameterMultiplier = reticleDiameterMultiplier,
+                showReticle = showReticle
             };
         }
 
@@ -155,21 +158,14 @@ namespace Game.Scripts.Client
         {
             new CameraZoomProfile { cameraDistance = 6f, fieldOfView = 50f, reticleBaseDiameter = 50f, reticleDiameterMultiplier = 1f },
             new CameraZoomProfile { cameraDistance = 4f, fieldOfView = 45f, reticleBaseDiameter = 60f, reticleDiameterMultiplier = 1f },
-            new CameraZoomProfile { cameraDistance = 2.5f, fieldOfView = 40f, reticleBaseDiameter = 75f, reticleDiameterMultiplier = 1f }
+            new CameraZoomProfile { cameraDistance = 2.5f, fieldOfView = 40f, reticleBaseDiameter = 75f, reticleDiameterMultiplier = 1f },
+            new CameraZoomProfile { cameraDistance = 0.25f, fieldOfView = 24f, reticleBaseDiameter = 50f, reticleDiameterMultiplier = 1f, showReticle = true }
         };
         [Tooltip("Кроки колеса назад: елемент 0 є першим кроком від базового профілю.")]
         public CameraZoomProfile[] cameraZoomBackwardSteps =
         {
             new CameraZoomProfile { cameraDistance = 12f, fieldOfView = 68f, reticleBaseDiameter = 55f, reticleDiameterMultiplier = 1f },
             new CameraZoomProfile { cameraDistance = 15f, fieldOfView = 76f, reticleBaseDiameter = 60f, reticleDiameterMultiplier = 1f }
-        };
-        [Tooltip("Окремий снайперський профіль, який додатково вмикає scope UI та змінює точку камери.")]
-        public CameraZoomProfile cameraZoomSniper = new CameraZoomProfile
-        {
-            cameraDistance = 0.25f,
-            fieldOfView = 24f,
-            reticleBaseDiameter = 50f,
-            reticleDiameterMultiplier = 1f
         };
         [Tooltip("У снайперському режимі брати точку камери від дула, якщо воно доступне.")]
         public bool cameraSniperFromMuzzle = true;
@@ -348,9 +344,6 @@ namespace Game.Scripts.Client
                 : Default.cameraZoomDefault.Clone();
             cameraZoomForwardSteps = CloneZoomProfiles(source.cameraZoomForwardSteps);
             cameraZoomBackwardSteps = CloneZoomProfiles(source.cameraZoomBackwardSteps);
-            cameraZoomSniper = source.cameraZoomSniper != null
-                ? source.cameraZoomSniper.Clone()
-                : Default.cameraZoomSniper.Clone();
             cameraSniperFromMuzzle = source.cameraSniperFromMuzzle;
             cameraSniperForwardOffset = source.cameraSniperForwardOffset;
             cameraSniperVerticalOffset = source.cameraSniperVerticalOffset;
@@ -392,12 +385,6 @@ namespace Game.Scripts.Client
             }
 
             cameraZoomDefault.Validate(Default.cameraZoomDefault);
-            if (cameraZoomSniper == null)
-            {
-                cameraZoomSniper = Default.cameraZoomSniper.Clone();
-            }
-
-            cameraZoomSniper.Validate(Default.cameraZoomSniper);
             cameraZoomForwardSteps = ValidateZoomProfiles(cameraZoomForwardSteps, Default.cameraZoomForwardSteps);
             cameraZoomBackwardSteps = ValidateZoomProfiles(cameraZoomBackwardSteps, Default.cameraZoomBackwardSteps);
         }

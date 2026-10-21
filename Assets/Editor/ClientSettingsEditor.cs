@@ -153,11 +153,9 @@ namespace Toras.Editor
                 ["gameplayRuntime.cameraZoomDefault"] =
                     "Базовий профіль зума: відстань камери, абсолютний FOV, базовий діаметр кільця та його множник.",
                 ["gameplayRuntime.cameraZoomForwardSteps"] =
-                    "Масив кроків колеса вперед; елемент 0 є першим кроком від default, а всі значення профілю є абсолютними.",
+                    "Масив кроків колеса вперед; елемент 0 є першим кроком від default, а всі значення профілю є абсолютними. Прапорець showReticle показує чорний круг снайперського прицілу з центральним прицілом, а true позначає крок як sniper.",
                 ["gameplayRuntime.cameraZoomBackwardSteps"] =
                     "Масив кроків колеса назад; елемент 0 є першим кроком від default і може відсунути камеру далі за default.",
-                ["gameplayRuntime.cameraZoomSniper"] =
-                    "Окремий sniper-профіль зума; він також змінює точку прив'язки камери та scope UI.",
                 ["gameplayRuntime.cameraSniperFromMuzzle"] =
                     "За можливості прив'язує снайперську камеру до дула. Наприклад: увімкніть, щоб приціл у sniper-режимі відповідав позиції гармати.",
                 ["gameplayRuntime.cameraSniperForwardOffset"] =

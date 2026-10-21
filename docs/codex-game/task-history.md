@@ -12,6 +12,36 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Allow multiple sniper-scope zoom profiles
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make every checked forward zoom profile reachable and keep the black sniper-scope overlay active on each checked step.
+- Bug: `ZoomIn` stopped whenever the current profile was marked sniper, so the next checked profile could never be reached. Wheel traversal assertions and production/editor builds now pass; manual Play Mode verification remains pending.
+- Detail: active task record is in `task-handoff.md`.
+
+### 2026-10-22 - Correct sniper-scope checkbox semantics
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make `showReticle = true` on a forward zoom profile activate the existing black sniper-scope overlay and central reticle.
+- Correction: the previous migration used `false` as the sniper marker, which did not match the user's inspector expectation and conflated the scope overlay with the ordinary dispersion ring. Runtime/editor builds and static assertions now pass; manual Play Mode verification remains pending.
+- Detail: active task record is in `task-handoff.md`.
+
+### 2026-10-22 - Forward zoom profile controls sniper mode
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: remove the standalone sniper zoom profile and select sniper mode from a forward-array profile using a serialized `showReticle` checkbox.
+- Acceptance: the flagged forward profile drives sniper camera/scope behavior and all profile values; the standalone field and stale serialization/editor references are removed.
+- Correction: added `CameraZoomProfile.showReticle`, migrated the old sniper values into the final forward-array element with `showReticle = false`, removed `cameraZoomSniper`, and refactored camera step selection. Builds and static migration checks passed; PlayMode was blocked by the already-open Unity Editor/licensing process.
+- Detail: active task record is in `task-handoff.md`.
+
+### 2026-10-22 - HUD ZoomLevel display
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: display the live camera zoom level in the existing HUD `ZoomLevel` text using `0` for default, negative backward steps, and positive forward steps.
+- Acceptance: serialized HUD text reference is wired; values update on initialization, vehicle/HUD changes, and every zoom change without changing camera behavior.
+- Correction: `GameplayGUI` updates both scene `ZoomLevel` texts from the signed `_currentZoomStep`; default is `0`, backward steps are negative, forward steps are positive, and sniper uses the next positive step. Builds and focused PlayMode tests passed 2/2; manual native-input verification remains pending.
+- Detail: active task record is in `task-handoff.md`.
+
 ### 2026-10-22 - Runtime zoom distance not applied
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

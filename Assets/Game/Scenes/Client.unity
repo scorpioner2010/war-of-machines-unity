@@ -14667,7 +14667,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 5
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: cd0bf33debf46ed4798364c9a60440d0, type: 2}
   m_sharedMaterial: {fileID: -3587004003571586328, guid: cd0bf33debf46ed4798364c9a60440d0,
@@ -22288,7 +22288,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 5
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: cd0bf33debf46ed4798364c9a60440d0, type: 2}
   m_sharedMaterial: {fileID: -3587004003571586328, guid: cd0bf33debf46ed4798364c9a60440d0,
@@ -28336,6 +28336,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPenetrationText: {fileID: 1916821299}
+  zoomLevelTexts:
+  - {fileID: 600716853}
+  - {fileID: 1009608740}
 --- !u!1 &1239291455
 GameObject:
   m_ObjectHideFlags: 0
@@ -48648,7 +48651,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &2063247309
 GameObject:
   m_ObjectHideFlags: 0
@@ -51774,8 +51777,7 @@ MonoBehaviour:
     tracerMaterial: {fileID: 2100000, guid: e09e8aed58e546b29ca4b569e18788c9, type: 2}
     muzzleFlashPrefab: {fileID: 7923806859326443355, guid: 83ad43f5a5d82d842a61442d91a04ab8,
       type: 3}
-    muzzleSmokePrefab: {fileID: 4783985020516635287, guid: 4bda94453d2ca7444a0fff05b2d425f5,
-      type: 3}
+    muzzleSmokePrefab: {fileID: 0}
     overrideProjectileMaterial: 1
     projectileBaseColor: {r: 2.297397, g: 1.3324902, b: 0.36758348, a: 1}
     projectileEmissionColor: {r: 4.9245777, g: 1.8713396, b: 0.29547465, a: 1}
@@ -51828,37 +51830,43 @@ MonoBehaviour:
     autoAimRejectSameTeam: 1
     autoAimPreferTurretTarget: 1
     cameraZoomDefault:
-      cameraDistance: 10
+      cameraDistance: 3
       fieldOfView: 60
       reticleBaseDiameter: 50
       reticleDiameterMultiplier: 1
+      showReticle: 0
     cameraZoomForwardSteps:
-    - cameraDistance: 6
+    - cameraDistance: 1.38
       fieldOfView: 50
-      reticleBaseDiameter: 50
+      reticleBaseDiameter: 62
       reticleDiameterMultiplier: 1
-    - cameraDistance: 4
+      showReticle: 0
+    - cameraDistance: 0.01
       fieldOfView: 45
-      reticleBaseDiameter: 60
+      reticleBaseDiameter: 77
       reticleDiameterMultiplier: 1
-    - cameraDistance: 2.5
-      fieldOfView: 40
-      reticleBaseDiameter: 75
+      showReticle: 0
+    - cameraDistance: 0.01
+      fieldOfView: 35
+      reticleBaseDiameter: 100
       reticleDiameterMultiplier: 1
+      showReticle: 1
+    - cameraDistance: 0.01
+      fieldOfView: 20
+      reticleBaseDiameter: 150
+      reticleDiameterMultiplier: 1
+      showReticle: 1
     cameraZoomBackwardSteps:
-    - cameraDistance: 12
-      fieldOfView: 68
-      reticleBaseDiameter: 55
+    - cameraDistance: 4
+      fieldOfView: 60
+      reticleBaseDiameter: 45
       reticleDiameterMultiplier: 1
-    - cameraDistance: 15
-      fieldOfView: 76
-      reticleBaseDiameter: 60
+      showReticle: 0
+    - cameraDistance: 6
+      fieldOfView: 60
+      reticleBaseDiameter: 40
       reticleDiameterMultiplier: 1
-    cameraZoomSniper:
-      cameraDistance: 0.25
-      fieldOfView: 24
-      reticleBaseDiameter: 50
-      reticleDiameterMultiplier: 1
+      showReticle: 0
     cameraSniperFromMuzzle: 1
     cameraSniperForwardOffset: 0.15
     cameraSniperVerticalOffset: 0
