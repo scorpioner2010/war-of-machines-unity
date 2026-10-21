@@ -131,11 +131,12 @@ MonoBehaviour:
     fallbackAcceleration: 30
     fallbackTraverseSpeedDegPerSecond: 0
     nvStoppingAccelerationMultiplier: 10
-    iaStoppingAccelerationMultiplier: 4
+    iaStoppingAccelerationMultiplier: 2
     standardAccelerationMultiplier: 1
     standardBrakingMultiplier: 3
     leggedAccelerationMultiplier: 2.25
     leggedBrakingMultiplier: 2.75
+    directionReversalBrakingMultiplier: 2
     leggedAnimationReferenceSpeed: 10
     leggedAnimationMinSpeedMultiplier: 1.35
     leggedAnimationMaxSpeedMultiplier: 2.2

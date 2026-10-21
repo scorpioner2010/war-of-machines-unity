@@ -51747,7 +51747,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1e1f72a4f3d4e67a9d2b8c6f0e5a431, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableVehicleTestMode: 0
+  enableVehicleTestMode: 1
   controller: {fileID: 2000100000012}
   networkManager: {fileID: 1509948893}
   registry: {fileID: 11400000, guid: e789c05f8eea53d409cd152d7bda366e, type: 2}
@@ -51758,6 +51758,7 @@ MonoBehaviour:
   sceneGameplayHud: {fileID: 2052894811}
   sceneGameplayCanvas: {fileID: 6073536986615846396}
   testRuntimeSettings: {fileID: 2000100000013}
+  serverSettingsPrefab: {fileID: 3533032834666098081, guid: 37920e9282dd1184faf512fea6cfe275, type: 3}
 --- !u!1 &2000100000010
 GameObject:
   m_ObjectHideFlags: 0

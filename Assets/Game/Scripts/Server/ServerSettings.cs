@@ -29,6 +29,8 @@ namespace Game.Scripts.Server
         public float leggedAccelerationMultiplier = 2.25f;
         [Tooltip("Множник гальмування для крокуючих машин.")]
         public float leggedBrakingMultiplier = 2.75f;
+        [Tooltip("Multiplier for braking when switching to the opposite direction.")]
+        public float directionReversalBrakingMultiplier = 2f;
 
         [Header("Анімація ніг")]
         [Tooltip("Швидкість руху, відносно якої рахується базова швидкість анімації ніг.")]
@@ -74,6 +76,11 @@ namespace Game.Scripts.Server
             return Mathf.Max(0.01f, value);
         }
 
+        public float GetDirectionReversalBrakingMultiplier()
+        {
+            return Mathf.Max(0.01f, directionReversalBrakingMultiplier);
+        }
+
         public void Validate()
         {
             fallbackMaxSpeed = ClampFinite(fallbackMaxSpeed, 0f, Default.fallbackMaxSpeed);
@@ -85,6 +92,7 @@ namespace Game.Scripts.Server
             standardBrakingMultiplier = ClampFinite(standardBrakingMultiplier, 0.01f, Default.standardBrakingMultiplier);
             leggedAccelerationMultiplier = ClampFinite(leggedAccelerationMultiplier, 0.01f, Default.leggedAccelerationMultiplier);
             leggedBrakingMultiplier = ClampFinite(leggedBrakingMultiplier, 0.01f, Default.leggedBrakingMultiplier);
+            directionReversalBrakingMultiplier = ClampFinite(directionReversalBrakingMultiplier, 0.01f, Default.directionReversalBrakingMultiplier);
             leggedAnimationReferenceSpeed = ClampFinite(leggedAnimationReferenceSpeed, 0.01f, Default.leggedAnimationReferenceSpeed);
             leggedAnimationMinSpeedMultiplier = ClampFinite(leggedAnimationMinSpeedMultiplier, 0.01f, Default.leggedAnimationMinSpeedMultiplier);
             leggedAnimationMaxSpeedMultiplier = ClampFinite(leggedAnimationMaxSpeedMultiplier, 0.01f, Default.leggedAnimationMaxSpeedMultiplier);
@@ -133,6 +141,7 @@ namespace Game.Scripts.Server
             standardBrakingMultiplier = source.standardBrakingMultiplier;
             leggedAccelerationMultiplier = source.leggedAccelerationMultiplier;
             leggedBrakingMultiplier = source.leggedBrakingMultiplier;
+            directionReversalBrakingMultiplier = source.directionReversalBrakingMultiplier;
             leggedAnimationReferenceSpeed = source.leggedAnimationReferenceSpeed;
             leggedAnimationMinSpeedMultiplier = source.leggedAnimationMinSpeedMultiplier;
             leggedAnimationMaxSpeedMultiplier = source.leggedAnimationMaxSpeedMultiplier;

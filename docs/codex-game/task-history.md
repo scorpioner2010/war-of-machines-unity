@@ -12,6 +12,38 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - AI reverse braking inertia
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: diagnose and fix robots taking longer to stop when reverse input is pressed than when movement is released, for both AI and player input.
+- Root cause found: `VehicleMovementController` applies faction stopping multipliers only for neutral coasting, while active direction reversal uses only chassis braking multipliers; active prefab values make reversal slower (`IA 3` vs `4`, `NV 3` vs `10`).
+- Verification: production/editor C# builds passed with 0 errors, reversal-rate assertions passed for IA/NV standard and legged movement, and `git diff --check` passed; Play Mode/user reproduction remains pending.
+- Detail: active task in `task-handoff.md`.
+
+### 2026-10-22 - AI reverse braking distance ratio
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make active reverse input reduce the stopping distance to approximately half of neutral coasting distance for the same robot speed and movement profile.
+- Prior implementation summary: the shared movement path combines faction stopping and chassis braking multipliers during direction reversal, and local `ClientVehicleTestMode` instantiates the assigned `ServerSettings` prefab. IA stopping is `0.2` versus NV `1.0`.
+- New acceptance: releasing movement remains the baseline; pressing the opposite direction must produce approximately `2x` deceleration, so a `10 m` neutral stop should become about `5 m` when braking.
+- Detail: active task record is in `task-handoff.md`.
+
+### 2026-10-22 - Reduce robot inertia fiftyfold
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: reduce the configured neutral stopping inertia for both NV and IA robots by `50x` because the current stopping response is still too long.
+- Configuration change: increase the stopping-strength multipliers from NV `1.0` to `50.0` and IA `0.2` to `10.0`; keep the reversal-only brake multiplier at `2.0`.
+- Expected result: for the same vehicle and speed, neutral stopping time/distance is approximately `1/50` of the previous profile, and holding reverse remains twice as strong as neutral coasting.
+- Detail: active task record is in `task-handoff.md`.
+
+### 2026-10-22 - Tune robot inertia to tenfold strength
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: soften the previous `NV=50` / `IA=10` stopping profile because it made robots stop too abruptly.
+- Configuration change: use NV `10.0` and IA `2.0`, preserving the IA/NV five-to-one neutral stopping-time ratio and the reversal-only multiplier `2.0`.
+- Expected result: stopping strength is one fifth of the previous profile (`10x` over the original NV baseline), with reverse braking still twice as strong as neutral coasting.
+- Detail: active task record is in `task-handoff.md`.
+
 ### 2026-10-22 - AI robot wheel logic and references
 
 - Status: `COMPLETED`
@@ -245,3 +277,10 @@ The repository can preserve task state and verification notes, but it cannot con
 - Scope: fix the Client projectile and impact FX position on `Hangar_v1_full (2)` by replacing its oversized convex hull with a non-convex static MeshCollider that follows the visible mesh.
 - Verification: Client Play Mode reproduced the requested `target1` shot with `IA Skirmisher`; the persistent decal and temporary red glow landed on the Hangar front door mesh, the projectile/FX hit-point path remained unchanged, Inspector showed `Convex` disabled, and Unity Console ended with `0` errors.
 - Detail: `task-handoff.md`, active task.
+### 2026-10-22 - AI movement settings runtime source and fivefold inertia
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make the local editor vehicle test host use the assigned `ServerSettings` prefab and configure IA with five times more movement inertia than NV.
+- Root cause: `Client.unity` started a local host without a `ServerSettings` instance, so `ServerSettings.GetRobotMovement()` returned code defaults and ignored Inspector values.
+- Implementation: `ClientVehicleTestMode` now instantiates the assigned settings prefab; `ServerSettings.prefab` uses NV stopping `1.0` and IA stopping `0.2`. Shared values remain standard acceleration `1`, standard braking `3`, legged acceleration `2.25`, and legged braking `2.75`.
+- Verification: serialized assertions, production/editor builds, and `git diff --check` passed with zero build errors. Unity Play Mode reproduction is still pending.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.

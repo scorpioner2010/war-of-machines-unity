@@ -72,6 +72,8 @@ Bot movement behavior:
 - If a graph is built, navigator finds a path from nearest node to either an explicit target or a random destination node.
 - If no graph exists, navigator uses fallback random wander input.
 - Movement input is always sent as player-like input: forward and turn through `VehicleInputController.ApplyBotInput`.
+- When a bot reverses its travel direction, the shared `VehicleMovementController` combines the faction stopping multiplier with `directionReversalBrakingMultiplier`, so the current value `2.0` makes the stopping distance approximately half of neutral coasting before accelerating in the opposite direction.
+- `nvStoppingAccelerationMultiplier` and `iaStoppingAccelerationMultiplier` are braking-strength multipliers, not inertia values: higher values create shorter coasting and less inertia. The current server profile uses NV `10.0` and IA `2.0`, which is five times softer than the previous `50.0`/`10.0` profile and ten times stronger than the original `1.0`/`0.2` profile while keeping IA at five times the NV stopping time before vehicle-specific speed/acceleration stats are considered.
 - Reverse bot input is still sent as normal negative movement input, but `VehicleMovementController` caps all reverse movement to 50% of the vehicle's forward max speed.
 - Navigator publishes a desired travel direction through `TryGetDesiredTravelDirection` so combat/idle aim can point the turret where the bot is driving.
 - Movement can be suppressed by combat via `SetMovementSuppressed(true)`. While suppressed, navigator still refreshes proximity sensing on its configured cadence and applies a local escape maneuver if another live robot is too close; otherwise it sends zero movement input.

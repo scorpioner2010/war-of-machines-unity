@@ -1,6 +1,7 @@
 using FishNet.Managing;
 using Game.Scripts.Core.Resources;
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.Server;
 using UnityEngine;
 
 namespace Game.Scripts.Testing
@@ -24,8 +25,11 @@ namespace Game.Scripts.Testing
         [SerializeField] private GameObject sceneGameplayHud;
         [SerializeField] private Canvas sceneGameplayCanvas;
         [SerializeField] private VehicleTestRuntimeSettings testRuntimeSettings;
+        [SerializeField] private ServerSettings serverSettingsPrefab;
 
         public static bool IsEnabled => _active;
+
+        private ServerSettings _testServerSettings;
 
         private void Awake()
         {
@@ -48,6 +52,17 @@ namespace Game.Scripts.Testing
 
         private void OnDestroy()
         {
+            if (ServerSettings.In == _testServerSettings)
+            {
+                ServerSettings.In = null;
+            }
+
+            if (_testServerSettings != null)
+            {
+                Destroy(_testServerSettings.gameObject);
+                _testServerSettings = null;
+            }
+
             if (_instance == this)
             {
                 _instance = null;
@@ -75,11 +90,19 @@ namespace Game.Scripts.Testing
                 return false;
             }
 
+            if (serverSettingsPrefab == null)
+            {
+                Debug.LogError("Client vehicle test mode is enabled but the ServerSettings prefab is not assigned.", this);
+                return false;
+            }
+
             return true;
         }
 
         private void ApplyConfiguration()
         {
+            EnsureTestServerSettings();
+
             controller.registry = registry;
             controller.resourceManager = resourceManager;
             controller.testCamera = testCamera;
@@ -98,6 +121,17 @@ namespace Game.Scripts.Testing
             }
 
             controller.gameObject.SetActive(true);
+        }
+
+        private void EnsureTestServerSettings()
+        {
+            if (ServerSettings.In != null || serverSettingsPrefab == null)
+            {
+                return;
+            }
+
+            _testServerSettings = Instantiate(serverSettingsPrefab);
+            _testServerSettings.name = "ServerSettings (VehicleTest)";
         }
 #else
         public static bool IsEnabled => false;

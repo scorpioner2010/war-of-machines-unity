@@ -1,6 +1,78 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- Follow-up request: reduce the previous `NV=50` stopping strength to `10` because it is too strong.
+- Objective: use the softer profile NV `10.0` and IA `2.0`, preserving IA's five-to-one neutral stopping time relative to NV and the `2x` reverse-braking ratio.
+- Acceptance criteria:
+  - NV stopping multiplier is `10.0`.
+  - IA stopping multiplier is `2.0`.
+  - The IA/NV neutral stopping-time ratio remains `5x`.
+  - Holding the opposite direction still uses `directionReversalBrakingMultiplier = 2.0` relative to neutral coasting.
+  - Relevant mechanic documentation, handoff/history, static validation, and build checks are updated.
+- Assumptions: higher stopping multipliers mean stronger braking and less inertia; only serialized profile values need changing for this follow-up.
+- Current work: the previous `NV=50` / `IA=10` profile passed static/build checks but was reported as too abrupt. This follow-up lowers both values by `5x` while preserving their ratio.
+- Work remaining: reproduce the softer stopping response in Unity Play Mode, then mark the task completed if the stopping feel matches the intended profile.
+- Edited files: `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, `docs/codex-game/ai-bots.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: serialized assertions passed (`NV=10`, `IA=2`, IA/NV neutral stopping time `5x`, reversal multiplier `2x`), production/editor C# builds passed with `0` errors, and `git diff --check` passed. Unity Play Mode/user reproduction remains pending.
+
+## Archived task (fiftyfold robot inertia reduction)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- Follow-up request: reduce robot stopping inertia by `50x` because robots still stop too slowly.
+- Objective: increase the faction stopping-strength multipliers so neutral stopping time/distance is approximately `1/50` of the current profile, while preserving the `2x` reverse-braking ratio.
+- Acceptance criteria:
+  - NV stopping multiplier changes from `1.0` to `50.0`.
+  - IA stopping multiplier changes from `0.2` to `10.0`.
+  - A neutral stop uses the new faction values and is approximately `50x` shorter than before for the same vehicle and speed.
+  - Holding the opposite direction still uses `directionReversalBrakingMultiplier = 2.0` relative to neutral coasting.
+  - Relevant mechanic documentation, handoff/history, static validation, and build checks are updated.
+- Assumptions: the reported robot uses the shared `VehicleMovementController`; higher stopping multipliers mean stronger braking and less inertia.
+- Current work: the previous task added a reversal-only multiplier of `2.0`, but the configured NV `1.0` and IA `0.2` neutral stopping values still produce too much inertia.
+- Work remaining: reproduce the new stopping response in Unity Play Mode, then mark the task completed if the reduced inertia is controllable and matches the intended feel.
+- Edited files: `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, `docs/codex-game/ai-bots.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: serialized assertions passed (`NV=50`, `IA=10`, both `50x` stronger than the previous profile, IA/NV neutral stopping time `5x`), production/editor C# builds passed with `0` errors, and `git diff --check` passed. Unity Play Mode/user reproduction remains pending.
+
+## Archived task (twofold AI reverse braking distance)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- Follow-up request: make active reverse input stop the robot in half the neutral coasting distance.
+- Objective: preserve the existing IA/NV inertia profile and make opposite-direction braking approximately twice as strong as neutral coasting for the same robot and speed.
+- Acceptance criteria:
+  - AI and player movement use the same server-side reversal braking path.
+  - For the same vehicle, faction, class, speed, and surface, active reverse braking produces approximately half the neutral stopping distance.
+  - The same two-to-one ratio applies when changing from reverse to forward.
+  - Existing IA five-to-one versus NV neutral inertia and the local test-host settings source remain intact.
+  - Same-direction speed reduction and final target-speed behavior remain intact unless the reversal-only factor is applied.
+  - Relevant movement documentation, handoff/history, static validation, and build checks are updated.
+- Assumptions: the reported robot uses the shared `VehicleMovementController`; AI and player input both reach `VehicleInputController.Move` on the authoritative server.
+- Current work: the previous task established the shared reversal path, fixed the local test-host settings source, and configured IA stopping `0.2` versus NV `1.0`. This follow-up will add a reversal-only factor without changing neutral coasting.
+- Work remaining: reproduce the distance ratio in Unity Play Mode or an actual local-host match, then mark the task completed if a neutral `10 m` stop is approximately `5 m` while holding reverse.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/VehicleMovementController.cs`, `Assets/Game/Scripts/Server/ServerSettings.cs`, `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, `docs/codex-game/ai-bots.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: reversal-only setting assertions passed for standard and legged movement (`2x` reversal/coast), IA/NV neutral inertia remains `5x`, production/editor C# builds passed with `0` errors, and `git diff --check` passed. Unity Play Mode/user reproduction remains pending.
+
+## Archived task (AI/NV fivefold inertia and local test settings)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- Follow-up request: Test why serialized acceleration/braking settings have no effect, and configure IA/AI movement to have five times more inertia than NV.
+- User request (verbatim): "помітив дуже дивний баг, коли робот розганяється АІ а потім я починаю тиснути клавішу руху назад в нього дуже довга інерція зупинки але коли я рожену робота і не тисну клавішу зупинки він зупиняється швидше, це дуже дивний баг тобі треба зрозіміти в чому проблема бо він навпаки якщо я жму клавішу назад має тормозити (зупинятися по інрції швидше чим коли я не тисну)"
+- Objective: Make active reverse input brake a robot faster than releasing movement, make the local test host use the serialized server movement settings, and configure IA to have five times more stopping inertia than NV.
+- Acceptance criteria:
+  - AI and player movement use the same corrected server-side reversal braking path.
+  - While moving forward, pressing reverse decelerates faster than releasing movement; the same applies when changing from reverse to forward.
+  - Same-direction speed reduction and final reverse-speed behavior remain intact.
+  - Client Vehicle Test Mode reads the same `ServerSettings` prefab as the server instead of silently using code defaults.
+  - IA and NV stopping response has a five-to-one inertia ratio while shared acceleration/braking parameters remain explicit.
+  - Relevant movement documentation, handoff/history, static validation, and build checks are updated.
+- Assumptions: The reported robot is using the shared `VehicleMovementController`; AI input and player input both reach `VehicleInputController.Move` on the authoritative server.
+- Current work: Confirmed the movement reversal regression and patched `VehicleMovementController`. Follow-up investigation found that local `ClientVehicleTestMode` starts a FishNet host from `Client.unity`, which has no `ServerSettings` instance; only `Server.unity` references the settings prefab, so the test host returns code defaults and ignores Inspector values such as IA `1111`.
+- Work remaining: Reproduce the updated IA/NV response in Unity Play Mode or an actual local-host match, then mark the task completed if the stopping response matches the acceptance criteria.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/VehicleMovementController.cs`, `Assets/Game/Scripts/Testing/ClientVehicleTestMode.cs`, `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/ai-bots.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Follow-up verification: serialized settings assertions passed (`NV stopping=1`, `IA stopping=0.2`, five-to-one stopping-time ratio; standard reversal strengths `3` vs `0.6`; legged reversal strengths `2.75` vs `0.55`); `Client.unity` references the settings prefab; production/editor C# builds passed with 0 errors; `git diff --check` passed. Play Mode/user reproduction remains pending.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo` passed with 0 errors; static source/settings assertions passed (`NV standard 10→30`, `IA standard 4→12`, `NV legged 10→27.5`, `IA legged 4→11`); `git diff --check` passed. Play Mode/user reproduction remains pending.
+
+## Archived task (AI robot wheel logic and references)
 - Status: `COMPLETED`
 - Started: 2026-10-22
 - User request (verbatim): "колеса у роботів АІ булим перероблені, твоє завдання налаштувати колайдера і ріджід боді кінематік як для інших мешів, налаштувати ссилки на всіх компонентах та класах де вони позлітали, а саме головне налаштувати правільне обертання цих коліс, тобі треба зрозуміти де ліві а де праві і налаштувати обертання щоб воно було вірним. позиції не повині поломатися твоє завдання пофіксити тільки логіку"

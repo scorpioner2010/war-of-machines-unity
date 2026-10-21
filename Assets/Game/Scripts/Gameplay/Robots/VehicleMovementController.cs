@@ -163,7 +163,15 @@ namespace Game.Scripts.Gameplay.Robots
                 }
                 else if (IsBraking(desiredSpeed))
                 {
-                    accelerationRate *= settings.GetBrakingMultiplier(isLegged);
+                    if (IsDirectionReversal(desiredSpeed))
+                    {
+                        accelerationRate *= settings.GetDirectionReversalBrakingMultiplier();
+                        accelerationRate *= GetStoppingAccelerationMultiplier(settings);
+                    }
+                    else
+                    {
+                        accelerationRate *= settings.GetBrakingMultiplier(isLegged);
+                    }
                 }
 
                 _forwardSpeed = Mathf.MoveTowards(_forwardSpeed, desiredSpeed, accelerationRate * dt);
@@ -331,6 +339,11 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return _forwardSpeed * desiredSpeed <= 0f || Mathf.Abs(desiredSpeed) < Mathf.Abs(_forwardSpeed);
+        }
+
+        private bool IsDirectionReversal(float desiredSpeed)
+        {
+            return _forwardSpeed * desiredSpeed < 0f;
         }
     }
 }
