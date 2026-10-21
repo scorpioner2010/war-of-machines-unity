@@ -121,6 +121,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            _targetDistance = GetDistanceForZoomStep(_currentZoomStep);
             Quaternion rotation = Quaternion.Euler(_Y, _X, 0);
             if (IsSniperModeActive && TryGetSniperCameraPosition(rotation, out Vector3 sniperPosition))
             {
@@ -188,8 +189,9 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            float profileDistance = GetDistanceForZoomStep(_currentZoomStep);
             position = anchor.position
-                       + forward * Mathf.Max(0f, _runtimeSettings.cameraSniperForwardOffset)
+                       + forward * (Mathf.Max(0f, _runtimeSettings.cameraSniperForwardOffset) + profileDistance)
                        + up * _runtimeSettings.cameraSniperVerticalOffset;
             return IsFinite(position);
         }
@@ -340,6 +342,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
             Vector3 origin = anchor.position;
+            float sniperProfileDistance = GetDistanceForZoomStep(GetSniperZoomStep());
             float yaw = _X;
             float pitch = _Y;
 
@@ -355,7 +358,7 @@ namespace Game.Scripts.Gameplay.Robots
                 Vector3 forward = rotation * Vector3.forward;
                 Vector3 up = rotation * Vector3.up;
                 origin = anchor.position
-                         + forward * Mathf.Max(0f, _runtimeSettings.cameraSniperForwardOffset)
+                         + forward * (Mathf.Max(0f, _runtimeSettings.cameraSniperForwardOffset) + sniperProfileDistance)
                          + up * _runtimeSettings.cameraSniperVerticalOffset;
             }
 

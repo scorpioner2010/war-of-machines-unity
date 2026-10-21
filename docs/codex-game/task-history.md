@@ -12,6 +12,14 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Runtime zoom distance not applied
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make every serialized zoom profile field work at runtime; user reports FOV/profile parameters apply, but `cameraDistance` does not visibly change the live camera.
+- Acceptance: default, forward, backward, and sniper profile distances affect the camera after zoom input, smoothing, collision, and recovery without changing reticle/projectile logic.
+- Correction: `CameraController` refreshes `cameraDistance` every update before writing the camera transform; the sniper path and sniper alignment now also apply the selected profile distance. Builds and fresh focused PlayMode tests passed 2/2. Manual Client Play Mode input verification remains pending.
+- Detail: active task record is in `task-handoff.md`.
+
 ### 2026-10-22 - Reticle over-expansion during movement and turret rotation
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

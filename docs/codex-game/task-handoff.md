@@ -3,6 +3,22 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-22
+- User request: "помітив не всі параметри працюють в рантаймі, параметри камери працюють а от відстань камери чомусь не працює, зроби щоб працювали всі параметри в рантаймі"
+- Objective: make every serialized zoom-profile field, including `cameraDistance`, affect the live camera at runtime for default, forward, backward, and sniper profiles.
+- Acceptance criteria:
+  - `cameraZoomDefault`, every forward/backward array entry, and `cameraZoomSniper` apply their serialized `cameraDistance`, `fieldOfView`, and reticle fields in runtime camera presentation.
+  - Changing `cameraDistance` visibly changes the camera anchor/position after zoom input, during smooth transitions, and after camera collision recovery; no later camera step overwrites it with a hard-coded or legacy distance.
+  - FOV, reticle projection, sniper transitions, and camera collision continue to use the active profile without changing projectile dispersion.
+  - Production/editor builds, focused Unity tests, static checks, and relevant `git diff --check` pass; any remaining manual Play Mode limitation is recorded explicitly.
+- Assumptions: the serialized profiles in `Client.unity` are the runtime source of truth; the reported issue is in the application of `cameraDistance`, not in Inspector serialization. The prior reticle calibration fix remains intact.
+- Current work: `CameraController` now refreshes the active profile distance before every camera transform and adds the sniper profile distance to the configured sniper forward offset. The existing collision controller remains the final obstruction clamp.
+- Work remaining: manually verify changing default/forward/backward/sniper distances in Client Play Mode with native mouse input.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: runtime source assertions passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo` passed with 0 errors; fresh Unity PlayMode filter `Game.Tests.PlayMode.DispersionConeProjectionPlayModeTests` passed 2/2 after the final sniper alignment patch; relevant `git diff --check` passed. Native input injection is unavailable for the final visual distance check.
+
+## Archived task (reticle over-expansion during movement and turret rotation)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
 - User request: "запусти сцену клієнт, вибери IA_L2_Scout. почину рухатися і подивися як сильно збільшується приціл, також при повороті цей приціл теж дуже розширяється, а якщо йти та повертати башню дуже великий приціл... він реально не відповідає радіусу попадання снаряду, тому треба щоб ти налаштував цей момент"
 - Objective: stop the reticle from over-expanding while IA_L2_Scout moves or rotates, and make its visible boundary match the actual projectile dispersion cone at every camera zoom/FOV state.
 - Acceptance criteria:
