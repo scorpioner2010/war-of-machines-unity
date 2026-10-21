@@ -790,10 +790,11 @@ namespace Game.Scripts.Gameplay.Robots
             float serverDeg = _testAccuracyDebugMode
                 ? localDeg
                 : _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
-            float localDiameter = GetCrosshairDiameter(localDeg);
+            float authoritativeDeg = serverDeg;
+            float localDiameter = GetCrosshairDiameter(authoritativeDeg);
             float serverDiameter = GetCrosshairDiameter(serverDeg);
             _crosshair.SetAimingDiameters(localDiameter, serverDiameter, globalDispersion.reticleDiameterLerpSpeed);
-            _crosshair.SetAimStatus(localDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
+            _crosshair.SetAimStatus(authoritativeDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
         }
 
         private float GetCrosshairDiameter(float dispersionDeg)
@@ -805,6 +806,8 @@ namespace Game.Scripts.Gameplay.Robots
                 : defaultProfile;
             float reticleMultiplier = Mathf.Max(0f, currentProfile.reticleDiameterMultiplier);
             float calibratedMinimumDiameter = Mathf.Max(0f, currentProfile.reticleBaseDiameter) * reticleMultiplier;
+            float minimumDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
+            float safeDispersionDeg = Mathf.Max(minimumDispersionDeg, dispersionDeg);
             Camera camera = CameraSync.In != null ? CameraSync.In.gameplayCamera : null;
             WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
             Transform originTransform = muzzleTransform != null
@@ -817,14 +820,19 @@ namespace Game.Scripts.Gameplay.Robots
 
             Vector3 origin = originTransform.position;
             Vector3 aimPoint = weaponAim.GetCurrentAimPointForOrigin(origin);
-            if (!DispersionConeProjection.TryGetScreenDiameter(camera, origin, aimPoint, dispersionDeg, out float currentScreenDiameter))
+            if (!DispersionConeProjection.TryGetScreenDiameter(camera, origin, aimPoint, safeDispersionDeg, out float currentScreenDiameter)
+                || !DispersionConeProjection.TryGetScreenDiameter(camera, origin, aimPoint, minimumDispersionDeg, out float minimumScreenDiameter))
             {
                 return Mathf.Max(1f, calibratedMinimumDiameter);
             }
 
             float currentCanvasDiameter = _crosshair.ScreenPixelsToCanvasUnits(currentScreenDiameter);
+            float minimumCanvasDiameter = _crosshair.ScreenPixelsToCanvasUnits(minimumScreenDiameter);
             float physicalDiameter = currentCanvasDiameter * reticleMultiplier;
-            return Mathf.Max(1f, physicalDiameter, calibratedMinimumDiameter);
+            float physicalMinimumDiameter = minimumCanvasDiameter * reticleMultiplier;
+            float fullyAimedDiameter = Mathf.Max(calibratedMinimumDiameter, physicalMinimumDiameter);
+            float physicalDispersionExpansion = Mathf.Max(0f, physicalDiameter - physicalMinimumDiameter);
+            return Mathf.Max(1f, fullyAimedDiameter + physicalDispersionExpansion);
         }
 
         private GunDispersionGlobalSettings GetGlobalDispersion()

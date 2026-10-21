@@ -1,6 +1,38 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "ні щось тут все одно не те, приціл звузився і зупинився а текст показує ще що звужується, текст повільніше доходить до звуження чим саме кільце щось тут не те, знайди що не так та виправ"
+- Objective: keep the visible dispersion ring changing until the server-authoritative dispersion reaches the same fully aimed state represented by `AimStatus`; a profile calibration value must not make the ring plateau early.
+- Acceptance criteria:
+  - The ring does not stop at `reticleBaseDiameter` while the server dispersion is still above minimum.
+  - `reticleBaseDiameter` remains usable as the calibrated diameter at fully aimed state, while current dispersion expansion remains visible above it.
+  - The ring and `AimStatus` reach their final state from the same server dispersion value.
+  - Runtime/editor builds, focused static checks, documentation, and `git diff --check` pass.
+- Assumptions: the remaining mismatch is caused by `GetCrosshairDiameter` applying `Mathf.Max(..., calibratedMinimumDiameter)` as a hard floor; current server synchronization is already correct.
+- Current work: `GetCrosshairDiameter` now uses the calibrated fully-aimed baseline plus continuous physical dispersion expansion instead of a hard base-diameter floor.
+- Work remaining: visually reproduce a shot/movement settle sequence in Client Play Mode and confirm the ring keeps narrowing until `AimStatus` reaches its final state.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: production/editor C# builds passed with 0 errors; static checks confirmed the hard floor is removed and the minimum-dispersion baseline is projected; `git diff --check` passed. Client Play Mode visual verification remains pending.
+
+## Archived task (server-authoritative dispersion for HUD narrowing)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "я помітив що приціл швидше звужується чим показує це таймер звудження в хаді, скоріше за все якісь невірні параметри звуження, треба щоб звуження підхватувалося з сервера і тягнуло параметер звідти як це було раніше"
+- Objective: make the visible dispersion ring and HUD aim-progress indicator use the server-authoritative dispersion value and remain consistent with the server's narrowing behavior.
+- Acceptance criteria:
+  - The local gameplay HUD no longer uses the client-only dispersion model as the primary narrowing source after the server value is available.
+  - The visible ring and `AimStatus` percentage use the same server-authoritative `CurrentDeg` value.
+  - The existing server fallback before the first sync remains safe and does not affect shot validation or projectile dispersion.
+  - Runtime/editor builds, focused static checks, documentation, and `git diff --check` pass.
+- Assumptions: the server already synchronizes `_serverDispersionDeg`; the mismatch is caused by HUD presentation using `_ownerDispersion.CurrentDeg` for the main ring and status text.
+- Current work: the client HUD now uses the synchronized server dispersion value for the main ring and `AimStatus`, retaining the local model only as a pre-sync fallback.
+- Work remaining: visually reproduce a shot/movement settle sequence in Client Play Mode and confirm the ring and HUD progress narrow together.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/ui-hud.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` and `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo` passed with 0 errors; static source assertions confirmed `AimStatus` and the main ring use the server value; `git diff --check` passed. Client Play Mode visual verification remains pending.
+
+## Archived task (preserve aim point during sniper camera transition)
 - Status: `COMPLETED`
 - Started: 2026-10-22
 - User request: "майже все ідеально, але є зсув і виглядає він як баг, приціл ззивається, пояснюю коли вмикається снайперський приціл (чорний круг) пішка міняє трохи місце прицілювання, це виглядає як баг, запусти гру сцену клієнт, вибери першого робота і потім перемикай роликом вперід поки не дійдеш до зумі і ти помітиш що приціл зсувається, я понямаю що він скоріше за все зсувається щоб ми дивилися з місця пушки так це вірно але він не має змінювати місце наведення, розберися в чому проблема та виправ"

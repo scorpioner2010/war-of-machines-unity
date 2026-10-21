@@ -12,6 +12,20 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Keep reticle narrowing continuous to full aim
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: prevent the reticle from visually plateauing at `reticleBaseDiameter` while the server dispersion and HUD aim status continue narrowing.
+- Bug: `GetCrosshairDiameter` used the profile base diameter as a hard `Mathf.Max` floor, so the ring stopped early even though `AimStatus` still reflected remaining dispersion.
+- Detail: the hard base-diameter floor was replaced by a calibrated fully-aimed baseline plus continuous physical expansion; builds/static checks pass, while Client Play Mode visual verification remains pending.
+
+### 2026-10-22 - Use server-authoritative dispersion for HUD narrowing
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make the visible reticle and HUD aim-progress indicator follow the synchronized server dispersion value instead of diverging from it through the client-only model.
+- Bug: the ring narrows faster than the HUD aim status because `NetworkWeaponShooter` sends `_ownerDispersion.CurrentDeg` to the main ring/status while the server value is only used for the optional server reticle.
+- Detail: the main ring and `AimStatus` now use synchronized server dispersion; builds and static checks pass, while final Client Play Mode visual verification remains pending.
+
 ### 2026-10-22 - Preserve aim point during sniper camera transition
 
 - Status: `COMPLETED`

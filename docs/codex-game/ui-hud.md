@@ -58,7 +58,8 @@ Current owner scripts:
   - Passes the selected vehicle faction to `GunCrosshair` and presents the local predicted/server-reconciled reload progress to the Nova Syndicate `lightElement` indicators; this is presentation only and does not alter fire validation.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
   - Applies local and authoritative crosshair dispersion to the owner HUD using the actual camera projection and active zoom profile; it no longer uses `zoom01`, hand-tuned pixels-per-degree values, or a global UI min/max clamp.
-  - Uses the projected current dispersion cone as the authoritative diameter. The profile base diameter is only a floor and is not multiplied by a current-to-minimum dispersion ratio, preventing oversized rings while the vehicle or turret moves.
+  - Uses the synchronized server-authoritative dispersion value for both the visible local ring and the `AimStatus` progress; the client-only dispersion model is used only until the first server value arrives.
+  - Uses the projected current dispersion cone as the authoritative diameter. The profile base diameter is the calibrated fully-aimed baseline; the physical expansion above minimum dispersion is added continuously, so the ring does not plateau while the HUD status is still narrowing.
 - `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`
   - Gameplay GUI root.
   - Keeps the legacy shot-result entry point compatible, but forwards results to the active `GunCrosshair`; it no longer clears the penetration label after a timeout.
