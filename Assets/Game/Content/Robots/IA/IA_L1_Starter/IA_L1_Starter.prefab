@@ -111,7 +111,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vehicleRoot: {fileID: 901996468296691208}
   rig: {fileID: 2849276272749456523}
-  distance: 7
   collisionController: {fileID: 778899001122334455}
 --- !u!114 &778899001122334455
 MonoBehaviour:

@@ -48,9 +48,13 @@ Current owner scripts:
   - Applies server input to movement, shoot/action state, turret yaw, gun pitch, and desired aim point.
 - `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`
   - Owns local gameplay camera orbit, zoom steps, and sniper camera placement.
+  - Reads `GameplayRuntimeSettings.cameraZoomDefault`, `cameraZoomForwardSteps`, `cameraZoomBackwardSteps`, and `cameraZoomSniper`. Step `0` is default; forward array element `0` is the first wheel-forward step, backward array element `0` is the first wheel-backward step, and every profile stores absolute camera distance, absolute vertical FOV, base reticle diameter, and reticle multiplier. The base reticle diameter is a visual floor only; it is not a multiplier for the current/minimum dispersion ratio.
+  - During FOV smoothing the current camera FOV remains authoritative; the weapon reticle does not use a normalized distance approximation.
   - Delegates the final camera position to its inspector-wired `CameraCollisionController` before gameplay-camera synchronization, so aiming uses the collision-corrected camera origin.
   - When entering sniper mode, aligns the camera yaw/pitch from the sniper anchor to the current gun aim point before moving the camera, so Shift/scroll zoom does not retarget the gun lower because of camera-origin parallax.
   - When exiting sniper mode, aligns the camera yaw/pitch from the normal orbit pivot (`rig.position`) to the current gun aim point before restoring the third-person zoom, so the gun does not climb upward when the camera origin changes back.
+- `Assets/Game/Scripts/Gameplay/Robots/Shared/DispersionConeProjection.cs`
+  - Contains the shared `DispersionConeProjection` helper in `Game.Gameplay.Shared` so the shot, reticle, and focused tests use one cone-basis implementation without an extra runtime component.
 - `Assets/Game/Scripts/Gameplay/Robots/CameraCollisionController.cs`
   - Client-side camera collision helper placed with `CameraController` on each vehicle's `CameraPoint` or `CameraFlyPoint`.
   - Sphere-casts from the controller's `rig` toward its desired camera position, ignores colliders below the inspector-wired local `VehicleRoot`, and moves the camera immediately in front of the nearest blocking surface.

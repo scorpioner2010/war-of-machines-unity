@@ -786,25 +786,45 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
-            float uiZoom01 = GetCrosshairUiZoom01();
             float localDeg = _testAccuracyDebugMode ? dispersion.MinDispersion : _ownerDispersion.CurrentDeg;
-            float localDiameter = globalDispersion.GetUiDiameter(localDeg, dispersion.MinDispersion, uiZoom01);
             float serverDeg = _testAccuracyDebugMode
                 ? localDeg
                 : _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
-            float serverDiameter = globalDispersion.GetUiDiameter(serverDeg, dispersion.MinDispersion, uiZoom01);
-            _crosshair.SetAimingDiameters(localDiameter, serverDiameter, globalDispersion.uiDiameterLerpSpeed);
+            float localDiameter = GetCrosshairDiameter(localDeg);
+            float serverDiameter = GetCrosshairDiameter(serverDeg);
+            _crosshair.SetAimingDiameters(localDiameter, serverDiameter, globalDispersion.reticleDiameterLerpSpeed);
             _crosshair.SetAimStatus(localDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
         }
 
-        private float GetCrosshairUiZoom01()
+        private float GetCrosshairDiameter(float dispersionDeg)
         {
-            if (vehicleRoot == null || vehicleRoot.cameraController == null)
+            GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            CameraZoomProfile defaultProfile = runtimeSettings.cameraZoomDefault ?? GameplayRuntimeSettings.Default.cameraZoomDefault;
+            CameraZoomProfile currentProfile = vehicleRoot != null && vehicleRoot.cameraController != null
+                ? vehicleRoot.cameraController.CurrentZoomProfile
+                : defaultProfile;
+            float reticleMultiplier = Mathf.Max(0f, currentProfile.reticleDiameterMultiplier);
+            float calibratedMinimumDiameter = Mathf.Max(0f, currentProfile.reticleBaseDiameter) * reticleMultiplier;
+            Camera camera = CameraSync.In != null ? CameraSync.In.gameplayCamera : null;
+            WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
+            Transform originTransform = muzzleTransform != null
+                ? muzzleTransform
+                : weaponAim != null && weaponAim.gun != null ? weaponAim.gun : transform;
+            if (camera == null || weaponAim == null || originTransform == null)
             {
-                return 1f;
+                return Mathf.Max(1f, calibratedMinimumDiameter);
             }
 
-            return vehicleRoot.cameraController.GetAimUiZoom01();
+            Vector3 origin = originTransform.position;
+            Vector3 aimPoint = weaponAim.GetCurrentAimPointForOrigin(origin);
+            if (!DispersionConeProjection.TryGetScreenDiameter(camera, origin, aimPoint, dispersionDeg, out float currentScreenDiameter))
+            {
+                return Mathf.Max(1f, calibratedMinimumDiameter);
+            }
+
+            float currentCanvasDiameter = _crosshair.ScreenPixelsToCanvasUnits(currentScreenDiameter);
+            float physicalDiameter = currentCanvasDiameter * reticleMultiplier;
+            return Mathf.Max(1f, physicalDiameter, calibratedMinimumDiameter);
         }
 
         private GunDispersionGlobalSettings GetGlobalDispersion()
@@ -856,26 +876,10 @@ namespace Game.Scripts.Gameplay.Robots
 
             Vector2 unitCircle = GetDeterministicUnitCircle(shotId);
 
-            Vector3 right = Vector3.Cross(Vector3.up, baseDirection);
-            if (right.sqrMagnitude < 0.0001f)
-            {
-                right = Vector3.Cross(Vector3.forward, baseDirection);
-            }
-            right.Normalize();
-
-            Vector3 up = Vector3.Cross(baseDirection, right).normalized;
-            float spreadTan = Mathf.Tan(Mathf.Max(0f, dispersionDeg) * Mathf.Deg2Rad);
-            Vector3 dispersedDirection = baseDirection
-                                         + right * (unitCircle.x * spreadTan)
-                                         + up * (unitCircle.y * spreadTan);
-            if (dispersedDirection.sqrMagnitude <= 0.000001f)
-            {
-                dispersedDirection = baseDirection;
-            }
-            else
-            {
-                dispersedDirection.Normalize();
-            }
+            Vector3 dispersedDirection = DispersionConeProjection.BuildDispersedDirection(
+                baseDirection,
+                unitCircle,
+                dispersionDeg);
 
             return new DispersedShotRay
             {

@@ -388,13 +388,13 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (sniperMode)
             {
-                horizontalLerpSpeed = Mathf.Max(0f, settings.uiSniperReticleHorizontalLerpSpeed);
-                verticalLerpSpeed = Mathf.Max(0f, settings.uiSniperReticleVerticalLerpSpeed);
+                horizontalLerpSpeed = Mathf.Max(0f, settings.reticleSniperHorizontalLerpSpeed);
+                verticalLerpSpeed = Mathf.Max(0f, settings.reticleSniperVerticalLerpSpeed);
                 return;
             }
 
-            horizontalLerpSpeed = Mathf.Max(0f, settings.uiReticleHorizontalLerpSpeed);
-            verticalLerpSpeed = Mathf.Max(0f, settings.uiReticleVerticalLerpSpeed);
+            horizontalLerpSpeed = Mathf.Max(0f, settings.reticleHorizontalLerpSpeed);
+            verticalLerpSpeed = Mathf.Max(0f, settings.reticleVerticalLerpSpeed);
         }
 
         private GunDispersionGlobalSettings GetGlobalDispersionSettings()

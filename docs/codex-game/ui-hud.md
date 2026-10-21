@@ -37,6 +37,7 @@ Current owner scripts:
   - On damage, enables the image immediately at canvas group alpha 1, fades alpha to 0 over 1 second, then disables the image object. It is visual only and does not affect gameplay.
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Gun crosshair UI, reload/ammo text, dispersion display target for weapon systems.
+  - Converts projected screen-pixel diameters to the active Canvas reference units before applying `RectTransform.sizeDelta`, so ring sizing stays correct across CanvasScaler resolution changes.
   - The new `GameplayHudContent` wiring uses `AmmoCountText` for remaining ammunition, `ReloadStatusText` for reload status, `AimStatus` for the aim label, `GameplayHudContent` as the regular HUD root, and `SniperScopeOverlay` as the scope overlay.
   - Owns the inspector-wired faction reticle bindings: `CrosshairType1` for `RobotFaction.IronAlliance` and `CrosshairType2` for `RobotFaction.NovaSyndicate`; the active local reticle, optional server reticle, reload fill, reload text, ammo text, aim-status text, and penetration-status text are switched together so every HUD calculation follows the selected robot.
   - `WeaponReloadController` receives a binding-change result and forces the current ammo/reload values into the newly selected target, preventing cached IA values from leaving the NV UI stale. Aim-status caches are also invalidated when the target text changes.
@@ -55,7 +56,8 @@ Current owner scripts:
   - Updates reload/ammo HUD state for owner.
   - Passes the selected vehicle faction to `GunCrosshair` and presents the local predicted/server-reconciled reload progress to the Nova Syndicate `lightElement` indicators; this is presentation only and does not alter fire validation.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
-  - Applies crosshair dispersion to owner HUD.
+  - Applies local and authoritative crosshair dispersion to the owner HUD using the actual camera projection and active zoom profile; it no longer uses `zoom01`, hand-tuned pixels-per-degree values, or a global UI min/max clamp.
+  - Uses the projected current dispersion cone as the authoritative diameter. The profile base diameter is only a floor and is not multiplied by a current-to-minimum dispersion ratio, preventing oversized rings while the vehicle or turret moves.
 - `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`
   - Gameplay GUI root.
   - Keeps the legacy shot-result entry point compatible, but forwards results to the active `GunCrosshair`; it no longer clears the penetration label after a timeout.

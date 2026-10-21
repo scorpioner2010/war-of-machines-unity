@@ -3,6 +3,34 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-22
+- User request: "запусти сцену клієнт, вибери IA_L2_Scout. почину рухатися і подивися як сильно збільшується приціл, також при повороті цей приціл теж дуже розширяється, а якщо йти та повертати башню дуже великий приціл... він реально не відповідає радіусу попадання снаряду, тому треба щоб ти налаштував цей момент"
+- Objective: stop the reticle from over-expanding while IA_L2_Scout moves or rotates, and make its visible boundary match the actual projectile dispersion cone at every camera zoom/FOV state.
+- Acceptance criteria:
+  - The reticle no longer multiplies its base size by `currentDispersion / minimumDispersion`; for IA_L2_Scout this removes the accidental approximately `6 / 0.35 = 17.1x` inflation.
+  - The actual camera-projected current dispersion cone is the authoritative reticle size during movement, turret rotation, zoom, FOV smoothing, and non-default aspect ratios.
+  - `reticleBaseDiameter` remains only a configurable minimum visual floor and `reticleDiameterMultiplier` remains an optional calibration multiplier; neither may amplify dispersion by a ratio.
+  - Shot randomization and projectile dispersion remain unchanged, so a target on the visible boundary stays inside the possible-hit area.
+  - Production/editor builds, focused Unity tests, static checks, and `git diff --check` pass; any remaining manual Play Mode limitation is recorded explicitly.
+- Assumptions: the previous rewrite's default/forward/backward profile arrays remain the source of camera state; the reported oversized ring is caused by the calibration formula in `NetworkWeaponShooter`, not by the physical cone helper or projectile randomization.
+- Current work: Unity Editor was launched with the `Client` scene open and the IA_L2_Scout prefab values were inspected. The reticle formula was traced to an extra current/minimum dispersion ratio; the follow-up now keeps only physical projection plus the configured floor/multiplier.
+- Work remaining: reproduce the movement and turret-rotation sequence manually in Play Mode when native input control is available, then confirm the visual ring against a target at its boundary.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo` passed with 0 errors; fresh Unity PlayMode filter `Game.Tests.PlayMode.DispersionConeProjectionPlayModeTests` passed 2/2; static search found no `dispersionRatio`, `minimumScreenDiameter`, or old FOV calibration call in `NetworkWeaponShooter`; relevant `git diff --check` passed; Unity Editor is open on the `Client` scene. Native Computer Use cannot inject the requested movement/turret input, so full manual visual reproduction remains pending. Existing unrelated map changes were preserved.
+
+## Archived task (full zoom and dispersion ring rewrite)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: completely remove the old zoom and dispersion-ring implementation, write a clear configurable system from scratch, configure it, and test/iterate until the visual logic is reliable.
+- Objective: use one default camera profile plus independent forward/backward step arrays with absolute camera distance, FOV, and ring calibration values; calculate the reticle from the same physical projectile cone through the actual camera projection.
+- Acceptance criteria: legacy zoom/ring math is removed; profiles are serialized and documented; local/server rings use the current camera projection and dispersion angle; zoom does not alter projectile spread; builds, static checks, and focused Unity verification pass.
+- Current work: replaced legacy zoom state and approximate reticle interpolation with profile-driven camera state and shared physical cone projection. The remaining issue was found in the calibration formula: it multiplied the physical result by a current/minimum dispersion ratio.
+- Work remaining: resolve the over-expansion follow-up above and complete manual boundary verification when native Play Mode input is available.
+- Edited files: `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Scripts/Gameplay/Robots/Shared/DispersionConeProjection.cs`, `Assets/Game/Scripts/Gameplay/Robots/Shared/Game.Gameplay.Shared.asmdef`, `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `Assets/Game/Tests/PlayMode/Game.PlayMode.Tests.asmdef`, `Assets/Game/Tests/PlayMode/DispersionConeProjectionPlayModeTests.cs`, `Assets/Game/Scenes/Client.unity`, `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, registered robot prefabs, affected editor/network/settings helpers, and mechanic documentation.
+- Verification: production/editor C# builds passed with 0 errors, focused Unity PlayMode projection tests passed 2/2, static legacy-field checks passed, and `git diff --check` passed. Full-scene manual boundary testing remained pending.
+
+## Archived task (robot stopping inertia soft profile)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
 - Follow-up request: reduce the previous `NV=50` stopping strength to `10` because it is too strong.
 - Objective: use the softer profile NV `10.0` and IA `2.0`, preserving IA's five-to-one neutral stopping time relative to NV and the `2x` reverse-braking ratio.
 - Acceptance criteria:

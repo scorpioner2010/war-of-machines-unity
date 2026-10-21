@@ -39,9 +39,11 @@ Important settings classes currently used by recent gameplay work:
   - `standardAccelerationMultiplier` and `leggedAccelerationMultiplier` scale base acceleration for tracked/standard and walking vehicles. `standardBrakingMultiplier` and `leggedBrakingMultiplier` scale active same-direction slowing. `directionReversalBrakingMultiplier` applies only while input requests the opposite direction; the current `2.0` value makes reversal deceleration twice as strong as neutral coasting, which approximately halves stopping distance. Runtime vehicle acceleration stats override the prefab component acceleration, while these global multipliers still apply.
   - Editor-only `ClientVehicleTestMode` instantiates its inspector-assigned `ServerSettings` prefab before starting the local FishNet host, so Vehicle Test movement uses the same `robotMovement` values as the server scene.
 - `GunDispersionGlobalSettings`
-  - Accuracy/dispersion conversion, UI/network smoothing, and global on/off behavior for the current speed/turret/shot dispersion model.
+  - Accuracy/dispersion conversion, reticle/network smoothing, and global on/off behavior for the current speed/turret/shot dispersion model.
   - Runtime spread itself is not configured with old reference traverse speeds anymore: `GunDispersionModel` derives it from normalized vehicle speed, normalized turret-local yaw speed, and fixed post-shot spread.
   - Weapon prefabs keep the per-weapon range through `minDispersionDeg`, `maxDispersionDeg`, and `aimTime`; the server settings prefab no longer serializes hull/gun/camera reference traverse fields.
+  - `reticleDiameterLerpSpeed` smooths the projected local/server ring diameter. `reticleHorizontalLerpSpeed`, `reticleVerticalLerpSpeed`, and their sniper variants smooth only reticle position in `WeaponReticlePresenter`.
+  - Reticle diameter is not authored in these server settings. `NetworkWeaponShooter` projects the same physical dispersion cone used by `BuildDispersedShotRay` through the current gameplay camera. Client zoom profiles provide a visual base diameter floor and direct multiplier; the projected cone always remains the minimum safe size, without any current/minimum dispersion ratio inflation.
 - `GameplayRuntimeSettings.shotResultVisibleTime` was removed because the faction-aware penetration status is now persistent and is replaced only by the next shot result.
 - `ProjectileBallisticsSettings`
   - Projectile gravity/ballistic settings.

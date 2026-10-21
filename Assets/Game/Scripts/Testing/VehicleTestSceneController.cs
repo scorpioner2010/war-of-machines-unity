@@ -7,6 +7,7 @@ using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Transporting;
 using Game.Scripts.API.Models;
+using Game.Scripts.Client;
 using Game.Scripts.Core.Resources;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
@@ -628,10 +629,14 @@ namespace Game.Scripts.Testing
 
             GunDispersionGlobalSettings dispersionSettings = ServerSettings.GetGunDispersion();
             float dispersionDeg = dispersionSettings.GetAccuracyDispersionDeg(stats.Accuracy, 0f);
-            float farRingDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg, 0f);
-            float zoomRingDiameter = dispersionSettings.GetUiDiameter(dispersionDeg, dispersionDeg, 1f);
+            GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            CameraZoomProfile defaultZoom = runtimeSettings.cameraZoomDefault;
+            CameraZoomProfile firstForwardZoom = runtimeSettings.cameraZoomForwardSteps != null
+                && runtimeSettings.cameraZoomForwardSteps.Length > 0
+                ? runtimeSettings.cameraZoomForwardSteps[0]
+                : defaultZoom;
             DrawStatRow("Full aim spread", dispersionDeg.ToString("0.###") + "°");
-            DrawStatRow("Aim ring", farRingDiameter.ToString("0.#") + " / " + zoomRingDiameter.ToString("0.#") + " px");
+            DrawStatRow("Aim ring base", defaultZoom.reticleBaseDiameter.ToString("0.#") + " / " + firstForwardZoom.reticleBaseDiameter.ToString("0.#") + " UI");
 
             DrawStatSection("Mobility");
             DrawStatRow("Speed", stats.Speed.ToString("0.#"));

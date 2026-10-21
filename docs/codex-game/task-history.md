@@ -12,6 +12,22 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Reticle over-expansion during movement and turret rotation
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: fix IA_L2_Scout's reticle becoming much larger than the actual projectile hit area while moving, rotating the turret, or doing both.
+- Root cause found: `NetworkWeaponShooter.GetCrosshairDiameter` multiplied the base/calibrated reticle by `currentDispersion / minimumDispersion`; IA_L2_Scout's `6° / 0.35°` range created an accidental approximately `17.1x` expansion.
+- Correction: use the current camera-projected physical cone as the authoritative size, with the profile base diameter as a floor only and no dispersion-ratio inflation. Production/editor builds passed, fresh focused PlayMode projection tests passed 2/2, and the Client scene is open for manual reproduction.
+- Remaining verification: native input injection is unavailable, so the movement/turret Play Mode sequence still needs user confirmation.
+- Detail: active task record is in `task-handoff.md`.
+
+### 2026-10-22 - Full zoom and dispersion ring rewrite
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: replace the legacy zoom-step and approximate reticle sizing with a default profile plus independent forward/backward profile arrays and camera-projected dispersion rings.
+- Acceptance: old zoom fields and zoom-normalized ring math are removed; the active camera projection visualizes the same physical projectile cone during every zoom/FOV transition; profile values and multipliers are serialized and documented; static checks, builds, and Unity verification pass.
+- Detail: active task record is in `task-handoff.md`; runtime/editor builds pass, Unity PlayMode projection tests pass 2/2, and only full-scene manual boundary testing remains.
+
 ### 2026-10-22 - AI reverse braking inertia
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

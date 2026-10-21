@@ -10,6 +10,9 @@ Current owner scripts:
   - For the local owner, it passes `VehicleRuntimeStats.Faction` to `GunCrosshair` and drives Nova Syndicate `CrosshairType2` light-element alpha from the predicted reload timer, reconciled against the authoritative reload remainder when available. Alpha is `0` immediately after the predicted shot and reaches `1` when the weapon is ready.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
   - Owns projectile fire, projectile visual spawning, dispersion, authoritative hit resolution, and network RPCs for shot visuals/results.
+  - Builds the authoritative random shot direction and the owner reticle from the same `DispersionConeProjection` tangent-cone basis. Zoom changes only the camera/profile presentation; it never changes the physical dispersion angle or deterministic shot sample.
+  - The local and server rings use their corresponding dispersion angle, the actual current gameplay camera FOV/viewport, the muzzle-to-aim distance, and the active zoom profile. A 2% boundary safety margin prevents sampled cone edges from under-enclosing a possible projectile hit.
+  - The active profile's `reticleBaseDiameter` is only a minimum visual floor and `reticleDiameterMultiplier` is a direct calibration multiplier. The ring is never enlarged by dividing current dispersion by minimum dispersion, so movement and turret rotation expand it only by the physical projected cone.
   - Owns the single human fire RPC. The server validates finite shot data, limits the client muzzle offset to 8 meters, requests ammo/reload approval, and only then creates the authoritative projectile.
   - Rejected owner shots cancel the predicted projectile and reconcile the local reload timer to the server value.
   - `ServerFireAuthoritative` is used by bots and other server-authoritative fire paths.
@@ -50,8 +53,10 @@ Current owner scripts:
 - `Assets/Game/Scripts/Editor/ArmorPrefabHighlighter.cs`
   - In Prefab Mode, draws the red overlay for active objects referenced by the root `VehicleArmorController` turret/hull arrays; an object disabled with `GameObject.SetActive(false)` is not highlighted.
   - Respects the prefab-owned `highlightArmorInPrefab` checkbox.
+- `Assets/Game/Scripts/Gameplay/Robots/Shared/DispersionConeProjection.cs`
+  - Shared tangent-cone direction builder and actual camera-projection diameter calculator used by both shot randomization and the owner reticle.
 - `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`
-  - Dispersion settings and runtime dispersion model.
+  - Runtime local dispersion model and server-synchronized dispersion settings.
 - `Assets/Game/Scripts/Gameplay/Robots/BallisticProjectileMath.cs`
   - Ballistic math helpers.
 - `Assets/Game/Scripts/Gameplay/Projectiles/Projectile.cs`

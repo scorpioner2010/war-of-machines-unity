@@ -47,6 +47,49 @@ namespace Game.Scripts.Client
     }
 
     [System.Serializable]
+    public class CameraZoomProfile
+    {
+        [Min(0.01f)]
+        public float cameraDistance = 10f;
+        [Range(1f, 179f)]
+        public float fieldOfView = 60f;
+        [Min(0f)]
+        public float reticleBaseDiameter = 50f;
+        [Min(0f)]
+        public float reticleDiameterMultiplier = 1f;
+
+        public CameraZoomProfile Clone()
+        {
+            return new CameraZoomProfile
+            {
+                cameraDistance = cameraDistance,
+                fieldOfView = fieldOfView,
+                reticleBaseDiameter = reticleBaseDiameter,
+                reticleDiameterMultiplier = reticleDiameterMultiplier
+            };
+        }
+
+        public void Validate(CameraZoomProfile fallback)
+        {
+            CameraZoomProfile safeFallback = fallback ?? new CameraZoomProfile();
+            cameraDistance = ClampFinite(cameraDistance, 0.01f, safeFallback.cameraDistance);
+            fieldOfView = Mathf.Clamp(ClampFinite(fieldOfView, 1f, safeFallback.fieldOfView), 1f, 179f);
+            reticleBaseDiameter = ClampFinite(reticleBaseDiameter, 0f, safeFallback.reticleBaseDiameter);
+            reticleDiameterMultiplier = ClampFinite(reticleDiameterMultiplier, 0f, safeFallback.reticleDiameterMultiplier);
+        }
+
+        private static float ClampFinite(float value, float minValue, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                return Mathf.Max(minValue, fallback);
+            }
+
+            return Mathf.Max(minValue, value);
+        }
+    }
+
+    [System.Serializable]
     public class GameplayRuntimeSettings
     {
         private static readonly GameplayRuntimeSettings DefaultSettings = new GameplayRuntimeSettings();
@@ -99,10 +142,35 @@ namespace Game.Scripts.Client
         public bool autoAimPreferTurretTarget = true;
 
         [Header("Камера")]
-        [Tooltip("Запасна дистанція камери в режимі наближення, якщо список кроків наближення порожній.")]
-        public float cameraAimDistance = 6f;
-        [Tooltip("Дистанція снайперської камери від точки прив'язки.")]
-        public float cameraSniperDistance = 0.25f;
+        [Tooltip("Базовий профіль зума з абсолютними значеннями дистанції, FOV і кільця.")]
+        public CameraZoomProfile cameraZoomDefault = new CameraZoomProfile
+        {
+            cameraDistance = 10f,
+            fieldOfView = 60f,
+            reticleBaseDiameter = 50f,
+            reticleDiameterMultiplier = 1f
+        };
+        [Tooltip("Кроки колеса вперед: елемент 0 є першим кроком від базового профілю.")]
+        public CameraZoomProfile[] cameraZoomForwardSteps =
+        {
+            new CameraZoomProfile { cameraDistance = 6f, fieldOfView = 50f, reticleBaseDiameter = 50f, reticleDiameterMultiplier = 1f },
+            new CameraZoomProfile { cameraDistance = 4f, fieldOfView = 45f, reticleBaseDiameter = 60f, reticleDiameterMultiplier = 1f },
+            new CameraZoomProfile { cameraDistance = 2.5f, fieldOfView = 40f, reticleBaseDiameter = 75f, reticleDiameterMultiplier = 1f }
+        };
+        [Tooltip("Кроки колеса назад: елемент 0 є першим кроком від базового профілю.")]
+        public CameraZoomProfile[] cameraZoomBackwardSteps =
+        {
+            new CameraZoomProfile { cameraDistance = 12f, fieldOfView = 68f, reticleBaseDiameter = 55f, reticleDiameterMultiplier = 1f },
+            new CameraZoomProfile { cameraDistance = 15f, fieldOfView = 76f, reticleBaseDiameter = 60f, reticleDiameterMultiplier = 1f }
+        };
+        [Tooltip("Окремий снайперський профіль, який додатково вмикає scope UI та змінює точку камери.")]
+        public CameraZoomProfile cameraZoomSniper = new CameraZoomProfile
+        {
+            cameraDistance = 0.25f,
+            fieldOfView = 24f,
+            reticleBaseDiameter = 50f,
+            reticleDiameterMultiplier = 1f
+        };
         [Tooltip("У снайперському режимі брати точку камери від дула, якщо воно доступне.")]
         public bool cameraSniperFromMuzzle = true;
         [Tooltip("Зміщення снайперської камери вперед від точки прив'язки.")]
@@ -117,21 +185,12 @@ namespace Game.Scripts.Client
         public float cameraMinPitch = -20f;
         [Tooltip("Максимальний кут нахилу камери.")]
         public float cameraMaxPitch = 80f;
-        [Tooltip("FOV камери у звичайному режимі.")]
-        public float cameraNormalFov = 60f;
-        [Tooltip("FOV камери в режимі наближення.")]
-        public float cameraAimFov = 45f;
-        [Tooltip("FOV камери у снайперському режимі.")]
-        public float cameraSniperFov = 24f;
         [Tooltip("Швидкість згладження зміни FOV.")]
         public float cameraFovLerpSpeed = 10f;
         [Tooltip("Швидкість згладження дистанції камери.")]
         public float cameraDistanceLerpSpeed = 12f;
         [Tooltip("Мертва зона колеса миші для перемикання наближення.")]
         public float cameraScrollDeadZone = 0.001f;
-        [Tooltip("Дистанції кроків наближення до снайперського режиму.")]
-        public float[] cameraAimZoomDistances = { 6f, 4f, 2.5f };
-
         [Header("Приціл")]
         [Tooltip("Колір тексту, коли розкид повністю зведений.")]
         public Color aimReadyColor = new Color(0.5f, 1f, 0.5f, 1f);
@@ -215,8 +274,6 @@ namespace Game.Scripts.Client
             mapTrackedVehicleRefreshInterval = ClampFinite(mapTrackedVehicleRefreshInterval, 0.1f, Default.mapTrackedVehicleRefreshInterval);
             autoAimMaxAcquireDistance = ClampFinite(autoAimMaxAcquireDistance, 0.1f, Default.autoAimMaxAcquireDistance);
             autoAimFallbackTargetHeight = ClampFinite(autoAimFallbackTargetHeight, 0f, Default.autoAimFallbackTargetHeight);
-            cameraAimDistance = ClampFinite(cameraAimDistance, 0.01f, Default.cameraAimDistance);
-            cameraSniperDistance = ClampFinite(cameraSniperDistance, 0.01f, Default.cameraSniperDistance);
             cameraSniperForwardOffset = ClampFinite(cameraSniperForwardOffset, 0f, Default.cameraSniperForwardOffset);
             cameraSniperVerticalOffset = ClampFinite(cameraSniperVerticalOffset, Default.cameraSniperVerticalOffset);
             cameraHorizontalSpeed = ClampFinite(cameraHorizontalSpeed, 0f, Default.cameraHorizontalSpeed);
@@ -228,13 +285,10 @@ namespace Game.Scripts.Client
                 cameraMaxPitch = cameraMinPitch;
             }
 
-            cameraNormalFov = ClampFinite(cameraNormalFov, 1f, Default.cameraNormalFov);
-            cameraAimFov = ClampFinite(cameraAimFov, 1f, Default.cameraAimFov);
-            cameraSniperFov = ClampFinite(cameraSniperFov, 1f, Default.cameraSniperFov);
             cameraFovLerpSpeed = ClampFinite(cameraFovLerpSpeed, 0f, Default.cameraFovLerpSpeed);
             cameraDistanceLerpSpeed = ClampFinite(cameraDistanceLerpSpeed, 0f, Default.cameraDistanceLerpSpeed);
             cameraScrollDeadZone = ClampFinite(cameraScrollDeadZone, 0f, Default.cameraScrollDeadZone);
-            ValidateCameraZoomDistances();
+            ValidateCameraZoomProfiles();
             aimReadyColor = ClampColor(aimReadyColor, Default.aimReadyColor);
             aimProgressColor = ClampColor(aimProgressColor, Default.aimProgressColor);
             if (string.IsNullOrEmpty(aimReadyText))
@@ -289,8 +343,14 @@ namespace Game.Scripts.Client
             autoAimFallbackTargetHeight = source.autoAimFallbackTargetHeight;
             autoAimRejectSameTeam = source.autoAimRejectSameTeam;
             autoAimPreferTurretTarget = source.autoAimPreferTurretTarget;
-            cameraAimDistance = source.cameraAimDistance;
-            cameraSniperDistance = source.cameraSniperDistance;
+            cameraZoomDefault = source.cameraZoomDefault != null
+                ? source.cameraZoomDefault.Clone()
+                : Default.cameraZoomDefault.Clone();
+            cameraZoomForwardSteps = CloneZoomProfiles(source.cameraZoomForwardSteps);
+            cameraZoomBackwardSteps = CloneZoomProfiles(source.cameraZoomBackwardSteps);
+            cameraZoomSniper = source.cameraZoomSniper != null
+                ? source.cameraZoomSniper.Clone()
+                : Default.cameraZoomSniper.Clone();
             cameraSniperFromMuzzle = source.cameraSniperFromMuzzle;
             cameraSniperForwardOffset = source.cameraSniperForwardOffset;
             cameraSniperVerticalOffset = source.cameraSniperVerticalOffset;
@@ -298,13 +358,9 @@ namespace Game.Scripts.Client
             cameraVerticalSpeed = source.cameraVerticalSpeed;
             cameraMinPitch = source.cameraMinPitch;
             cameraMaxPitch = source.cameraMaxPitch;
-            cameraNormalFov = source.cameraNormalFov;
-            cameraAimFov = source.cameraAimFov;
-            cameraSniperFov = source.cameraSniperFov;
             cameraFovLerpSpeed = source.cameraFovLerpSpeed;
             cameraDistanceLerpSpeed = source.cameraDistanceLerpSpeed;
             cameraScrollDeadZone = source.cameraScrollDeadZone;
-            cameraAimZoomDistances = source.cameraAimZoomDistances != null ? (float[])source.cameraAimZoomDistances.Clone() : null;
             aimReadyColor = source.aimReadyColor;
             aimProgressColor = source.aimProgressColor;
             aimReadyText = source.aimReadyText;
@@ -328,18 +384,65 @@ namespace Game.Scripts.Client
             sniperScopeOverlayFadeDuration = source.sniperScopeOverlayFadeDuration;
         }
 
-        private void ValidateCameraZoomDistances()
+        private void ValidateCameraZoomProfiles()
         {
-            if (cameraAimZoomDistances == null)
+            if (cameraZoomDefault == null)
             {
-                cameraAimZoomDistances = (float[])Default.cameraAimZoomDistances.Clone();
-                return;
+                cameraZoomDefault = Default.cameraZoomDefault.Clone();
             }
 
-            for (int i = 0; i < cameraAimZoomDistances.Length; i++)
+            cameraZoomDefault.Validate(Default.cameraZoomDefault);
+            if (cameraZoomSniper == null)
             {
-                cameraAimZoomDistances[i] = ClampFinite(cameraAimZoomDistances[i], 0.01f, Default.cameraAimDistance);
+                cameraZoomSniper = Default.cameraZoomSniper.Clone();
             }
+
+            cameraZoomSniper.Validate(Default.cameraZoomSniper);
+            cameraZoomForwardSteps = ValidateZoomProfiles(cameraZoomForwardSteps, Default.cameraZoomForwardSteps);
+            cameraZoomBackwardSteps = ValidateZoomProfiles(cameraZoomBackwardSteps, Default.cameraZoomBackwardSteps);
+        }
+
+        private static CameraZoomProfile[] ValidateZoomProfiles(
+            CameraZoomProfile[] profiles,
+            CameraZoomProfile[] fallbackProfiles)
+        {
+            if (profiles == null)
+            {
+                return CloneZoomProfiles(fallbackProfiles);
+            }
+
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                if (profiles[i] == null)
+                {
+                    profiles[i] = fallbackProfiles != null && i < fallbackProfiles.Length
+                        ? fallbackProfiles[i].Clone()
+                        : new CameraZoomProfile();
+                }
+
+                CameraZoomProfile fallback = fallbackProfiles != null && i < fallbackProfiles.Length
+                    ? fallbackProfiles[i]
+                    : Default.cameraZoomDefault;
+                profiles[i].Validate(fallback);
+            }
+
+            return profiles;
+        }
+
+        private static CameraZoomProfile[] CloneZoomProfiles(CameraZoomProfile[] profiles)
+        {
+            if (profiles == null)
+            {
+                return null;
+            }
+
+            CameraZoomProfile[] clone = new CameraZoomProfile[profiles.Length];
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                clone[i] = profiles[i] != null ? profiles[i].Clone() : new CameraZoomProfile();
+            }
+
+            return clone;
         }
 
         private static Color ClampColor(Color value, Color fallback)

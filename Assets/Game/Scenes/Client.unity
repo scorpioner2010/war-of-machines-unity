@@ -51549,8 +51549,38 @@ MonoBehaviour:
     autoAimFallbackTargetHeight: 1.2
     autoAimRejectSameTeam: 1
     autoAimPreferTurretTarget: 1
-    cameraAimDistance: 6
-    cameraSniperDistance: 0.25
+    cameraZoomDefault:
+      cameraDistance: 10
+      fieldOfView: 60
+      reticleBaseDiameter: 50
+      reticleDiameterMultiplier: 1
+    cameraZoomForwardSteps:
+    - cameraDistance: 6
+      fieldOfView: 50
+      reticleBaseDiameter: 50
+      reticleDiameterMultiplier: 1
+    - cameraDistance: 4
+      fieldOfView: 45
+      reticleBaseDiameter: 60
+      reticleDiameterMultiplier: 1
+    - cameraDistance: 2.5
+      fieldOfView: 40
+      reticleBaseDiameter: 75
+      reticleDiameterMultiplier: 1
+    cameraZoomBackwardSteps:
+    - cameraDistance: 12
+      fieldOfView: 68
+      reticleBaseDiameter: 55
+      reticleDiameterMultiplier: 1
+    - cameraDistance: 15
+      fieldOfView: 76
+      reticleBaseDiameter: 60
+      reticleDiameterMultiplier: 1
+    cameraZoomSniper:
+      cameraDistance: 0.25
+      fieldOfView: 24
+      reticleBaseDiameter: 50
+      reticleDiameterMultiplier: 1
     cameraSniperFromMuzzle: 1
     cameraSniperForwardOffset: 0.15
     cameraSniperVerticalOffset: 0
@@ -51558,16 +51588,9 @@ MonoBehaviour:
     cameraVerticalSpeed: 120
     cameraMinPitch: -20
     cameraMaxPitch: 80
-    cameraNormalFov: 60
-    cameraAimFov: 45
-    cameraSniperFov: 24
     cameraFovLerpSpeed: 10
     cameraDistanceLerpSpeed: 12
     cameraScrollDeadZone: 0.001
-    cameraAimZoomDistances:
-    - 6
-    - 4
-    - 2.5
     aimReadyColor: {r: 0.5, g: 1, b: 0.5, a: 1}
     aimProgressColor: {r: 1, g: 0.86, b: 0.2, a: 1}
     aimReadyText: AIM READY

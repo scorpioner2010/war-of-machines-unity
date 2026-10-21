@@ -15,9 +15,9 @@ EditorBuildSettings:
     path: Assets/Game/Scenes/Server.unity
     guid: cbc98448b3060534490c89572f65107a
   - enabled: 0
-    path: Assets/Game/Scenes/Map11.unity
+    path: Assets/Game/Scenes/Map1.unity
     guid: 6b0b553174046644d83fa418205d4fa7
-  - enabled: 1
+  - enabled: 0
     path: Assets/Game/Scenes/VehicleTest.unity
     guid: c9da53d63bfbb8144bc898828ee85910
   m_configObjects: {}
