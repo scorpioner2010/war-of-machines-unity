@@ -12,6 +12,13 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Preserve aim point during sniper camera transition
+
+- Status: `COMPLETED`
+- Scope: prevent the visible aim point from shifting when the camera moves to or from a checked sniper-scope zoom profile.
+- Bug: the wheel path changes the camera origin to the gun/sniper anchor but leaves the previous orbit yaw/pitch unchanged, creating parallax and changing the apparent target.
+- Detail: `ApplyZoomStep` now preserves the existing world-space aim point when moving the camera to/from any checked sniper profile; Client Play Mode, production/editor builds, static checks, and `git diff --check` passed.
+
 ### 2026-10-22 - Allow multiple sniper-scope zoom profiles
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

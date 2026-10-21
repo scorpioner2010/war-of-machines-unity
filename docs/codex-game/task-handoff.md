@@ -1,6 +1,23 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `COMPLETED`
+- Started: 2026-10-22
+- User request: "майже все ідеально, але є зсув і виглядає він як баг, приціл ззивається, пояснюю коли вмикається снайперський приціл (чорний круг) пішка міняє трохи місце прицілювання, це виглядає як баг, запусти гру сцену клієнт, вибери першого робота і потім перемикай роликом вперід поки не дійдеш до зумі і ти помітиш що приціл зсувається, я понямаю що він скоріше за все зсувається щоб ми дивилися з місця пушки так це вірно але він не має змінювати місце наведення, розберися в чому проблема та виправ"
+- Objective: preserve the current world-space aim point when entering or leaving any sniper-scope zoom profile; moving the camera to the gun anchor must not retarget the weapon.
+- Acceptance criteria:
+  - Scrolling into a checked sniper profile keeps the same world aim point visible before and after the camera-origin transition.
+  - Leaving a sniper profile also preserves the current world aim point when returning to orbit camera presentation.
+  - The weapon's desired/current aim is not overwritten with a new target solely because the camera moved to the sniper anchor.
+  - Multiple checked forward profiles remain reachable and retain their existing scope behavior.
+  - Runtime/editor builds, static checks, documentation, and `git diff --check` pass.
+- Assumptions: the reported shift is camera parallax caused by changing the camera origin without recalculating yaw/pitch; projectile dispersion and weapon aim logic should remain unchanged.
+- Current work: `ApplyZoomStep` now aligns the destination camera origin to the existing world-space gun aim point whenever the transition enters or leaves a checked sniper profile; weapon targeting and projectile logic remain untouched.
+- Work remaining: none.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/task-handoff.md`, and `docs/codex-game/task-history.md`.
+- Verification: Client Play Mode was tested with the first `IA Skirmisher`; zoom steps 1–4 were traversed, the black sniper scope activated at step 3, and no visible reticle/aim-point jump occurred at activation or the next zoom step. `dotnet build Assembly-CSharp.csproj --no-restore --nologo` and `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo` passed with 0 errors; static transition checks and `git diff --check` passed.
+
+## Archived task (allow multiple sniper-scope zoom profiles)
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-22
 - User request: "я налаштував приціл вперед, чому на 2 та на 3 кроці не зявляється чорний круг вокруг приціла? я ж поставив галочки що не так?"

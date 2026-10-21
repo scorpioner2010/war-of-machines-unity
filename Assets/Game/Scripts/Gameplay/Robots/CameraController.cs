@@ -311,13 +311,12 @@ namespace Game.Scripts.Gameplay.Robots
             if (!IsSniperStep(_currentZoomStep))
             {
                 _lastNonSniperZoomStep = _currentZoomStep;
-                AlignSniperCameraToCurrentGunAim();
             }
 
             ApplyZoomStep(sniperStep, false);
         }
 
-        private void AlignSniperCameraToCurrentGunAim()
+        private void AlignSniperCameraToCurrentGunAim(int sniperStep)
         {
             if (!TryGetCurrentGunAimPoint(out Vector3 aimPoint))
             {
@@ -331,7 +330,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            int sniperStep = GetSniperZoomStep();
             if (sniperStep <= DefaultZoomStep)
             {
                 return;
@@ -440,7 +438,6 @@ namespace Game.Scripts.Gameplay.Robots
                 returnStep = DefaultZoomStep;
             }
 
-            AlignOrbitCameraToCurrentGunAim();
             ApplyZoomStep(returnStep, false);
         }
 
@@ -471,6 +468,17 @@ namespace Game.Scripts.Gameplay.Robots
                 zoomStep = -GetMaxBackwardZoomStep();
             }
 
+            bool wasSniperStep = IsSniperStep(_currentZoomStep);
+            bool isSniperStep = IsSniperStep(zoomStep);
+            if (isSniperStep && !wasSniperStep)
+            {
+                AlignSniperCameraToCurrentGunAim(zoomStep);
+            }
+            else if (!isSniperStep && wasSniperStep)
+            {
+                AlignOrbitCameraToCurrentGunAim();
+            }
+
             _currentZoomStep = zoomStep;
             if (!IsSniperStep(zoomStep))
             {
@@ -489,7 +497,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ApplyCameraFov(GetFovForZoomStep(zoomStep), true);
             }
 
-            ApplySniperUi(IsSniperStep(zoomStep), immediate);
+            ApplySniperUi(isSniperStep, immediate);
         }
 
         private int GetMaxForwardZoomStep()
