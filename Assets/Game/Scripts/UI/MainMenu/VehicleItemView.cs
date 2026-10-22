@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,7 +7,9 @@ namespace Game.Scripts.UI.MainMenu
     public class VehicleItemView : MonoBehaviour
     {
         [SerializeField] private Image iconImage;
+        [SerializeField] private TMP_Text nameText;
         [SerializeField] private GameObject selectedMarker;
+        [SerializeField] private VehicleBlink vehicleBlink;
 
         public void Apply(VehicleSlotVehicleData data)
         {
@@ -15,7 +18,13 @@ namespace Game.Scripts.UI.MainMenu
                 return;
             }
 
-            name = string.IsNullOrEmpty(data.Name) ? "Vehicle" : data.Name;
+            string displayName = string.IsNullOrEmpty(data.Name) ? "Vehicle" : data.Name;
+            name = displayName;
+
+            if (nameText != null)
+            {
+                nameText.text = displayName;
+            }
 
             if (iconImage != null)
             {
@@ -26,6 +35,11 @@ namespace Game.Scripts.UI.MainMenu
             if (selectedMarker != null)
             {
                 selectedMarker.SetActive(data.IsSelected);
+            }
+
+            if (vehicleBlink != null)
+            {
+                vehicleBlink.SetBlinking(data.IsSelected);
             }
         }
     }

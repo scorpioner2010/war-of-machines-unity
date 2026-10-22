@@ -14,6 +14,21 @@ namespace Game.Scripts.UI.Tree
         public VehicleClass vehicleType;
         public GameObject isClose;
         public GameObject isHave;
+        public GameObject isSelect;
+        public CanvasGroup canvasGroup;
         public RectTransform rectTransform;
+
+        public void SetSelected(bool selected)
+        {
+            if (isSelect != null)
+            {
+                isSelect.SetActive(selected);
+            }
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = selected ? 1f : 0.35f;
+            }
+        }
     }
 }

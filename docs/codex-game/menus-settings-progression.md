@@ -19,7 +19,9 @@ Current owner scripts:
   - Keep Convert disabled until a vehicle and a positive amount are selected; Close hides the popup without sending a request.
   - `Client.unity/FreeXpConversionPopup` owns the serialized `vehicleDropdown` `TMP_Dropdown`. `FreeXpConversionPopup` adds the `Choose vehicle` entry plus owned vehicles, maps `onValueChanged` back to the selected vehicle, and relies on the native template/list lifecycle to close the list after selection.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleItemView.cs`
-  - Vehicle list item view.
+  - Vehicle list item view. Applies the resolved `VehicleSlotVehicleData.Name` to the serialized `nameText` TMP label, using `Vehicle` when the data name is empty; the serialized `vehicleBlink` runs only when `data.IsSelected` is true.
+- `Assets/Game/Scripts/UI/MainMenu/VehicleBlink.cs`
+  - Runs on the root of the main-menu `Vehicle` prefab and applies a configurable smooth ping-pong alpha pulse to the serialized `BlackScreen` `CanvasGroup` only while the item is selected; deselection restores the authored alpha and deactivates the `BlackScreen` GameObject, while scale is never changed.
 - `Assets/Game/Scripts/UI/MainMenu/VehicleSlotView.cs`
   - Vehicle slot display and vehicle-selection click handling. It does not create a hover specifications popup.
 - `Assets/Game/Scripts/UI/MainMenu/RobotView.cs`
@@ -32,15 +34,23 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/Tree/DevelopmentTree.cs`
   - Loads `VehicleGraph` data per faction, builds the selected faction tree at runtime, and keeps purchase/research RPC validation authoritative on the server.
   - Groups every graph node by `level`: level 1 is the lowest row, later levels are stacked above it, and nodes in every row are centered.
-  - A `TreeItem` click only selects a vehicle; it never starts purchase or research directly.
+  - A `TreeItem` click only selects a vehicle; it never starts purchase or research directly. `DevelopmentTree` keeps one `_selectedTreeItem`, disables its previous `IsSelect` child before enabling the newly clicked item's child, and clears the selection when changing faction or rebuilding the runtime tree.
+- `Assets/Game/Scripts/UI/Tree/TreeItem.cs`
+  - Exposes the serialized `isSelect` and `canvasGroup` references, and `SetSelected(bool)` enables the selected marker while setting the root CanvasGroup alpha to `1` for the selected item or `0.35` otherwise; the component does not discover or create UI objects at runtime.
+- `Assets/Game/Scripts/UI/Tree/TreeItemBlink.cs`
+  - Runs on the root of `TreeItem.prefab` and animates the serialized `Image (0)` through `Image (3)` references together.
+  - Uses unscaled time and a smooth repeating ping-pong cycle to interpolate alpha between `alphaA`/`alphaB` and local Y scale between `scaleYA`/`scaleYB`; `blinkSpeed` controls complete A-B-A cycles per second.
+  - The prefab keeps neutral defaults so existing tree visuals do not change until the Inspector values are configured.
 - `Assets/Game/Scripts/UI/Tree/FactionTreeView.cs`, `FactionButtonView.cs`, `DevelopmentTreeDetailsPanel.cs`, `ArrowDrawer.cs`
   - `FactionTreeView` owns the serialized rows and arrows layers of a generated faction tree.
   - `FactionButtonView` provides serialized faction button visuals and selects the correct background and emblem from the faction code, without runtime component lookups.
-  - `DevelopmentTreeDetailsPanel` displays the selected vehicle and exclusively enables its Buy or Research button when the progression state permits it.
+  - `DevelopmentTreeDetailsPanel` displays the selected vehicle, assigns its `GameResourceManager.GetIcon(node.code)` sprite to the serialized `DevelopmentTree/RightInfoPanel/Image`, activates that Image GameObject only while a node with an icon is selected, and exclusively enables its Buy or Research button when the progression state permits it.
   - `ArrowDrawer` draws one non-interactive arrow for each server-provided `VehicleEdge` after the row layout is resolved.
 - `Assets/Game/Content/UI/Prefabs/Tree/FactionTree.prefab`, `DevelopmentTreeLevelRow.prefab`, `TreeItem.prefab`
   - The first prefab provides a faction root with empty arrow and vertical-row containers; the second provides a centered, one-row horizontal grid for every level.
-  - `TreeItem.prefab` remains the node visual and selection button; it is not responsible for progression actions.
+  - `TreeItem.prefab` remains the node visual and selection button; its root owns the `TreeItemBlink` presentation component and `CanvasGroup` (default alpha `0.35`), and its `Name`/`lvl` TMP labels are wired to `TreeItem.vehicleName`/`TreeItem.level`. Its inactive `IsSelect` child and root alpha are enabled/raised only by the selected runtime node.
+- `Assets/Game/Content/UI/Prefabs/MainMenu/Vehicle.prefab`
+  - The root `Vehicle` owns `VehicleBlink`, and `VehicleItemView.vehicleBlink` is wired to it. Its serialized `blackScreen` reference targets the existing inactive-by-default `BlackScreen` child `CanvasGroup`; only selected generated vehicle items activate and pulse it.
 - `Assets/Game/Scripts/UI/Tree/VehicleResearchProgressResolver.cs`
   - Vehicle research/progression data support.
 - `Assets/Game/Scripts/UI/Settings/*.cs`
@@ -96,7 +106,7 @@ Important behavior:
 - In `Assets/Game/Scenes/Client.unity`, the existing `MenuType.DevelopmentTree` route now opens `DevelopmentTreeNew`.
   - `DevelopmentTreeNew/AnimationPanel/FactionRoot` and `ButtonsContainer` must stay empty in the saved scene: `DevelopmentTree` fills them from server data.
   - Generated faction buttons use the `DevelopmentTreeNewView` visual reference: Iron Alliance uses `nav_button_a_bg_v2` with `emblem_a`; Nova Syndicate uses `nav_button_gear_bg` with `tree_sidebar_gear`.
-  - The right-side `RightInfoPanel` is static layout only. `DevelopmentTreeDetailsPanel` updates its `Tier/lvl` image from the serialized I–X tier sprites after a node is selected.
+  - The right-side `RightInfoPanel` owns the serialized robot `Image` target and the `Tier/lvl` image. `DevelopmentTreeDetailsPanel` updates both from the selected node: the robot image comes from `GameResourceManager.GetIcon(node.code)`, while the tier image uses the serialized I–X sprites; the robot Image GameObject is inactive when no technique is selected.
   - `DevelopmentTree` registers `CloseBattle` at runtime through its serialized `buttonBack` reference. `DevelopmentTreeCloseButton` also closes on left-pointer-down and verifies the left mouse press is inside its own `RectTransform`, so the control still closes when Unity does not emit the legacy `Button.onClick`. The panel root is hidden before the main-menu route opens.
   - Owned vehicles disable both actions; researched but unowned vehicles enable only Buy; vehicles with an affordable owned predecessor enable only Research.
 - In `Assets/Game/Scenes/Client.unity`, `MenuLoadingScreen/AnimationPanel/Bar` has `MenuLoadingProgressBar` with its ten `element (0-9)` images and the `full` / `after full` sprites assigned. At progress `0.5`, elements 0-4 are full, element 5 is the after-full sprite, and elements 6-9 are hidden; at `1.0`, all ten elements are full.

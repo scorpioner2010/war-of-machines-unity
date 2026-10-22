@@ -12,6 +12,76 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Disable DevelopmentTree robot image when no technique is selected
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: keep the selected robot icon on `DevelopmentTree/RightInfoPanel/Image`, but deactivate its GameObject when no tree technique is selected.
+- Verification: Image GameObject toggle and scene reference pass static checks; production/editor C# builds pass with 0 errors. Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Show selected robot image in DevelopmentTree
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: bind the existing `DevelopmentTreeNew/RightInfoPanel/Image` to the selected robot icon and clear it when no node is selected.
+- Verification: serialized Image reference and selected/clear sprite binding pass static checks; production/editor C# builds pass with 0 errors. Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Disable Vehicle BlackScreen when unselected
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: deactivate the `BlackScreen` GameObject for unselected vehicle items and activate it only for the selected pulse.
+- Verification: BlackScreen inactive default, selection-driven activation/deactivation, alpha restoration, and no-scale behavior pass static checks; production/editor C# builds pass with 0 errors. Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Limit Vehicle pulse to selected items
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: gate the `Vehicle` BlackScreen alpha pulse by `VehicleSlotVehicleData.IsSelected` and restore the authored alpha when deselected.
+- Verification: selection gating, authored-alpha restoration, serialized references, and no-scale behavior pass static checks; production/editor C# builds pass with 0 errors. Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Add Vehicle BlackScreen alpha pulse
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add the same configurable ping-pong alpha pulse used by `TreeItem` to the `Vehicle` prefab, targeting `BlackScreen` and omitting scale animation.
+- Verification: serialized `VehicleBlink` reference, `BlackScreen` CanvasGroup target, alpha-only implementation, and configurable settings pass static checks; production/editor C# builds pass with 0 errors. Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Sync TreeItem CanvasGroup alpha with selection
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: set the TreeItem root CanvasGroup alpha to `0.35` when unselected and `1` when selected, while preserving the existing `IsSelect` behavior.
+- Verification: serialized CanvasGroup reference, default alpha, and selected/unselected assignments pass static checks; production/editor C# builds pass with 0 errors. Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Bind robot names and TreeItem level text
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: write the resolved robot name into the main-menu `Vehicle` prefab and wire `TreeItem` name/level TMP references so the existing runtime data appears.
+- Verification: `Vehicle.nameText`, `TreeItem.vehicleName`, and `TreeItem.level` serialized references pass static checks; production/editor C# builds pass with 0 errors. Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Synchronize TreeItem IsSelect with development-tree selection
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: expose the `IsSelect` child through `TreeItem` and make `DevelopmentTree` keep exactly the selected item active while every other item is inactive.
+- Verification: `IsSelect` is wired and inactive by default; selection switching, faction changes, and tree rebuild clearing are covered by source assertions. Production/editor C# builds passed with 0 errors; Play Mode verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Add configurable TreeItem image blinking
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add a reusable inspector-configurable blink component to `TreeItem.prefab`, assign `Image (0)` through `Image (3)`, and animate alpha plus local Y scale together at an adjustable speed.
+- Verification: `TreeItemBlink` is serialized on the prefab root with all four image references in order; production/editor C# builds and targeted diff checks pass. Optional Unity Play Mode visual verification remains pending after Inspector tuning.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-22 - Resize robot images to 1024 square
+
+- Status: `COMPLETED`
+- Scope: resize four IA and four NV robot PNG images from 1254x1254 to 1024x1024 while preserving transparency, filenames, and Unity metadata.
+- Verification: all eight PNGs are 1024x1024 RGBA with transparency retained; `.meta` sidecars are unchanged. Original PNGs were backed up under `work/robot-images-1024-originals`.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-22 - Keep reticle narrowing continuous to full aim
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

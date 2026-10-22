@@ -3,6 +3,155 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-22
+- User request: "додай щоб підтягувало картинку вибраного робота в DevelopmentTree, картинку підтягувати має на обьект Image. якщо техніка не вибрана обьект Image має бути вимкнутий"
+- Objective: use the `DevelopmentTree/RightInfoPanel/Image` object for the selected robot icon and deactivate that GameObject when no technique is selected.
+- Acceptance criteria:
+  - The target remains the existing `DevelopmentTree/RightInfoPanel/Image` object shown in the provided screenshot.
+  - A selected tree node assigns its robot sprite to that Image.
+  - No selected technique deactivates the Image GameObject, not only its `Image.enabled` property.
+  - Selecting a technique activates the Image GameObject and displays its icon.
+- Assumptions: the existing serialized `vehicleImage` reference is wired to the screenshot target and `GameResourceManager.GetIcon(node.code)` remains the authoritative icon source.
+- Current work: `DevelopmentTreeDetailsPanel` now activates the serialized `RightInfoPanel/Image` GameObject only when the selected node resolves an icon.
+- Work remaining: optionally run the DevelopmentTree screen in Unity Play Mode to confirm the selected and cleared visuals.
+- Edited files: `Assets/Game/Scripts/UI/Tree/DevelopmentTreeDetailsPanel.cs`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/scene assertions passed; production/editor C# builds passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (selected robot image in DevelopmentTree - previous implementation)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+ - User request: "додай щоб підтягувало картинку вибраного робота в DevelopmentTree, картинку підтягувати має на обьект Image"
+- Objective: display the selected development-tree robot icon in the existing `RightInfoPanel/Image` UI object.
+- Acceptance criteria:
+  - `DevelopmentTreeDetailsPanel` owns a serialized `Image` reference for the existing right-panel image.
+  - Selecting a tree node assigns the robot sprite resolved from its vehicle code.
+  - Clearing the selection clears and disables the image.
+  - The existing TreeItem image binding and selection behavior remain unchanged.
+- Assumptions: `GameResourceManager.GetIcon(node.code)` is the authoritative robot image source, and `RightInfoPanel/Image` is the requested target.
+- Current work: `DevelopmentTreeDetailsPanel` updates `RightInfoPanel/Image` from the selected node code and clears/disables it when no node is selected.
+- Work remaining: optionally run the DevelopmentTree screen in Unity Play Mode to confirm the selected and cleared visuals.
+- Edited files: `Assets/Game/Scripts/UI/Tree/DevelopmentTreeDetailsPanel.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/scene assertions passed; targeted `git diff --check` passed; production/editor C# builds passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (disable Vehicle BlackScreen when unselected)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "якщо елемент не вибраний BlackScreen має бути вимкнений"
+- Objective: deactivate the `BlackScreen` GameObject for unselected main-menu vehicle items and activate it only for the selected item pulse.
+- Acceptance criteria:
+  - Unselected `Vehicle` items have the serialized `BlackScreen` GameObject inactive.
+  - Selected `Vehicle` items activate `BlackScreen` and continue the alpha pulse.
+  - Deselection restores the authored alpha before deactivating `BlackScreen`.
+  - No scale behavior changes.
+- Assumptions: the existing serialized `CanvasGroup` reference is sufficient to control the target `BlackScreen` GameObject through its `gameObject` property.
+- Current work: `VehicleBlink` now toggles the serialized `BlackScreen` GameObject with selection; the prefab defaults it inactive.
+- Work remaining: optionally run the main-menu screen in Unity Play Mode to confirm the selected and unselected visuals.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/VehicleBlink.cs`, `Assets/Game/Content/UI/Prefabs/MainMenu/Vehicle.prefab`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/prefab assertions passed; targeted `git diff --check` passed; production/editor C# builds passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (limit Vehicle pulse to selected items)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "тільки для вибраних айтемів має цей ефект працювати"
+- Objective: run the `Vehicle` BlackScreen alpha pulse only while the main-menu vehicle item is selected.
+- Acceptance criteria:
+  - `VehicleItemView` passes `data.IsSelected` to the serialized `VehicleBlink` reference.
+  - Selected vehicle items pulse the `BlackScreen` CanvasGroup alpha.
+  - Unselected vehicle items do not update through the pulse and restore their authored alpha.
+  - Scale behavior remains unchanged.
+- Assumptions: `VehicleSlotVehicleData.IsSelected` is the authoritative selection state and the existing `VehicleBlink` component remains on the prefab root.
+- Current work: `VehicleItemView` gates `VehicleBlink` with `data.IsSelected`; deselection and component disable restore the authored `BlackScreen` alpha.
+- Work remaining: optionally run the main-menu screen in Unity Play Mode to confirm selected/unselected behavior.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/VehicleBlink.cs`, `Assets/Game/Scripts/UI/MainMenu/VehicleItemView.cs`, `Assets/Game/Content/UI/Prefabs/MainMenu/Vehicle.prefab`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/prefab assertions passed; targeted `git diff --check` passed; production/editor C# builds passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (add Vehicle BlackScreen alpha pulse)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "додай такий самий скріпт пульсації для Vehicle, але без скеййла і мінятися має канвас грп на BlackScreen обьекті"
+- Objective: add an inspector-configurable alpha pulse to the `Vehicle` prefab, targeting the `BlackScreen` child CanvasGroup without changing scale.
+- Acceptance criteria:
+  - `Vehicle` owns a pulse component with configurable alpha A/B and speed.
+  - The pulse changes only the serialized `BlackScreen` CanvasGroup alpha.
+  - No image scale or transform scale is modified.
+  - The `Vehicle.prefab` reference points to the existing `BlackScreen` CanvasGroup.
+- Assumptions: the pulse component is attached to the `Vehicle` prefab root and runs with unscaled time, matching `TreeItemBlink`.
+- Current work: `VehicleBlink` is attached to the `Vehicle` prefab root and drives the serialized `BlackScreen` CanvasGroup alpha through a smooth ping-pong cycle.
+- Work remaining: optionally run the main-menu screen in Unity Play Mode to visually confirm the pulse and tune alpha/speed values.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/VehicleBlink.cs`, its `.meta`, `Assets/Game/Content/UI/Prefabs/MainMenu/Vehicle.prefab`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/prefab assertions passed; targeted `git diff --check` passed; production/editor C# builds passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (sync TreeItem CanvasGroup alpha with selection)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "TreeItem якщо елемент не активний то канвас груп альфа 0.35, якщо активний 1"
+- Objective: synchronize the `TreeItem` root `CanvasGroup.alpha` with the selected state of the development-tree item.
+- Acceptance criteria:
+  - Unselected runtime `TreeItem` instances use alpha `0.35`.
+  - The currently selected runtime `TreeItem` uses alpha `1`.
+  - `TreeItem.isSelect` selection behavior remains unchanged and is synchronized by the same `SetSelected` call.
+  - Initial creation, faction changes, and tree rebuilds leave non-selected items at alpha `0.35`.
+- Assumptions: “active” means the selected development-tree item, matching the preceding `IsSelect` behavior; the root `TreeItem` already owns a `CanvasGroup`.
+- Current work: `TreeItem.SetSelected(bool)` now updates both the serialized `IsSelect` child and root `CanvasGroup.alpha`; the prefab reference and default alpha are serialized.
+- Work remaining: optionally run the development-tree screen in Unity Play Mode to visually confirm selection and deselection alpha.
+- Edited files: `Assets/Game/Scripts/UI/Tree/TreeItem.cs`, `Assets/Game/Content/UI/Prefabs/Tree/TreeItem.prefab`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/prefab assertions passed; targeted `git diff --check` passed; production/editor C# builds passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (bind robot names and TreeItem level text)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "в префабі Vehicle для головного меню підтягни нейм робота, також в TreeItem піднягти нейм та левел."
+- Objective: display the vehicle name in the main-menu `Vehicle` prefab and wire the existing name and level text fields in `TreeItem.prefab`.
+- Acceptance criteria:
+  - Main-menu `VehicleItemView` writes the resolved robot name into the prefab's `Name` TMP text.
+  - `Vehicle.prefab` serializes that `Name` TMP reference.
+  - `TreeItem.prefab` serializes its `Name` TMP into `TreeItem.vehicleName` and its `lvl` TMP into `TreeItem.level`.
+  - Existing runtime data flow, selection visuals, and layout remain unchanged.
+- Assumptions: the existing `VehicleSlotVehicleData.Name` is the authoritative display name, with `Vehicle` as the existing fallback when it is empty; `DevelopmentTree` already supplies `node.name` and `node.level`.
+- Current work: `VehicleItemView` writes `VehicleSlotVehicleData.Name` into the serialized `Vehicle` prefab label; `TreeItem.prefab` now wires its `Name` and `lvl` TMP components to `TreeItem.vehicleName` and `TreeItem.level`.
+- Work remaining: optionally run the main-menu and development-tree screens in Unity Play Mode to visually confirm the labels with live data.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/VehicleItemView.cs`, `Assets/Game/Content/UI/Prefabs/MainMenu/Vehicle.prefab`, `Assets/Game/Content/UI/Prefabs/Tree/TreeItem.prefab`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: serialized-reference assertions passed; targeted `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo` passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (synchronize TreeItem IsSelect with development-tree selection)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "тепер запрограмуй щоб IsSelect тру був тільки тоді коли елемент вибраний в дереві розвитку, якщо елемент не вибраний IsSelect фолс"
+- Objective: make each runtime development-tree `TreeItem` activate its serialized `IsSelect` child only while that item is the currently selected node.
+- Current work: `TreeItem.isSelect` is wired to the prefab's inactive `IsSelect` child; `DevelopmentTree` keeps one selected item, disables the previous item, and clears selection when changing faction or rebuilding.
+- Work remaining: optionally reproduce clicking multiple nodes and switching factions in Unity Play Mode.
+- Edited files: `Assets/Game/Scripts/UI/Tree/TreeItem.cs`, `Assets/Game/Scripts/UI/Tree/DevelopmentTree.cs`, `Assets/Game/Content/UI/Prefabs/Tree/TreeItem.prefab`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/prefab assertions passed; targeted diff check and production/editor C# builds passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (configurable TreeItem image blinking)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
+- User request: "є префаб TreeItem, тобі треба додати компонент мигання, що мається на увазі, тобі в масив треба додати імеджі Image (0) - Image (3), а мигати вони мають по хитрому, альфа від А до Б, + скейл по Y від А до Б, компонент має висіти на TreeItem, і параметри мають налаштовуватися, також швидкість мигання має налаштоваватися, створи цей компонент наципи на TreeItem, а я потім налаштую параметри"
+- Objective: add an inspector-configurable blinking component to `TreeItem.prefab` and assign its serialized image graphics.
+- Acceptance criteria: the root owns `TreeItemBlink`; its image array, alpha A/B, Y-scale A/B, and speed are serialized; the images animate together through a smooth repeating cycle; existing tree behavior remains intact.
+- Current work: `TreeItemBlink` is attached to the prefab root. The user subsequently tuned the prefab to eight decorative images and changed its serialized values.
+- Work remaining: optional Unity Play Mode visual verification after final Inspector tuning.
+- Edited files: `Assets/Game/Scripts/UI/Tree/TreeItemBlink.cs`, its `.meta`, `Assets/Game/Content/UI/Prefabs/Tree/TreeItem.prefab`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static source/prefab assertions passed; targeted diff check passed; production/editor C# builds passed with 0 errors. Full working-tree diff check still reports a pre-existing trailing-whitespace line in the user-modified prefab.
+
+## Archived task (resize robot images to 1024 square)
+- Status: `COMPLETED`
+- Started: 2026-10-22
+- User request: "зроби всі картинки розімра 1024 на 1024"
+- Objective: resize every image in `Assets/Game/Content/Robots/NV/Images` and `Assets/Game/Content/Robots/IA/Images` to exactly 1024x1024.
+- Acceptance criteria:
+  - All eight PNG images in the two folders are 1024x1024.
+  - Preserve each image's transparency, filename, and Unity `.meta` sidecar.
+  - Preserve proportions using premultiplied-alpha LANCZOS resampling.
+  - Keep originals backed up outside `Assets`; do not change scenes, prefabs, or code.
+- Assumptions: the user asked to resize the files in place at the two specified paths; all eight source images are square 1254x1254 RGBA PNGs.
+- Current work: all eight PNGs were resized in place with premultiplied-alpha LANCZOS.
+- Work remaining: none.
+- Edited files: the eight PNGs in `Assets/Game/Content/Robots/NV/Images` and `Assets/Game/Content/Robots/IA/Images`, plus this handoff and `docs/codex-game/task-history.md`.
+- Verification: all eight PNGs were reopened with Pillow 9.5.0 and verified as 1024x1024 RGBA with alpha range 0-255; Unity `.meta` SHA256 hashes remained unchanged. Originals were backed up outside `Assets`. No scenes, prefabs, or code changed.
+
+## Archived task (reticle narrowing continuous to full aim)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
 - User request: "ні щось тут все одно не те, приціл звузився і зупинився а текст показує ще що звужується, текст повільніше доходить до звуження чим саме кільце щось тут не те, знайди що не так та виправ"
 - Objective: keep the visible dispersion ring changing until the server-authoritative dispersion reaches the same fully aimed state represented by `AimStatus`; a profile calibration value must not make the ring plateau early.
 - Acceptance criteria:

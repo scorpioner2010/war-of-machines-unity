@@ -1,5 +1,6 @@
 using System;
 using Game.Scripts.API;
+using Game.Scripts.Core.Resources;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,7 @@ namespace Game.Scripts.UI.Tree
         [Header("Header")]
         [SerializeField] private TMP_Text vehicleName;
         [SerializeField] private TMP_Text faction;
+        [SerializeField] private Image vehicleImage;
         [SerializeField] private Image levelIcon;
         [SerializeField] private Sprite[] levelSprites;
         [SerializeField] private TMP_Text progression;
@@ -80,6 +82,7 @@ namespace Game.Scripts.UI.Tree
             SetText(faction, vehicle != null && !string.IsNullOrWhiteSpace(vehicle.factionName)
                 ? vehicle.factionName
                 : node.factionCode);
+            SetVehicleImage(node.code);
             SetLevelIcon(node.level);
             SetText(progression, BuildProgressionText(progress));
 
@@ -113,6 +116,7 @@ namespace Game.Scripts.UI.Tree
 
             SetText(vehicleName, string.Empty);
             SetText(faction, string.Empty);
+            SetVehicleImage(null);
             SetLevelIcon(0);
             SetText(progression, string.Empty);
             SetText(hitPoints, string.Empty);
@@ -212,6 +216,23 @@ namespace Game.Scripts.UI.Tree
 
             levelIcon.enabled = hasIcon;
             levelIcon.sprite = hasIcon ? levelSprites[spriteIndex] : null;
+        }
+
+        private void SetVehicleImage(string vehicleCode)
+        {
+            if (vehicleImage == null)
+            {
+                return;
+            }
+
+            Sprite icon = string.IsNullOrWhiteSpace(vehicleCode)
+                ? null
+                : GameResourceManager.GetIcon(vehicleCode);
+
+            bool hasIcon = icon != null;
+            vehicleImage.enabled = hasIcon;
+            vehicleImage.gameObject.SetActive(hasIcon);
+            vehicleImage.sprite = icon;
         }
 
         private static string BuildDamageText(VehicleLite vehicle, VehicleNode node)

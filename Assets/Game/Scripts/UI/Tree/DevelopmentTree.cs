@@ -44,6 +44,7 @@ namespace Game.Scripts.UI.Tree
         private VehicleLite[] _vehicleLites;
         private string[] _factionCodes;
         private bool _isInitializing;
+        private TreeItem _selectedTreeItem;
 
         private readonly List<FactionView> _views = new List<FactionView>();
         private readonly List<Button> _factionButtons = new List<Button>();
@@ -221,6 +222,8 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
+            SetSelectedTreeItem(null);
+
             for (int i = 0; i < _views.Count; i++)
             {
                 _views[i].Root.gameObject.SetActive(i == index);
@@ -309,6 +312,7 @@ namespace Game.Scripts.UI.Tree
 
             TreeItem item = Instantiate(treeItemPrefab, parent);
             item.name = $"Vehicle_{node.code}";
+            item.SetSelected(false);
 
             if (item.vehicleName != null)
             {
@@ -330,7 +334,7 @@ namespace Game.Scripts.UI.Tree
 
             if (item.button != null)
             {
-                item.button.onClick.AddListener(() => SelectVehicle(progress));
+                item.button.onClick.AddListener(() => SelectVehicle(item, progress));
             }
 
             if (item.rectTransform != null)
@@ -365,13 +369,14 @@ namespace Game.Scripts.UI.Tree
             }
         }
 
-        private void SelectVehicle(VehicleResearchProgress progress)
+        private void SelectVehicle(TreeItem item, VehicleResearchProgress progress)
         {
             if (progress == null || progress.Node == null)
             {
                 return;
             }
 
+            SetSelectedTreeItem(item);
             detailsPanel.Show(progress, TryBuy, TryResearch);
         }
 
@@ -512,9 +517,25 @@ namespace Game.Scripts.UI.Tree
 
         private void ClearRuntimeTree()
         {
+            SetSelectedTreeItem(null);
             ClearChildren(treeHost);
             _views.Clear();
             ClearButtons();
+        }
+
+        private void SetSelectedTreeItem(TreeItem item)
+        {
+            if (_selectedTreeItem != null)
+            {
+                _selectedTreeItem.SetSelected(false);
+            }
+
+            _selectedTreeItem = item;
+
+            if (_selectedTreeItem != null)
+            {
+                _selectedTreeItem.SetSelected(true);
+            }
         }
 
         private void ClearButtons()
