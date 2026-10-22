@@ -87,6 +87,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             CacheComponents();
             InitializeComponents(VehicleInitializationPhase.Server);
+            VehicleColliderRegistry.RegisterNetworkRoot(this);
 
             if (!InstanceFinder.IsClientStarted)
             {
@@ -96,6 +97,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartClient()
         {
+            VehicleColliderRegistry.RegisterNetworkRoot(this);
             if (clientVisibility != null)
             {
                 clientVisibility.OnVehicleClientStarted();

@@ -530,22 +530,30 @@ namespace Game.Scripts.Gameplay.Robots
                         visualProjectileMaxInactive);
                 }
 
-                if (visualProjectilePrefab.explosionFX != null)
-                {
-                    int visualImpactMaxInactive = Mathf.Max(1, visualSettings.clientImpactFxPoolMaxInactive);
-                    ProjectileRuntimePool.ConfigureImpactFxPool(visualProjectilePrefab.explosionFX, visualImpactMaxInactive);
-                    if (prewarmProjectilePools && visualSettings.clientImpactFxPoolPrewarmCount > 0)
-                    {
-                        ProjectileRuntimePool.PrewarmImpactFx(
-                            visualProjectilePrefab.explosionFX,
-                            visualSettings.clientImpactFxPoolPrewarmCount,
-                            visualImpactMaxInactive);
-                    }
-                }
+                PrepareImpactFxPool(visualProjectilePrefab.robotImpactFxPrefab, visualSettings);
+                PrepareImpactFxPool(visualProjectilePrefab.otherObjectImpactFxPrefab, visualSettings);
             }
 
             PrepareMuzzleFxPool(visualSettings.muzzleFlashPrefab, visualSettings);
             PrepareMuzzleFxPool(visualSettings.muzzleSmokePrefab, visualSettings);
+        }
+
+        private void PrepareImpactFxPool(PooledImpactFx prefab, ClientProjectileVisualSettings visualSettings)
+        {
+            if (prefab == null || visualSettings == null)
+            {
+                return;
+            }
+
+            int maxInactive = Mathf.Max(1, visualSettings.clientImpactFxPoolMaxInactive);
+            ProjectileRuntimePool.ConfigureImpactFxPool(prefab, maxInactive);
+            if (prewarmProjectilePools && visualSettings.clientImpactFxPoolPrewarmCount > 0)
+            {
+                ProjectileRuntimePool.PrewarmImpactFx(
+                    prefab,
+                    visualSettings.clientImpactFxPoolPrewarmCount,
+                    maxInactive);
+            }
         }
 
         private void PrepareMuzzleFxPool(PooledImpactFx prefab, ClientProjectileVisualSettings visualSettings)

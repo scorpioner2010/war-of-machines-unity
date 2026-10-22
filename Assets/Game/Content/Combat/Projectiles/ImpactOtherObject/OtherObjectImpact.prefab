@@ -141,7 +141,7 @@ GameObject:
   - component: {fileID: 2883620193154939874}
   - component: {fileID: 14658567035172846}
   m_Layer: 0
-  m_Name: CFXR Explosion
+  m_Name: Other Object Impact
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4855,7 +4855,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 79d0c47029980c04caed1c1327f99c17, type: 2}
+  - {fileID: 2100000, guid: b293883c8a005824ea9218614dd0ebe5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5084,32 +5084,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b375f9fe4520fd64ea6e8f687dc6d200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PooledImpactFx
-  robotImpactProfile:
-    particles:
-    - {fileID: 2433282508523890284}
-    - {fileID: 2433282509751658717}
-    - {fileID: 2433282510014370360}
-    - {fileID: 2433282508753476427}
-    - {fileID: 2433282509598398878}
-    - {fileID: 6900951462358853761}
-    cartoonFxEffects:
-    - {fileID: 2883620193154939874}
-    impactDecal: {fileID: 7310000000000000003}
-    impactGlowDecal: {fileID: 7310000000000000103}
-    impactGlowHaloRenderer: {fileID: 1968993708421514810}
-    enableImpactGlowHalo: 0
-    impactGlowStrength: 1
-    impactGlowHaloStrength: 1
-    impactGlowHaloEmissionColor: {r: 4, g: 0.25, b: 0.02, a: 1}
-    impactGlowHaloBaseColor: {r: 1, g: 1, b: 1, a: 1}
-    impactGlowHaloSizeMultiplier: 1
-    impactGlowDecalEmissionStrength: 1
-    impactGlowFadeDuration: 2
-    impactDecalWidth: 0.2
-    impactDecalHeight: 0.2
-    impactDecalProjectionDepth: 0.6
-    impactDecalSurfaceOffset: 0.003
-  otherObjectImpactProfile:
+  impactProfile:
     particles:
     - {fileID: 2433282508523890284}
     - {fileID: 2433282509751658717}
@@ -9878,7 +9853,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc2ae6c61d51b04ea1a55fbeff6341e, type: 2}
+  - {fileID: 2100000, guid: d955c3d8cfae5e440ad0e841592c521c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14604,7 +14579,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7840d900dc0a4ed4dbcd26e23f064dd8, type: 2}
+  - {fileID: 2100000, guid: 28d86d2dd9083414ebaac6a9fa72e2ba, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -19402,7 +19377,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc2ae6c61d51b04ea1a55fbeff6341e, type: 2}
+  - {fileID: 2100000, guid: d955c3d8cfae5e440ad0e841592c521c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -24155,7 +24130,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 04d0f020002082e4db140d8c0954e83e, type: 2}
+  - {fileID: 2100000, guid: a3015404a894da942913cbfd9f272da1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -24275,7 +24250,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1d72fcf0b3a94f4a9a222c0dc3ac9b75, type: 2}
+  - {fileID: 2100000, guid: 19fca6e12901486792d1f787c1507cbe, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -24343,7 +24318,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
-  m_Material: {fileID: 2100000, guid: 8d2e3d4b2c9e46a68c6c5a2e1e4a0d71, type: 2}
+  m_Material: {fileID: 2100000, guid: 82ddfe9537a54283916054bd73e4c5f8, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
   m_StartAngleFade: 0
@@ -24403,7 +24378,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
-  m_Material: {fileID: 2100000, guid: 26f524f1eaa8b5440a9f1ccff2767e53, type: 2}
+  m_Material: {fileID: 2100000, guid: 8308cac0f7e743f992ce227f416b03bd, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
   m_StartAngleFade: 0
@@ -29271,7 +29246,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a81df4963508f8c4e9c854c919c93b67, type: 2}
+  - {fileID: 2100000, guid: ab8f8a5c8528d554bba3418c3dc3c9e1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

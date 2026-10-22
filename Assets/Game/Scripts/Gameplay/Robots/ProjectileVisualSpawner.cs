@@ -174,14 +174,20 @@ namespace Game.Scripts.Gameplay.Robots
 #endif
             using (ProfileScope.Measure("Projectile.ImpactFx.Spawn", DiagnosticsCategories.Physics))
             {
-                if (projectilePrefab == null || projectilePrefab.explosionFX == null)
+                if (projectilePrefab == null)
+                {
+                    return;
+                }
+
+                PooledImpactFx impactFxPrefab = projectilePrefab.GetImpactFxPrefab(impactTarget);
+                if (impactFxPrefab == null)
                 {
                     return;
                 }
 
                 Vector3 normal = impactNormal.sqrMagnitude > 0.000001f ? impactNormal : Vector3.up;
                 ProjectileRuntimePool.SpawnImpactFx(
-                    projectilePrefab.explosionFX,
+                    impactFxPrefab,
                     impactPoint,
                     Quaternion.LookRotation(normal),
                     attachmentParent,

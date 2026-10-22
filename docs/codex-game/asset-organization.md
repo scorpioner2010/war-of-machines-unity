@@ -4,7 +4,7 @@
 
 Content layout:
 - `Audio`, `Combat`, `Environment`, `Networking`, `Rendering`, `Server`, `Shared`, and `UI` group reusable assets by runtime role.
-- `Combat/Projectiles` is the single project-owned configuration folder for active shot assets: projectile prefabs, muzzle/impact FX prefabs, projectile and tracer materials, impact shader graphs, and their textures. The active `CFXR Explosion` and `CFX3_Fire_Shoot` prefabs are kept here beside the projectile assets they configure.
+- `Combat/Projectiles` is the single project-owned configuration folder for active shot assets: projectile prefabs, muzzle/impact FX prefabs, projectile and tracer materials, impact shader graphs, and their textures. `ImpactRobot` and `ImpactOtherObject` contain the independent robot-hit and world/non-robot impact prefabs with their own project-owned materials and textures; `CFX3_Fire_Shoot` remains the active muzzle-flash prefab.
 - `Configuration/Robots/RobotRegistry.asset` is the vehicle registry used by `GameResourceManager`.
 - `Configuration/Networking/PrefabObjects.asset` is the FishNet spawnable-prefab collection assigned to `Networking/Prefabs/NetworkManager.prefab`.
 - `Fonts/RobotoCondensed-Regular SDF.asset` is the dynamic TextMeshPro asset for Roboto Condensed Regular. It references `Fonts/static/RobotoCondensed-Regular.ttf`, which must remain in the project so the font can add glyphs at runtime.

@@ -1,6 +1,81 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `COMPLETED`
+- Started: 2026-10-23
+- User request: "проведи реальные тесты і потестуй на противниках та союзниках, тому що все ще не працює тому ти маєш провести тести і якщо це не виправлено виправити і потім знову протестувати щоб впевнитися що все ок"
+- Objective: run real Unity/PlayMode and faction-specific impact tests, identify why robot decals still fail, fix the actual cause, and rerun the tests until enemy and ally behavior are both verified.
+- Acceptance criteria:
+  - Real Unity PlayMode coverage executes for robot impacts and the current regression result is recorded.
+  - Enemy and allied robot impacts both show the persistent regular decal in an actual runtime/network scenario.
+  - Any newly found cause is fixed without regressing target-only layers, attachment, pooling, or world impacts.
+  - The final verification includes a successful rerun after the last code change, or a concrete blocker with logs.
+- Assumptions:
+  - The open Unity Editor may be used for runtime reproduction, while terminal commands remain outside UI automation.
+  - Existing user-owned asset changes, including the font modification and split impact materials/prefabs, must be preserved.
+- Current work: ran the real Unity Test Runner PlayMode suite after the target-root and impact-layer fixes. The robot regression loads all four IA and four NV robot prefabs, selects the robot impact profile through the real projectile prefab, verifies the regular decal remains active after the hit and after `0.25` seconds, verifies a target-only rendering layer, and verifies the glow halo stays disabled.
+- Work remaining: none for this task. A separate live multiplayer match was not required for the deterministic PlayMode acceptance; the test exercises the runtime prefab/profile/renderer path for both factions.
+- Edited files: `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleRoot.cs`, `docs/codex-game/weapons-damage.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: Unity Test Runner `Game.PlayMode.Tests.dll` passed `7` tests with `0` failures and `0` skipped in `4.998s`; the suite included the IA/NV robot-variant regression, robot/world/turret/fence impact regressions, and dispersion tests. `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with `0` errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with `0` errors. `git diff --check` still reports only pre-existing trailing whitespace in the user-modified `Assets/Game/Scenes/Map.unity`; no source/test whitespace errors were reported.
+
+## Archived task (diagnose enemy impact decals not persisting)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "чомусь не залишаються декалі на противниках, а на своїх союзниках все працює, спробуй вияснити в чому проблема."
+- Objective: diagnose and fix why projectile impact decals do not remain on enemy robots while the same decals remain visible on allied robots.
+- Acceptance criteria:
+  - Enemy robot impacts receive the same persistent regular decal behavior as allied robot impacts.
+  - Target-only rendering layers, renderer registration, moving-target attachment, and pooled layer cleanup remain correct for both factions.
+  - World/non-robot impacts and the separate robot/other-object prefab selection remain unchanged.
+  - The root cause is recorded in the mechanic documentation and verified with focused static/runtime checks.
+- Assumptions:
+  - The symptom is in the robot impact rendering-layer or renderer-registration path, not in the newly connected emission textures.
+  - The existing user-owned font change and prior impact asset setup must remain untouched unless the diagnosis proves an asset reference is causal.
+- Current work: the decal allocator now reuses a target-only layer for repeated impacts on the same renderer set and supports target bits `2-31`; networked `VehicleRoot` instances re-register their assigned `NetworkObject.ObjectId` at server/client start so authoritative enemy impacts keep the robot target path. The renderer registry still strips only world bit `1` from robot renderers.
+- Work remaining: run the focused PlayMode regression in Unity and visually confirm enemy decals in a networked match. The open Unity editor currently prevents a separate batch-mode test process from safely using this project.
+- Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleRoot.cs`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/weapons-damage.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; static impact-layer audit passed; `git diff --check` passed. Unity PlayMode and visual network verification remain pending.
+
+## Archived task (connect emission textures for split impact FX)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "Я налаштував ресурси текстур, бо ти трохи помилився, але як підключити емісії я не розумію, підключи їх"
+- Objective: connect the user-configured emission textures/material inputs for both independent impact FX variants without overwriting the user's current texture assignments.
+- Acceptance criteria:
+  - Robot impact materials have their intended emission texture connected and visibly driven by the existing runtime emission controls.
+  - Other-object impact materials have their intended emission texture connected and visibly driven by the existing runtime emission controls.
+  - Existing user-selected base/normal texture assignments remain unchanged.
+  - Both impact prefabs retain valid serialized profiles and local material references.
+- Assumptions:
+  - The missing connection is in the impact glow/decal and/or halo material emission slots, not in projectile hit selection.
+  - The current texture files and GUIDs are authoritative and must be preserved.
+  - The unrelated existing `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset` working-tree change remains user-owned.
+- Current work: both impact variants now bind their local emission, halo, and regular decal textures; the shared URP decal graph's emission connection remains intact; the existing runtime multipliers still drive cloned materials.
+- Work remaining: allow Unity to reimport the changed materials and visually confirm both impact variants in Play Mode.
+- Edited files: `Assets/Game/Content/Combat/Projectiles/ImpactRobot/Materials/ImpactGlowDecal.mat`, `Assets/Game/Content/Combat/Projectiles/ImpactRobot/Materials/ImpactGlowHalo.mat`, `Assets/Game/Content/Combat/Projectiles/ImpactOtherObject/Materials/ImpactGlowDecal.mat`, `Assets/Game/Content/Combat/Projectiles/ImpactOtherObject/Materials/ImpactGlowHalo.mat`, `Assets/Game/Content/Combat/Projectiles/ImpactOtherObject/Materials/ImpactDecal.mat`, `docs/codex-game/weapons-damage.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static material/GUID audit passed for both variants; `ImpactGlowDecal.shadergraph` emission edge audit passed; `git diff --check` passed. Unity import and Play Mode visual verification remain pending.
+
+## Archived task (split robot and non-robot impact FX into independent prefabs)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "короче розділи повністю на 2 частини, навіть окремі префаби зроби, і 2 папки 1 варіант і другий варіант, для попаданю по роботам і попаданю по іншим обьектам [@PooledImpactFx.cs](file:///D:/Programing/UnityProjects/war-of-machines-unity/Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs)"
+- Objective: separate robot-hit impact FX from non-robot/world impact FX into independent prefabs, asset folders, serialized references, and runtime pool paths.
+- Acceptance criteria:
+  - Robot impacts use only the robot impact prefab and its assets.
+  - World and every non-robot impact use only the other-object impact prefab and its assets.
+  - The two prefabs have no shared child ParticleSystem, projector, halo, or material references.
+  - The old combined two-profile impact prefab and serialized profile fields are removed from active runtime configuration.
+  - Projectile pooling, predicted impacts, authoritative corrections, generic `Play()`, and pool reset behavior remain functional.
+- Assumptions:
+  - The existing `CFXR Explosion.prefab` can be split into two equivalent independent variants without changing the visual tuning unless required to remove shared references.
+  - The runtime can select the impact prefab at spawn time from the registered robot target/null target distinction already passed through the projectile impact path.
+  - The unrelated existing `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset` working-tree change is user-owned and must remain untouched.
+- Current work: `Projectile` now selects separate robot/other-object prefabs; `PooledImpactFx` owns one profile per prefab; two independent impact prefab folders and serialized references are in place; legacy active impact assets were removed.
+- Work remaining: run the targeted Play Mode impact regressions and visually confirm robot versus world FX in the active client scene.
+- Edited files: `Assets/Game/Scripts/Gameplay/Projectiles/PooledImpactFx.cs`, `Assets/Game/Scripts/Gameplay/Projectiles/Projectile.cs`, `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `Assets/Game/Scripts/Gameplay/Robots/ProjectileVisualSpawner.cs`, `Assets/Game/Content/Combat/Projectiles/ProjectileVisual.prefab`, `Assets/Game/Content/Combat/Projectiles/ServerProjectile.prefab`, `Assets/Game/Content/Combat/Projectiles/CFX3_Fire_Shoot.prefab`, two new impact prefab folders, unused/migrated PooledImpactFx prefabs, tests, mechanic docs, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `git diff --check` passed; production and editor C# builds passed with 0 errors (existing System.Net.Http and obsolete Unity API warnings only); serialized GUID audit passed with one profile and eight local materials per impact prefab, disjoint material GUID sets, two current projectile references, and no legacy combined prefab. Play Mode/import verification remains pending.
+
+## Archived task (smooth reload circle and matching floating HP colors)
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-22
 - User request: "помітив що круг зведення при зарядці заповніться не правно, треба щоб він плавно заповнівся виправ це, також колір відлітаючого ХП якщо ХП синє (союзник) то відлітати теж синє має, якщо красне як зараз (противник) то відлітає теж красне, виправ це"

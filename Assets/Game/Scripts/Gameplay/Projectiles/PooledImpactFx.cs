@@ -50,7 +50,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     private const string ImpactGlowHaloEmissionColorPropertyName = "_EmissionColor";
     private const uint WorldImpactRenderingLayerMask = 2u;
     private const int FirstImpactRenderingLayerBit = 2;
-    private const int LastImpactRenderingLayerBit = 7;
+    private const int LastImpactRenderingLayerBit = 31;
     private const float CameraShakeFullStrengthDistance = 10f;
     private const float CameraShakeMaxDistance = 90f;
     private const float CameraShakeStrengthScale = 0.3f;
@@ -64,12 +64,12 @@ public sealed class PooledImpactFx : MonoBehaviour
         Shader.PropertyToID(ImpactGlowHaloBaseColorPropertyName);
     private static readonly int ImpactGlowHaloEmissionColorPropertyId =
         Shader.PropertyToID(ImpactGlowHaloEmissionColorPropertyName);
+    private static readonly List<ImpactLayerState> ActiveImpactLayerStates =
+        new List<ImpactLayerState>(32);
     private static uint ActiveImpactRenderingLayerMask;
 
-    [Header("Robot Impact Profile")]
-    public ImpactFxProfile robotImpactProfile = new ImpactFxProfile();
-    [Header("Other Object Impact Profile")]
-    public ImpactFxProfile otherObjectImpactProfile = new ImpactFxProfile();
+    [Header("Impact Profile")]
+    public ImpactFxProfile impactProfile = new ImpactFxProfile();
 
     private float _fallbackLifetime;
     private float _releaseTime;
@@ -96,7 +96,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     public void Play()
     {
-        PlayInternal(GetOtherObjectImpactProfile());
+        PlayInternal(GetImpactProfile());
     }
 
     public void PlayImpact(
@@ -105,9 +105,7 @@ public sealed class PooledImpactFx : MonoBehaviour
         VehicleRoot impactTarget = null,
         Collider impactCollider = null)
     {
-        ImpactFxProfile profile = impactTarget != null
-            ? GetRobotImpactProfile()
-            : GetOtherObjectImpactProfile();
+        ImpactFxProfile profile = GetImpactProfile();
         PlayInternal(profile);
         if (profile.impactDecal == null
             && profile.impactGlowDecal == null
@@ -225,7 +223,7 @@ public sealed class PooledImpactFx : MonoBehaviour
         _activeProfile = profile;
         if (_activeProfile == null)
         {
-            _activeProfile = GetOtherObjectImpactProfile();
+            _activeProfile = GetImpactProfile();
         }
 
         DisableExternalAutoDestroy();
@@ -285,24 +283,14 @@ public sealed class PooledImpactFx : MonoBehaviour
         _playing = true;
     }
 
-    private ImpactFxProfile GetRobotImpactProfile()
+    private ImpactFxProfile GetImpactProfile()
     {
-        if (robotImpactProfile == null)
+        if (impactProfile == null)
         {
-            robotImpactProfile = new ImpactFxProfile();
+            impactProfile = new ImpactFxProfile();
         }
 
-        return robotImpactProfile;
-    }
-
-    private ImpactFxProfile GetOtherObjectImpactProfile()
-    {
-        if (otherObjectImpactProfile == null)
-        {
-            otherObjectImpactProfile = new ImpactFxProfile();
-        }
-
-        return otherObjectImpactProfile;
+        return impactProfile;
     }
 
     private static Camera GetGameplayCamera()
@@ -346,8 +334,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
         _playing = false;
         ResetImpactDecal();
-        StopParticles(robotImpactProfile);
-        StopParticles(otherObjectImpactProfile);
+        StopParticles(impactProfile);
         _activeProfile = null;
 
         if (gameObject.activeSelf)
@@ -380,8 +367,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     private void DisableExternalAutoDestroy()
     {
-        DisableExternalAutoDestroy(robotImpactProfile);
-        DisableExternalAutoDestroy(otherObjectImpactProfile);
+        DisableExternalAutoDestroy(impactProfile);
     }
 
     private static void DisableExternalAutoDestroy(ImpactFxProfile profile)
@@ -439,8 +425,7 @@ public sealed class PooledImpactFx : MonoBehaviour
         _impactGlowPlaying = false;
         _impactGlowFadeStartTime = 0f;
         _impactGlowFadeEndTime = 0f;
-        ResetImpactProfileVisuals(robotImpactProfile);
-        ResetImpactProfileVisuals(otherObjectImpactProfile);
+        ResetImpactProfileVisuals(impactProfile);
     }
 
     private static void ResetImpactProfileVisuals(ImpactFxProfile profile)
@@ -777,17 +762,26 @@ public sealed class PooledImpactFx : MonoBehaviour
             return false;
         }
 
+        ImpactLayerState existingState = FindMatchingImpactLayerState(targetRoot, targetRenderers);
+        if (existingState != null)
+        {
+            existingState.ReferenceCount++;
+            _impactRenderingLayerMask = existingState.LayerMask;
+            _impactLayerState = existingState;
+            return true;
+        }
+
         uint freeLayerMask = FindFreeImpactLayerMask();
         if (freeLayerMask == 0u)
         {
             return false;
         }
 
-        ImpactLayerState state = new ImpactLayerState(freeLayerMask);
-        for (int i = 0; i < targetRenderers.Count; i++)
+        ImpactLayerState state = new ImpactLayerState(targetRoot, freeLayerMask);
+        for (int rendererIndex = 0; rendererIndex < targetRenderers.Count; rendererIndex++)
         {
-            Renderer renderer = targetRenderers[i];
-            if (renderer == null)
+            Renderer renderer = targetRenderers[rendererIndex];
+            if (renderer == null || state.Renderers.Contains(renderer))
             {
                 continue;
             }
@@ -802,6 +796,7 @@ public sealed class PooledImpactFx : MonoBehaviour
             return false;
         }
 
+        ActiveImpactLayerStates.Add(state);
         ActiveImpactRenderingLayerMask |= freeLayerMask;
         _impactRenderingLayerMask = freeLayerMask;
         _impactLayerState = state;
@@ -815,16 +810,26 @@ public sealed class PooledImpactFx : MonoBehaviour
             return false;
         }
 
+        ImpactLayerState existingState = FindMatchingImpactLayerState(targetRoot, targetRenderer);
+        if (existingState != null)
+        {
+            existingState.ReferenceCount++;
+            _impactRenderingLayerMask = existingState.LayerMask;
+            _impactLayerState = existingState;
+            return true;
+        }
+
         uint freeLayerMask = FindFreeImpactLayerMask();
         if (freeLayerMask == 0u)
         {
             return false;
         }
 
-        ImpactLayerState state = new ImpactLayerState(freeLayerMask);
+        ImpactLayerState state = new ImpactLayerState(targetRoot, freeLayerMask);
         state.Renderers.Add(targetRenderer);
         state.OriginalMasks.Add(targetRenderer.renderingLayerMask);
         targetRenderer.renderingLayerMask |= freeLayerMask;
+        ActiveImpactLayerStates.Add(state);
         ActiveImpactRenderingLayerMask |= freeLayerMask;
         _impactRenderingLayerMask = freeLayerMask;
         _impactLayerState = state;
@@ -841,15 +846,30 @@ public sealed class PooledImpactFx : MonoBehaviour
         }
 
         ImpactLayerState state = _impactLayerState;
-        for (int i = 0; i < state.Renderers.Count; i++)
+        state.ReferenceCount--;
+        if (state.ReferenceCount > 0)
         {
-            Renderer renderer = state.Renderers[i];
+            _impactRenderingLayerMask = 0u;
+            _impactLayerState = null;
+            return;
+        }
+
+        for (int rendererIndex = 0; rendererIndex < state.Renderers.Count; rendererIndex++)
+        {
+            Renderer renderer = state.Renderers[rendererIndex];
             if (renderer != null)
             {
-                renderer.renderingLayerMask = state.OriginalMasks[i];
+                uint restoredMask = renderer.renderingLayerMask & ~state.LayerMask;
+                if ((state.OriginalMasks[rendererIndex] & state.LayerMask) != 0u)
+                {
+                    restoredMask |= state.LayerMask;
+                }
+
+                renderer.renderingLayerMask = restoredMask;
             }
         }
 
+        ActiveImpactLayerStates.Remove(state);
         ActiveImpactRenderingLayerMask &= ~state.LayerMask;
 
         _impactRenderingLayerMask = 0u;
@@ -870,14 +890,82 @@ public sealed class PooledImpactFx : MonoBehaviour
         return 0u;
     }
 
+    private static ImpactLayerState FindMatchingImpactLayerState(
+        VehicleRoot targetRoot,
+        List<Renderer> targetRenderers)
+    {
+        int validRendererCount = 0;
+        for (int rendererIndex = 0; rendererIndex < targetRenderers.Count; rendererIndex++)
+        {
+            Renderer renderer = targetRenderers[rendererIndex];
+            if (renderer != null)
+            {
+                validRendererCount++;
+            }
+        }
+
+        if (validRendererCount == 0)
+        {
+            return null;
+        }
+
+        for (int stateIndex = 0; stateIndex < ActiveImpactLayerStates.Count; stateIndex++)
+        {
+            ImpactLayerState state = ActiveImpactLayerStates[stateIndex];
+            if (state.TargetRoot != targetRoot || state.Renderers.Count != validRendererCount)
+            {
+                continue;
+            }
+
+            bool matches = true;
+            for (int rendererIndex = 0; rendererIndex < targetRenderers.Count; rendererIndex++)
+            {
+                Renderer renderer = targetRenderers[rendererIndex];
+                if (renderer != null && !state.Renderers.Contains(renderer))
+                {
+                    matches = false;
+                    break;
+                }
+            }
+
+            if (matches)
+            {
+                return state;
+            }
+        }
+
+        return null;
+    }
+
+    private static ImpactLayerState FindMatchingImpactLayerState(
+        VehicleRoot targetRoot,
+        Renderer targetRenderer)
+    {
+        for (int stateIndex = 0; stateIndex < ActiveImpactLayerStates.Count; stateIndex++)
+        {
+            ImpactLayerState state = ActiveImpactLayerStates[stateIndex];
+            if (state.TargetRoot == targetRoot
+                && state.Renderers.Count == 1
+                && state.Renderers[0] == targetRenderer)
+            {
+                return state;
+            }
+        }
+
+        return null;
+    }
+
     private sealed class ImpactLayerState
     {
+        public readonly VehicleRoot TargetRoot;
         public readonly uint LayerMask;
         public readonly List<Renderer> Renderers = new List<Renderer>(16);
         public readonly List<uint> OriginalMasks = new List<uint>(16);
+        public int ReferenceCount = 1;
 
-        public ImpactLayerState(uint layerMask)
+        public ImpactLayerState(VehicleRoot targetRoot, uint layerMask)
         {
+            TargetRoot = targetRoot;
             LayerMask = layerMask;
         }
     }

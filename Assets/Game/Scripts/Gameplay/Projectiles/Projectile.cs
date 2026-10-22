@@ -165,7 +165,13 @@ public class Projectile : MonoBehaviour
     public LayerMask hitMask = ~0;
     public float hitRadius = 0.05f;
     public int damage = 40;
-    public PooledImpactFx explosionFX;
+    public PooledImpactFx robotImpactFxPrefab;
+    public PooledImpactFx otherObjectImpactFxPrefab;
+
+    public PooledImpactFx GetImpactFxPrefab(VehicleRoot impactTarget)
+    {
+        return impactTarget != null ? robotImpactFxPrefab : otherObjectImpactFxPrefab;
+    }
 
     [Header("Projectile Visuals")]
     [SerializeField] private ProjectileVisualSettings visualSettings = new ProjectileVisualSettings();
@@ -935,13 +941,14 @@ public class Projectile : MonoBehaviour
         if (!_authoritative)
         {
             _predictedImpactTargetObjectId = GetImpactTargetObjectId(hit.collider);
-            _predictedImpactPlayed = _visualsEnabled && explosionFX != null;
+            VehicleRoot impactTarget = GetImpactTargetRoot(hit.collider);
+            _predictedImpactPlayed = _visualsEnabled && GetImpactFxPrefab(impactTarget) != null;
             DrawDebugHit(hit.point, _lastHitNormal);
             Explode(
                 hit.point,
                 _lastHitNormal,
                 GetImpactAttachmentParent(hit.collider),
-                GetImpactTargetRoot(hit.collider),
+                impactTarget,
                 hit.collider);
             StopClientVisualAtCollision();
             return;
@@ -1200,11 +1207,12 @@ public class Projectile : MonoBehaviour
         VehicleRoot impactTarget = null,
         Collider impactCollider = null)
     {
-        if (_visualsEnabled && explosionFX != null)
+        PooledImpactFx impactFxPrefab = GetImpactFxPrefab(impactTarget);
+        if (_visualsEnabled && impactFxPrefab != null)
         {
             Vector3 safeNormal = normal.sqrMagnitude > 0.000001f ? normal.normalized : Vector3.up;
             ProjectileRuntimePool.SpawnImpactFx(
-                explosionFX,
+                impactFxPrefab,
                 position,
                 Quaternion.LookRotation(safeNormal),
                 attachmentParent,

@@ -12,6 +12,41 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-23 - Real Unity verification and repair of robot impact decals
+
+- Status: `COMPLETED`
+- Scope: execute real PlayMode/runtime checks for enemy and allied robot impact decals, then repair and rerun until both factions are verified.
+- Acceptance: actual Unity test execution, runtime reproduction for both factions, a fix for any remaining root cause, and a successful post-fix rerun.
+- Verification: Unity Test Runner `Game.PlayMode.Tests.dll` passed `7/7` tests with `0` failures and `0` skipped in `4.998s`. The IA/NV robot-variant test covered all four IA and four NV robot prefabs, selected the robot impact profile through `ProjectileVisual.prefab`, confirmed the regular decal remained active after `0.25` seconds, and confirmed target-only rendering layers. Robot, world, turret, fence, and dispersion regressions also passed. Both C# project builds passed with `0` errors. `git diff --check` reports only pre-existing trailing whitespace in `Assets/Game/Scenes/Map.unity`.
+- Result: the existing root re-registration and target-layer reuse fixes are validated in Unity PlayMode; no additional production patch was needed after the runtime rerun. Detailed record: `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Diagnose enemy impact decals not persisting
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: find and fix the difference between enemy and allied robot decal persistence without regressing target-only rendering layers or pooled cleanup.
+- Acceptance: enemy robot impacts retain the regular decal like allied impacts; world and other-object impacts remain unchanged; root cause and verification are recorded.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; static impact-layer audit and `git diff --check` passed. Unity PlayMode and visual network verification remain pending.
+- Status update 2026-10-23: root cause was target-only layer exhaustion. Six bits (`2-7`) were allocated once per persistent impact; after exhaustion, the code silently used world mask `2`, while `VehicleColliderRegistry` intentionally removes world bit `1` from robot renderers. The fix reuses a layer for repeated impacts on the same renderer set and expands the allocator to bits `2-31`; a PlayMode regression now covers eight repeated impacts on one turret renderer. Networked roots also re-register their assigned `NetworkObject.ObjectId` at server/client start so authoritative enemy impacts cannot lose the target root and fall back to the world profile.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Connect emission textures for split impact FX
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: connect the current emission texture/material inputs in both robot-impact and other-object impact FX folders without replacing user texture assignments.
+- Acceptance: both variants expose connected emission inputs, preserve the user's current texture resources, and keep valid prefab/profile serialization.
+- Verification: both variants' material/GUID audit, shader graph emission-edge audit, and `git diff --check` passed; Unity import and Play Mode visual verification remain pending.
+- Status update 2026-10-23: current `Emossion.png` is bound to each `ImpactGlowDecal.mat` `Base_Map`; current `Glow.png` is bound to each halo `_BaseMap` and `_EmissionMap`; the other-object regular decal now points to its current local `Decal.png`.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Split robot and non-robot impact FX into independent prefabs
+
+- Status: `IN_PROGRESS`
+- Scope: replace the combined `PooledImpactFx` two-profile setup with separate robot-hit and other-object impact prefabs, asset folders, and runtime pool selection.
+- Acceptance: robot hits use only the robot FX prefab/assets; world and non-robot hits use only the other-object prefab/assets; no child/material references are shared; projectile prediction, authoritative correction, generic playback, and pooling remain functional.
+- Verification: not started; unrelated existing font asset modification is preserved.
+- Status update 2026-10-23: implementation complete; production/editor C# builds, `git diff --check`, and serialized GUID/material separation audit passed. Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-22 - Smooth reload circle and match floating HP colors
 
 - Status: `IN_PROGRESS`

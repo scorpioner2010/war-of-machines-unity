@@ -51,6 +51,11 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
+        public static void RegisterNetworkRoot(VehicleRoot root)
+        {
+            RegisterRoot(root);
+        }
+
         public static void RegisterArmor(
             Collider collider,
             VehicleRoot root,

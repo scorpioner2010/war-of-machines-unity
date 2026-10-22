@@ -49,7 +49,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   hitRadius: 0.05
   damage: 40
-  explosionFX: {fileID: 0}
+  robotImpactFxPrefab: {fileID: 0}
+  otherObjectImpactFxPrefab: {fileID: 0}
   projectileRigidbody: {fileID: 0}
   projectileRenderers: []
   projectileParticles: []

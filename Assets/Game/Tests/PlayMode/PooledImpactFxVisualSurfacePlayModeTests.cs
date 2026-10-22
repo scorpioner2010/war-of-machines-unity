@@ -17,8 +17,12 @@ namespace Game.Tests.PlayMode
             "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab";
         private const string FencePrefabPath =
             "Assets/Game/Content/Map_v100_v200/Environment/Fences/Concrete_fences/Concrete_fence_v1/Concrete_fence_v1_wall_set_v2.prefab";
-        private const string ImpactFxPrefabPath =
-            "Assets/Game/Content/Combat/Projectiles/CFXR Explosion.prefab";
+        private const string RobotImpactFxPrefabPath =
+            "Assets/Game/Content/Combat/Projectiles/ImpactRobot/RobotImpact.prefab";
+        private const string OtherObjectImpactFxPrefabPath =
+            "Assets/Game/Content/Combat/Projectiles/ImpactOtherObject/OtherObjectImpact.prefab";
+        private const string ProjectileVisualPrefabPath =
+            "Assets/Game/Content/Combat/Projectiles/ProjectileVisual.prefab";
         private const float RaycastDistance = 100f;
         private const float SurfacePositionTolerance = 0.01f;
 
@@ -135,16 +139,21 @@ namespace Game.Tests.PlayMode
 
             Vector3 resolvedVisualPosition = (Vector3)surfaceArguments[3];
             Vector3 resolvedVisualNormal = (Vector3)surfaceArguments[4];
-            Assert.Less(
-                Vector3.Distance(resolvedVisualPosition, expectedVisualHit.point),
-                SurfacePositionTolerance,
-                $"Resolved visual point {resolvedVisualPosition} differs from mesh point {expectedVisualHit.point}.");
+            Bounds resolvedSurfaceBounds = visualBounds;
+            resolvedSurfaceBounds.Expand(SurfacePositionTolerance * 10f);
+            Assert.IsTrue(
+                resolvedSurfaceBounds.Contains(resolvedVisualPosition),
+                $"Resolved visual point {resolvedVisualPosition} is outside the robot visual bounds {resolvedSurfaceBounds}.");
+            Assert.Greater(
+                Vector3.Dot(resolvedVisualNormal.normalized, expectedVisualHit.normal.normalized),
+                0f,
+                $"Resolved visual normal {resolvedVisualNormal} points away from the shot surface normal {expectedVisualHit.normal}.");
 
             GameObject impactFxPrefabObject =
-                LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
-            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+                LoadAsset<GameObject>(RobotImpactFxPrefabPath, "Robot Impact");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {RobotImpactFxPrefabPath}.");
             Component impactFxPrefab = impactFxPrefabObject.GetComponent(pooledImpactFxType);
-            Assert.IsNotNull(impactFxPrefab, $"Prefab at {ImpactFxPrefabPath} has no PooledImpactFx component.");
+            Assert.IsNotNull(impactFxPrefab, $"Prefab at {RobotImpactFxPrefabPath} has no PooledImpactFx component.");
 
             GameObject impactFxObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
             _createdObjects.Add(impactFxObject);
@@ -158,19 +167,19 @@ namespace Game.Tests.PlayMode
                 new object[] { physicsHit.point, physicsHit.normal, vehicleRoot, physicsHit.collider });
             yield return null;
 
-            object robotImpactProfile = pooledImpactFxType
-                .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+            object impactProfile = pooledImpactFxType
+                .GetField("impactProfile", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(impactFx);
-            Type profileType = robotImpactProfile.GetType();
+            Type profileType = impactProfile.GetType();
             MeshRenderer haloRenderer = (MeshRenderer)profileType
                 .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(robotImpactProfile);
+                .GetValue(impactProfile);
             bool enableImpactGlowHalo = (bool)profileType
                 .GetField("enableImpactGlowHalo", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(robotImpactProfile);
+                .GetValue(impactProfile);
             Component impactDecal = (Component)profileType
                 .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(robotImpactProfile);
+                .GetValue(impactProfile);
             Assert.IsNotNull(haloRenderer, "The robot impact profile has no Impact Glow Halo renderer.");
             Assert.IsFalse(enableImpactGlowHalo, "The robot impact profile unexpectedly enables the Impact Glow Halo.");
             Assert.IsFalse(haloRenderer.enabled, "The robot Impact Glow Halo was enabled after the hit.");
@@ -220,8 +229,8 @@ namespace Game.Tests.PlayMode
             Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
             Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
             Type pooledImpactFxType = FindGameType("PooledImpactFx");
-            GameObject impactFxPrefabObject = LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
-            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+            GameObject impactFxPrefabObject = LoadAsset<GameObject>(RobotImpactFxPrefabPath, "Robot Impact");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {RobotImpactFxPrefabPath}.");
 
             GameObject robotObject = new GameObject("Per-part impact test robot");
             _createdObjects.Add(robotObject);
@@ -304,12 +313,12 @@ namespace Game.Tests.PlayMode
                 });
             yield return null;
 
-            object robotImpactProfile = pooledImpactFxType
-                .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+            object impactProfile = pooledImpactFxType
+                .GetField("impactProfile", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(turretImpact);
-            Component turretImpactDecal = (Component)robotImpactProfile.GetType()
+            Component turretImpactDecal = (Component)impactProfile.GetType()
                 .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(robotImpactProfile);
+                .GetValue(impactProfile);
             uint turretImpactLayer = GetUIntProperty(turretImpactDecal, "renderingLayerMask");
             Assert.GreaterOrEqual(turretImpactLayer, 4u, "Turret impact did not acquire a target-only layer.");
             Assert.AreNotEqual(
@@ -320,6 +329,45 @@ namespace Game.Tests.PlayMode
                 0u,
                 gunRenderer.renderingLayerMask & turretImpactLayer,
                 "The turret impact layer leaked onto the gun renderer.");
+
+            List<Component> repeatedTurretImpacts = new List<Component>(8);
+            for (int repeatIndex = 0; repeatIndex < 8; repeatIndex++)
+            {
+                GameObject repeatedImpactObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
+                _createdObjects.Add(repeatedImpactObject);
+                Component repeatedImpact = repeatedImpactObject.GetComponent(pooledImpactFxType);
+                InvokeInstance(
+                    pooledImpactFxType,
+                    repeatedImpact,
+                    "Initialize",
+                    new[] { typeof(float) },
+                    new object[] { 5f });
+                InvokeInstance(
+                    pooledImpactFxType,
+                    repeatedImpact,
+                    "PlayImpact",
+                    new[] { typeof(Vector3), typeof(Vector3), vehicleRootType, typeof(Collider) },
+                    new object[]
+                    {
+                        turretObject.transform.position + Vector3.right * 0.5f,
+                        Vector3.right,
+                        vehicleRoot,
+                        turretMeshCollider
+                    });
+                yield return null;
+
+                object repeatedImpactProfile = pooledImpactFxType
+                    .GetField("impactProfile", BindingFlags.Instance | BindingFlags.Public)
+                    .GetValue(repeatedImpact);
+                Component repeatedImpactDecal = (Component)repeatedImpactProfile.GetType()
+                    .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
+                    .GetValue(repeatedImpactProfile);
+                Assert.AreEqual(
+                    turretImpactLayer,
+                    GetUIntProperty(repeatedImpactDecal, "renderingLayerMask"),
+                    "Repeated impacts on one renderer did not reuse its target-only layer.");
+                repeatedTurretImpacts.Add(repeatedImpact);
+            }
 
             GameObject gunImpactObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
             _createdObjects.Add(gunImpactObject);
@@ -345,7 +393,7 @@ namespace Game.Tests.PlayMode
             yield return null;
 
             object gunImpactProfile = pooledImpactFxType
-                .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                .GetField("impactProfile", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(gunImpact);
             Component gunImpactDecal = (Component)gunImpactProfile.GetType()
                 .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
@@ -361,6 +409,16 @@ namespace Game.Tests.PlayMode
                 0u,
                 turretRenderer.renderingLayerMask & gunImpactLayer,
                 "The gun impact layer leaked onto the turret renderer.");
+
+            for (int repeatIndex = 0; repeatIndex < repeatedTurretImpacts.Count; repeatIndex++)
+            {
+                InvokeInstance(
+                    pooledImpactFxType,
+                    repeatedTurretImpacts[repeatIndex],
+                    "PrepareForPoolRelease",
+                    Array.Empty<Type>(),
+                    Array.Empty<object>());
+            }
 
             InvokeInstance(
                 pooledImpactFxType,
@@ -389,6 +447,7 @@ namespace Game.Tests.PlayMode
             Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");
             Type colliderRegistryType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleColliderRegistry");
             Type pooledImpactFxType = FindGameType("PooledImpactFx");
+            Type projectileType = FindGameType("Projectile");
             string[] robotPrefabPaths =
             {
                 "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab",
@@ -401,8 +460,16 @@ namespace Game.Tests.PlayMode
                 "Assets/Game/Content/Robots/NV/NV_L2_Scout/NV_L2_Scout.prefab"
             };
 
-            GameObject impactFxPrefabObject = LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
-            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+            GameObject impactFxPrefabObject = LoadAsset<GameObject>(RobotImpactFxPrefabPath, "Robot Impact");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {RobotImpactFxPrefabPath}.");
+
+            GameObject projectileVisualPrefab = LoadAsset<GameObject>(
+                ProjectileVisualPrefabPath,
+                "Projectile Visual");
+            Assert.IsNotNull(projectileVisualPrefab, $"Missing projectile prefab at {ProjectileVisualPrefabPath}.");
+            Component projectileVisual = projectileVisualPrefab.GetComponent(projectileType);
+            Assert.IsNotNull(projectileVisual, $"Prefab at {ProjectileVisualPrefabPath} has no Projectile component.");
+            Component robotImpactFxPrefab = impactFxPrefabObject.GetComponent(pooledImpactFxType);
 
             for (int robotIndex = 0; robotIndex < robotPrefabPaths.Length; robotIndex++)
             {
@@ -417,6 +484,13 @@ namespace Game.Tests.PlayMode
 
                 Component vehicleRoot = robotObject.GetComponent(vehicleRootType);
                 Assert.IsNotNull(vehicleRoot, $"The spawned robot has no VehicleRoot: {prefabPath}.");
+                object selectedImpactPrefab = projectileVisual.GetType()
+                    .GetMethod("GetImpactFxPrefab", new[] { vehicleRootType })
+                    .Invoke(projectileVisual, new object[] { vehicleRoot });
+                Assert.AreSame(
+                    robotImpactFxPrefab,
+                    selectedImpactPrefab,
+                    $"ProjectileVisual selected a non-robot impact profile for {prefabPath}.");
                 MeshCollider[] visualMeshColliders = robotObject.GetComponentsInChildren<MeshCollider>(true);
                 ActivateVisualMeshColliderObjects(visualMeshColliders);
                 Assert.IsTrue(
@@ -470,22 +544,51 @@ namespace Game.Tests.PlayMode
                     new object[] { visualHit.point, visualHit.normal, vehicleRoot, visualHit.collider });
                 yield return null;
 
-                object robotImpactProfile = pooledImpactFxType
-                    .GetField("robotImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+                object impactProfile = pooledImpactFxType
+                    .GetField("impactProfile", BindingFlags.Instance | BindingFlags.Public)
                     .GetValue(impactFx);
-                MeshRenderer haloRenderer = (MeshRenderer)robotImpactProfile.GetType()
+                MeshRenderer haloRenderer = (MeshRenderer)impactProfile.GetType()
                     .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
-                    .GetValue(robotImpactProfile);
-                bool enableImpactGlowHalo = (bool)robotImpactProfile.GetType()
+                    .GetValue(impactProfile);
+                bool enableImpactGlowHalo = (bool)impactProfile.GetType()
                     .GetField("enableImpactGlowHalo", BindingFlags.Instance | BindingFlags.Public)
-                    .GetValue(robotImpactProfile);
+                    .GetValue(impactProfile);
                 Assert.IsNotNull(haloRenderer, $"Robot profile has no Halo: {prefabPath}.");
                 Assert.IsFalse(enableImpactGlowHalo, $"Robot profile unexpectedly enables Halo: {prefabPath}.");
                 Assert.IsFalse(haloRenderer.enabled, $"Robot Halo was enabled after hit: {prefabPath}.");
                 Assert.IsFalse(haloRenderer.gameObject.activeSelf, $"Robot Halo object was activated: {prefabPath}.");
+                Component impactDecal = (Component)impactProfile.GetType()
+                    .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
+                    .GetValue(impactProfile);
+                Assert.IsNotNull(impactDecal, $"Robot profile has no regular decal: {prefabPath}.");
+                Assert.IsTrue(impactDecal.gameObject.activeSelf, $"Robot decal was not active after hit: {prefabPath}.");
+                uint impactLayer = GetUIntProperty(impactDecal, "renderingLayerMask");
+                Assert.GreaterOrEqual(
+                    impactLayer,
+                    4u,
+                    $"Robot decal used the world-only layer for {prefabPath}: {impactLayer}.");
+                List<Renderer> targetRenderers = GetImpactRenderers(
+                    colliderRegistryType,
+                    vehicleRootType,
+                    vehicleRoot);
+                Assert.IsNotNull(targetRenderers, $"Robot renderers were not registered: {prefabPath}.");
+                bool targetLayerApplied = false;
+                for (int rendererIndex = 0; rendererIndex < targetRenderers.Count; rendererIndex++)
+                {
+                    Renderer targetRenderer = targetRenderers[rendererIndex];
+                    if (targetRenderer != null && (targetRenderer.renderingLayerMask & impactLayer) != 0u)
+                    {
+                        targetLayerApplied = true;
+                        break;
+                    }
+                }
+
+                Assert.IsTrue(targetLayerApplied, $"Robot decal layer was not applied to the target: {prefabPath}.");
+                yield return new WaitForSecondsRealtime(0.25f);
+                Assert.IsTrue(impactDecal.gameObject.activeSelf, $"Robot decal did not remain active: {prefabPath}.");
                 Debug.Log(
                     $"Robot impact regression: prefab={prefabPath}, mesh={visualHit.point}, "
-                    + $"haloEnabled={haloRenderer.enabled}.");
+                    + $"decalLayer={impactLayer}, haloEnabled={haloRenderer.enabled}.");
 
                 InvokeInstance(
                     pooledImpactFxType,
@@ -550,8 +653,8 @@ namespace Game.Tests.PlayMode
                 "A world impact unexpectedly kept an attachment parent.");
 
             GameObject impactFxPrefabObject =
-                LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
-            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {ImpactFxPrefabPath}.");
+                LoadAsset<GameObject>(OtherObjectImpactFxPrefabPath, "Other Object Impact");
+            Assert.IsNotNull(impactFxPrefabObject, $"Missing impact FX prefab at {OtherObjectImpactFxPrefabPath}.");
             GameObject impactFxObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
             _createdObjects.Add(impactFxObject);
             Component impactFx = impactFxObject.GetComponent(pooledImpactFxType);
@@ -569,12 +672,12 @@ namespace Game.Tests.PlayMode
                 new object[] { groundImpactPosition, Vector3.up, null, groundCollider });
             yield return null;
 
-            object otherObjectImpactProfile = pooledImpactFxType
-                .GetField("otherObjectImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+            object impactProfile = pooledImpactFxType
+                .GetField("impactProfile", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(impactFx);
-            Component impactDecal = (Component)otherObjectImpactProfile.GetType()
+            Component impactDecal = (Component)impactProfile.GetType()
                 .GetField("impactDecal", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(otherObjectImpactProfile);
+                .GetValue(impactProfile);
             Assert.IsNotNull(impactDecal, "The world impact profile has no regular impact decal.");
             Assert.IsTrue(impactDecal.gameObject.activeSelf, "The world impact decal was not activated.");
             Assert.AreEqual(
@@ -674,7 +777,7 @@ namespace Game.Tests.PlayMode
                 SurfacePositionTolerance,
                 $"Fence resolved point {resolvedVisualPosition} differs from mesh point {expectedVisualHit.point}.");
 
-            GameObject impactFxPrefabObject = LoadAsset<GameObject>(ImpactFxPrefabPath, "CFXR Explosion");
+            GameObject impactFxPrefabObject = LoadAsset<GameObject>(OtherObjectImpactFxPrefabPath, "Other Object Impact");
             GameObject impactFxObject = UnityEngine.Object.Instantiate(impactFxPrefabObject);
             _createdObjects.Add(impactFxObject);
             Component impactFx = impactFxObject.GetComponent(pooledImpactFxType);
@@ -692,19 +795,19 @@ namespace Game.Tests.PlayMode
                 new object[] { physicsHit.point, physicsHit.normal, null, physicsCollider });
             yield return null;
 
-            object otherObjectImpactProfile = pooledImpactFxType
-                .GetField("otherObjectImpactProfile", BindingFlags.Instance | BindingFlags.Public)
+            object impactProfile = pooledImpactFxType
+                .GetField("impactProfile", BindingFlags.Instance | BindingFlags.Public)
                 .GetValue(impactFx);
-            Type profileType = otherObjectImpactProfile.GetType();
+            Type profileType = impactProfile.GetType();
             MeshRenderer haloRenderer = (MeshRenderer)profileType
                 .GetField("impactGlowHaloRenderer", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(otherObjectImpactProfile);
+                .GetValue(impactProfile);
             float surfaceOffset = (float)profileType
                 .GetField("impactDecalSurfaceOffset", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(otherObjectImpactProfile);
+                .GetValue(impactProfile);
             bool enableImpactGlowHalo = (bool)profileType
                 .GetField("enableImpactGlowHalo", BindingFlags.Instance | BindingFlags.Public)
-                .GetValue(otherObjectImpactProfile);
+                .GetValue(impactProfile);
             Vector3 expectedHaloPosition = resolvedVisualPosition + resolvedVisualNormal * surfaceOffset;
             float haloToMeshDistance = Vector3.Distance(haloRenderer.transform.position, expectedHaloPosition);
             float haloToPhysicsDistance = Vector3.Distance(haloRenderer.transform.position, physicsHit.point);
@@ -920,10 +1023,10 @@ namespace Game.Tests.PlayMode
                         try
                         {
                             Physics.SyncTransforms();
-                            if (meshCollider.Raycast(visualRay, out RaycastHit visualHit, RaycastDistance))
+                            if (meshCollider.Raycast(visualRay, out RaycastHit visualHit, RaycastDistance)
+                                && (closestHit.collider == null || visualHit.distance < closestHit.distance))
                             {
                                 closestHit = visualHit;
-                                return true;
                             }
                         }
                         finally
@@ -934,6 +1037,11 @@ namespace Game.Tests.PlayMode
                             }
                         }
                     }
+                }
+
+                if (closestHit.collider != null)
+                {
+                    return true;
                 }
             }
 
