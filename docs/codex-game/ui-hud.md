@@ -10,6 +10,7 @@ Current owner scripts:
   - Consumes `VehicleRuntimeStats` and displays the robot name, falling back to its code and then prefab instance name until stats arrive.
   - Uses the same map/spotting visibility result as the vehicle model: the name and HP disappear when the robot disappears from the map.
   - While the robot remains present in the map visibility snapshot, overlay materials keep its name and HP visible through walls.
+  - Floating damage text uses the same relation color as the world HP bar: `alliedHpColor` for allies and `enemyHpColor` for enemies; pooled text resets that color at the start of each animation.
   - Never displays the world vehicle name, HP bar, or floating damage text for the locally owned gameplay vehicle; the owner uses the screen-space HUD health display instead.
   - Never displays the world vehicle name or HP bar for a main-menu robot preview. `VehicleRoot.Init(true)` refreshes this gate after assigning the menu context.
   - `Assets/Game/NameCanvas.prefab` assigns overlay materials to its TMP text and HP images. Those materials use the Overlay render queue with `ZTest Always`, and the Canvas overrides sorting at order `32767`, so map geometry and walls do not occlude the presentation.
@@ -43,7 +44,7 @@ Current owner scripts:
   - `CameraController` treats every forward zoom profile with `showReticle = true` as sniper presentation: the regular HUD is replaced by the black `SniperScopeOverlay` and central sniper reticle, while the profile's camera/FOV values remain authoritative. The wheel can move between multiple flagged profiles without hiding the overlay. This flag controls the scope overlay, not the ordinary projectile-dispersion ring.
   - `WeaponReloadController` receives a binding-change result and forces the current ammo/reload values into the newly selected target, preventing cached IA values from leaving the NV UI stale. Aim-status caches are also invalidated when the target text changes.
   - Initializes the active penetration-status label to `PENETRATION STATUS` and preserves the last `Miss`, `Penetrated`, or `No penetration` result when the faction reticle changes; the text is intentionally not cleared by a timer.
-  - Owns the serialized `CrosshairType2` `lightElement` image list and changes only those images' alpha from the local weapon charge progress. It preserves each element's authored RGB color.
+  - Owns the serialized `CrosshairType2` `lightElement` image list and changes only those images' alpha from the local weapon charge progress. It preserves each element's authored RGB color. The active faction reload circle uses the same progress, resets immediately when progress decreases, and smoothly fills toward higher progress.
   - The bindings are serialized on the scene `GunCrosshair` presenter and target `Client.unity/Canvas/GameplayHUD/GameplayHudContent/CrosshairType1` and `CrosshairType2`; the scene assigns all 12 Nova `lightElement` `Image` components explicitly.
 - `Assets/Game/Scenes/Client.unity/SniperScopeOverlay/SniperScopeMask`
   - Fullscreen procedural sniper-scope vignette. Its standard UI `Image` is tinted black at alpha `0.72`, uses `Assets/Game/Content/UI/Materials/ProceduralSniperScopeMask.mat`, and intentionally has no sprite.
@@ -55,7 +56,7 @@ Current owner scripts:
   - Positions/presents reticle based on weapon aim.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`
   - Updates reload/ammo HUD state for owner.
-  - Passes the selected vehicle faction to `GunCrosshair` and presents the local predicted/server-reconciled reload progress to the Nova Syndicate `lightElement` indicators; this is presentation only and does not alter fire validation.
+  - Passes the selected vehicle faction to `GunCrosshair` and presents the local predicted/server-reconciled reload progress to the active reload circle and Nova Syndicate `lightElement` indicators; this is presentation only and does not alter fire validation.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
   - Applies local and authoritative crosshair dispersion to the owner HUD using the actual camera projection and active zoom profile; it no longer uses `zoom01`, hand-tuned pixels-per-degree values, or a global UI min/max clamp.
   - Uses the synchronized server-authoritative dispersion value for both the visible local ring and the `AimStatus` progress; the client-only dispersion model is used only until the first server value arrives.

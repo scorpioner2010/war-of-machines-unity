@@ -12,6 +12,14 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-22 - Smooth reload circle and match floating HP colors
+
+- Status: `IN_PROGRESS`
+- Scope: make the weapon reload/charge circle fill continuously during charging and color floating damage text blue for allies and red for enemies, matching the world HP bar relation color.
+- Acceptance: the reload circle uses the smooth local/server charge progress without bypassing reload authority; lower-progress resets remain immediate; floating text receives the same ally/enemy color as the target HP bar.
+- Verification: targeted static assertions, `git diff --check`, and production/editor C# builds pass with 0 errors; Unity Play Mode visual verification remains pending.
+- Detail: active task record in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-22 - Disable DevelopmentTree robot image when no technique is selected
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

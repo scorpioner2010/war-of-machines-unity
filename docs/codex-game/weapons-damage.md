@@ -7,7 +7,7 @@ Current owner scripts:
   - Owns ammo count, reload timer, reload HUD state, and fire gating.
   - Human owner path starts local prediction, while `ServerTryApproveOwnerShot` atomically validates ownership/reload/ammo, consumes one shell, and starts server reload.
   - Bot/server path uses `ServerTryFireAuthoritative`.
-  - For the local owner, it passes `VehicleRuntimeStats.Faction` to `GunCrosshair` and drives Nova Syndicate `CrosshairType2` light-element alpha from the predicted reload timer, reconciled against the authoritative reload remainder when available. Alpha is `0` immediately after the predicted shot and reaches `1` when the weapon is ready.
+  - For the local owner, it passes `VehicleRuntimeStats.Faction` to `GunCrosshair` and drives the active reload circle plus Nova Syndicate `CrosshairType2` light-element alpha from the predicted reload timer, reconciled against the authoritative reload remainder when available. The circle resets immediately when a shot starts and smoothly fills toward the ready state; light-element alpha is `0` immediately after the predicted shot and reaches `1` when the weapon is ready.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
   - Owns projectile fire, projectile visual spawning, dispersion, authoritative hit resolution, and network RPCs for shot visuals/results.
   - Builds the authoritative random shot direction and the owner reticle from the same `DispersionConeProjection` tangent-cone basis. Zoom changes only the camera/profile presentation; it never changes the physical dispersion angle or deterministic shot sample.
@@ -25,6 +25,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHealth.cs`
   - Networked health state and death handling integration.
   - Raises `OnDamaged` on observers after authoritative damage is applied; the local HUD `DamageScreen` uses this event for the red hit indicator.
+  - `VehicleHUD` consumes the same event for pooled floating damage text and applies the target's ally/enemy HP color without changing authoritative health behavior.
   - On a confirmed death, disables configured hit colliders immediately, sends the observer death event, and server-despawns the robot after the temporary `5`-second debris hold plus a `1`-second client fade and `0.25`-second safety margin. The client never decides when to despawn the network object.
  - `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`
   - Disables configured gameplay/armor colliders on death and releases configured visual debris.
@@ -102,6 +103,7 @@ Fire flow:
   - Server validates reload/ammo in `WeaponReloadController` before `NetworkWeaponShooter` creates the authoritative projectile.
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Presents the owner weapon state in `Client.unity/Canvas/GameplayHUD/GameplayHudContent`. It selects the matching `AmmoCountText`, `ReloadStatusText`, reload fill `Image`, `AimStatus`, and penetration-status bindings for the active faction; switching bindings forces the current cached ammo/reload state and last penetration result into the new UI target.
+  - Smooths the active reload fill only while it advances toward the charge target; decreases are applied immediately so a new reload starts at the correct empty state.
   - Uses the serialized `GameplayHudContent` regular-HUD root and `SniperScopeOverlay` scope root when switching between regular and sniper presentation. Every forward zoom profile with `showReticle = true` selects the black scope overlay with the central reticle, not the ordinary dispersion ring; multiple flagged profiles are reachable by the wheel. There is no separate sniper zoom profile.
 - Bot fire uses `WeaponReloadController.ServerTryFireAuthoritative` and then `NetworkWeaponShooter.ServerFireAuthoritative`.
 - Impact particles are spawned one Unity unit toward the local gameplay camera, keeping their screen position aligned with the actual hit point even at an oblique shot angle. If no gameplay camera exists, they fall back to the collision-surface normal.

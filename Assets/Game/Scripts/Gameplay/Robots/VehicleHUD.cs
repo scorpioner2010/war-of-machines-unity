@@ -174,7 +174,7 @@ namespace Game.Scripts.Gameplay.Robots
                 floatingTextPoolMaxInactive);
             if (floatingText != null)
             {
-                floatingText.SetDamage(Mathf.RoundToInt(dmg));
+                floatingText.SetDamage(Mathf.RoundToInt(dmg), GetHpColor());
             }
         }
 
@@ -338,9 +338,14 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            hpView.color = GetHpColor();
+        }
+
+        private Color GetHpColor()
+        {
             VehicleHudRelation relation = GetRelationToLocalPlayer();
             GameplayRuntimeSettings settings = GetRuntimeSettings();
-            hpView.color = relation == VehicleHudRelation.Ally ? settings.alliedHpColor : settings.enemyHpColor;
+            return relation == VehicleHudRelation.Ally ? settings.alliedHpColor : settings.enemyHpColor;
         }
 
         private void RefreshDisplayName(VehicleRuntimeStats stats = null)

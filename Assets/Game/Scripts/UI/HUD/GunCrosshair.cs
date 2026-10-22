@@ -75,6 +75,7 @@ namespace Game.Scripts.UI.HUD
         private TMP_Text _ironAlliancePenetrationStatusFallback;
         private const string DefaultPenetrationStatusText = "PENETRATION STATUS";
         private string _lastPenetrationStatus = DefaultPenetrationStatusText;
+        private const float ChargeFillSmoothingSpeed = 14f;
 
         private void Awake()
         {
@@ -289,6 +290,8 @@ namespace Game.Scripts.UI.HUD
                 safeProgress = 1f;
             }
 
+            ApplyChargeFill(safeProgress);
+
             if (Mathf.Abs(_lastChargeProgress - safeProgress) <= 0.001f)
             {
                 return;
@@ -312,6 +315,27 @@ namespace Game.Scripts.UI.HUD
                 color.a = safeProgress;
                 lightElement.color = color;
             }
+        }
+
+        private void ApplyChargeFill(float targetProgress)
+        {
+            if (fillImage == null)
+            {
+                return;
+            }
+
+            float currentProgress = Mathf.Clamp01(fillImage.fillAmount);
+            if (targetProgress <= currentProgress)
+            {
+                fillImage.fillAmount = targetProgress;
+                return;
+            }
+
+            float smoothing = 1f - Mathf.Exp(-ChargeFillSmoothingSpeed * Time.unscaledDeltaTime);
+            float smoothedProgress = Mathf.Lerp(currentProgress, targetProgress, smoothing);
+            fillImage.fillAmount = Mathf.Abs(smoothedProgress - targetProgress) <= 0.001f
+                ? targetProgress
+                : smoothedProgress;
         }
 
         private static void ApplyAimingDiameter(

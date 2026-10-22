@@ -270,10 +270,6 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (ammoLeft <= 0 && !isReloading)
             {
-                if (_crosshair.fillImage != null)
-                {
-                    _crosshair.fillImage.fillAmount = 0f;
-                }
                 if (_crosshair.reloadText != null)
                 {
                     ApplyReloadText(ReloadHudState.Empty, 0, factionBindingsChanged);
@@ -283,14 +279,6 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (isReloading)
             {
-                float t = reloadTime > 0.0001f
-                    ? Mathf.Clamp01(1f - (reloadRemain / reloadTime))
-                    : 1f;
-
-                if (_crosshair.fillImage != null)
-                {
-                    _crosshair.fillImage.fillAmount = t;
-                }
                 if (_crosshair.reloadText != null)
                 {
                     int reloadTenths = Mathf.CeilToInt(Mathf.Max(0f, reloadRemain) * 10f);
@@ -299,10 +287,6 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (_crosshair.fillImage != null)
-            {
-                _crosshair.fillImage.fillAmount = 1f;
-            }
             if (_crosshair.reloadText != null)
             {
                 ApplyReloadText(ReloadHudState.Ready, 0, factionBindingsChanged);

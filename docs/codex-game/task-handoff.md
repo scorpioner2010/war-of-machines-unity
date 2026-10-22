@@ -3,6 +3,22 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-22
+- User request: "помітив що круг зведення при зарядці заповніться не правно, треба щоб він плавно заповнівся виправ це, також колір відлітаючого ХП якщо ХП синє (союзник) то відлітати теж синє має, якщо красне як зараз (противник) то відлітає теж красне, виправ це"
+- Objective: make the weapon charge/reload circle fill smoothly during charging and make floating damage text use the same ally/enemy color as the target world HP bar.
+- Acceptance criteria:
+  - The charge circle uses the existing local/server charge progress and no longer receives a visibly stepped server-only `fillAmount`.
+  - A newly started reload can reset the circle immediately, then fills smoothly to full.
+  - Floating damage text is blue for allied vehicles and red for enemy vehicles, matching the HP bar relation color.
+  - Reload authority, ammo gating, pooled floating text behavior, and visibility rules remain unchanged.
+- Assumptions: the reported circle is the inspector-wired `GunCrosshair.fillImage` radial reload image; `VehicleHUD` already owns the authoritative ally/enemy relation color used by the world HP bar.
+- Current work: `GunCrosshair` now owns smoothed upward reload-fill presentation from the existing charge progress; `WeaponReloadController` no longer overwrites that fill directly; `VehicleHUD` passes the relation HP color into `FloatingDamageText`.
+- Work remaining: optionally run the gameplay HUD in Unity Play Mode and confirm the circle fills continuously after a shot and allied/enemy floating text colors match their HP bars.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`, `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`, `Assets/Game/Scripts/UI/HUD/FloatingDamageText.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/weapons-damage.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: targeted static assertions passed; `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo` passed with 0 errors. Unity Play Mode visual verification remains pending.
+
+## Archived task (selected robot image in DevelopmentTree - previous active task)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-22
 - User request: "додай щоб підтягувало картинку вибраного робота в DevelopmentTree, картинку підтягувати має на обьект Image. якщо техніка не вибрана обьект Image має бути вимкнутий"
 - Objective: use the `DevelopmentTree/RightInfoPanel/Image` object for the selected robot icon and deactivate that GameObject when no technique is selected.
 - Acceptance criteria:

@@ -89,6 +89,16 @@ namespace Game.Scripts.UI.HUD
             BeginAnimation();
         }
 
+        public void SetDamage(int value, Color color)
+        {
+            if (text != null)
+            {
+                text.SetText("{0}", value);
+            }
+
+            BeginAnimation(color);
+        }
+
         private void LateUpdate()
         {
             if (_camera != null)
@@ -133,6 +143,11 @@ namespace Game.Scripts.UI.HUD
 
         private void BeginAnimation()
         {
+            BeginAnimation(text != null ? text.color : Color.white);
+        }
+
+        private void BeginAnimation(Color color)
+        {
             _camera = CameraSync.In != null ? CameraSync.In.gameplayCamera : null;
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
             _duration = Mathf.Max(0.01f, settings.floatingDamageTextDuration);
@@ -144,7 +159,7 @@ namespace Game.Scripts.UI.HUD
 
             if (text != null)
             {
-                _visibleColor = text.color;
+                _visibleColor = color;
                 _visibleColor.a = 1f;
                 text.color = _visibleColor;
             }
