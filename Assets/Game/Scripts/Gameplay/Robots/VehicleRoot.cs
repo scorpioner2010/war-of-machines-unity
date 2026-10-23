@@ -376,7 +376,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (clientVisibility != null)
             {
-                clientVisibility.DestroyVisualObjectsForServer();
+                clientVisibility.HideVisualObjectsForServer();
             }
         }
 

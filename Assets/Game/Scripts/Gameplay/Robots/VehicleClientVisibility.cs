@@ -14,12 +14,14 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _clientStarted;
         private bool _hasAppliedVisibility;
         private bool _isVisible;
-        private bool _serverVisualObjectsDestroyed;
+        private bool _serverVisualsHidden;
         private bool _hasVisibilityOverride;
         private bool _visibilityOverride;
+        private bool _hasSpectatorVisibilityOverride;
+        private bool _spectatorPreviousVisibility;
 
         public bool IsVisible => _hasAppliedVisibility && _isVisible;
-        public bool ServerVisualObjectsDestroyed => _serverVisualObjectsDestroyed;
+        public bool ServerVisualsHidden => _serverVisualsHidden;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -64,14 +66,44 @@ namespace Game.Scripts.Gameplay.Robots
             return visibleAtDeath;
         }
 
-        public void DestroyVisualObjectsForServer()
+        public void SetSpectatorVisibility(bool visible)
         {
-            if (_serverVisualObjectsDestroyed)
+            if (visible)
+            {
+                if (!_hasSpectatorVisibilityOverride)
+                {
+                    _spectatorPreviousVisibility = _hasAppliedVisibility && _isVisible;
+                }
+
+                _hasSpectatorVisibilityOverride = true;
+                ApplyVisibility(true);
+                return;
+            }
+
+            if (!_hasSpectatorVisibilityOverride)
             {
                 return;
             }
 
-            _serverVisualObjectsDestroyed = true;
+            _hasSpectatorVisibilityOverride = false;
+            if (_clientStarted && enabled)
+            {
+                _refreshRequested = true;
+                RefreshVisibility();
+                return;
+            }
+
+            ApplyVisibility(_spectatorPreviousVisibility);
+        }
+
+        public void HideVisualObjectsForServer()
+        {
+            if (_serverVisualsHidden)
+            {
+                return;
+            }
+
+            _serverVisualsHidden = true;
             _refreshRequested = false;
             enabled = false;
 
@@ -97,24 +129,8 @@ namespace Game.Scripts.Gameplay.Robots
                     continue;
                 }
 
-                bool alreadyQueued = false;
-                for (int previousIndex = 0; previousIndex < i; previousIndex++)
-                {
-                    Renderer previousRenderer = visualRenderers[previousIndex];
-                    if (previousRenderer != null && previousRenderer.gameObject == visualObject)
-                    {
-                        alreadyQueued = true;
-                        break;
-                    }
-                }
-
-                if (alreadyQueued)
-                {
-                    continue;
-                }
-
+                visualRenderer.enabled = false;
                 visualRenderer.forceRenderingOff = true;
-                Destroy(visualObject);
             }
         }
 

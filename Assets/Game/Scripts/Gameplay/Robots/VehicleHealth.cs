@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
@@ -10,17 +9,14 @@ namespace Game.Scripts.Gameplay.Robots
     public class VehicleHealth : NetworkBehaviour, IVehicleStatsConsumer
     {
         private const string DeathDebrisLayerName = "Chassis";
-        private const float DeathDespawnSafetySeconds = 0.25f;
         private static int _deathDebrisLayer = int.MinValue;
-
-        public const float DeathDebrisDelaySeconds = 5f;
-        public const float DeathDebrisFadeDurationSeconds = 1f;
 
         [Min(1f)] public float maxHealth = 100f;
 
         public Action<float, float, float> OnDamaged;
         public Action<float, float> OnHealthChanged;
         public Action<VehicleHealth> OnServerDeath;
+        public Action<int> OnClientDeath;
         public UnityEvent onDeath;
 
         private readonly SyncVar<float> _hp = new();
@@ -32,7 +28,6 @@ namespace Game.Scripts.Gameplay.Robots
         private float _observedHealth;
         private bool _hasAppliedSyncHealth;
         private float _appliedSyncHealth;
-        private Coroutine _serverDeathDespawnRoutine;
 
         public float Current
         {
@@ -99,7 +94,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartServer()
         {
-            _serverDeathDespawnRoutine = null;
             _hp.Value = Mathf.Max(1f, maxHealth);
             _dead.Value = false;
             SetObservedHealth(_hp.Value, maxHealth, true);
@@ -107,12 +101,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStopServer()
         {
-            if (_serverDeathDespawnRoutine != null)
-            {
-                StopCoroutine(_serverDeathDespawnRoutine);
-                _serverDeathDespawnRoutine = null;
-            }
-
             base.OnStopServer();
         }
 
@@ -146,6 +134,20 @@ namespace Game.Scripts.Gameplay.Robots
         [Server]
         public void ServerApplyDamage(float dmg)
         {
+            ServerApplyDamageInternal(dmg, -1);
+        }
+
+        [Server]
+        public void ServerApplyDamage(float dmg, VehicleRoot attackerRoot)
+        {
+            int attackerObjectId = attackerRoot != null && attackerRoot.networkObject != null
+                ? attackerRoot.networkObject.ObjectId
+                : -1;
+            ServerApplyDamageInternal(dmg, attackerObjectId);
+        }
+
+        private void ServerApplyDamageInternal(float dmg, int attackerObjectId)
+        {
             if (!IsServerInitialized || _dead.Value || dmg <= 0f)
             {
                 return;
@@ -161,7 +163,7 @@ namespace Game.Scripts.Gameplay.Robots
             if (_hp.Value <= 0f)
             {
                 _dead.Value = true;
-                DeathServer();
+                DeathServer(attackerObjectId);
             }
         }
 
@@ -178,29 +180,15 @@ namespace Game.Scripts.Gameplay.Robots
             SetObservedHealth(0f, maxHealth, true);
             DamagedObserversRpc(old, _hp.Value, maxHealth);
             _dead.Value = true;
-            DeathServer();
+            DeathServer(-1);
         }
 
         [Server]
-        private void DeathServer()
+        private void DeathServer(int killerObjectId)
         {
             SetCollidersEnabled(false);
             OnServerDeath?.Invoke(this);
-            DiedObserversRpc();
-            _serverDeathDespawnRoutine = StartCoroutine(DespawnAfterDeath());
-        }
-
-        private IEnumerator DespawnAfterDeath()
-        {
-            float despawnDelay = DeathDebrisDelaySeconds + DeathDebrisFadeDurationSeconds + DeathDespawnSafetySeconds;
-            yield return new WaitForSecondsRealtime(despawnDelay);
-
-            if (!IsServerInitialized || !_dead.Value || NetworkObject == null || !NetworkObject.IsSpawned || ServerManager == null)
-            {
-                yield break;
-            }
-
-            ServerManager.Despawn(NetworkObject);
+            DiedObserversRpc(killerObjectId);
         }
         
         private void SetCollidersEnabled(bool v)
@@ -268,10 +256,11 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [ObserversRpc(BufferLast = false)]
-        private void DiedObserversRpc()
+        private void DiedObserversRpc(int killerObjectId)
         {
             SetObservedHealth(0f, maxHealth, true);
             onDeath?.Invoke();
+            OnClientDeath?.Invoke(killerObjectId);
         }
 
         private void OnHpSyncChanged(float previous, float next, bool asServer)

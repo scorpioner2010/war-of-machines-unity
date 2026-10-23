@@ -12,6 +12,13 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-23 - Death camera, persistent wrecks, and spectator cycling
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: after a player dies, keep the destroyed robot visible, show the killer through the gameplay camera for three seconds without orbit input, return to the wreck, then allow left-click spectator cycling through all robots including the destroyed owner; make dead robots physical obstacles for bots.
+- Acceptance: authoritative killer identity reaches the client; death-cam and spectator transitions preserve the existing camera/HUD ownership; destroyed vehicles and detached parts do not disappear during the match; bots raycast dead robot geometry and steer around it without selecting/shooting it as a live target; focused tests are compiled and runtime verification remains pending in the open Editor.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-23 - Dead player freezes after team victory
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

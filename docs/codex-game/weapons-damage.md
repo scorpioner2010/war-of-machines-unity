@@ -26,7 +26,7 @@ Current owner scripts:
   - Networked health state and death handling integration.
   - Raises `OnDamaged` on observers after authoritative damage is applied; the local HUD `DamageScreen` uses this event for the red hit indicator.
   - `VehicleHUD` consumes the same event for pooled floating damage text and applies the target's ally/enemy HP color without changing authoritative health behavior.
-  - On a confirmed death, disables configured hit colliders immediately, sends the observer death event, and server-despawns the robot after the temporary `5`-second debris hold plus a `1`-second client fade and `0.25`-second safety margin. The client never decides when to despawn the network object.
+  - On a confirmed death, disables configured hit colliders immediately, sends the observer death event with the attacker's network object id, and keeps the dead network object spawned until map unload. The client never decides the network object lifetime.
  - `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`
   - Disables configured gameplay/armor colliders on death and releases configured visual debris.
   - Disables the root tracked, suspension, walker, ground-alignment, and gun-recoil presentation controllers before detaching debris, preventing post-death transform writes against deactivated or detached renderers.
@@ -37,7 +37,7 @@ Current owner scripts:
   - Fully empty `detachableVisuals` slots are ignored so prefab inspector capacity does not produce runtime errors; a slot with any assigned collider, rigidbody, renderer, mesh collider, or behaviour but no root still logs a configuration error.
   - Optional `behavioursToDisable` entries stop visual animation before a detached rigidbody becomes dynamic.
   - The legacy parallel debris arrays are empty on registered IA/NV robot prefabs; all death debris uses `detachableVisuals`.
-  - Detached parts are registered with `MapScopedObjectRegistry`, remain for `5` seconds, fade over the following `1` second, then have their colliders disabled and are destroyed locally. The registry remains the fallback cleanup path for map unload or an external despawn before the timer finishes.
+  - Detached parts are registered with `MapScopedObjectRegistry` and remain physically/renderably present until map unload or external network removal, when the registry and `OnDestroy` cleanup disable their colliders and destroy the detached objects.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleArmorController.cs`
   - Single root-level armor owner for a vehicle prefab.
   - `turretColliders` and `hullColliders` are the only armor-surface lists. `additionalVehicleColliders` registers non-armor hit surfaces with the vehicle root.

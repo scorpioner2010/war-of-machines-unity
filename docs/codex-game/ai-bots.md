@@ -14,7 +14,7 @@ Current owner scripts:
   - Uses `WaypointGraphRuntime` and `WaypointAStarPathfinder` when a graph exists.
   - Tracks waypoint visits per bot and prefers unvisited graph nodes when no explicit combat target is active, then falls back to least-visited nodes.
   - Falls back to random movement if no graph is available, with the same nearby-robot avoidance steering.
-  - Every `BotWanderSettings.proximityScanInterval` seconds, probes front/back/left/right and all four 45-degree diagonals. Each direction uses lower/middle/upper rays so different robot heights are detected; registered robot colliders are converted into a tangent/repulsion steering vector.
+  - Every `BotWanderSettings.proximityScanInterval` seconds, probes front/back/left/right and all four 45-degree diagonals. Each direction uses lower/middle/upper rays so different robot heights are detected; registered live/dead robot colliders and detached colliders on the forced `Chassis` layer are converted into a tangent/repulsion steering vector. The configured proximity mask is augmented with `Chassis` so dead parts cannot be excluded accidentally.
   - Sends movement through `IBotInputReceiver.ApplyBotInput`, currently implemented by `VehicleInputController`.
   - Does not create/find required runtime components.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatController.cs`
@@ -85,11 +85,12 @@ Bot movement behavior:
 - Movement can be suppressed by combat via `SetMovementSuppressed(true)`. While suppressed, navigator still refreshes proximity sensing on its configured cadence and applies a local escape maneuver if another live robot is too close; otherwise it sends zero movement input.
 - Exploration is per-bot state: `BotNavigator` increments a visit count when the nearest graph node changes. With `exploreUnvisitedNodes` enabled, destination selection first searches unvisited nodes at least `minDestinationDistance` away, then least-visited nodes.
 - Steering uses a 4-degree `turnDeadZoneAngle` by default, so tiny waypoint or avoidance errors do not flip the body between left and right. `turnInputSmoothing` defaults to 7 and exponentially smooths steering at the decision cadence, while large-angle pivot turns still stop forward movement normally.
-- Proximity avoidance is server-side and does not use scene-wide searches or runtime component creation. It casts eight horizontal directions at three vertical offsets, ignores the bot's own hierarchy, respects `proximityMask`, and only steers for registered live `VehicleRoot` colliders. A forward hit adds a side-step based on the bot's stable turn bias so a robot does not simply reverse into a queue.
+- Proximity avoidance is server-side and does not use scene-wide searches or runtime component creation. It casts eight horizontal directions at three vertical offsets, ignores the bot's own hierarchy, recognizes registered live/dead `VehicleRoot` colliders and unparented dynamic `Chassis` debris, and adds a side-step based on the bot's stable turn bias so a robot does not simply reverse into a queue.
 - Combat navigation uses `BotNavigator.SetTargetPosition` for tactical/map positions. The navigator treats those position targets separately from transform targets, keeps them active after reaching the last waypoint node, and drives the final segment directly to the requested tactical position until combat clears or changes it.
 - `SetTarget` and `SetTargetPosition` clear the current path and allow an immediate repath so bots do not wait on `repathCooldown` before reacting to a new combat navigation command.
 - `UpdateTargetPosition` refreshes a moving target's path without resetting steering smoothing or pivot state, preventing target-motion updates from producing artificial left/right body oscillation.
 - Progress tracking resets whenever a target or movement suppression state changes. Stuck recovery compares both traveled distance and real chassis yaw progress; a pivot that is not actually rotating can now trigger the reverse/turn escape maneuver instead of spinning indefinitely.
+- Dead `VehicleRoot` entries remain included in short-range dynamic avoidance, while `BotTargetValidator` continues to reject dead robots as combat targets. Detached Chassis parts are recognized after they leave the registered root, so bots steer around wreckage instead of driving through it.
 
 Current waypoint arrival behavior:
 - `waypointReachDistance` accepts a waypoint if the bot enters the reach radius.

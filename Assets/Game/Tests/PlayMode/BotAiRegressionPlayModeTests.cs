@@ -238,5 +238,54 @@ namespace Game.Tests.PlayMode
             Assert.IsTrue(realYawChange);
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator ProximityMaskAlwaysIncludesDeathChassisLayer()
+        {
+            int chassisLayer = LayerMask.NameToLayer("Chassis");
+            Assert.That(chassisLayer, Is.GreaterThanOrEqualTo(0));
+
+            Type navigatorType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
+            Assert.IsNotNull(navigatorType);
+            MethodInfo getMask = navigatorType.GetMethod(
+                "GetProximityMask",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(getMask);
+
+            LayerMask result = (LayerMask)getMask.Invoke(null, new object[] { (LayerMask)0 });
+            Assert.That(result.value & (1 << chassisLayer), Is.Not.EqualTo(0));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator DetachedDeathChassisColliderIsAnObstacle()
+        {
+            int chassisLayer = LayerMask.NameToLayer("Chassis");
+            Assert.That(chassisLayer, Is.GreaterThanOrEqualTo(0));
+
+            GameObject debrisObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Rigidbody debrisRigidbody = debrisObject.AddComponent<Rigidbody>();
+            debrisObject.layer = chassisLayer;
+            try
+            {
+                Type navigatorType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
+                Assert.IsNotNull(navigatorType);
+                MethodInfo isDeathDebris = navigatorType.GetMethod(
+                    "IsDeathDebrisCollider",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+                Assert.IsNotNull(isDeathDebris);
+
+                Collider collider = debrisObject.GetComponent<Collider>();
+                bool isObstacle = (bool)isDeathDebris.Invoke(null, new object[] { collider });
+                Assert.IsTrue(isObstacle);
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(debrisRigidbody);
+                UnityEngine.Object.Destroy(debrisObject);
+            }
+
+            yield return null;
+        }
     }
 }

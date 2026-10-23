@@ -14,7 +14,7 @@ namespace Game.Scripts.Gameplay.Robots
                 GameplaySpawner.In.RecordHitStats(attackerRoot, targetRoot, damage, willKill);
             }
 
-            targetHealth.ServerApplyDamage(damage);
+            targetHealth.ServerApplyDamage(damage, attackerRoot);
         }
     }
 }

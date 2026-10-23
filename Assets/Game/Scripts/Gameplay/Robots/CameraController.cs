@@ -12,6 +12,7 @@ namespace Game.Scripts.Gameplay.Robots
     public class CameraController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         private const int DefaultZoomStep = 0;
+        private const float DeathSpectatorIntroSeconds = 3f;
 
         public VehicleRoot vehicleRoot;
         public Transform rig;
@@ -25,6 +26,12 @@ namespace Game.Scripts.Gameplay.Robots
         private int _lastNonSniperZoomStep = DefaultZoomStep;
         private bool _sniperUiApplied;
         private bool _initialized;
+        private bool _deathSpectatorActive;
+        private bool _deathSpectatorIntroFinished;
+        private float _deathSpectatorIntroEndTime;
+        private int _pendingKillerObjectId = -1;
+        private VehicleRoot _spectatorTarget;
+        private VehicleRoot _spectatorVisibilityTarget;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
 
         public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
@@ -32,7 +39,16 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void SetVehicleRoot(VehicleRoot root)
         {
+            if (vehicleRoot != null && vehicleRoot.health != null)
+            {
+                vehicleRoot.health.OnClientDeath -= HandleClientDeath;
+            }
+
             vehicleRoot = root;
+            if (vehicleRoot != null && vehicleRoot.health != null)
+            {
+                vehicleRoot.health.OnClientDeath += HandleClientDeath;
+            }
         }
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
@@ -67,6 +83,19 @@ namespace Game.Scripts.Gameplay.Robots
             SyncGameplayCameraTransform();
         }
 
+        private void OnDestroy()
+        {
+            if (vehicleRoot != null && vehicleRoot.health != null)
+            {
+                vehicleRoot.health.OnClientDeath -= HandleClientDeath;
+            }
+
+            if (_spectatorVisibilityTarget != null && _spectatorVisibilityTarget.clientVisibility != null)
+            {
+                _spectatorVisibilityTarget.clientVisibility.SetSpectatorVisibility(false);
+            }
+        }
+
         public void RefreshSniperCameraPose()
         {
             if (!_initialized || !IsSniperModeActive)
@@ -87,17 +116,25 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
+                if (_deathSpectatorActive)
+                {
+                    UpdateDeathSpectator();
+                    if (!VehicleInputController.IsGameplayInputBlockedByUi)
+                    {
+                        UpdateDeathSpectatorInputs();
+                    }
+
+                    ApplyCameraTransform(false);
+                    SyncGameplayCameraTransform();
+                    UpdateFov();
+                    return;
+                }
+
                 bool inputBlocked = VehicleInputController.IsGameplayInputBlockedByUi;
                 if (!inputBlocked)
                 {
                     UpdateAimInputs();
-
-                    float mouseSensitivity = GetMouseSensitivity();
-                    _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-                    _X += Input.GetAxis("Mouse X") * _runtimeSettings.cameraHorizontalSpeed * mouseSensitivity * 0.02f;
-                    _Y -= Input.GetAxis("Mouse Y") * _runtimeSettings.cameraVerticalSpeed * mouseSensitivity * 0.02f;
-
-                    _Y = Mathf.Clamp(_Y, _runtimeSettings.cameraMinPitch, _runtimeSettings.cameraMaxPitch);
+                    UpdateOrbitInputs();
                 }
 
                 ApplyCameraTransform(false);
@@ -116,7 +153,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyCameraTransform(bool immediate)
         {
-            if (rig == null)
+            Transform cameraRig = GetCameraRig();
+            if (cameraRig == null)
             {
                 return;
             }
@@ -128,7 +166,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _currentDistance = _targetDistance;
                 transform.rotation = rotation;
                 transform.position = sniperPosition;
-                ResolveCameraCollision();
+                ResolveCameraCollision(cameraRig);
                 return;
             }
 
@@ -143,21 +181,183 @@ namespace Game.Scripts.Gameplay.Robots
                 _currentDistance = Mathf.Lerp(_currentDistance, _targetDistance, cameraT);
             }
 
-            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -_currentDistance) + rig.position;
+            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -_currentDistance) + cameraRig.position;
 
             transform.rotation = rotation;
             transform.position = position;
-            ResolveCameraCollision();
+            ResolveCameraCollision(cameraRig);
         }
 
-        private void ResolveCameraCollision()
+        private void ResolveCameraCollision(Transform cameraRig)
         {
-            if (collisionController == null || rig == null)
+            if (collisionController == null || cameraRig == null)
             {
                 return;
             }
 
-            collisionController.Resolve(rig.position);
+            collisionController.Resolve(cameraRig.position);
+        }
+
+        private void HandleClientDeath(int killerObjectId)
+        {
+            if (!_initialized || vehicleRoot == null || !vehicleRoot.IsOwner || vehicleRoot.IsMenu)
+            {
+                return;
+            }
+
+            _deathSpectatorActive = true;
+            _deathSpectatorIntroFinished = false;
+            _deathSpectatorIntroEndTime = Time.unscaledTime + DeathSpectatorIntroSeconds;
+            _pendingKillerObjectId = killerObjectId;
+
+            if (IsSniperModeActive)
+            {
+                ApplyZoomStep(DefaultZoomStep, true);
+            }
+
+            SetSpectatorTarget(vehicleRoot);
+            TryResolveKillerTarget();
+        }
+
+        private void UpdateDeathSpectator()
+        {
+            if (!_deathSpectatorIntroFinished)
+            {
+                TryResolveKillerTarget();
+                if (Time.unscaledTime < _deathSpectatorIntroEndTime)
+                {
+                    return;
+                }
+
+                _deathSpectatorIntroFinished = true;
+                _pendingKillerObjectId = -1;
+                SetSpectatorTarget(vehicleRoot);
+                return;
+            }
+
+            if (!VehicleInputController.IsGameplayInputBlockedByUi && Input.GetMouseButtonDown(0))
+            {
+                CycleSpectatorTarget();
+            }
+        }
+
+        private void TryResolveKillerTarget()
+        {
+            if (_pendingKillerObjectId < 0
+                || !VehicleColliderRegistry.TryGetRoot(_pendingKillerObjectId, out VehicleRoot killerRoot)
+                || !IsSpectatorCandidate(killerRoot))
+            {
+                return;
+            }
+
+            _pendingKillerObjectId = -1;
+            SetSpectatorTarget(killerRoot);
+        }
+
+        private void CycleSpectatorTarget()
+        {
+            int count = VehicleRoot.ActiveVehicleCount;
+            if (count <= 1)
+            {
+                return;
+            }
+
+            VehicleRoot currentTarget = _spectatorTarget != null ? _spectatorTarget : vehicleRoot;
+            int currentIndex = -1;
+            for (int vehicleIndex = 0; vehicleIndex < count; vehicleIndex++)
+            {
+                if (VehicleRoot.GetActiveVehicle(vehicleIndex) == currentTarget)
+                {
+                    currentIndex = vehicleIndex;
+                    break;
+                }
+            }
+
+            for (int offset = 1; offset <= count; offset++)
+            {
+                int candidateIndex = (currentIndex + offset + count) % count;
+                VehicleRoot candidate = VehicleRoot.GetActiveVehicle(candidateIndex);
+                if (!IsSpectatorCandidate(candidate))
+                {
+                    continue;
+                }
+
+                SetSpectatorTarget(candidate);
+                return;
+            }
+        }
+
+        private static bool IsSpectatorCandidate(VehicleRoot candidate)
+        {
+            return candidate != null
+                   && !candidate.IsMenu
+                   && candidate.health != null
+                   && candidate.networkObject != null
+                   && candidate.networkObject.IsSpawned;
+        }
+
+        private void SetSpectatorTarget(VehicleRoot target)
+        {
+            if (!IsSpectatorCandidate(target))
+            {
+                target = vehicleRoot;
+            }
+
+            if (target == null)
+            {
+                return;
+            }
+
+            if (_spectatorVisibilityTarget != null && _spectatorVisibilityTarget != target
+                && _spectatorVisibilityTarget.clientVisibility != null)
+            {
+                _spectatorVisibilityTarget.clientVisibility.SetSpectatorVisibility(false);
+            }
+
+            _spectatorTarget = target;
+            _spectatorVisibilityTarget = target;
+            if (target.clientVisibility != null)
+            {
+                target.clientVisibility.SetSpectatorVisibility(true);
+            }
+
+            Transform targetRig = GetTargetRig(target);
+            if (targetRig == null)
+            {
+                return;
+            }
+
+            Vector3 forward = targetRig.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude > 0.0001f)
+            {
+                _X = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+            }
+        }
+
+        private Transform GetCameraRig()
+        {
+            if (_deathSpectatorActive)
+            {
+                return GetTargetRig(_spectatorTarget);
+            }
+
+            return rig;
+        }
+
+        private static Transform GetTargetRig(VehicleRoot target)
+        {
+            if (target == null)
+            {
+                return null;
+            }
+
+            if (target.cameraController != null && target.cameraController.rig != null)
+            {
+                return target.cameraController.rig;
+            }
+
+            return target.transform;
         }
 
         private bool TryGetSniperCameraPosition(Quaternion cameraRotation, out Vector3 position)
@@ -235,6 +435,30 @@ namespace Game.Scripts.Gameplay.Robots
             else if (scrollDirection < 0)
             {
                 ZoomOut();
+            }
+        }
+
+        private void UpdateOrbitInputs()
+        {
+            float mouseSensitivity = GetMouseSensitivity();
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            _X += Input.GetAxis("Mouse X") * _runtimeSettings.cameraHorizontalSpeed * mouseSensitivity * 0.02f;
+            _Y -= Input.GetAxis("Mouse Y") * _runtimeSettings.cameraVerticalSpeed * mouseSensitivity * 0.02f;
+            _Y = Mathf.Clamp(_Y, _runtimeSettings.cameraMinPitch, _runtimeSettings.cameraMaxPitch);
+        }
+
+        private void UpdateDeathSpectatorInputs()
+        {
+            UpdateOrbitInputs();
+
+            int scrollDirection = GetScrollDirection();
+            if (scrollDirection < 0)
+            {
+                ZoomOut();
+            }
+            else if (scrollDirection > 0 && _currentZoomStep < DefaultZoomStep)
+            {
+                ZoomIn();
             }
         }
 

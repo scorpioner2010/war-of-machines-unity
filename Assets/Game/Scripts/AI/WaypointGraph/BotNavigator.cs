@@ -15,6 +15,8 @@ namespace Game.Scripts.AI.WaypointGraph
         private const int ProximityDirectionCount = 8;
         private const int ProximityVerticalRayCount = 3;
         private const int ProximityRaycastBufferSize = 32;
+        private const string DeathDebrisLayerName = "Chassis";
+        private static int _deathDebrisLayer = int.MinValue;
         private static readonly Vector3[] ProximityDirections =
         {
             Vector3.forward,
@@ -608,11 +610,6 @@ namespace Game.Scripts.AI.WaypointGraph
                     continue;
                 }
 
-                if (player.playerRoot.health != null && player.playerRoot.health.IsDead)
-                {
-                    continue;
-                }
-
                 Vector3 otherPosition = GetRootPosition(player.playerRoot);
                 Vector3 away = position - otherPosition;
                 away.y = 0f;
@@ -1039,6 +1036,7 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             Vector3 totalAvoidance = Vector3.zero;
+            LayerMask proximityMask = GetProximityMask(settings.proximityMask);
             for (int directionIndex = 0; directionIndex < ProximityDirectionCount; directionIndex++)
             {
                 Vector3 direction = moveTransform.TransformDirection(ProximityDirections[directionIndex]);
@@ -1058,14 +1056,15 @@ namespace Game.Scripts.AI.WaypointGraph
                             origin,
                             direction,
                             settings.proximityRayDistance,
-                            settings.proximityMask,
+                            proximityMask,
                             out VehicleRoot otherRoot,
+                            out Vector3 obstaclePosition,
                             out float hitDistance))
                     {
                         continue;
                     }
 
-                    Vector3 away = position - BotCombatUtility.GetMovePosition(otherRoot);
+                    Vector3 away = position - obstaclePosition;
                     away.y = 0f;
                     if (away.sqrMagnitude <= 0.0001f)
                     {
@@ -1108,9 +1107,11 @@ namespace Game.Scripts.AI.WaypointGraph
             float distance,
             LayerMask mask,
             out VehicleRoot otherRoot,
+            out Vector3 obstaclePosition,
             out float hitDistance)
         {
             otherRoot = null;
+            obstaclePosition = default;
             hitDistance = float.PositiveInfinity;
             int hitCount = Physics.RaycastNonAlloc(
                 origin,
@@ -1135,29 +1136,86 @@ namespace Game.Scripts.AI.WaypointGraph
                     nearestColliderDistance = currentDistance;
                 }
 
-                if (!VehicleColliderRegistry.TryGetRoot(collider, out VehicleRoot candidateRoot)
-                    || candidateRoot == null
-                    || candidateRoot == _vehicleRoot
-                    || (candidateRoot.health != null && candidateRoot.health.IsDead))
+                if (VehicleColliderRegistry.TryGetRoot(collider, out VehicleRoot candidateRoot))
+                {
+                    if (candidateRoot == null || candidateRoot == _vehicleRoot)
+                    {
+                        continue;
+                    }
+
+                    Vector3 candidatePosition = BotCombatUtility.GetMovePosition(candidateRoot);
+                    if (currentDistance < hitDistance)
+                    {
+                        otherRoot = candidateRoot;
+                        obstaclePosition = candidatePosition;
+                        hitDistance = currentDistance;
+                    }
+
+                    continue;
+                }
+
+                if (!IsDeathDebrisCollider(collider))
                 {
                     continue;
                 }
 
+                Vector3 debrisPosition = _proximityRaycastBuffer[i].point;
+                if ((debrisPosition - origin).sqrMagnitude <= 0.0001f)
+                {
+                    debrisPosition = collider.bounds.center;
+                }
+
                 if (currentDistance < hitDistance)
                 {
-                    otherRoot = candidateRoot;
+                    otherRoot = null;
+                    obstaclePosition = debrisPosition;
                     hitDistance = currentDistance;
                 }
             }
 
-            if (otherRoot == null || hitDistance > nearestColliderDistance + 0.05f)
+            if (hitDistance == float.PositiveInfinity || hitDistance > nearestColliderDistance + 0.05f)
             {
                 otherRoot = null;
+                obstaclePosition = default;
                 hitDistance = 0f;
                 return false;
             }
 
             return true;
+        }
+
+        private static LayerMask GetProximityMask(LayerMask configuredMask)
+        {
+            if (_deathDebrisLayer == int.MinValue)
+            {
+                _deathDebrisLayer = LayerMask.NameToLayer(DeathDebrisLayerName);
+            }
+
+            if (_deathDebrisLayer < 0)
+            {
+                return configuredMask;
+            }
+
+            configuredMask.value |= 1 << _deathDebrisLayer;
+            return configuredMask;
+        }
+
+        private static bool IsDeathDebrisCollider(Collider collider)
+        {
+            if (collider == null)
+            {
+                return false;
+            }
+
+            if (_deathDebrisLayer == int.MinValue)
+            {
+                _deathDebrisLayer = LayerMask.NameToLayer(DeathDebrisLayerName);
+            }
+
+            return _deathDebrisLayer >= 0
+                   && collider.gameObject.layer == _deathDebrisLayer
+                   && collider.attachedRigidbody != null
+                   && collider.transform.parent == null;
         }
 
         private void OnDrawGizmosSelected()
