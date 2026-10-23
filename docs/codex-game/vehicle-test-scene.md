@@ -29,7 +29,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/Testing/VehicleTestRuntimeSettings.cs`
   - Builds test runtime stats for reload/ammo overrides.
   - Applies test-only weapon accuracy debug mode to the spawned vehicle.
-  - Creates optional hit marker spheres in `VehicleTest`.
+  - `disableCameraShake` applies a non-persistent camera-shake override through `ClientGameplaySettings` while the VehicleTest settings component is active and a test vehicle is being applied; disabling or destroying the component restores the saved gameplay preference.
+  - `PooledImpactFx` consumes the effective `ClientGameplaySettings.CameraShakeEnabled` value, so the override suppresses impact camera shake without changing impact placement, projectile resolution, or the saved settings file.
+  - Creates optional hit-marker spheres for authoritative projectile hits in the legacy `VehicleTest` scene and in the editor-only `Client.unity` test mode when `ClientVehicleTestMode.IsEnabled` is true. Normal Client gameplay never enables this debug marker path.
 
 Rendering prerequisites:
 - The serialized `VehicleTest` camera and the `Client.unity` Test Mode camera use HDR plus an explicit URP `UniversalAdditionalCameraData` component with post-processing enabled and the Default volume layer selected. This is required for impact-crack emission, projectile/tracer emission, and the CFXR Explosion glow to reach the default Bloom profile during Play Mode verification.

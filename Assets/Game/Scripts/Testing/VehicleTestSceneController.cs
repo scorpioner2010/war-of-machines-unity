@@ -636,14 +636,8 @@ namespace Game.Scripts.Testing
 
             GunDispersionGlobalSettings dispersionSettings = ServerSettings.GetGunDispersion();
             float dispersionDeg = dispersionSettings.GetAccuracyDispersionDeg(stats.Accuracy, 0f);
-            GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            CameraZoomProfile defaultZoom = runtimeSettings.cameraZoomDefault;
-            CameraZoomProfile firstForwardZoom = runtimeSettings.cameraZoomForwardSteps != null
-                && runtimeSettings.cameraZoomForwardSteps.Length > 0
-                ? runtimeSettings.cameraZoomForwardSteps[0]
-                : defaultZoom;
             DrawStatRow("Full aim spread", dispersionDeg.ToString("0.###") + "°");
-            DrawStatRow("Aim ring base", defaultZoom.reticleBaseDiameter.ToString("0.#") + " / " + firstForwardZoom.reticleBaseDiameter.ToString("0.#") + " UI");
+            DrawStatRow("Aim ring", dispersionSettings.uiMinDiameter.ToString("0.#") + " - " + dispersionSettings.uiMaxDiameter.ToString("0.#") + " UI");
 
             DrawStatSection("Mobility");
             DrawStatRow("Speed", stats.Speed.ToString("0.#"));

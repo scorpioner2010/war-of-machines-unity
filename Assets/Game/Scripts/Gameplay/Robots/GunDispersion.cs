@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -43,16 +44,31 @@ namespace Game.Scripts.Gameplay.Robots
         public float accuracyReferenceDistanceMeters = 100f;
 
         [Header("Інтерфейс")]
-        [Tooltip("Швидкість згладжування діаметра кільця, яке розраховується окремою камерною проєкцією конуса пострілу.")]
-        public float reticleDiameterLerpSpeed = 18f;
+        [Tooltip("Мінімальний діаметр UI-кола зведення в пікселях навіть при ідеально точній гарматі.")]
+        public float uiMinDiameter = 55f;
+        [Tooltip("Максимальний діаметр UI-кола зведення в пікселях.")]
+        public float uiMaxDiameter = 340f;
+        [Tooltip("Скільки пікселів на градус точності додається до повністю зведеного кола в максимальному зумі/снайперському режимі.")]
+        [FormerlySerializedAs("uiFullyAimedPixelsPerDegree")]
+        public float uiFullyAimedPixelsPerDegreeAtMaxZoom = 85f;
+        [Tooltip("Скільки пікселів на градус точності додається до повністю зведеного кола на максимальній дистанції камери від третьої особи.")]
+        public float uiFullyAimedPixelsPerDegreeAtMaxDistance = 34f;
+        [Tooltip("Скільки пікселів на градус поточного розкиду понад мінімальний додається в максимальному зумі/снайперському режимі.")]
+        [FormerlySerializedAs("uiPixelsPerDegree")]
+        public float uiBloomPixelsPerDegreeAtMaxZoom = 42f;
+        [Tooltip("Скільки пікселів на градус поточного розкиду понад мінімальний додається на максимальній дистанції камери від третьої особи.")]
+        public float uiBloomPixelsPerDegreeAtMaxDistance = 17f;
+        [Tooltip("Швидкість згладжування діаметра UI-кола зведення. 0 = діаметр змінюється миттєво.")]
+        public float uiDiameterLerpSpeed = 18f;
         [Tooltip("Швидкість, з якою UI-коло доганяє логічну точку прицілу по горизонталі. 0 = горизонталь миттєва.")]
-        public float reticleHorizontalLerpSpeed = 20f;
+        public float uiReticleHorizontalLerpSpeed = 20f;
         [Tooltip("Швидкість, з якою UI-коло доганяє логічну точку прицілу по вертикалі. 0 = вертикаль миттєва.")]
-        public float reticleVerticalLerpSpeed = 20f;
+        [FormerlySerializedAs("uiReticlePositionLerpSpeed")]
+        public float uiReticleVerticalLerpSpeed = 20f;
         [Tooltip("Швидкість, з якою UI-коло в снайперському режимі доганяє логічну точку прицілу по горизонталі. Менше значення сильніше згладжує дрібне смикання, 0 = миттєво.")]
-        public float reticleSniperHorizontalLerpSpeed = 18f;
+        public float uiSniperReticleHorizontalLerpSpeed = 18f;
         [Tooltip("Швидкість, з якою UI-коло в снайперському режимі доганяє логічну точку прицілу по вертикалі. Менше значення сильніше згладжує дрібне смикання, 0 = миттєво.")]
-        public float reticleSniperVerticalLerpSpeed = 18f;
+        public float uiSniperReticleVerticalLerpSpeed = 18f;
 
         [Header("Мережа")]
         [Tooltip("Як часто сервер синхронізує значення розкиду з клієнтами. Менше значення = частіше оновлення, але більше мережевого трафіку.")]
@@ -66,6 +82,57 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 return DefaultSettings;
             }
+        }
+
+        public float GetUiDiameter(float dispersionDeg, float fullyAimedDispersionDeg)
+        {
+            return GetUiDiameter(dispersionDeg, fullyAimedDispersionDeg, 1f);
+        }
+
+        public float GetUiDiameter(float dispersionDeg, float fullyAimedDispersionDeg, float cameraZoom01)
+        {
+            return GetUiDiameter(dispersionDeg, fullyAimedDispersionDeg, cameraZoom01, float.NaN);
+        }
+
+        public float GetUiDiameter(
+            float dispersionDeg,
+            float fullyAimedDispersionDeg,
+            float cameraZoom01,
+            float aimingCircleDiameter)
+        {
+            Validate();
+
+            bool hasDiameterOverride = !float.IsNaN(aimingCircleDiameter)
+                                       && !float.IsInfinity(aimingCircleDiameter);
+            if (hasDiameterOverride)
+            {
+                float profileFullyAimedDeg = Mathf.Max(0f, fullyAimedDispersionDeg);
+                float profileCurrentDeg = Mathf.Max(profileFullyAimedDeg, dispersionDeg);
+                float profileZoom = Clamp01Finite(cameraZoom01, 1f);
+                float profileBloomPixelsPerDegree = Mathf.Lerp(
+                    uiBloomPixelsPerDegreeAtMaxDistance,
+                    uiBloomPixelsPerDegreeAtMaxZoom,
+                    profileZoom);
+                float profileBloomDiameter = Mathf.Max(0f, profileCurrentDeg - profileFullyAimedDeg)
+                                             * profileBloomPixelsPerDegree;
+                return Mathf.Max(0f, aimingCircleDiameter) + profileBloomDiameter;
+            }
+
+            float fullyAimedDeg = Mathf.Max(0f, fullyAimedDispersionDeg);
+            float currentDeg = Mathf.Max(fullyAimedDeg, dispersionDeg);
+            float zoom = Clamp01Finite(cameraZoom01, 1f);
+            float fullyAimedPixelsPerDegree = Mathf.Lerp(
+                uiFullyAimedPixelsPerDegreeAtMaxDistance,
+                uiFullyAimedPixelsPerDegreeAtMaxZoom,
+                zoom);
+            float bloomPixelsPerDegree = Mathf.Lerp(
+                uiBloomPixelsPerDegreeAtMaxDistance,
+                uiBloomPixelsPerDegreeAtMaxZoom,
+                zoom);
+            float fullyAimedDiameter = fullyAimedDeg * fullyAimedPixelsPerDegree;
+            float bloomDiameter = Mathf.Max(0f, currentDeg - fullyAimedDeg) * bloomPixelsPerDegree;
+            float diameter = uiMinDiameter + fullyAimedDiameter + bloomDiameter;
+            return Mathf.Clamp(diameter, uiMinDiameter, uiMaxDiameter);
         }
 
         public float GetAccuracyDispersionDeg(float accuracyMetersAtReferenceDistance, float fallbackDispersionDeg)
@@ -86,11 +153,22 @@ namespace Game.Scripts.Gameplay.Robots
         public void Validate()
         {
             accuracyReferenceDistanceMeters = ClampFinite(accuracyReferenceDistanceMeters, 0.0001f, Default.accuracyReferenceDistanceMeters);
-            reticleDiameterLerpSpeed = ClampFinite(reticleDiameterLerpSpeed, 0f, Default.reticleDiameterLerpSpeed);
-            reticleHorizontalLerpSpeed = ClampFinite(reticleHorizontalLerpSpeed, 0f, Default.reticleHorizontalLerpSpeed);
-            reticleVerticalLerpSpeed = ClampFinite(reticleVerticalLerpSpeed, 0f, Default.reticleVerticalLerpSpeed);
-            reticleSniperHorizontalLerpSpeed = ClampFinite(reticleSniperHorizontalLerpSpeed, 0f, Default.reticleSniperHorizontalLerpSpeed);
-            reticleSniperVerticalLerpSpeed = ClampFinite(reticleSniperVerticalLerpSpeed, 0f, Default.reticleSniperVerticalLerpSpeed);
+            uiMinDiameter = ClampFinite(uiMinDiameter, 1f, Default.uiMinDiameter);
+            uiMaxDiameter = ClampFinite(uiMaxDiameter, uiMinDiameter, Default.uiMaxDiameter);
+            if (uiMaxDiameter < uiMinDiameter)
+            {
+                uiMaxDiameter = uiMinDiameter;
+            }
+
+            uiFullyAimedPixelsPerDegreeAtMaxZoom = ClampFinite(uiFullyAimedPixelsPerDegreeAtMaxZoom, 0f, Default.uiFullyAimedPixelsPerDegreeAtMaxZoom);
+            uiFullyAimedPixelsPerDegreeAtMaxDistance = ClampFinite(uiFullyAimedPixelsPerDegreeAtMaxDistance, 0f, Default.uiFullyAimedPixelsPerDegreeAtMaxDistance);
+            uiBloomPixelsPerDegreeAtMaxZoom = ClampFinite(uiBloomPixelsPerDegreeAtMaxZoom, 0f, Default.uiBloomPixelsPerDegreeAtMaxZoom);
+            uiBloomPixelsPerDegreeAtMaxDistance = ClampFinite(uiBloomPixelsPerDegreeAtMaxDistance, 0f, Default.uiBloomPixelsPerDegreeAtMaxDistance);
+            uiDiameterLerpSpeed = ClampFinite(uiDiameterLerpSpeed, 0f, Default.uiDiameterLerpSpeed);
+            uiReticleHorizontalLerpSpeed = ClampFinite(uiReticleHorizontalLerpSpeed, 0f, Default.uiReticleHorizontalLerpSpeed);
+            uiReticleVerticalLerpSpeed = ClampFinite(uiReticleVerticalLerpSpeed, 0f, Default.uiReticleVerticalLerpSpeed);
+            uiSniperReticleHorizontalLerpSpeed = ClampFinite(uiSniperReticleHorizontalLerpSpeed, 0f, Default.uiSniperReticleHorizontalLerpSpeed);
+            uiSniperReticleVerticalLerpSpeed = ClampFinite(uiSniperReticleVerticalLerpSpeed, 0f, Default.uiSniperReticleVerticalLerpSpeed);
             expandTime = ClampFinite(expandTime, 0.001f, Default.expandTime);
             serverSyncInterval = ClampFinite(serverSyncInterval, 0.001f, Default.serverSyncInterval);
             serverSyncDeadZoneDeg = ClampFinite(serverSyncDeadZoneDeg, 0f, Default.serverSyncDeadZoneDeg);
@@ -106,11 +184,17 @@ namespace Game.Scripts.Gameplay.Robots
             enabled = source.enabled;
             expandTime = source.expandTime;
             accuracyReferenceDistanceMeters = source.accuracyReferenceDistanceMeters;
-            reticleDiameterLerpSpeed = source.reticleDiameterLerpSpeed;
-            reticleHorizontalLerpSpeed = source.reticleHorizontalLerpSpeed;
-            reticleVerticalLerpSpeed = source.reticleVerticalLerpSpeed;
-            reticleSniperHorizontalLerpSpeed = source.reticleSniperHorizontalLerpSpeed;
-            reticleSniperVerticalLerpSpeed = source.reticleSniperVerticalLerpSpeed;
+            uiMinDiameter = source.uiMinDiameter;
+            uiMaxDiameter = source.uiMaxDiameter;
+            uiFullyAimedPixelsPerDegreeAtMaxZoom = source.uiFullyAimedPixelsPerDegreeAtMaxZoom;
+            uiFullyAimedPixelsPerDegreeAtMaxDistance = source.uiFullyAimedPixelsPerDegreeAtMaxDistance;
+            uiBloomPixelsPerDegreeAtMaxZoom = source.uiBloomPixelsPerDegreeAtMaxZoom;
+            uiBloomPixelsPerDegreeAtMaxDistance = source.uiBloomPixelsPerDegreeAtMaxDistance;
+            uiDiameterLerpSpeed = source.uiDiameterLerpSpeed;
+            uiReticleHorizontalLerpSpeed = source.uiReticleHorizontalLerpSpeed;
+            uiReticleVerticalLerpSpeed = source.uiReticleVerticalLerpSpeed;
+            uiSniperReticleHorizontalLerpSpeed = source.uiSniperReticleHorizontalLerpSpeed;
+            uiSniperReticleVerticalLerpSpeed = source.uiSniperReticleVerticalLerpSpeed;
             serverSyncInterval = source.serverSyncInterval;
             serverSyncDeadZoneDeg = source.serverSyncDeadZoneDeg;
         }
@@ -128,6 +212,16 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return Mathf.Max(minValue, value);
+        }
+
+        private static float Clamp01Finite(float value, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                return Mathf.Clamp01(fallback);
+            }
+
+            return Mathf.Clamp01(value);
         }
 
     }

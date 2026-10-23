@@ -794,53 +794,45 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             GunDispersionGlobalSettings globalDispersion = GetGlobalDispersion();
+            float uiZoom01 = GetCrosshairUiZoom01();
+            float aimingCircleDiameter = GetCrosshairAimingCircleDiameter();
             float localDeg = _testAccuracyDebugMode ? dispersion.MinDispersion : _ownerDispersion.CurrentDeg;
+            float localDiameter = globalDispersion.GetUiDiameter(
+                localDeg,
+                dispersion.MinDispersion,
+                uiZoom01,
+                aimingCircleDiameter);
             float serverDeg = _testAccuracyDebugMode
                 ? localDeg
                 : _serverDispersionDeg.Value > 0f ? _serverDispersionDeg.Value : _ownerDispersion.CurrentDeg;
-            float authoritativeDeg = serverDeg;
-            float localDiameter = GetCrosshairDiameter(authoritativeDeg);
-            float serverDiameter = GetCrosshairDiameter(serverDeg);
-            _crosshair.SetAimingDiameters(localDiameter, serverDiameter, globalDispersion.reticleDiameterLerpSpeed);
-            _crosshair.SetAimStatus(authoritativeDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
+            float serverDiameter = globalDispersion.GetUiDiameter(
+                serverDeg,
+                dispersion.MinDispersion,
+                uiZoom01,
+                aimingCircleDiameter);
+            _crosshair.SetAimingDiameters(localDiameter, serverDiameter, globalDispersion.uiDiameterLerpSpeed);
+            _crosshair.SetAimStatus(localDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
         }
 
-        private float GetCrosshairDiameter(float dispersionDeg)
+        private float GetCrosshairUiZoom01()
         {
-            GameplayRuntimeSettings runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            CameraZoomProfile defaultProfile = runtimeSettings.cameraZoomDefault ?? GameplayRuntimeSettings.Default.cameraZoomDefault;
-            CameraZoomProfile currentProfile = vehicleRoot != null && vehicleRoot.cameraController != null
-                ? vehicleRoot.cameraController.CurrentZoomProfile
-                : defaultProfile;
-            float reticleMultiplier = Mathf.Max(0f, currentProfile.reticleDiameterMultiplier);
-            float calibratedMinimumDiameter = Mathf.Max(0f, currentProfile.reticleBaseDiameter) * reticleMultiplier;
-            float minimumDispersionDeg = dispersion != null ? dispersion.MinDispersion : 0f;
-            float safeDispersionDeg = Mathf.Max(minimumDispersionDeg, dispersionDeg);
-            Camera camera = CameraSync.In != null ? CameraSync.In.gameplayCamera : null;
-            WeaponAimController weaponAim = vehicleRoot != null ? vehicleRoot.weaponAimAtCamera : null;
-            Transform originTransform = muzzleTransform != null
-                ? muzzleTransform
-                : weaponAim != null && weaponAim.gun != null ? weaponAim.gun : transform;
-            if (camera == null || weaponAim == null || originTransform == null)
+            if (vehicleRoot == null || vehicleRoot.cameraController == null)
             {
-                return Mathf.Max(1f, calibratedMinimumDiameter);
+                return 1f;
             }
 
-            Vector3 origin = originTransform.position;
-            Vector3 aimPoint = weaponAim.GetCurrentAimPointForOrigin(origin);
-            if (!DispersionConeProjection.TryGetScreenDiameter(camera, origin, aimPoint, safeDispersionDeg, out float currentScreenDiameter)
-                || !DispersionConeProjection.TryGetScreenDiameter(camera, origin, aimPoint, minimumDispersionDeg, out float minimumScreenDiameter))
+            return vehicleRoot.cameraController.GetAimUiZoom01();
+        }
+
+        private float GetCrosshairAimingCircleDiameter()
+        {
+            if (vehicleRoot == null || vehicleRoot.cameraController == null)
             {
-                return Mathf.Max(1f, calibratedMinimumDiameter);
+                return float.NaN;
             }
 
-            float currentCanvasDiameter = _crosshair.ScreenPixelsToCanvasUnits(currentScreenDiameter);
-            float minimumCanvasDiameter = _crosshair.ScreenPixelsToCanvasUnits(minimumScreenDiameter);
-            float physicalDiameter = currentCanvasDiameter * reticleMultiplier;
-            float physicalMinimumDiameter = minimumCanvasDiameter * reticleMultiplier;
-            float fullyAimedDiameter = Mathf.Max(calibratedMinimumDiameter, physicalMinimumDiameter);
-            float physicalDispersionExpansion = Mathf.Max(0f, physicalDiameter - physicalMinimumDiameter);
-            return Mathf.Max(1f, fullyAimedDiameter + physicalDispersionExpansion);
+            CameraZoomProfile profile = vehicleRoot.cameraController.CurrentZoomProfile;
+            return profile != null ? profile.aimingCircleDiameter : float.NaN;
         }
 
         private GunDispersionGlobalSettings GetGlobalDispersion()

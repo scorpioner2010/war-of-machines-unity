@@ -51906,44 +51906,59 @@ MonoBehaviour:
     autoAimFallbackTargetHeight: 1.2
     autoAimRejectSameTeam: 1
     autoAimPreferTurretTarget: 1
-    cameraZoomDefault:
-      cameraDistance: 3
-      fieldOfView: 60
-      reticleBaseDiameter: 50
-      reticleDiameterMultiplier: 1
-      showReticle: 0
-    cameraZoomForwardSteps:
-    - cameraDistance: 1.38
-      fieldOfView: 50
-      reticleBaseDiameter: 62
-      reticleDiameterMultiplier: 1
-      showReticle: 0
-    - cameraDistance: 0.01
-      fieldOfView: 45
-      reticleBaseDiameter: 77
-      reticleDiameterMultiplier: 1
-      showReticle: 0
-    - cameraDistance: 0.01
-      fieldOfView: 35
-      reticleBaseDiameter: 100
-      reticleDiameterMultiplier: 1
+    cameraZoomProfiles:
+    - zoomIndex: 7
+      cameraDistance: 0.01
+      fieldOfView: 10
+      aimingCircleDiameter: 366
       showReticle: 1
-    - cameraDistance: 0.01
+    - zoomIndex: 6
+      cameraDistance: 0.01
       fieldOfView: 20
-      reticleBaseDiameter: 150
-      reticleDiameterMultiplier: 1
+      aimingCircleDiameter: 189
       showReticle: 1
-    cameraZoomBackwardSteps:
-    - cameraDistance: 4
+    - zoomIndex: 5
+      cameraDistance: 0.01
+      fieldOfView: 30
+      aimingCircleDiameter: 125
+      showReticle: 1
+    - zoomIndex: 4
+      cameraDistance: 0.01
+      fieldOfView: 45
+      aimingCircleDiameter: 80
+      showReticle: 1
+    - zoomIndex: 3
+      cameraDistance: 0.15
       fieldOfView: 60
-      reticleBaseDiameter: 45
-      reticleDiameterMultiplier: 1
+      aimingCircleDiameter: 58
       showReticle: 0
-    - cameraDistance: 6
+    - zoomIndex: 2
+      cameraDistance: 2
       fieldOfView: 60
-      reticleBaseDiameter: 40
-      reticleDiameterMultiplier: 1
+      aimingCircleDiameter: 54
       showReticle: 0
+    - zoomIndex: 1
+      cameraDistance: 3.5
+      fieldOfView: 60
+      aimingCircleDiameter: 53
+      showReticle: 0
+    - zoomIndex: 0
+      cameraDistance: 4.5
+      fieldOfView: 60
+      aimingCircleDiameter: 49
+      showReticle: 0
+    - zoomIndex: -1
+      cameraDistance: 5
+      fieldOfView: 70
+      aimingCircleDiameter: 40
+      showReticle: 0
+    - zoomIndex: -2
+      cameraDistance: 6
+      fieldOfView: 75
+      aimingCircleDiameter: 38
+      showReticle: 0
+    runtimeZoomOverrideEnabled: 0
+    runtimeZoomIndex: 0
     cameraSniperFromMuzzle: 1
     cameraSniperForwardOffset: 0.15
     cameraSniperVerticalOffset: 0
@@ -52232,12 +52247,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   activateTestParameters: 0
-  reloadTime: 0.1
-  shellsCount: 999
+  reloadTime: 0.01
+  shellsCount: 9999
   forceFullyAimedAccuracyOnly: 0
+  disableCameraShake: 1
   createHitMarkerSphere: 0
-  hitMarkerRadius: 0.18
-  hitMarkerColor: {r: 1, g: 0.052777845, b: 0.05098039, a: 1}
+  hitMarkerRadius: 0.2
+  hitMarkerColor: {r: 0, g: 0.4693768, b: 1, a: 1}
 --- !u!1 &2000100000020
 GameObject:
   m_ObjectHideFlags: 0

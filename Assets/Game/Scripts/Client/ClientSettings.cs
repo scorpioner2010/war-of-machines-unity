@@ -49,14 +49,15 @@ namespace Game.Scripts.Client
     [System.Serializable]
     public class CameraZoomProfile
     {
+        [Tooltip("Zoom index: 0 is default, positive values zoom in, negative values zoom out.")]
+        public int zoomIndex;
         [Min(0.01f)]
         public float cameraDistance = 10f;
         [Range(1f, 179f)]
         public float fieldOfView = 60f;
         [Min(0f)]
-        public float reticleBaseDiameter = 50f;
-        [Min(0f)]
-        public float reticleDiameterMultiplier = 1f;
+        [Tooltip("Базовий діаметр круга у повністю зведеному стані для цього zoom-профілю в UI-пікселях. Значення 0 або менше 1 відображаються як мінімальні 1x1 UI-піксель; при розкиді вище повністю зведеного діаметра bloom додається поверх бази.")]
+        public float aimingCircleDiameter = 55f;
         [Tooltip("Показувати чорний круг снайперського прицілу з центральним прицілом. Для forward-профілю true позначає цей крок як снайперський.")]
         public bool showReticle = false;
 
@@ -64,10 +65,10 @@ namespace Game.Scripts.Client
         {
             return new CameraZoomProfile
             {
+                zoomIndex = zoomIndex,
                 cameraDistance = cameraDistance,
                 fieldOfView = fieldOfView,
-                reticleBaseDiameter = reticleBaseDiameter,
-                reticleDiameterMultiplier = reticleDiameterMultiplier,
+                aimingCircleDiameter = aimingCircleDiameter,
                 showReticle = showReticle
             };
         }
@@ -77,8 +78,7 @@ namespace Game.Scripts.Client
             CameraZoomProfile safeFallback = fallback ?? new CameraZoomProfile();
             cameraDistance = ClampFinite(cameraDistance, 0.01f, safeFallback.cameraDistance);
             fieldOfView = Mathf.Clamp(ClampFinite(fieldOfView, 1f, safeFallback.fieldOfView), 1f, 179f);
-            reticleBaseDiameter = ClampFinite(reticleBaseDiameter, 0f, safeFallback.reticleBaseDiameter);
-            reticleDiameterMultiplier = ClampFinite(reticleDiameterMultiplier, 0f, safeFallback.reticleDiameterMultiplier);
+            aimingCircleDiameter = ClampFinite(aimingCircleDiameter, 0f, safeFallback.aimingCircleDiameter);
         }
 
         private static float ClampFinite(float value, float minValue, float fallback)
@@ -145,28 +145,21 @@ namespace Game.Scripts.Client
         public bool autoAimPreferTurretTarget = true;
 
         [Header("Камера")]
-        [Tooltip("Базовий профіль зума з абсолютними значеннями дистанції, FOV і кільця.")]
-        public CameraZoomProfile cameraZoomDefault = new CameraZoomProfile
+        [Tooltip("Єдиний масив zoom-профілів. Вкажіть zoomIndex: 0 — базовий, додатні значення — наближення, від'ємні — віддалення.")]
+        public CameraZoomProfile[] cameraZoomProfiles =
         {
-            cameraDistance = 10f,
-            fieldOfView = 60f,
-            reticleBaseDiameter = 50f,
-            reticleDiameterMultiplier = 1f
+            new CameraZoomProfile { zoomIndex = 0, cameraDistance = 10f, fieldOfView = 60f },
+            new CameraZoomProfile { zoomIndex = 1, cameraDistance = 6f, fieldOfView = 50f },
+            new CameraZoomProfile { zoomIndex = 2, cameraDistance = 4f, fieldOfView = 45f },
+            new CameraZoomProfile { zoomIndex = 3, cameraDistance = 2.5f, fieldOfView = 40f },
+            new CameraZoomProfile { zoomIndex = 4, cameraDistance = 0.25f, fieldOfView = 24f, showReticle = true },
+            new CameraZoomProfile { zoomIndex = -1, cameraDistance = 12f, fieldOfView = 68f },
+            new CameraZoomProfile { zoomIndex = -2, cameraDistance = 15f, fieldOfView = 76f }
         };
-        [Tooltip("Кроки колеса вперед: елемент 0 є першим кроком від базового профілю.")]
-        public CameraZoomProfile[] cameraZoomForwardSteps =
-        {
-            new CameraZoomProfile { cameraDistance = 6f, fieldOfView = 50f, reticleBaseDiameter = 50f, reticleDiameterMultiplier = 1f },
-            new CameraZoomProfile { cameraDistance = 4f, fieldOfView = 45f, reticleBaseDiameter = 60f, reticleDiameterMultiplier = 1f },
-            new CameraZoomProfile { cameraDistance = 2.5f, fieldOfView = 40f, reticleBaseDiameter = 75f, reticleDiameterMultiplier = 1f },
-            new CameraZoomProfile { cameraDistance = 0.25f, fieldOfView = 24f, reticleBaseDiameter = 50f, reticleDiameterMultiplier = 1f, showReticle = true }
-        };
-        [Tooltip("Кроки колеса назад: елемент 0 є першим кроком від базового профілю.")]
-        public CameraZoomProfile[] cameraZoomBackwardSteps =
-        {
-            new CameraZoomProfile { cameraDistance = 12f, fieldOfView = 68f, reticleBaseDiameter = 55f, reticleDiameterMultiplier = 1f },
-            new CameraZoomProfile { cameraDistance = 15f, fieldOfView = 76f, reticleBaseDiameter = 60f, reticleDiameterMultiplier = 1f }
-        };
+        [Tooltip("Увімкнути примусове перемикання локального зуму з параметра runtimeZoomIndex під час Play Mode. Працює як колесо миші, але значення з інспектора має пріоритет.")]
+        public bool runtimeZoomOverrideEnabled = false;
+        [Tooltip("Поточний signed zoomIndex із cameraZoomProfiles, який примусово застосовується в реальному часі, коли runtimeZoomOverrideEnabled увімкнено. Наприклад: 0 — default, 1 — один крок наближення, -1 — один крок віддалення.")]
+        public int runtimeZoomIndex = 0;
         [Tooltip("У снайперському режимі брати точку камери від дула, якщо воно доступне.")]
         public bool cameraSniperFromMuzzle = true;
         [Tooltip("Зміщення снайперської камери вперед від точки прив'язки.")]
@@ -339,11 +332,9 @@ namespace Game.Scripts.Client
             autoAimFallbackTargetHeight = source.autoAimFallbackTargetHeight;
             autoAimRejectSameTeam = source.autoAimRejectSameTeam;
             autoAimPreferTurretTarget = source.autoAimPreferTurretTarget;
-            cameraZoomDefault = source.cameraZoomDefault != null
-                ? source.cameraZoomDefault.Clone()
-                : Default.cameraZoomDefault.Clone();
-            cameraZoomForwardSteps = CloneZoomProfiles(source.cameraZoomForwardSteps);
-            cameraZoomBackwardSteps = CloneZoomProfiles(source.cameraZoomBackwardSteps);
+            cameraZoomProfiles = CloneZoomProfiles(source.cameraZoomProfiles);
+            runtimeZoomOverrideEnabled = source.runtimeZoomOverrideEnabled;
+            runtimeZoomIndex = source.runtimeZoomIndex;
             cameraSniperFromMuzzle = source.cameraSniperFromMuzzle;
             cameraSniperForwardOffset = source.cameraSniperForwardOffset;
             cameraSniperVerticalOffset = source.cameraSniperVerticalOffset;
@@ -379,14 +370,7 @@ namespace Game.Scripts.Client
 
         private void ValidateCameraZoomProfiles()
         {
-            if (cameraZoomDefault == null)
-            {
-                cameraZoomDefault = Default.cameraZoomDefault.Clone();
-            }
-
-            cameraZoomDefault.Validate(Default.cameraZoomDefault);
-            cameraZoomForwardSteps = ValidateZoomProfiles(cameraZoomForwardSteps, Default.cameraZoomForwardSteps);
-            cameraZoomBackwardSteps = ValidateZoomProfiles(cameraZoomBackwardSteps, Default.cameraZoomBackwardSteps);
+            cameraZoomProfiles = ValidateZoomProfiles(cameraZoomProfiles, Default.cameraZoomProfiles);
         }
 
         private static CameraZoomProfile[] ValidateZoomProfiles(
@@ -407,13 +391,31 @@ namespace Game.Scripts.Client
                         : new CameraZoomProfile();
                 }
 
-                CameraZoomProfile fallback = fallbackProfiles != null && i < fallbackProfiles.Length
-                    ? fallbackProfiles[i]
-                    : Default.cameraZoomDefault;
+                CameraZoomProfile fallback = FindZoomProfile(fallbackProfiles, profiles[i].zoomIndex)
+                    ?? FindZoomProfile(Default.cameraZoomProfiles, 0)
+                    ?? new CameraZoomProfile();
                 profiles[i].Validate(fallback);
             }
 
             return profiles;
+        }
+
+        private static CameraZoomProfile FindZoomProfile(CameraZoomProfile[] profiles, int zoomIndex)
+        {
+            if (profiles == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                if (profiles[i] != null && profiles[i].zoomIndex == zoomIndex)
+                {
+                    return profiles[i];
+                }
+            }
+
+            return null;
         }
 
         private static CameraZoomProfile[] CloneZoomProfiles(CameraZoomProfile[] profiles)

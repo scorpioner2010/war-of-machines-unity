@@ -12,6 +12,20 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-23 - Smooth tracked reticle presentation
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make the local reticle follow the live point of an active auto-aim target while preserving manual gun-ray behavior, physical dispersion sizing, and existing exponential smoothing.
+- Acceptance: active auto-aim reticle follows a moving target smoothly; manual reticle behavior and projectile/dispersion calculations remain unchanged; focused build/static checks pass and Play Mode reproduction is recorded.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Pre-global aiming rollback and zoom reimplementation
+
+- Status: `IN_PROGRESS`
+- Scope: restore the complete pre-`bdc51fa3` aiming/reticle system first, verify that baseline, then reapply the configurable zoom profile arrays and wheel-step logic without reintroducing the global physical-ring behavior.
+- Acceptance: the legacy sight works independently of the new zoom; the new zoom arrays/steps, FOV, distance, sniper presentation, and HUD step display work after phase two; projectile direction, server fire validation, authoritative dispersion, and manual aim remain unchanged; focused builds/tests and runtime limitations are recorded.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-23 - Dead robot invisible collision isolation
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
@@ -517,3 +531,107 @@ The repository can preserve task state and verification notes, but it cannot con
 - Implementation: `ClientVehicleTestMode` now instantiates the assigned settings prefab; `ServerSettings.prefab` uses NV stopping `1.0` and IA stopping `0.2`. Shared values remain standard acceleration `1`, standard braking `3`, legged acceleration `2.25`, and legged braking `2.75`.
 - Verification: serialized assertions, production/editor builds, and `git diff --check` passed with zero build errors. Unity Play Mode reproduction is still pending.
 - Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Pre-global aiming rollback verification update
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Verification: restored legacy reticle/server settings and layered the configurable zoom arrays without physical ring projection; production and test `dotnet build` commands passed with 0 errors and `git diff --check` passed. Unity batch PlayMode did not produce an XML result because the project was already locked by another Unity instance; manual Client Play Mode remains required.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - VehicleTest hit-marker visibility regression
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make the Inspector-enabled hit-marker sphere appear in the current `Client.unity` editor test mode while preserving legacy `VehicleTest` behavior and authoritative hit resolution.
+- Root cause: `VehicleTestRuntimeSettings.OnAuthoritativeProjectileHit` accepted only `gameObject.scene.name == "VehicleTest"`, but the current test-mode object is hosted in `Client`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` and `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. Manual Client Test Mode firing remains pending while Unity Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - VehicleTest camera shake override
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add `VehicleTestRuntimeSettings.disableCameraShake` for impact camera-shake suppression during zoom and hit testing.
+- Implementation: `ClientGameplaySettings` now supports a non-persistent nullable override; VehicleTest applies it after spawn and clears it when the settings component is disabled or destroyed, leaving `PlayerPrefs` unchanged.
+- Verification: source/build checks are recorded in the active handoff; manual Client Test Mode firing and comparison with the saved camera-shake preference remain pending while Unity Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Per-zoom aiming circle diameter
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add a required `aimingCircleDiameter` value to the default, forward, and backward `CameraZoomProfile` elements and apply the active profile value to both local and server dispersion reticles.
+- Implementation: profile cloning/validation and Client scene serialization now preserve the value; `GunDispersionGlobalSettings` uses it as the profile base diameter while existing zoom interpolation, bloom expansion, and min/max clamps remain active.
+- Verification: production and PlayMode test assemblies built with 0 errors; `git diff --check` passed; the Client scene contains 7 serialized profile fields. Manual Unity Play Mode zoom comparison remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Single indexed ClientSettings zoom array
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: replace separate default/forward/backward camera zoom settings with one `GameplayRuntimeSettings.cameraZoomProfiles` array keyed by explicit signed `zoomIndex` values.
+- Implementation: `CameraController` now resolves the active profile, wheel bounds, sniper step, normalized zoom endpoint, camera distance/FOV, and HUD step from the matching index; the existing per-profile aiming-circle diameter remains available for local/server reticles. Client scene serialization now contains one array with 7 indexed profiles.
+- Verification: production and PlayMode test assemblies built with 0 errors; `git diff --check` passed; static audit found no obsolete scene fields and confirmed indices `0,1,2,3,4,-1,-2`. Manual Unity Play Mode wheel/reticle verification remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Fractional per-zoom aiming circle diameter
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: allow `ClientSettings` zoom profiles to use aiming-circle base diameters below `1` and make those values effective below the legacy global UI minimum.
+- Implementation: `aimingCircleDiameter` now validates from `0`; explicit finite profile overrides bypass `uiMinDiameter` but remain capped by `uiMaxDiameter`, while the legacy overload keeps the global minimum fallback. Added focused coverage for a `0.5` profile diameter.
+- Verification: production and PlayMode assemblies built with 0 errors; `git diff --check` passed; focused test source covers the new lower-than-global-minimum behavior. Manual Unity Play Mode verification remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Zero aiming circle HUD clamp
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: preserve a zero per-zoom aiming-circle diameter through `GunCrosshair` so the configured dispersion sprite can actually disappear.
+- Root cause: `GunCrosshair.ApplyAimingDiameter` applied `Mathf.Max(1f, diameter)` after the profile/global calculations, restoring a visible sprite even when the profile value was zero.
+- Implementation: zero now immediately clears the smoothed diameter and writes zero to the active reticle size/scale; focused PlayMode source coverage verifies the `RectTransform` size becomes `Vector2.zero`.
+- Verification: production and PlayMode assemblies built with 0 errors; `git diff --check` passed; focused PlayMode source coverage checks the zero-size `RectTransform` path. Manual Unity Play Mode confirmation remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Zero aiming circle one-pixel minimum
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make a zero `ClientSettings` zoom-profile diameter produce a `1x1` dispersion sprite instead of the `64.38217`-sized result caused by adding minimum weapon dispersion.
+- Root cause: the profile value was treated as a base diameter, so `0` still received aimed-dispersion pixels and bloom pixels before reaching `GunCrosshair`.
+- Implementation: `GunDispersionGlobalSettings.GetUiDiameter` now returns `1` for an explicit zero/negative profile value; `GunCrosshair` retains its `1f` lower bound. Positive fractional values and the legacy fallback path are unchanged.
+- Verification: focused source coverage checks both the zero-profile final diameter and the HUD `1x1` `RectTransform` result; production and PlayMode assemblies built with 0 errors and `git diff --check` passed. Manual Unity Play Mode remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Per-zoom base diameter bloom regression
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: restore movement/turret/shot dispersion growth above the configured fully-aimed `aimingCircleDiameter` without undoing fractional sizing, values above `uiMaxDiameter`, or runtime zoom override behavior.
+- Root cause: the finite profile branch in `GunDispersionGlobalSettings.GetUiDiameter` returned before adding the existing bloom contribution.
+- Acceptance: explicit values are exact at full aim, current dispersion above fully aimed adds bloom, zero/tiny bases can grow with bloom, legacy no-profile behavior is unchanged, and focused/build/static checks pass.
+- Implementation: finite profile values now replace only the fully aimed base contribution; movement/turret/shot bloom is added using the existing zoom-scaled coefficients. The legacy no-profile branch remains unchanged, and runtime zoom override fields/flow are preserved.
+- Verification: production and PlayMode assemblies built with 0 errors; the temporary compiled harness returned `20`, `35`, `400`, `415`, and `15` for the fully aimed, bloomed, oversized, and zero-base cases; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Tiny aiming circle regression
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: reproduce the exact `ClientSettings` value `0.000001` from the user's screenshot and make the final `GunCrosshair` Image size `1x1` instead of `64.38217x64.38217`.
+- Root cause under investigation: only exact zero bypassed aimed/bloom additions; a positive near-zero profile value still received the minimum weapon-dispersion contribution.
+- Acceptance: add an end-to-end focused test for the tiny profile value, preserve the one-pixel minimum for exact zero, keep values above `1` unchanged, and record build/runtime verification.
+- Implementation: profile values at or below `1` now bypass aimed/bloom additions; the compiled production method returned `0.000001` for the exact screenshot value, and `GunCrosshair` clamps that result to `1x1`.
+- Verification: production and PlayMode assemblies built with 0 errors; `dotnet test` did not run Unity tests because no .NET adapter is configured; a temporary .NET 8 harness executed the compiled `Assembly-CSharp.dll` calculation successfully; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Absolute per-zoom aiming circle diameter
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: make the serialized zoom-profile diameter an exact final `GunCrosshair` Image size, so values `1`, `1.01`, and `20` do not receive hidden dispersion additions.
+- Root cause: `GunDispersionGlobalSettings.GetUiDiameter` treated explicit profile values above `1` as a base diameter and added aimed/bloom pixels, producing the observed `1.01 -> 43.50203` jump.
+- Acceptance: preserve explicit values through the local/server reticle path, keep the legacy no-profile formula unchanged, add exact-value regression tests, and record compiled/runtime verification.
+- Implementation: finite zoom-profile overrides now return as absolute diameters; `GunCrosshair` keeps the one-pixel lower bound for zero/tiny values, while the legacy `NaN` path retains dispersion and zoom calculations.
+- Verification: production and PlayMode assemblies built with 0 errors; compiled `Assembly-CSharp.dll` returned `1`, `1.01`, and `20` unchanged for the exact profile inputs; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending while the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Explicit zoom diameter upper clamp
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: allow an explicit `ClientSettings` zoom-profile diameter of `400` to enlarge the dispersion sprite beyond the legacy `uiMaxDiameter` value of `340`.
+- Root cause: the absolute explicit-profile branch still passed the configured value through `Mathf.Clamp(..., uiMaxDiameter)`, so every value above the global legacy maximum rendered as `340`.
+- Implementation: the explicit-profile branch now returns the nonnegative configured diameter without the legacy maximum; regression coverage asserts `340` and `400` in both the calculation and `GunCrosshair` `RectTransform`, while the legacy no-profile path remains capped.
+- Verification: production and PlayMode assemblies built with 0 errors; the temporary compiled harness returned `explicit 340 -> 340`, `explicit 400 -> 400`, and `legacy -> 340`; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending because the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Runtime ClientSettings zoom override
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add an Inspector checkbox and signed `runtimeZoomIndex` next to the ClientSettings zoom-profile array so developers can change the active local camera zoom during runtime.
+- Implementation: `CameraController` applies valid runtime index changes during normal updates and initialization through `ApplyZoomStep`; wheel zoom is suppressed while the override is valid and active, and resumes when disabled or when the index is missing.
+- Verification: production and PlayMode assemblies built with 0 errors; focused PlayMode source coverage compiled for enabled `0 -> 1`, invalid-index ignore, disabled override, and validation/copy behavior; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending because the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.

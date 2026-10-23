@@ -1,4 +1,5 @@
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.UI.Settings;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -16,12 +17,17 @@ namespace Game.Scripts.Testing
         [FormerlySerializedAs("disableDispersionAndForceFullyAimedReticle")]
         public bool forceFullyAimedAccuracyOnly;
 
+        [Header("Debug камери")]
+        [Tooltip("Вимикає тряску камери від impact FX тільки під час VehicleTest і не змінює збережене ігрове налаштування.")]
+        public bool disableCameraShake;
+
         [Header("Маркери влучань")]
         public bool createHitMarkerSphere;
         [Min(0.01f)] public float hitMarkerRadius = 0.18f;
         public Color hitMarkerColor = new Color(1f, 0.85f, 0.05f, 1f);
 
         private Material _hitMarkerMaterial;
+        private bool _cameraShakeOverrideApplied;
 
         public bool HasActiveTestParameters => activateTestParameters;
 
@@ -33,10 +39,13 @@ namespace Game.Scripts.Testing
         private void OnDisable()
         {
             NetworkWeaponShooter.AuthoritativeProjectileHit -= OnAuthoritativeProjectileHit;
+            ClearCameraShakeOverride();
         }
 
         private void OnDestroy()
         {
+            ClearCameraShakeOverride();
+
             if (_hitMarkerMaterial != null)
             {
                 Destroy(_hitMarkerMaterial);
@@ -65,6 +74,8 @@ namespace Game.Scripts.Testing
 
         public void ApplyToVehicle(VehicleRoot vehicleRoot)
         {
+            ApplyCameraShakeOverride();
+
             if (vehicleRoot == null || vehicleRoot.shooterNet == null)
             {
                 return;
@@ -73,14 +84,47 @@ namespace Game.Scripts.Testing
             vehicleRoot.shooterNet.SetTestAccuracyDebugMode(forceFullyAimedAccuracyOnly);
         }
 
+        private void ApplyCameraShakeOverride()
+        {
+            if (disableCameraShake)
+            {
+                ClientGameplaySettings.SetCameraShakeOverride(false);
+                _cameraShakeOverrideApplied = true;
+                return;
+            }
+
+            ClearCameraShakeOverride();
+        }
+
+        private void ClearCameraShakeOverride()
+        {
+            if (!_cameraShakeOverrideApplied)
+            {
+                return;
+            }
+
+            ClientGameplaySettings.SetCameraShakeOverride(null);
+            _cameraShakeOverrideApplied = false;
+        }
+
         private void OnAuthoritativeProjectileHit(Vector3 hitPoint, Vector3 hitNormal)
         {
-            if (!createHitMarkerSphere || gameObject.scene.name != "VehicleTest")
+            if (!createHitMarkerSphere || !IsVehicleTestContext())
             {
                 return;
             }
 
             CreateHitMarker(hitPoint, hitNormal);
+        }
+
+        private bool IsVehicleTestContext()
+        {
+            if (gameObject.scene.name == "VehicleTest")
+            {
+                return true;
+            }
+
+            return gameObject.scene.name == "Client" && ClientVehicleTestMode.IsEnabled;
         }
 
         private void CreateHitMarker(Vector3 hitPoint, Vector3 hitNormal)

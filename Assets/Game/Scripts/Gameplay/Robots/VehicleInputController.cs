@@ -257,7 +257,6 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     autoAimActive = autoAimController.TryGetAimTarget(out autoAimPoint, out autoAimForward);
                 }
-
                 _moveLocal = new Vector2(x, y);
                 _shootLocal = newShoot;
                 _actionLocal = newAction;

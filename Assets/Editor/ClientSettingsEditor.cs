@@ -150,12 +150,12 @@ namespace Toras.Editor
                     "Забороняє автоприцілу захоплювати союзників. Наприклад: увімкнене значення пропускає дружню машину перед ворогом.",
                 ["gameplayRuntime.autoAimPreferTurretTarget"] =
                     "За можливості веде автоприціл у башту противника замість центру всього корпусу. Наприклад: увімкніть для більш природної точки наведення.",
-                ["gameplayRuntime.cameraZoomDefault"] =
-                    "Базовий профіль зума: відстань камери, абсолютний FOV, базовий діаметр кільця та його множник.",
-                ["gameplayRuntime.cameraZoomForwardSteps"] =
-                    "Масив кроків колеса вперед; елемент 0 є першим кроком від default, а всі значення профілю є абсолютними. Прапорець showReticle показує чорний круг снайперського прицілу з центральним прицілом, а true позначає крок як sniper.",
-                ["gameplayRuntime.cameraZoomBackwardSteps"] =
-                    "Масив кроків колеса назад; елемент 0 є першим кроком від default і може відсунути камеру далі за default.",
+                ["gameplayRuntime.cameraZoomProfiles"] =
+                    "Єдиний масив zoom-профілів. У кожному елементі zoomIndex: 0 — default, додатні значення — наближення, від'ємні — віддалення; distance/FOV абсолютні, showReticle вмикає чорний sniper scope, а aimingCircleDiameter задає базовий діаметр круга у повністю зведеному стані. Динамічний bloom додається поверх цієї бази.",
+                ["gameplayRuntime.runtimeZoomOverrideEnabled"] =
+                    "Вмикає debug-примус локального zoom у Play Mode. Коли прапорець активний, runtimeZoomIndex має пріоритет над колесом миші та використовує той самий перехід камери.",
+                ["gameplayRuntime.runtimeZoomIndex"] =
+                    "Signed zoomIndex із cameraZoomProfiles для runtime-примусу. Наприклад: 0 — default, 1 — один крок наближення, -1 — один крок віддалення; відсутній індекс ігнорується.",
                 ["gameplayRuntime.cameraSniperFromMuzzle"] =
                     "За можливості прив'язує снайперську камеру до дула. Наприклад: увімкніть, щоб приціл у sniper-режимі відповідав позиції гармати.",
                 ["gameplayRuntime.cameraSniperForwardOffset"] =

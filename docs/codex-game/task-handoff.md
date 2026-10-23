@@ -2,6 +2,273 @@
 
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-24
+- User request: "Ти зламав круг зведення: параметри, які ми зробили, мають визначати круг у повністю зведеному стані, але круг розбросу більше не збільшується як раніше. Знайди, де це поламано, і не ламай поведінку повністю зведеного стану."
+- Objective: restore dynamic dispersion bloom above the configured per-zoom fully-aimed reticle diameter without reverting the small/large explicit diameter fixes or the runtime zoom override.
+- Acceptance criteria:
+  - A finite `CameraZoomProfile.aimingCircleDiameter` is the base diameter when current dispersion equals fully aimed dispersion.
+  - When current dispersion is greater than fully aimed dispersion, the existing bloom contribution expands the local and server reticles above that base.
+  - Zero and fractional base diameters remain configurable; the HUD's existing one-pixel display floor remains intact.
+  - Explicit base values above the legacy `uiMaxDiameter` remain supported, while the no-profile legacy calculation remains unchanged.
+  - Focused regression coverage, production/test builds, and static checks pass.
+- Assumptions:
+  - The zoom-profile diameter replaces only the legacy fully-aimed base contribution; it does not disable movement, turret, or shot bloom.
+  - The same calculated diameter path is used for both local and server reticles.
+- Root cause: `GunDispersionGlobalSettings.GetUiDiameter` returned the explicit profile diameter before calculating bloom, so every finite profile value froze the reticle at its fully aimed size.
+- Current work: `GunDispersionGlobalSettings.GetUiDiameter` now treats a finite zoom-profile diameter as the fully aimed base and adds the existing zoom-scaled bloom contribution when current dispersion is greater.
+- Work remaining: run the focused Unity PlayMode test and manually verify movement/turret/shot bloom in the open Editor; the compiled checks cannot replace this visual/runtime confirmation.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Editor/ClientSettingsEditor.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/ui-hud.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; the temporary compiled reticle harness returned `20`, `35`, `400`, `415`, and `15` for fully aimed/bloomed explicit and zero-base cases; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending because the Editor is open.
+
+## Previous active task (runtime ClientSettings zoom override)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-24
+- User request: "додай параметер текущий зум в клієнт сетінг там де налаштовується масив зуму, і галочку типу активувати, коли галочка стоїть то зум в ріалтаймі можна міняти цим параметром для гри. наприклад в грі робот стоїть на 0 зумі, і там 0 я змінюю нараметр на 1 і в ріалтаймі в робота міняється зум ніби я покрутив колесико мишки"
+- Objective: add a serialized ClientSettings runtime zoom override toggle and signed zoom index, then make the active local camera follow that index through the same transition path as mouse-wheel zoom.
+- Acceptance criteria:
+  - `GameplayRuntimeSettings` exposes an activation checkbox next to `cameraZoomProfiles` and an integer `runtimeZoomIndex`.
+  - When enabled, changing `runtimeZoomIndex` from `0` to `1` during runtime changes the local camera as if one wheel-forward step occurred.
+  - The existing camera/FOV/sniper/HUD transition behavior remains owned by `ApplyZoomStep`.
+  - When disabled, the override stops forcing the camera and normal mouse-wheel control remains available.
+  - The override fields survive validation and `GameplayRuntimeSettings.CopyFrom`.
+  - Focused regression coverage, production/test builds, and static checks pass.
+- Assumptions:
+  - The override is a client-only debug/test control and does not change server-authoritative gameplay or persist to player preferences.
+  - `runtimeZoomIndex` must match a configured `cameraZoomProfiles[].zoomIndex`; an invalid value is ignored rather than inventing a missing profile.
+- Current work: `ClientSettings` now exposes `runtimeZoomOverrideEnabled` and `runtimeZoomIndex`; `CameraController` applies valid changes through `ApplyZoomStep` and suppresses competing wheel zoom while the override is active.
+- Work remaining: run the focused Unity PlayMode test and manually change `runtimeZoomIndex` from `0` to `1` in the open Editor.
+- Edited files: `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Editor/ClientSettingsEditor.cs`, `Assets/Game/Tests/PlayMode/CameraRuntimeZoomOverridePlayModeTests.cs`, its meta file, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. Unity PlayMode confirmation remains pending because the Editor is open.
+
+## Previous active task (explicit zoom diameter upper clamp)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-24
+- User request: "Потестив зі зменшенням все ок але помітив інший баг зі збільшенням 340 ок а коли ставлю 400 кільце не збільшується а тут в чому проблема?"
+- Objective: remove the unintended `uiMaxDiameter` cap from explicit `CameraZoomProfile.aimingCircleDiameter` values so a configured profile diameter of `400` reaches the local and server dispersion sprites unchanged.
+- Acceptance criteria:
+  - Explicit profile values `340` and `400` return exactly `340` and `400` from the UI diameter calculation.
+  - The `GunCrosshair` presenter applies an explicit `400` value as a `400x400` `RectTransform` size.
+  - The legacy no-profile path remains capped by `uiMaxDiameter` and keeps its existing formula.
+  - Focused regression coverage, production/test builds, and compiled runtime checks pass.
+- Assumptions:
+  - `aimingCircleDiameter` is an absolute final UI size for an explicit profile, so the global legacy maximum must not limit it.
+  - Negative explicit values still normalize to zero before the HUD's existing one-pixel lower bound.
+- Current work: the explicit profile branch now returns the nonnegative configured diameter directly; the legacy no-profile branch still clamps to `uiMaxDiameter`.
+- Work remaining: run the focused Unity PlayMode test and inspect the active `GunCrosshair` Image in the open Editor with profile values `340` and `400`.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; the temporary compiled harness returned `explicit 340 -> 340`, `explicit 400 -> 400`, and `legacy -> 340`; `git diff --check` passed. Unity Editor is open, so focused PlayMode/Inspector confirmation remains pending.
+
+## Previous active task (absolute per-zoom aiming circle diameter)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "When the zoom value is `1`, the sprite is `1`; when it is `1.01`, the sprite becomes `43.50203 x 43.50203`. I need to be able to configure an exact size such as `20`."
+- Objective: make `CameraZoomProfile.aimingCircleDiameter` an absolute final UI diameter for the active local and server dispersion sprites.
+- Acceptance criteria:
+  - Profile value `1` renders a `1x1` Image.
+  - Profile value `1.01` renders approximately `1.01x1.01`, without a dispersion jump.
+  - Profile value `20` renders `20x20`, not `20` plus aimed/bloom contributions.
+  - Exact zero and tiny values still use the HUD's existing `1x1` lower bound.
+  - The legacy no-profile overload retains its existing dispersion/zoom formula.
+  - Focused tests, production/test builds, and compiled runtime checks verify the exact values.
+- Assumptions:
+  - The user wants the serialized per-zoom diameter to control the final sprite size; the physical dispersion remains available in the existing legacy path and `AimStatus`, but must not alter an explicit profile diameter.
+  - The active local and server rings must receive the same absolute profile diameter.
+- Current work: the existing four-argument `GetUiDiameter` still treats explicit profile values above `1` as a base and adds aimed/bloom pixels, causing the reported `1.01 -> 43.50203` jump.
+- Work remaining: run the focused Unity PlayMode test and inspect the active Image in the open Editor; compiled production checks already confirm the exact diameter values.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing dependency/API warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; a temporary .NET 8 harness executed the compiled `Assembly-CSharp.dll` and returned exactly `1 -> 1`, `1.01 -> 1.01`, and `20 -> 20` under high dispersion inputs; `git diff --check` passed. Unity Editor is open, so focused PlayMode execution and Inspector confirmation remain pending.
+
+## Previous active task (tiny aiming circle regression)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "The configured zoom value is `0.000001`, but the `GunCrosshair` Image is still `64.38217 x 64.38217`; add a test and verify that this exact case produces the intended small result."
+- Objective: make the screenshot's tiny per-zoom diameter bypass the dispersion add-on and render as the HUD's required `1x1` minimum.
+- Acceptance criteria:
+  - A finite profile value of `0.000001` does not become `64.38217` through aimed/bloom additions.
+  - The final local and server `GunCrosshair` Image `RectTransform` size is exactly `1x1` for that value.
+  - The existing zero value still renders at the same `1x1` minimum.
+  - Profile values above `1` retain their existing aimed/bloom expansion and positive fractional values remain accepted.
+  - A focused regression test reproduces the screenshot input, both assemblies build, and the Unity runtime verification status is recorded honestly.
+- Assumptions:
+  - The screenshot's `0.000001` is intentionally being used as a near-zero/minimum setting, so the final visible UI size must be clamped to one pixel.
+  - The requested minimum applies to the dispersion Image only; sniper overlay and aim-status UI remain independent.
+- Current work: the previous fix handled only exact zero. The current formula still adds minimum dispersion to any positive tiny override, which explains the observed `64.38217` size.
+- Work remaining: run the new PlayMode test in the open Unity Editor and confirm the Inspector reports `1 x 1` on the active Image; the compiled production calculation has already been executed headlessly.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing dependency/API warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `dotnet test` did not execute Unity tests because this generated PlayMode project has no .NET test adapter; a temporary .NET 8 harness executed the compiled `Assembly-CSharp.dll` and returned `GetUiDiameter(0.000001) = 0.000001`; `git diff --check` passed. Unity Editor is open, so the actual Unity PlayMode test and Inspector confirmation remain pending.
+
+## Previous active task (zero aiming circle one-pixel minimum)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "When `ClientSettings` aiming circle diameter is `0`, the `GunCrosshair` Image still has size `64.38217 x 64.38217`; it must be `1 x 1`."
+- Objective: make a zero zoom-profile aiming-circle value produce the required one-pixel reticle size instead of adding the weapon's minimum dispersion to the UI diameter.
+- Acceptance criteria:
+  - A finite zoom-profile value of `0` produces a final UI diameter of exactly `1` for both local and server reticles.
+  - The HUD presenter keeps its one-pixel lower bound and never writes `0 x 0` for an aiming-circle sprite.
+  - Positive fractional profile diameters and the legacy no-profile path retain their existing behavior.
+  - Focused tests and mechanic documentation describe the zero-value behavior.
+  - Production/test builds and static checks pass; Unity Play Mode limitation is recorded.
+- Assumptions:
+  - The requested `1 x 1` is the final `RectTransform` size of the dispersion Image, not the separate sniper reticle or aim-status text.
+  - A profile value of `0` is a deliberate minimum-size override and therefore bypasses aimed/bloom additions; positive values continue using the existing additive dispersion behavior.
+- Current work: traced the `CameraZoomProfile` -> `NetworkWeaponShooter` -> `GunDispersionGlobalSettings` -> `GunCrosshair` path and found that the profile zero was only used as a base, so the minimum dispersion contribution produced `64.38217`.
+- Work remaining: verify in Unity Play Mode that the active `GunCrosshair` Image reports `1 x 1` for the configured zero profile while positive profiles still expand normally.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing dependency/API warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. Focused PlayMode source coverage checks that a zero profile returns `1` and that `GunCrosshair` writes `Vector2.one`. Unity Editor is open, so manual Play Mode verification remains pending.
+
+## Previous active task (zero aiming circle HUD clamp)
+- Status: `IN_PROGRESS`
+- Started: 2026-10-23
+- User request: "при нулі круг все одно дуже великий, ось 2 скріни де видно що значення 0 круга в налаштуваннях зума а насправді спрайт має не 0, виправ це"
+- Objective: make a zero `ClientSettings` zoom-profile aiming-circle diameter produce a zero-size crosshair sprite instead of being restored to a visible minimum by the HUD presenter.
+- Acceptance criteria:
+  - `GunCrosshair` does not clamp an explicit zero profile diameter back to `1`.
+  - A zero diameter reaches the active local and server reticle `RectTransform`/scale path and hides the sprite.
+  - Positive fractional diameters remain supported and smoothing still converges to the configured value.
+  - Existing non-profile fallback and dispersion/bloom calculations remain unchanged.
+  - Focused/static checks, documentation, and the open-Editor manual verification limitation are recorded.
+- Assumptions:
+  - The screenshots show the active aiming dispersion sprite, not the separate sniper overlay or central reticle.
+  - Zero is intentionally a valid profile value and means hide the dispersion circle; the aim status text and sniper presentation remain independent.
+- Current work: `GunCrosshair.ApplyAimingDiameter` now preserves zero instead of clamping it to `1f`, immediately resets the current diameter to zero, and writes zero to the active reticle `RectTransform` or local scale.
+- Work remaining: verify the zero profile in Unity Play Mode and confirm the local/server dispersion sprites disappear without affecting the aim-status text or sniper overlay.
+- Edited files: `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing dependency/API warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. Focused PlayMode source coverage now checks that `GunCrosshair` writes `Vector2.zero` for a zero diameter. Unity Editor is open, so manual Play Mode verification remains pending.
+
+## Previous active task (fractional per-zoom aiming circle diameter)
+- Status: `IN_PROGRESS`
+- Started: 2026-10-23
+- User request: "НЕ МОЖУ ЗМЕНШИТИ МЕНЬШЕ 1, круг дуже великий треба менший а зменшити не можу"
+- Objective: allow each `ClientSettings` zoom profile's `aimingCircleDiameter` to be configured below `1` and make that smaller base diameter effective in the rendered dispersion circle.
+- Acceptance criteria:
+  - The `aimingCircleDiameter` Inspector field accepts values below `1`, including fractional values and zero.
+  - A configured profile diameter is not raised to the global `GunDispersionGlobalSettings.uiMinDiameter`.
+  - The legacy three-argument UI diameter path keeps using the global minimum when no zoom-profile override is supplied.
+  - Existing aimed/bloom contributions and the global maximum clamp remain active.
+  - Focused test, build, documentation, and manual Unity verification status are recorded.
+- Assumptions:
+  - The user wants to tune the per-zoom profile base diameter, not remove the global fallback minimum from the legacy path.
+  - A zero profile diameter is valid; dispersion contributions can still make the final visible ring nonzero.
+- Current work: `CameraZoomProfile.aimingCircleDiameter` now accepts `0` and fractional values. The four-argument `GunDispersionGlobalSettings.GetUiDiameter` treats finite profile values as explicit base diameters, while the legacy three-argument overload passes a non-finite sentinel and retains `uiMinDiameter` as its fallback minimum.
+- Work remaining: verify a fractional/zero profile diameter in Unity Play Mode and confirm movement/shot bloom still expands the circle above that base.
+- Edited files: `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing 4 warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. The focused test assembly contains coverage proving a `0.5` profile diameter remains `0.5` even when `uiMinDiameter` is `20`. Unity Editor is open, so manual reticle verification remains pending.
+
+## Previous active task (single indexed ClientSettings zoom array)
+- Status: `IN_PROGRESS`
+- Started: 2026-10-23
+- User request: "я так подумав треба зробити 1 масив, просто вказувати індекс зума 0 1 2 3 -1 -2 -3"; clarification: "ні стоп, я про клієнт сетінг масив зумів!"
+- Objective: replace the separate default/forward/backward zoom settings with one `ClientSettings` zoom-profile array keyed by explicit signed zoom indices, while keeping per-index aiming-circle diameter configuration.
+- Acceptance criteria:
+  - `GameplayRuntimeSettings` exposes one serialized camera zoom array in `ClientSettings`.
+  - Each profile stores an explicit `zoomIndex`; `0` is default, positive values zoom forward, and negative values zoom backward.
+  - Camera distance, FOV, sniper reticle presentation, wheel limits, HUD step display, and reticle diameter all resolve from the matching signed index.
+  - Existing behavior remains unchanged for the current `0, 1, 2, 3, 4, -1, -2` configuration, and normal dispersion bloom/min/max logic remains active.
+  - Documentation, builds, focused/static checks, and the open-Editor manual verification limitation are recorded.
+- Assumptions:
+  - The single array replaces the three current serialized fields rather than adding a parallel compatibility path.
+  - The existing `CameraZoomProfile` fields remain the per-index camera/sniper settings; `aimingCircleDiameter` remains the base diameter for that index.
+- Current work: `GameplayRuntimeSettings` now exposes one `cameraZoomProfiles` array. Each `CameraZoomProfile` carries an explicit signed `zoomIndex`, and `CameraController` resolves distance, FOV, wheel limits, sniper selection, normalized zoom, and HUD step state from that index; the active profile diameter still feeds the local/server reticles.
+- Work remaining: verify wheel movement through the configured positive and negative indices, per-index camera/reticle values, sniper presentation, and dispersion bloom in Unity Play Mode.
+- Edited files: `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Editor/ClientSettingsEditor.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing 4 warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed; a static scene audit found one `cameraZoomProfiles` array with indices `0,1,2,3,4,-1,-2` and 7 `aimingCircleDiameter` values. Unity Editor is open, so manual Play Mode verification remains pending.
+
+## Previous active task (per-zoom aiming circle diameter)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "я не бачу тут регулирования для розміру кругу зведення для конкретного зума, цей параметр обовязковим має бути"
+- Objective: expose an explicit aiming-circle diameter on every camera zoom profile and use that profile value for the current local and server dispersion reticles.
+- Acceptance criteria:
+  - The default, forward, and backward zoom profile elements each expose a required serialized aiming-circle diameter field in the Inspector.
+  - The active zoom profile controls the fully aimed/base reticle diameter for both local and server crosshairs.
+  - Movement/shot bloom still expands the circle above the configured profile diameter and global min/max clamps remain active.
+  - Existing camera zoom, sniper presentation, projectile direction, and authoritative dispersion behavior remain unchanged.
+  - Documentation, builds, focused tests/static checks, and the manual Unity verification limitation are recorded.
+- Assumptions:
+  - The screenshot is the `GameplayRuntimeSettings` camera profile inspector in `Client.unity`; the profile object is the correct owner for per-zoom values.
+  - The new value is the fully aimed/base diameter in UI pixels; current dispersion bloom is added on top rather than replacing the accuracy system.
+- Current work: traced the current `CameraZoomProfile` → `CameraController` → `NetworkWeaponShooter` → `GunCrosshair` path and confirmed that only one normalized zoom scalar currently reaches `GunDispersionGlobalSettings.GetUiDiameter`.
+- Work remaining: verify the Inspector field and zoom-to-zoom diameter changes in Unity Play Mode when the open Editor is available.
+- Edited files: `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `Assets/Game/Scenes/Client.unity`, `Assets/Game/Tests/PlayMode/LegacyGunDispersionUiPlayModeTests.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing 4 warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed; a static scene audit found 7 `aimingCircleDiameter` fields for the default/forward/backward profiles. Unity Editor is open, so manual zoom stepping and reticle-size confirmation remain pending.
+
+## Previous active task (VehicleTest camera shake override)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "додай ще в `VehicleTestRuntimeSettings` вимкнення тряски камери"
+- Objective: add a VehicleTest-only Inspector switch that disables impact camera shake without changing the player's persisted gameplay setting or normal gameplay behavior.
+- Acceptance criteria:
+  - `VehicleTestRuntimeSettings` exposes a clear serialized camera-shake disable flag.
+  - Enabling it suppresses camera shake from VehicleTest impact FX, including the current Client editor test mode.
+  - The override is non-persistent and is cleared when the test settings component is disabled or destroyed.
+  - Normal settings and production gameplay retain their existing camera-shake behavior.
+  - Builds, focused static checks, and the manual verification limitation/result are recorded.
+- Assumptions:
+  - Camera shake is the impact FX path driven by `PooledImpactFx` and `ClientGameplaySettings.CameraShakeEnabled`.
+  - The existing `ApplyToVehicle` calls are the intended VehicleTest lifecycle hook; no scene-wide runtime lookup is needed.
+- Current work: inspected the shake path and confirmed that the current test settings component is present in `Client.unity` and applied after the test vehicle spawns.
+- Work remaining: implement the non-persistent override, document it, build the affected assemblies, and leave manual Client Test Mode firing for user confirmation while Unity Editor is open.
+- Edited files: `Assets/Game/Scripts/Testing/VehicleTestRuntimeSettings.cs`, `Assets/Game/Scripts/UI/Settings/ClientGameplaySettings.cs`, `Assets/Editor/VehicleTestRuntimeSettingsEditor.cs`, `docs/codex-game/vehicle-test-scene.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and the existing 4 warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. Unity Editor is open, so no parallel batch PlayMode run was started; manual Client Test Mode impact firing with `disableCameraShake` enabled remains pending.
+
+## Previous active task (VehicleTest hit-marker visibility regression)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "супер, але тепер хочу налаштувати зуми і помітив щзо тестові маркери не працюють, ось скрін я увімкнув але сфер нема [@ai-chat-attachment-16291646523327626538.png](file:///C:/Users/TorasPC/AppData/Local/Temp/ai-chat-attachment-16291646523327626538.png)"
+- Objective: make the VehicleTest hit-marker sphere setting work in the current Client test-mode scene and then verify the zoom-test configuration path is not obscured by the marker issue.
+- Acceptance criteria:
+  - Enabling `createHitMarkerSphere` in the Client test-mode `VehicleTestRuntimeSettings` creates a visible sphere at every authoritative projectile hit.
+  - Legacy `VehicleTest` scene behavior remains supported.
+  - Marker creation remains test-only, does not alter projectile hit resolution, and does not use runtime scene-wide discovery.
+  - Production/test builds, focused static checks, and the final limitation or runtime result are recorded.
+- Assumptions:
+  - The attached Inspector is the `Client.unity` editor test-mode object, whose scene name is `Client`, not the legacy `VehicleTest` scene.
+  - The requested zoom tuning itself remains in the existing serialized `cameraZoomDefault`, `cameraZoomForwardSteps`, and `cameraZoomBackwardSteps` profiles; this task fixes the adjacent marker visibility regression first.
+- Current work: `VehicleTestRuntimeSettings` now accepts both the legacy `VehicleTest` scene and the editor-only `ClientVehicleTestMode` context. Normal Client gameplay remains excluded through `ClientVehicleTestMode.IsEnabled`.
+- Work remaining: user should fire in Client Test Mode and confirm a sphere appears at each authoritative hit; zoom profile tuning can then be checked independently.
+- Edited files: `Assets/Game/Scripts/Testing/VehicleTestRuntimeSettings.cs`, `docs/codex-game/vehicle-test-scene.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and 4 pre-existing warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. Unity Editor is currently open, so no parallel batch PlayMode run was started; manual hit-marker confirmation remains pending.
+
+## Previous active task (pre-global aiming rollback and zoom reimplementation)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "окей давай реалізуємо це, повністю повернути треба стару систему до нашого глобального фікса, а потім вже коли стара система буде повернута переписати на наш оновлений зум логіку"
+- Objective: first restore the complete pre-`bdc51fa3` aiming/reticle system and verify that baseline, then reapply the configurable zoom profile arrays and wheel-step logic while preserving the restored sight behavior.
+- Acceptance criteria:
+  - Phase 1 restores the pre-global legacy camera/aiming and reticle sizing path, including its serialized/server settings and manual gun-ray presentation.
+  - Phase 1 is built and focused-tested before the new zoom layer is reintroduced.
+  - Phase 2 restores configurable default/forward/backward zoom arrays and wheel steps, FOV/distance smoothing, sniper presentation, and HUD step display without changing the legacy sight formula.
+  - Projectile direction, server-authoritative dispersion state, fire validation, ammo/reload, and hit resolution remain unchanged.
+  - Both phase checkpoints, final builds/tests, edited files, and any Play Mode limitation are recorded.
+- Assumptions:
+  - The pre-global baseline is the source at `bdc51fa3^`; the current user-owned working-tree changes are part of the superseded tracked-reticle task and may be replaced as requested.
+  - The new zoom must be layered after the legacy baseline, not mixed with the physical camera-projected ring implementation.
+  - Runtime component discovery and unrelated gameplay systems remain out of scope.
+- Current work: phase one restored the pre-global legacy reticle sizing, server settings, manual gun-ray presentation, and removed the superseded physical ring/auto-aim overlay path. Phase two retained the configurable default/forward/backward camera zoom arrays, wheel steps, FOV/distance behavior, sniper presentation, and HUD step display; the zoom now supplies only the legacy normalized zoom scalar, with a last-forward-profile fallback when no profile is flagged.
+- Work remaining: perform Client Play Mode verification across default, backward, forward, and flagged sniper profiles, then confirm manual aiming, movement bloom, firing, and server-ring reconciliation in the running game.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`, `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `Assets/Game/Scripts/Gameplay/Robots/WeaponReticlePresenter.cs`, `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Game/Scripts/Gameplay/Robots/Shared/DispersionConeProjection.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `Assets/Game/Scripts/Server/RemoteServerSettings.cs`, `Assets/Game/Scripts/Networking/Lobby/LobbyManager.cs`, `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scenes/Client.unity`, `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, `Assets/Editor/ServerSettingsEditor.cs`, `Assets/Editor/ClientSettingsEditor.cs`, `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`, focused PlayMode tests, and the mechanic/task documentation.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and 4 pre-existing warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed. Focused test sources cover legacy UI interpolation/clamping and shared shot direction math. Unity batch PlayMode was attempted with `-runTests`, but the first process exited without creating XML and the retry reported that another Unity instance had the project open; no Unity test result is claimed. Manual Client Play Mode remains pending.
+
+## Previous active task (smooth tracked reticle presentation)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "ти зможеш реалызувати подыбну логыку але так щоб нычого не поломати? також треба щоб прицыл був плавний подивись як це було реалызовано там ы теж витягни цю логыку, але роби все дуже обережно та продумано щоб нычого не зламати"
+- Objective: make the local reticle follow the live point of an active auto-aim target smoothly, while preserving manual gun-ray behavior, server-authoritative dispersion, projectile direction, and the old exponential UI smoothing.
+- Acceptance criteria:
+  - Active auto-aim reticle follows a moving target point through the existing smoothed canvas path.
+  - Manual reticle positioning remains based on the weapon aim point.
+  - Projectile, dispersion, zoom, server reticle, and fire-validation code paths remain unchanged.
+  - Static/build checks and the focused regression result are recorded.
+- Assumptions:
+  - Target tracking is intended only when the existing `VehicleAutoAimController` has an active valid target; manual aim must not become an automatic lock.
+  - The existing `WeaponReticlePresenter` exponential interpolation and `GunCrosshair` diameter smoothing are the desired presentation behavior from the earlier implementation.
+- Current work: inspected commits `bdc51fa3`, `1498d9bc`, and `ee013e10`; preserved their physical cone projection and exponential diameter/position smoothing. The local reticle consumed the target point already calculated by `VehicleInputController` while auto-aim drove the turret, then used the existing `WeaponReticlePresenter` interpolation.
+- Work remaining: the user manually tested the result and requested a return to the pre-global sight system; the tracked-target overlay is superseded by the new rollback task.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/VehicleInputController.cs`, `Assets/Game/Scripts/Gameplay/Robots/WeaponReticlePresenter.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/weapons-damage.md`, `docs/codex-game/task-history.md`, and the handoff at that time.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and 4 pre-existing warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; `git diff --check` passed; Client Play Mode was not run because the Unity Editor was open; the user manual test did not accept the behavior.
+
+## Previous active task (dead robot invisible collision isolation)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-23
 - User request: "помітив серйозний баг, таке відчуття що коли противник загинув я зацеплююсь за невидемі колайдери, це вже баг, я маю зацеплюватися тільким за його меш колайдери які розлетілися при дестрої і також я їх маю дввигати щоб я міг проїхати, але зроби це якось продумано та оптимізовано, продумай цей момент добре і зроби так щоб це була оптимізована логіка"
 - Objective: make dead-robot collision ownership explicit so live vehicles collide only with visible detached mesh debris, never with the dead root or hidden gameplay colliders, while preserving optimized debris obstacles for bots and players.

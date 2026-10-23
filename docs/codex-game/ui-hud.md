@@ -38,7 +38,7 @@ Current owner scripts:
   - On damage, enables the image immediately at canvas group alpha 1, fades alpha to 0 over 1 second, then disables the image object. It is visual only and does not affect gameplay.
 - `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`
   - Gun crosshair UI, reload/ammo text, dispersion display target for weapon systems.
-  - Converts projected screen-pixel diameters to the active Canvas reference units before applying `RectTransform.sizeDelta`, so ring sizing stays correct across CanvasScaler resolution changes.
+  - Applies the server-synchronized dispersion diameter directly to the active reticle `RectTransform`; a finite zoom-profile `aimingCircleDiameter` is the fully aimed base size, so values such as `1.01`, `20`, and `400` are preserved at full aim without the legacy global maximum, while current dispersion above fully aimed adds bloom. Values below `1` are clamped by the presenter to `1x1`. The legacy no-profile path uses the global minimum/maximum UI limits and current zoom scalar.
   - The new `GameplayHudContent` wiring uses `AmmoCountText` for remaining ammunition, `ReloadStatusText` for reload status, `AimStatus` for the aim label, `GameplayHudContent` as the regular HUD root, and `SniperScopeOverlay` as the scope overlay.
   - Owns the inspector-wired faction reticle bindings: `CrosshairType1` for `RobotFaction.IronAlliance` and `CrosshairType2` for `RobotFaction.NovaSyndicate`; the active local reticle, optional server reticle, reload fill, reload text, ammo text, aim-status text, and penetration-status text are switched together so every HUD calculation follows the selected robot.
   - `CameraController` treats every forward zoom profile with `showReticle = true` as sniper presentation: the regular HUD is replaced by the black `SniperScopeOverlay` and central sniper reticle, while the profile's camera/FOV values remain authoritative. The wheel can move between multiple flagged profiles without hiding the overlay. This flag controls the scope overlay, not the ordinary projectile-dispersion ring.
@@ -53,14 +53,15 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/CameraCrosshair.cs`
   - Owns the simple center crosshair. It records show/hide requests received before the inactive `GameplayHUD` first runs `Awake()`, then applies the last requested state after registration. This keeps the first local-vehicle spawn from being lost to `UIScreenBase.Awake()` hiding the visual child.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReticlePresenter.cs`
-  - Positions/presents reticle based on weapon aim.
+  - Positions/presents the reticle from the weapon aim point through the existing exponential canvas interpolation.
+  - Uses the current aim point supplied by `WeaponAimController`; auto-aim and manual gun-ray paths remain owned by the upstream vehicle input/aim systems.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`
   - Updates reload/ammo HUD state for owner.
   - Passes the selected vehicle faction to `GunCrosshair` and presents the local predicted/server-reconciled reload progress to the active reload circle and Nova Syndicate `lightElement` indicators; this is presentation only and does not alter fire validation.
 - `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`
-  - Applies local and authoritative crosshair dispersion to the owner HUD using the actual camera projection and active zoom profile; it no longer uses `zoom01`, hand-tuned pixels-per-degree values, or a global UI min/max clamp.
+  - Applies local and authoritative crosshair dispersion to the owner HUD through the legacy `GunDispersionGlobalSettings.GetUiDiameter` formula, including global UI min/max limits and distance/zoom pixels-per-degree settings.
   - Uses the synchronized server-authoritative dispersion value for both the visible local ring and the `AimStatus` progress; the client-only dispersion model is used only until the first server value arrives.
-  - Uses the projected current dispersion cone as the authoritative diameter. The profile base diameter is the calibrated fully-aimed baseline; the physical expansion above minimum dispersion is added continuously, so the ring does not plateau while the HUD status is still narrowing.
+  - Reads a normalized zoom scalar from `CameraController.GetAimUiZoom01`; default zoom maps to the legacy distance endpoint and the first flagged forward profile maps to the legacy max-zoom endpoint, with the last forward profile as fallback when none is flagged.
 - `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`
   - Gameplay GUI root.
   - Keeps the legacy shot-result entry point compatible, but forwards results to the active `GunCrosshair`; it no longer clears the penetration label after a timeout.

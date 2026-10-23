@@ -36,6 +36,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
         public CameraZoomProfile CurrentZoomProfile => GetZoomProfile(_currentZoomStep);
+        public int CurrentZoomStep => _currentZoomStep;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -79,6 +80,7 @@ namespace Game.Scripts.Gameplay.Robots
             _lastNonSniperZoomStep = DefaultZoomStep;
             ApplyZoomStep(DefaultZoomStep, true);
             _initialized = true;
+            ApplyRuntimeZoomOverride(true);
             ApplyCameraTransform(true);
             SyncGameplayCameraTransform();
         }
@@ -107,6 +109,41 @@ namespace Game.Scripts.Gameplay.Robots
             SyncGameplayCameraTransform();
         }
 
+        public float GetAimUiZoom01()
+        {
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+
+            CameraZoomProfile defaultProfile = GetZoomProfile(DefaultZoomStep);
+            int sniperStep = GetSniperZoomStep();
+            int zoomEndpointStep = sniperStep > DefaultZoomStep
+                ? sniperStep
+                : GetMaxForwardZoomStep();
+            if (zoomEndpointStep <= DefaultZoomStep)
+            {
+                return IsSniperModeActive ? 1f : 0f;
+            }
+
+            if (IsSniperModeActive)
+            {
+                return 1f;
+            }
+
+            CameraZoomProfile sniperProfile = GetZoomProfile(zoomEndpointStep);
+            float normalDistance = Mathf.Max(0.01f, defaultProfile.cameraDistance);
+            float sniperDistance = Mathf.Max(0.01f, sniperProfile.cameraDistance);
+            float minDistance = Mathf.Min(normalDistance, sniperDistance);
+            float maxDistance = Mathf.Max(normalDistance, sniperDistance);
+            if (maxDistance <= minDistance + 0.0001f)
+            {
+                return 0f;
+            }
+
+            CameraZoomProfile currentProfile = GetZoomProfile(_currentZoomStep);
+            float currentDistance = Mathf.Clamp(currentProfile.cameraDistance, minDistance, maxDistance);
+            float distance01 = Mathf.InverseLerp(minDistance, maxDistance, currentDistance);
+            return Mathf.Clamp01(1f - distance01);
+        }
+
         private void Update()
         {
             using (ProfileScope.Measure("Camera.Controller.Update", DiagnosticsCategories.Render))
@@ -130,10 +167,15 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
+                bool runtimeZoomOverrideActive = ApplyRuntimeZoomOverride(false);
                 bool inputBlocked = VehicleInputController.IsGameplayInputBlockedByUi;
                 if (!inputBlocked)
                 {
-                    UpdateAimInputs();
+                    if (!runtimeZoomOverrideActive)
+                    {
+                        UpdateAimInputs();
+                    }
+
                     UpdateOrbitInputs();
                 }
 
@@ -438,6 +480,28 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
+        private bool ApplyRuntimeZoomOverride(bool immediate)
+        {
+            _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            if (!_runtimeSettings.runtimeZoomOverrideEnabled)
+            {
+                return false;
+            }
+
+            int runtimeZoomIndex = _runtimeSettings.runtimeZoomIndex;
+            if (FindZoomProfile(_runtimeSettings.cameraZoomProfiles, runtimeZoomIndex) == null)
+            {
+                return false;
+            }
+
+            if (_currentZoomStep != runtimeZoomIndex)
+            {
+                ApplyZoomStep(runtimeZoomIndex, immediate);
+            }
+
+            return true;
+        }
+
         private void UpdateOrbitInputs()
         {
             float mouseSensitivity = GetMouseSensitivity();
@@ -727,37 +791,69 @@ namespace Game.Scripts.Gameplay.Robots
         private int GetMaxForwardZoomStep()
         {
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            return _runtimeSettings.cameraZoomForwardSteps != null
-                ? _runtimeSettings.cameraZoomForwardSteps.Length
-                : 0;
+            int maxForwardStep = 0;
+            CameraZoomProfile[] profiles = _runtimeSettings.cameraZoomProfiles;
+            if (profiles == null)
+            {
+                return maxForwardStep;
+            }
+
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                if (profiles[i] != null && profiles[i].zoomIndex > maxForwardStep)
+                {
+                    maxForwardStep = profiles[i].zoomIndex;
+                }
+            }
+
+            return maxForwardStep;
         }
 
         private int GetMaxBackwardZoomStep()
         {
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            return _runtimeSettings.cameraZoomBackwardSteps != null
-                ? _runtimeSettings.cameraZoomBackwardSteps.Length
-                : 0;
+            int maxBackwardStep = 0;
+            CameraZoomProfile[] profiles = _runtimeSettings.cameraZoomProfiles;
+            if (profiles == null)
+            {
+                return maxBackwardStep;
+            }
+
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                if (profiles[i] != null && profiles[i].zoomIndex < 0)
+                {
+                    maxBackwardStep = Mathf.Max(maxBackwardStep, -profiles[i].zoomIndex);
+                }
+            }
+
+            return maxBackwardStep;
         }
 
         private int GetSniperZoomStep()
         {
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-            CameraZoomProfile[] forwardSteps = _runtimeSettings.cameraZoomForwardSteps;
-            if (forwardSteps == null)
+            CameraZoomProfile[] profiles = _runtimeSettings.cameraZoomProfiles;
+            if (profiles == null)
             {
                 return -1;
             }
 
-            for (int i = 0; i < forwardSteps.Length; i++)
+            int sniperStep = -1;
+            for (int i = 0; i < profiles.Length; i++)
             {
-                if (forwardSteps[i] != null && forwardSteps[i].showReticle)
+                if (profiles[i] == null || profiles[i].zoomIndex <= DefaultZoomStep || !profiles[i].showReticle)
                 {
-                    return i + 1;
+                    continue;
+                }
+
+                if (sniperStep < 0 || profiles[i].zoomIndex < sniperStep)
+                {
+                    sniperStep = profiles[i].zoomIndex;
                 }
             }
 
-            return -1;
+            return sniperStep;
         }
 
         private bool IsSniperStep(int zoomStep)
@@ -774,24 +870,38 @@ namespace Game.Scripts.Gameplay.Robots
         private CameraZoomProfile GetZoomProfile(int zoomStep)
         {
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
-
-            if (zoomStep > DefaultZoomStep
-                && _runtimeSettings.cameraZoomForwardSteps != null
-                && zoomStep - 1 < _runtimeSettings.cameraZoomForwardSteps.Length)
+            CameraZoomProfile profile = FindZoomProfile(_runtimeSettings.cameraZoomProfiles, zoomStep);
+            if (profile != null)
             {
-                return _runtimeSettings.cameraZoomForwardSteps[zoomStep - 1]
-                       ?? GameplayRuntimeSettings.Default.cameraZoomDefault;
+                return profile;
             }
 
-            if (zoomStep < DefaultZoomStep
-                && _runtimeSettings.cameraZoomBackwardSteps != null
-                && -zoomStep - 1 < _runtimeSettings.cameraZoomBackwardSteps.Length)
+            profile = FindZoomProfile(GameplayRuntimeSettings.Default.cameraZoomProfiles, zoomStep);
+            if (profile != null)
             {
-                return _runtimeSettings.cameraZoomBackwardSteps[-zoomStep - 1]
-                       ?? GameplayRuntimeSettings.Default.cameraZoomDefault;
+                return profile;
             }
 
-            return _runtimeSettings.cameraZoomDefault ?? GameplayRuntimeSettings.Default.cameraZoomDefault;
+            return FindZoomProfile(GameplayRuntimeSettings.Default.cameraZoomProfiles, DefaultZoomStep)
+                   ?? new CameraZoomProfile();
+        }
+
+        private static CameraZoomProfile FindZoomProfile(CameraZoomProfile[] profiles, int zoomIndex)
+        {
+            if (profiles == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                if (profiles[i] != null && profiles[i].zoomIndex == zoomIndex)
+                {
+                    return profiles[i];
+                }
+            }
+
+            return null;
         }
 
         private float GetDistanceForZoomStep(int zoomStep)

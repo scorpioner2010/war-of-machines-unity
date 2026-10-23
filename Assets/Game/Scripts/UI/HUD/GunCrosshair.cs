@@ -134,50 +134,6 @@ namespace Game.Scripts.UI.HUD
                 ref _serverCrosshairDiameterCached);
         }
 
-        public float ScreenPixelsToCanvasUnits(float screenPixels)
-        {
-            float safePixels = Mathf.Max(0f, screenPixels);
-            ResolveCanvasReference();
-            if (safePixels <= 0f || canvasRect == null || Screen.width <= 0 || Screen.height <= 0)
-            {
-                return safePixels;
-            }
-
-            Camera eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
-                ? canvas.worldCamera
-                : null;
-            Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-            Vector2 horizontalPoint = screenCenter + Vector2.right * safePixels;
-            Vector2 verticalPoint = screenCenter + Vector2.up * safePixels;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenCenter, eventCamera, out Vector2 centerLocal)
-                || !RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, horizontalPoint, eventCamera, out Vector2 horizontalLocal)
-                || !RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, verticalPoint, eventCamera, out Vector2 verticalLocal))
-            {
-                return canvas != null && canvas.scaleFactor > 0f
-                    ? safePixels / canvas.scaleFactor
-                    : safePixels;
-            }
-
-            float horizontalUnits = Mathf.Abs(horizontalLocal.x - centerLocal.x);
-            float verticalUnits = Mathf.Abs(verticalLocal.y - centerLocal.y);
-            if (horizontalUnits <= 0.0001f && verticalUnits <= 0.0001f)
-            {
-                return safePixels;
-            }
-
-            if (horizontalUnits <= 0.0001f)
-            {
-                return verticalUnits;
-            }
-
-            if (verticalUnits <= 0.0001f)
-            {
-                return horizontalUnits;
-            }
-
-            return (horizontalUnits + verticalUnits) * 0.5f;
-        }
-
         public bool SetFaction(RobotFaction faction)
         {
             bool useNovaReticle = faction == RobotFaction.NovaSyndicate;

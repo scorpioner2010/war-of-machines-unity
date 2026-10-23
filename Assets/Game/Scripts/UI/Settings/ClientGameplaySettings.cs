@@ -19,6 +19,8 @@ namespace Game.Scripts.UI.Settings
         public static event Action<bool> ServerCrosshairChanged;
         public static event Action<bool> CameraShakeChanged;
 
+        private static bool? _cameraShakeOverride;
+
         public static bool ServerCrosshairEnabled
         {
             get
@@ -31,6 +33,11 @@ namespace Game.Scripts.UI.Settings
         {
             get
             {
+                if (_cameraShakeOverride.HasValue)
+                {
+                    return _cameraShakeOverride.Value;
+                }
+
                 return PlayerPrefs.GetInt(CameraShakeKey, 1) == 1;
             }
         }
@@ -98,12 +105,18 @@ namespace Game.Scripts.UI.Settings
                 PlayerPrefs.Save();
             }
 
-            ApplyCameraShakePreference(enabled);
+            ApplyCameraShakePreference(CameraShakeEnabled);
 
             if (changed && notify)
             {
                 CameraShakeChanged?.Invoke(enabled);
             }
+        }
+
+        public static void SetCameraShakeOverride(bool? enabled)
+        {
+            _cameraShakeOverride = enabled;
+            ApplyCameraShakePreference(CameraShakeEnabled);
         }
 
         public static void SetGameplayMouseSensitivity(float value)

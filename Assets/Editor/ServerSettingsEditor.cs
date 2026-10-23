@@ -231,15 +231,27 @@ namespace Toras.Editor
                     "Час швидкого розширення розкиду після початку руху танка, повороту башти або пострілу. Наприклад: 0.12 майже одразу розширює коло після різкого маневру.",
                 ["gunDispersion.accuracyReferenceDistanceMeters"] =
                     "Дистанція інтерпретації точності з бази даних у стилі метрів розкиду на заданій відстані. Наприклад: 100 читає точність як метри радіального розкиду на 100 метрах.",
-                ["gunDispersion.reticleDiameterLerpSpeed"] =
-                    "Швидкість згладжування діаметра кільця; 0 змінює його миттєво.",
-                ["gunDispersion.reticleHorizontalLerpSpeed"] =
+                ["gunDispersion.uiMinDiameter"] =
+                    "Мінімальний діаметр legacy-кільця у пікселях навіть при повному зведенні.",
+                ["gunDispersion.uiMaxDiameter"] =
+                    "Максимальний діаметр legacy-кільця у пікселях.",
+                ["gunDispersion.uiFullyAimedPixelsPerDegreeAtMaxZoom"] =
+                    "Пікселів на градус для повністю зведеного legacy-кільця у максимальному zoom.",
+                ["gunDispersion.uiFullyAimedPixelsPerDegreeAtMaxDistance"] =
+                    "Пікселів на градус для повністю зведеного legacy-кільця на дальній камері.",
+                ["gunDispersion.uiBloomPixelsPerDegreeAtMaxZoom"] =
+                    "Пікселів на градус поточного bloom понад мінімальний у максимальному zoom.",
+                ["gunDispersion.uiBloomPixelsPerDegreeAtMaxDistance"] =
+                    "Пікселів на градус поточного bloom понад мінімальний на дальній камері.",
+                ["gunDispersion.uiDiameterLerpSpeed"] =
+                    "Швидкість згладжування діаметра legacy-кільця; 0 змінює його миттєво.",
+                ["gunDispersion.uiReticleHorizontalLerpSpeed"] =
                     "Швидкість горизонтального слідування кільця за логічною точкою прицілу.",
-                ["gunDispersion.reticleVerticalLerpSpeed"] =
+                ["gunDispersion.uiReticleVerticalLerpSpeed"] =
                     "Швидкість вертикального слідування кільця за логічною точкою прицілу.",
-                ["gunDispersion.reticleSniperHorizontalLerpSpeed"] =
+                ["gunDispersion.uiSniperReticleHorizontalLerpSpeed"] =
                     "Горизонтальне згладжування кільця у снайперському режимі.",
-                ["gunDispersion.reticleSniperVerticalLerpSpeed"] =
+                ["gunDispersion.uiSniperReticleVerticalLerpSpeed"] =
                     "Вертикальне згладжування кільця у снайперському режимі.",
                 ["gunDispersion.serverSyncInterval"] =
                     "Інтервал серверної синхронізації розкиду з клієнтами. Наприклад: 0.05 дозволяє до двадцяти оновлень за секунду.",
