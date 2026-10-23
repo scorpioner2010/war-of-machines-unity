@@ -11,6 +11,7 @@ namespace Game.Scripts.AI.WaypointGraph
     public sealed class BotNavigator : MonoBehaviour
     {
         private const float FailedRepathBackoffSeconds = 2f;
+        private const float MinimumPivotProgressDegrees = 4f;
         private const int ProximityDirectionCount = 8;
         private const int ProximityVerticalRayCount = 3;
         private const int ProximityRaycastBufferSize = 32;
@@ -41,12 +42,15 @@ namespace Game.Scripts.AI.WaypointGraph
         private Vector3 _targetPosition;
         private Vector3 _pathTargetPosition;
         private Vector3 _lastProgressPosition;
+        private float _lastProgressYaw;
         private float _nextTickTime;
         private float _nextRepathTime;
         private float _nextStuckCheckTime;
         private float _unstickUntilTime;
         private float _nextFallbackInputChangeTime;
         private float _nextProximityScanTime;
+        private float _smoothedTurnInput;
+        private float _lastSteeringSampleTime;
         private float _turnBias = 1f;
         private Vector3 _desiredTravelDirection;
         private Vector3 _proximityAvoidance;
@@ -81,6 +85,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _nextRepathTime = now + Random.Range(0f, settings.repathCooldown);
             _nextStuckCheckTime = now + Random.Range(0.1f, settings.stuckCheckInterval);
             _nextProximityScanTime = now + Random.Range(0f, settings.proximityScanInterval);
+            ResetSteeringSmoothing();
             _proximityAvoidance = Vector3.zero;
             InitializeExplorationMemory();
             _lastProgressPosition = GetMovePosition();
@@ -91,11 +96,25 @@ namespace Game.Scripts.AI.WaypointGraph
             target = newTarget;
             _hasExplicitPositionTarget = false;
             _hasExplicitTarget = target != null;
+            ResetSteeringSmoothing();
+            ResetProgressTracking();
             ClearPath();
             _nextRepathTime = 0f;
         }
 
         public void SetTargetPosition(Vector3 position)
+        {
+            target = null;
+            _targetPosition = position;
+            _hasExplicitPositionTarget = true;
+            _hasExplicitTarget = true;
+            ResetSteeringSmoothing();
+            ResetProgressTracking();
+            ClearPath();
+            _nextRepathTime = 0f;
+        }
+
+        public void UpdateTargetPosition(Vector3 position)
         {
             target = null;
             _targetPosition = position;
@@ -113,9 +132,11 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             _movementSuppressed = suppressed;
+            ResetProgressTracking();
             if (_movementSuppressed)
             {
                 _isPivotTurning = false;
+                ResetSteeringSmoothing();
                 ClearDesiredTravelDirection();
                 ApplyInput(0f, 0f);
             }
@@ -148,6 +169,7 @@ namespace Game.Scripts.AI.WaypointGraph
         {
             _movementSuppressed = false;
             _isPivotTurning = false;
+            ResetSteeringSmoothing();
             ClearDesiredTravelDirection();
             ApplyInput(0f, 0f);
             ClearPath();
@@ -619,13 +641,23 @@ namespace Game.Scripts.AI.WaypointGraph
         {
             _nextStuckCheckTime = now + settings.stuckCheckInterval;
 
+            if (!_hasDesiredTravelDirection)
+            {
+                ResetProgressTracking();
+                return false;
+            }
+
             Vector3 position = GetMovePosition();
             Vector3 moved = position - _lastProgressPosition;
             moved.y = 0f;
+            float currentYaw = GetMoveYaw();
+            float yawDelta = Mathf.Abs(Mathf.DeltaAngle(_lastProgressYaw, currentYaw));
             _lastProgressPosition = position;
+            _lastProgressYaw = currentYaw;
 
             float stuckDistanceSqr = settings.stuckDistance * settings.stuckDistance;
-            if (moved.sqrMagnitude >= stuckDistanceSqr)
+            if (moved.sqrMagnitude >= stuckDistanceSqr
+                || HasTurnProgress(yawDelta, MinimumPivotProgressDegrees))
             {
                 return false;
             }
@@ -639,6 +671,25 @@ namespace Game.Scripts.AI.WaypointGraph
             return true;
         }
 
+        private static bool HasTurnProgress(float yawDelta, float minimumProgressDegrees)
+        {
+            return yawDelta >= Mathf.Max(0f, minimumProgressDegrees);
+        }
+
+        private void ResetProgressTracking()
+        {
+            _lastProgressPosition = GetMovePosition();
+            _lastProgressYaw = GetMoveYaw();
+            _nextStuckCheckTime = Time.time + Mathf.Max(0.1f, ServerSettings.GetBotWander().stuckCheckInterval);
+            _isUnsticking = false;
+        }
+
+        private float GetMoveYaw()
+        {
+            Transform moveTransform = GetMoveTransform();
+            return moveTransform != null ? moveTransform.eulerAngles.y : 0f;
+        }
+
         private void ApplyDirectionInput(Vector3 desiredDirection, float waypointDistance, BotWanderSettings settings)
         {
             Transform moveTransform = GetMoveTransform();
@@ -650,7 +701,16 @@ namespace Game.Scripts.AI.WaypointGraph
 
             float angle = Vector3.SignedAngle(moveTransform.forward, desiredDirection, Vector3.up);
             float absAngle = Mathf.Abs(angle);
-            float turn = Mathf.Clamp(angle / settings.turnFullInputAngle, -1f, 1f);
+            float desiredTurn = ResolveSteeringTurn(
+                angle,
+                settings.turnFullInputAngle,
+                settings.turnDeadZoneAngle);
+            float turn = SmoothSteeringTurn(
+                _smoothedTurnInput,
+                desiredTurn,
+                settings.turnInputSmoothing,
+                GetSteeringDeltaTime(settings));
+            _smoothedTurnInput = turn;
             float forward = settings.forwardInput;
 
             if (_isPivotTurning)
@@ -685,6 +745,49 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             ApplyInput(forward, turn);
+        }
+
+        private float GetSteeringDeltaTime(BotWanderSettings settings)
+        {
+            float now = Time.time;
+            float deltaTime = _lastSteeringSampleTime > 0f
+                ? now - _lastSteeringSampleTime
+                : settings.thinkInterval;
+            _lastSteeringSampleTime = now;
+            return Mathf.Clamp(deltaTime, 0.01f, 0.5f);
+        }
+
+        private static float ResolveSteeringTurn(float angle, float fullInputAngle, float deadZoneAngle)
+        {
+            float absoluteAngle = Mathf.Abs(angle);
+            if (absoluteAngle <= Mathf.Max(0f, deadZoneAngle))
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp(angle / Mathf.Max(1f, fullInputAngle), -1f, 1f);
+        }
+
+        private static float SmoothSteeringTurn(
+            float currentInput,
+            float desiredInput,
+            float smoothingSpeed,
+            float deltaTime)
+        {
+            if (smoothingSpeed <= 0f || deltaTime <= 0f)
+            {
+                return desiredInput;
+            }
+
+            float blend = 1f - Mathf.Exp(-smoothingSpeed * deltaTime);
+            float smoothedInput = Mathf.Lerp(currentInput, desiredInput, blend);
+            return Mathf.Abs(smoothedInput) < 0.025f ? 0f : smoothedInput;
+        }
+
+        private void ResetSteeringSmoothing()
+        {
+            _smoothedTurnInput = 0f;
+            _lastSteeringSampleTime = 0f;
         }
 
         private void TickFallbackWander(BotWanderSettings settings, float now)

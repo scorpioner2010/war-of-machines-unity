@@ -73,8 +73,7 @@ namespace Game.Scripts.Networking.Lobby
             return player != null
                    && !player.isBot
                    && player.Connection != null
-                   && !player.leftBattle
-                   && player.playerRoot != null;
+                   && !player.leftBattle;
         }
 
         public static EndGameResult GetEndGameResult(Player player, MatchTeam winnerTeam, bool isDraw)

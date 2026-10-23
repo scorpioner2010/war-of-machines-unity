@@ -34,6 +34,10 @@ Runtime graph flow:
 4. `BotNavigator` uses the graph and `WaypointAStarPathfinder` to choose and follow a path.
 5. For explicit transform or position targets, the graph path routes the bot to the nearest graph node first; after the path is exhausted, `BotNavigator` keeps the explicit target active and drives the final segment directly to the requested target position instead of switching back to random wander.
 
+Bot path-progress safeguards:
+- `BotNavigator` resets progress/stuck timers when a transform target, position target, or movement-suppression state changes, so a newly issued combat command starts with a clean progress window.
+- Stuck recovery does not trigger during an intentional pivot turn or when the navigator has no valid desired travel direction. This prevents planned in-place alignment from being mistaken for a blocked route and repeatedly reversing the vehicle.
+
 Important constraints:
 - Runtime graph lookup uses a static dictionary by scene handle. Do not replace it with scene-wide searches.
 - Required graph/source references should be wired in the scene.

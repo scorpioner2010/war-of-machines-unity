@@ -1,6 +1,49 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
+- User request: "зустрів дуже дивний баг, короче я погиб, але замість того щоб вийти я вирішив дочекатися коли моя команда переможе, і вона перемогла але потім все зависло ось на цьому скріні, перевірь цей кейс бо це схоже на потенційно на дуже серйозний баг [@ai-chat-attachment-7601617674806234218.png](file:///C:/Users/TorasPC/AppData/Local/Temp/ai-chat-attachment-7601617674806234218.png)."
+- Objective: diagnose and fix the match-end flow for a connected player who dies, waits for the surviving team to win, and then becomes stuck in the gameplay HUD instead of receiving a usable end-game/result transition.
+- Acceptance criteria:
+  - A dead connected real player receives the EndGame transition even if the dead vehicle has already despawned.
+  - The post-battle result cannot wait forever for MainMenu behind a missing EndGame transition.
+  - Focused regression coverage proves the dead-player battle-end condition and the relevant result-flow contract.
+  - Unity/build verification is rerun after the final code change, with any open-editor or manual-test limitation recorded.
+- Assumptions:
+  - Existing user-owned working-tree changes, including the open Client/Server editor sessions and prior gameplay fixes, must remain intact.
+  - The dead vehicle may be destroyed by the authoritative server before the final team elimination; the player record and connection are the durable result-routing identity.
+- Current work: removed the `playerRoot != null` requirement from `BattleRules.ShouldReceiveEndGame`, so a connected non-bot player still receives EndGame after the authoritative dead vehicle despawns. Added reflection-based PlayMode regression coverage for the despawned-player case and disconnected/abandoned negative cases. Updated `match-lobby-spawn.md` and `menus-settings-progression.md` with the result-flow contract.
+- Work remaining: run the focused Unity PlayMode test and, if possible, reproduce one dead-player/surviving-team match through the EndGame and GameResult menus after the open Editor sessions are closed.
+- Edited files: `Assets/Game/Scripts/Networking/Lobby/BattleRules.cs`, `Assets/Game/Tests/PlayMode/MatchBattleEndPlayModeTests.cs`, `Assets/Game/Tests/PlayMode/MatchBattleEndPlayModeTests.cs.meta`, `docs/codex-game/match-lobby-spawn.md`, `docs/codex-game/menus-settings-progression.md`, `docs/codex-game/task-history.md`, and this handoff.
+- Verification: screenshot inspected; required `game-diag` commands could not reach `127.0.0.1:8765-8774` and timed out during fallback, so diagnostics classification remains `UNKNOWN`. `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with `0` errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with `0` errors; `git diff --check` passed. Unity batch PlayMode was not run because Client Editor process `16356` is open on this project and a Server clone Editor is also open.
+
+## Previous completed task (deep 10v9 bot battle audit)
+- Status: `COMPLETED`
+- Started: 2026-10-23
+- New user request: "все одно пушка труситься, короче, запусти сцену клыэнт, заспавнь явно 10 ботыв противника ы 9 ботыв своъх і наблюдай як вони воюють, до кінця боя, ти побачиш деякі баги, важливо боти часто крутяться вправо вліво і із за цього не можуть навестися бо башня повертається за тілом. проведи цей глубокий тест вияви всі поломки та пофікси"
+- User request: "тобі треба зробити ботів максимально розумними,
+тобі треба запустити сцену клієнт, вибрати рандомного робота попасти в гру, потім заспавнити ботів союзників та ботів противників і просто наблюдати за їх поведінкою, якщо ти помічаєш що роботи туплять, не можуть нормально рухатися, крутяться на місті замість того щоб йти бо вже вільному маршруту, не атакують противника там де можуть його атакувати і т.д. то ти фіксуєш ці проблеми і виправляєш в коді, потім знову запускаєш тести і так працюєш поки боти не будуть максимально адекватні максимально розуміні, бо зараз вони не можуть нормально рухатися часто застряють чомусь, і не можуть нормально атакувати, якщо я рухаюся бот як сліпий він не може на мене навестися і стреляти, також якщо я трішки вилізу із за угла у стреляю по ньому він мене не бачить, це все баги які треба виправити боти мають бути розумними все одно що це люди, навіть хитрими мають бути, займати вигідні позиції для атаки і вести себе розуміно. займися цим. я впевнений що під час тестів ти побачиш багато багів та виправиш їх.
+
+тобі дозволено робити все, видаляти створювати файли писати якісь тести, запускати юніті вимикати юніті і и.д. повністю повний доступ щоб реалізувати цей таск чітко"
+- Objective: audit and improve bot navigation, perception, targeting, aim, firing, avoidance, and tactical positioning through reproducible runtime and automated tests.
+- Acceptance criteria:
+  - Bots follow open routes without stationary spinning, repeated waypoint loops, or avoidable deadlocks.
+  - Bots detect and track moving enemies when visibility and line of fire allow it, including partial exposure around cover.
+  - Bots aim and fire through the authoritative weapon path when a valid shot exists, while respecting cover, allies, reload, and team filtering.
+  - Allied and enemy bots use sensible movement/tactical positions without omniscient target acquisition.
+  - Every production behavior change has focused regression coverage or a documented runtime verification result.
+  - Unity batch/PlayMode verification is rerun after the final code change; any unavailable manual observation is recorded as a concrete limitation.
+- Assumptions:
+  - Existing user-owned changes, especially `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset`, must remain untouched.
+  - Existing bot architecture, logical visibility rules, and player-like input path should be improved rather than bypassed.
+  - A deterministic PlayMode harness is preferable to UI automation for repeatable bot behavior checks; manual Client observation will be used only if the environment supports it without conflicting Unity processes.
+- Current work: completed the automated Client PlayMode audit with exactly 10 enemy and 9 ally bots. The telemetry covered body/turret direction flips, per-bot positions, targets, health, and ammunition through the end of the battle.
+- Work remaining: none for the requested deep audit.
+- Edited files: `Assets/Game/Scripts/AI/WaypointGraph/BotNavigator.cs`, `Assets/Game/Scripts/AI/WaypointGraph/BotCombatNavigationController.cs`, `Assets/Game/Scripts/AI/WaypointGraph/BotCombatTacticSelector.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleTurretRotationController.cs`, `Assets/Game/Scripts/Server/ServerSettings.cs`, `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`, `Assets/Editor/ServerSettingsEditor.cs`, `Assets/Game/Tests/PlayMode/BotAiRegressionPlayModeTests.cs`, `Assets/Game/Tests/PlayMode/BotBattle10v9PlayModeTests.cs`, `docs/codex-game/ai-bots.md`, and this handoff.
+- Verification: Unity PlayMode `BotAiRegressionPlayModeTests` passed `7/7`; the exact `10 enemy / 9 ally` Client battle passed in `225.609s` and ended with `3 enemy / 1 ally` alive before one team was eliminated. A repeat exact `10 enemy / 9 ally` battle also passed in `216.603s`; the final telemetry reached `7 enemy / 1 ally` before the last ally was eliminated. The CUA visual-control bridge was unavailable, so observation used runtime telemetry rather than screenshots.
+
+## Previous completed task (real Unity verification and repair of robot impact decals)
 - Status: `COMPLETED`
 - Started: 2026-10-23
 - User request: "проведи реальные тесты і потестуй на противниках та союзниках, тому що все ще не працює тому ти маєш провести тести і якщо це не виправлено виправити і потім знову протестувати щоб впевнитися що все ок"

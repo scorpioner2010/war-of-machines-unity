@@ -18,6 +18,7 @@ Current owner scripts:
   - In the editor-only Client vehicle test path, `StartEditorTestMatch` registers the prepared test room as an active match, starts its visibility service, and spawns the normal network gameplay timer without changing the production match path.
   - Sends unreliable visibility snapshots with a monotonic state version, FishNet server tick, and per-entry remaining lifetime. The client uses the tick to subtract packet age before applying a deadline.
   - Receives `VehicleHealth.OnServerDeath` to evaluate battle end. Individual dead vehicles are later removed by the authoritative `VehicleHealth` FishNet despawn timer, not by local client presentation code.
+  - At battle end, sends the EndGame transition to every connected non-bot player who has not abandoned the match, even when that player's dead `VehicleRoot` has already been despawned. The player connection and `leftBattle` state own result delivery; the vehicle object lifetime does not.
   - When the last real player disconnects from a spawned/loading match, finishes the match as a draw, unloads that match scene on the server without affecting other room instances, and removes the room after result delivery. This prevents abandoned bot vehicles and their AI from accumulating across reconnects.
   - At battle end, receives the per-user result built by `MatchResultService` and delivers it directly or queues it in `PendingBattleResults` until that same `userId` reconnects.
 - `Assets/Game/Scripts/Networking/Lobby/MatchResultService.cs`
@@ -77,7 +78,8 @@ Post-battle result flow:
 1. `GameplaySpawner` finishes the room and `MatchResultService` posts the real-player inputs to `/matches/{matchId}/end`.
 2. The API returns stored per-match XP, Bolts, Free XP, and MMR for the same `userId`; participant history is the fallback if the immediate response is incomplete.
 3. A complete authoritative payload is delivered with `RewardsAvailable = true`. An unavailable or historical incomplete payload is delivered as pending while preserving room-authoritative kills and damage.
-4. `GameResultUI` confirms receipt when closed and refreshes the profile, so persistent totals are reloaded after the popup.
+4. The EndGame menu is delivered before `GameResultUI`; closing EndGame returns to MainMenu, allowing the queued result popup to appear. A dead player's despawned vehicle must not suppress this transition, otherwise the result queue would wait indefinitely for MainMenu behind the gameplay HUD.
+5. `GameResultUI` confirms receipt when closed and refreshes the profile, so persistent totals are reloaded after the popup.
 
 Rules when editing match/spawn:
 - Keep room state authoritative on server.

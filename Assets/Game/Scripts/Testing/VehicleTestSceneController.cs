@@ -177,6 +177,13 @@ namespace Game.Scripts.Testing
 
         private void Update()
         {
+            if (Input.GetKeyDown(KeyCode.F1) && _spawnedVehicle != null)
+            {
+                _testPanelExpanded = true;
+                SetTestCursorMode(true);
+                RefreshGameplayHudVisibilityForTest();
+            }
+
             if (VehicleInputController.Escape)
             {
                 SetTestCursorMode(!_testCursorMode);

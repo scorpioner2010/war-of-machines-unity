@@ -90,21 +90,55 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             float leadSeconds = Mathf.Clamp(distance / shellSpeed, 0f, settings.maxLeadSeconds);
-            Vector3 predictedAimPoint = aimPoint;
-            int iterations = Mathf.Clamp(settings.leadPredictionIterations, 1, 8);
+            return BotLeadPrediction.Solve(
+                aimPoint,
+                origin,
+                _targetVelocity,
+                shellSpeed,
+                settings.maxLeadSeconds,
+                settings.leadPredictionIterations,
+                settings.leadPredictionMultiplier,
+                leadSeconds);
+        }
+    }
+
+    public static class BotLeadPrediction
+    {
+        public static Vector3 Solve(
+            Vector3 aimPoint,
+            Vector3 origin,
+            Vector3 targetVelocity,
+            float shellSpeed,
+            float maxLeadSeconds,
+            int predictionIterations,
+            float predictionMultiplier,
+            float initialLeadSeconds)
+        {
+            if (!BotCombatUtility.IsFinite(aimPoint)
+                || !BotCombatUtility.IsFinite(origin)
+                || !BotCombatUtility.IsFinite(targetVelocity)
+                || float.IsNaN(shellSpeed)
+                || float.IsInfinity(shellSpeed)
+                || shellSpeed <= 0.001f)
+            {
+                return aimPoint;
+            }
+
+            float leadSeconds = Mathf.Clamp(initialLeadSeconds, 0f, Mathf.Max(0f, maxLeadSeconds));
+            int iterations = Mathf.Clamp(predictionIterations, 1, 8);
             for (int i = 0; i < iterations; i++)
             {
-                predictedAimPoint = aimPoint + _targetVelocity * leadSeconds;
+                Vector3 predictedAimPoint = aimPoint + targetVelocity * leadSeconds;
                 float predictedDistance = (predictedAimPoint - origin).magnitude;
                 if (float.IsNaN(predictedDistance) || float.IsInfinity(predictedDistance))
                 {
                     break;
                 }
 
-                leadSeconds = Mathf.Clamp(predictedDistance / shellSpeed, 0f, settings.maxLeadSeconds);
+                leadSeconds = Mathf.Clamp(predictedDistance / shellSpeed, 0f, Mathf.Max(0f, maxLeadSeconds));
             }
 
-            return aimPoint + _targetVelocity * leadSeconds * settings.leadPredictionMultiplier;
+            return aimPoint + targetVelocity * leadSeconds * Mathf.Max(0f, predictionMultiplier);
         }
     }
 }

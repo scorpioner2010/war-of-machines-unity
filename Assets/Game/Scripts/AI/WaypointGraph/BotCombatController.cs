@@ -188,12 +188,25 @@ namespace Game.Scripts.AI.WaypointGraph
             Vector3 visibleAimPoint = _state.TargetIsDirectlySpotted
                 ? _aimPointResolver.Resolve(_state.TargetRoot, settings, _state.TargetAimOffset)
                 : _state.TargetMapPosition + Vector3.up * settings.fallbackTargetHeight;
-            bool hasLineOfFire = _state.TargetIsDirectlySpotted
-                                 && _lineOfFireChecker.HasLineOfFire(_vehicleRoot, visibleAimPoint, _state.TargetRoot, settings);
 
             Vector3 aimPoint = _state.TargetIsDirectlySpotted
                 ? _motionTracker.ApplyTargetLead(_vehicleRoot, visibleAimPoint, settings)
                 : visibleAimPoint;
+            bool hasLineOfFire = false;
+            if (_state.TargetIsDirectlySpotted)
+            {
+                hasLineOfFire = _lineOfFireChecker.TryGetBestAimPoint(
+                    _vehicleRoot,
+                    aimPoint,
+                    _state.TargetRoot,
+                    settings,
+                    out Vector3 clearAimPoint);
+                if (hasLineOfFire)
+                {
+                    aimPoint = clearAimPoint;
+                }
+            }
+
             Vector3 aimForward = _aimController.ResolveAimForward(_vehicleRoot, aimPoint);
             VehicleAimInputResult aimResult = _aimController.SolveAim(_vehicleRoot, aimPoint, aimForward);
             float aimReadiness01 = BotCombatTacticSelector.GetAimReadiness01(_vehicleRoot);

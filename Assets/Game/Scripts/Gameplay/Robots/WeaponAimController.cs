@@ -214,7 +214,7 @@ namespace Game.Scripts.Gameplay.Robots
 
                 if (ShouldDriveGunPitch())
                 {
-                    _localPitch = _targetPitchServer;
+                    _localPitch = SmoothAngle(_localPitch, _targetPitchServer, smoothSpeed, Time.deltaTime);
                     Quaternion localRot = _initialLocalRotation * Quaternion.AngleAxis(_localPitch, AxisToVector(localPitchAxis));
                     gun.localRotation = localRot;
                 }
@@ -354,6 +354,17 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return IsOwner && vehicleRoot != null && !vehicleRoot.IsMenu;
+        }
+
+        private static float SmoothAngle(float currentAngle, float targetAngle, float smoothingSpeed, float deltaTime)
+        {
+            if (smoothingSpeed <= 0f || deltaTime <= 0f)
+            {
+                return targetAngle;
+            }
+
+            float blend = 1f - Mathf.Exp(-smoothingSpeed * deltaTime);
+            return Mathf.LerpAngle(currentAngle, targetAngle, blend);
         }
 
         private Vector3 GetAimPlaneForward()

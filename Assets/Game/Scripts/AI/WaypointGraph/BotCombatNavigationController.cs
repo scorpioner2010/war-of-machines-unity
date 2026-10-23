@@ -48,10 +48,18 @@ namespace Game.Scripts.AI.WaypointGraph
                 return;
             }
 
+            bool preserveSteering = _hasNavigationTarget && _navigationTargetRoot == targetRoot;
             _navigationTargetRoot = targetRoot;
             _navigationTargetPosition = mapPosition;
             _hasNavigationTarget = true;
-            _navigator.SetTargetPosition(mapPosition);
+            if (preserveSteering)
+            {
+                _navigator.UpdateTargetPosition(mapPosition);
+            }
+            else
+            {
+                _navigator.SetTargetPosition(mapPosition);
+            }
         }
 
         public void ReleaseControl()

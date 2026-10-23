@@ -7,6 +7,8 @@ namespace Game.Scripts.Gameplay.Robots
     [DefaultExecutionOrder(-20)]
     public class VehicleTurretRotationController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
+        private const float AimHoldDeadZoneDegrees = 0.25f;
+
         public VehicleRoot vehicleRoot;
 
         public float rotationSpeed = 30f;
@@ -102,10 +104,19 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                float step = rotationSpeed * Time.deltaTime;
-                _localYaw = Mathf.MoveTowardsAngle(_localYaw, _targetYawServer, step);
+                if (!ShouldHoldTargetYaw(_localYaw, _targetYawServer, AimHoldDeadZoneDegrees))
+                {
+                    float step = rotationSpeed * Time.deltaTime;
+                    _localYaw = Mathf.MoveTowardsAngle(_localYaw, _targetYawServer, step);
+                }
+
                 transform.rotation = _chassisTransform.rotation * Quaternion.Euler(0f, _localYaw, 0f);
             }
+        }
+
+        private static bool ShouldHoldTargetYaw(float currentYaw, float targetYaw, float deadZoneDegrees)
+        {
+            return Mathf.Abs(Mathf.DeltaAngle(currentYaw, targetYaw)) <= Mathf.Max(0f, deadZoneDegrees);
         }
 
         private bool ShouldDriveRotation()

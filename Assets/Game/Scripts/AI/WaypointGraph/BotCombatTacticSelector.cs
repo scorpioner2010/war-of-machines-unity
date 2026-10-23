@@ -65,7 +65,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private const float NavigationRefreshIntervalSeconds = 0.75f;
         private const float NavigationRefreshDistance = 6f;
         private const float OccupiedPositionRadius = 9f;
-        private const float FireLaneBlockerRadius = 5.5f;
+        private const float FireLaneBlockerRadius = 2.5f;
         private const float FireLaneSideStepDistance = 18f;
         private const float FireLaneBackStepDistance = 8f;
         private const float CandidateMinorSideStep = 10f;
@@ -648,7 +648,9 @@ namespace Game.Scripts.AI.WaypointGraph
 
         private BotCombatTacticDecision BuildKiteStrongTargetDecision(BotCombatTacticContext context)
         {
-            Vector3 navigationPosition = BuildRetreatPosition(context, 34f, 12f);
+            Vector3 navigationPosition = context.HasLineOfFire
+                ? BuildRetreatPosition(context, 34f, 12f)
+                : BuildRearSidePosition(context, 18f, 12f);
             return CreateDecision(context, BotCombatTactic.KiteStrongTarget, navigationPosition, false, true, KitingFireReadiness);
         }
 

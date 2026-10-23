@@ -2672,7 +2672,7 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 7340184188128964142}
   vehicleRoot: {fileID: 5226239542433404041}
   gun: {fileID: 3016261043316007493}
-  smoothSpeed: 50
+  smoothSpeed: 10
   minPitch: -30
   maxPitch: 70
   pitchOffset: 0

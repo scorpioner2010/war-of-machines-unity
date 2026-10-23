@@ -199,6 +199,8 @@ namespace Game.Scripts.Server
         public float slowTurnAngle = 55f;
         [Tooltip("Кут до цілі, після якого бот майже зупиняється для розвороту.")]
         public float stopTurnAngle = 115f;
+        public float turnDeadZoneAngle = 4f;
+        public float turnInputSmoothing = 7f;
         [Tooltip("Ввід руху вперед під час повільного повороту.")]
         public float slowForwardInput = 0.35f;
         [Tooltip("Дистанція до waypoint, з якої бот починає сповільнюватися для точнішого прибуття.")]
@@ -277,6 +279,8 @@ namespace Game.Scripts.Server
 
             slowTurnAngle = ClampFinite(slowTurnAngle, 0f, Default.slowTurnAngle);
             stopTurnAngle = ClampFinite(stopTurnAngle, slowTurnAngle, Default.stopTurnAngle);
+            turnDeadZoneAngle = ClampFinite(turnDeadZoneAngle, 0f, Default.turnDeadZoneAngle);
+            turnInputSmoothing = ClampFinite(turnInputSmoothing, 0.1f, Default.turnInputSmoothing);
             slowForwardInput = ClampInput(slowForwardInput, Default.slowForwardInput);
             waypointApproachSlowDistance = ClampFinite(waypointApproachSlowDistance, waypointReachDistance, Default.waypointApproachSlowDistance);
             waypointPassDistance = ClampFinite(waypointPassDistance, waypointReachDistance, Default.waypointPassDistance);
@@ -321,6 +325,8 @@ namespace Game.Scripts.Server
             turnInPlaceExitAngle = source.turnInPlaceExitAngle;
             slowTurnAngle = source.slowTurnAngle;
             stopTurnAngle = source.stopTurnAngle;
+            turnDeadZoneAngle = source.turnDeadZoneAngle;
+            turnInputSmoothing = source.turnInputSmoothing;
             slowForwardInput = source.slowForwardInput;
             waypointApproachSlowDistance = source.waypointApproachSlowDistance;
             waypointPassDistance = source.waypointPassDistance;
@@ -704,6 +710,8 @@ namespace Game.Scripts.Server
         public float spotterEyeHeight = 2f;
         [Tooltip("Вертикальне зміщення кінця променя від наземної позиції цілі.")]
         public float targetProbeHeight = 1.4f;
+        [Tooltip("Горизонтальний радіус додаткових точок spotting навколо цілі для часткового peek з-за укриття.")]
+        public float targetProbeRadius = 0.75f;
 
         public static MatchVisibilityGlobalSettings Default
         {
@@ -725,6 +733,7 @@ namespace Game.Scripts.Server
             lineOfSightRecheckSeconds = ClampFinite(lineOfSightRecheckSeconds, 0.05f, Default.lineOfSightRecheckSeconds);
             spotterEyeHeight = ClampFinite(spotterEyeHeight, 0f, Default.spotterEyeHeight);
             targetProbeHeight = ClampFinite(targetProbeHeight, 0f, Default.targetProbeHeight);
+            targetProbeRadius = ClampFinite(targetProbeRadius, 0f, Default.targetProbeRadius);
         }
 
         public void CopyFrom(MatchVisibilityGlobalSettings source)
@@ -746,6 +755,7 @@ namespace Game.Scripts.Server
             lineOfSightRecheckSeconds = source.lineOfSightRecheckSeconds;
             spotterEyeHeight = source.spotterEyeHeight;
             targetProbeHeight = source.targetProbeHeight;
+            targetProbeRadius = source.targetProbeRadius;
         }
 
         private static LayerMask NormalizeLineOfSightMask(LayerMask source)

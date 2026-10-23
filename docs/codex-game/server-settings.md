@@ -56,6 +56,8 @@ Important settings classes currently used by recent gameplay work:
   - Bot target acquisition uses this visibility state through `MatchVisibilityService`, not an omniscient room player scan.
   - `spottedMemorySeconds` starts at the server-confirmed transition from direct spotting to hidden and keeps the `EnemyLastKnown` map entry and the enemy's 3D presentation visible for that duration.
   - `guaranteedDetectionRange` bypasses only the normal view-range statistic. It does not bypass terrain or walls while `requireLineOfSight` is enabled.
+  - `maxLineOfSightChecksPerTick` limits the server raycast budget. `MatchVisibilityService` walks ordered participant pairs with a circular cursor and reserves part of the budget for already spotted pairs, so a large match cannot permanently starve new enemy acquisition. The current prefab value is `96`.
+  - `targetProbeRadius` is the horizontal half-width used for the two side probes around a target. With the current prefab value `0.75`, a partial peek around a corner can be spotted when any probe has clear line of sight; it does not bypass the obstacle between the observer and the target.
 
 Rules when editing settings:
 - Add fields to the correct nested settings class.
@@ -69,6 +71,8 @@ Rules when editing settings:
 Current bot settings added recently:
 - `BotWanderSettings.turnInPlaceEnterAngle`
 - `BotWanderSettings.turnInPlaceExitAngle`
+- `BotWanderSettings.turnDeadZoneAngle` (default `4` degrees)
+- `BotWanderSettings.turnInputSmoothing` (default `7`, exponential steering response)
 - `BotWanderSettings.waypointApproachSlowDistance`
 - `BotWanderSettings.waypointPassDistance`
 - `BotWanderSettings.waypointPassedAngle`
@@ -87,5 +91,6 @@ Current bot combat visibility notes:
 - `BotWanderSettings.proximityScanInterval` defaults to `0.5` seconds. Each scan uses eight compass/diagonal directions and three vertical offsets, then steers around live registered robot colliders. The ray height fields are offsets from the movement root, not world-space absolute heights.
 - `BotWanderSettings.exploreUnvisitedNodes` makes no-target graph wandering prefer nodes that this individual bot has not visited; the visit memory is not shared between bots or persisted between spawns.
 - `BotCombatSettings.requireLineOfSightToAcquire` now makes line-of-fire candidates win target scoring when available; it does not block movement toward an obstructed target that is still visible on the logical map.
+- `MatchVisibilityGlobalSettings.maxLineOfSightChecksPerTick` and `targetProbeRadius` control fair spotting throughput and partial-peek detection; increasing the budget improves acquisition latency at the cost of more server raycasts.
 - `BotCombatSettings.holdPositionWithLineOfFire` suppresses bot navigation only when the current tactic allows holding, line of fire is clean, and the target is within the tactic selector's far combat range. Targets beyond that range still pull bots forward so distant bots do not idle at long sight lines.
 - `BotCombatSettings.maxAcquireDistance`, `BotCombatSettings.viewRangeMultiplier`, and `BotCombatSettings.lostSightForgetSeconds` are legacy fields from the old direct room-scan acquisition path. Current bot target visibility and forgetting are controlled by `MatchVisibilityGlobalSettings` and spotted-memory state.

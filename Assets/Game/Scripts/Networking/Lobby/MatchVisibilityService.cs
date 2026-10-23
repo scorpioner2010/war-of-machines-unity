@@ -48,6 +48,7 @@ namespace Game.Scripts.Networking.Lobby
         private float _nextTickTime;
         private float _lastStateRefreshTime;
         private int _version;
+        private int _spottingPairCursor;
 
         public bool IsRunning => _room != null;
 
@@ -63,6 +64,7 @@ namespace Game.Scripts.Networking.Lobby
             _entries.Clear();
             _lineOfSightCache.Clear();
             _expiredLineOfSightKeys.Clear();
+            _spottingPairCursor = 0;
         }
 
         public void Stop()
@@ -76,6 +78,7 @@ namespace Game.Scripts.Networking.Lobby
             _entries.Clear();
             _lineOfSightCache.Clear();
             _expiredLineOfSightKeys.Clear();
+            _spottingPairCursor = 0;
         }
 
         public void Tick(float now, IMatchVisibilityUpdateSink updateSink)
@@ -406,8 +409,13 @@ namespace Game.Scripts.Networking.Lobby
             _teamB.BeginFrame();
 
             int lineOfSightChecksRemaining = Mathf.Max(1, settings.maxLineOfSightChecksPerTick);
-            UpdateTeamSpottingPass(now, settings, true, ref lineOfSightChecksRemaining);
-            UpdateTeamSpottingPass(now, settings, false, ref lineOfSightChecksRemaining);
+            int maintenanceBudget = Mathf.Max(1, lineOfSightChecksRemaining / 3);
+            int maintenanceChecksRemaining = maintenanceBudget;
+            int pairCursor = GetNormalizedPairCursor();
+            UpdateTeamSpottingPass(now, settings, true, ref maintenanceChecksRemaining, ref pairCursor);
+            lineOfSightChecksRemaining -= maintenanceBudget - maintenanceChecksRemaining;
+            UpdateTeamSpottingPass(now, settings, false, ref lineOfSightChecksRemaining, ref pairCursor);
+            _spottingPairCursor = pairCursor;
 
             float memorySeconds = Mathf.Max(0f, settings.spottedMemorySeconds);
             _teamA.EndFrame(now, memorySeconds);
@@ -421,11 +429,28 @@ namespace Game.Scripts.Networking.Lobby
             float now,
             MatchVisibilityGlobalSettings settings,
             bool previouslySpottedTargets,
-            ref int lineOfSightChecksRemaining)
+            ref int lineOfSightChecksRemaining,
+            ref int pairCursor)
         {
-            for (int i = 0; i < _participants.Count; i++)
+            int participantCount = _participants.Count;
+            if (participantCount <= 1)
             {
-                VisibilityParticipant spotter = _participants[i];
+                return;
+            }
+
+            int pairSlotCount = participantCount * participantCount;
+            for (int inspected = 0; inspected < pairSlotCount; inspected++)
+            {
+                int pairSlot = pairCursor;
+                pairCursor = (pairCursor + 1) % pairSlotCount;
+                int spotterIndex = pairSlot / participantCount;
+                int targetIndex = pairSlot % participantCount;
+                if (spotterIndex == targetIndex)
+                {
+                    continue;
+                }
+
+                VisibilityParticipant spotter = _participants[spotterIndex];
                 if (spotter.IsDead)
                 {
                     continue;
@@ -437,35 +462,40 @@ namespace Game.Scripts.Networking.Lobby
                     continue;
                 }
 
-                for (int j = 0; j < _participants.Count; j++)
+                VisibilityParticipant target = _participants[targetIndex];
+                if (target.IsDead || !MatchTeamUtility.AreOpposingAssignedTeams(spotter.Team, target.Team))
                 {
-                    if (i == j)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    VisibilityParticipant target = _participants[j];
-                    if (target.IsDead || !MatchTeamUtility.AreOpposingAssignedTeams(spotter.Team, target.Team))
-                    {
-                        continue;
-                    }
+                if (spotterTeam.WasDirectlySpotted(target.ObjectId) != previouslySpottedTargets
+                    || spotterTeam.IsDirectlySpotted(target.ObjectId))
+                {
+                    continue;
+                }
 
-                    if (spotterTeam.WasDirectlySpotted(target.ObjectId) != previouslySpottedTargets)
-                    {
-                        continue;
-                    }
+                if (CanSpot(spotter, target, settings, now, ref lineOfSightChecksRemaining))
+                {
+                    spotterTeam.MarkSpotted(target.ObjectId, target.Position, target.Yaw);
+                }
 
-                    if (spotterTeam.IsDirectlySpotted(target.ObjectId))
-                    {
-                        continue;
-                    }
-
-                    if (CanSpot(spotter, target, settings, now, ref lineOfSightChecksRemaining))
-                    {
-                        spotterTeam.MarkSpotted(target.ObjectId, target.Position, target.Yaw);
-                    }
+                if (lineOfSightChecksRemaining <= 0)
+                {
+                    return;
                 }
             }
+        }
+
+        private int GetNormalizedPairCursor()
+        {
+            int participantCount = _participants.Count;
+            if (participantCount <= 1)
+            {
+                return 0;
+            }
+
+            int pairSlotCount = participantCount * participantCount;
+            return ((_spottingPairCursor % pairSlotCount) + pairSlotCount) % pairSlotCount;
         }
 
         private bool CanSpot(
@@ -493,12 +523,12 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             Vector3 origin = spotter.Position + Vector3.up * Mathf.Max(0f, settings.spotterEyeHeight);
-            Vector3 targetPoint = target.Position + Vector3.up * Mathf.Max(0f, settings.targetProbeHeight);
             return HasCachedLineOfSight(
                 spotter.ObjectId,
                 target.ObjectId,
                 origin,
-                targetPoint,
+                target.Position,
+                target.Yaw,
                 settings,
                 now,
                 ref lineOfSightChecksRemaining);
@@ -508,7 +538,8 @@ namespace Game.Scripts.Networking.Lobby
             int spotterObjectId,
             int targetObjectId,
             Vector3 origin,
-            Vector3 targetPoint,
+            Vector3 targetPosition,
+            float targetYaw,
             MatchVisibilityGlobalSettings settings,
             float now,
             ref int lineOfSightChecksRemaining)
@@ -521,20 +552,46 @@ namespace Game.Scripts.Networking.Lobby
                 return cached.Visible;
             }
 
-            if (lineOfSightChecksRemaining <= 0)
+            float probeHeight = Mathf.Max(0f, settings.targetProbeHeight);
+            float probeRadius = Mathf.Max(0f, settings.targetProbeRadius);
+            Vector3 targetRight = Quaternion.Euler(0f, targetYaw, 0f) * Vector3.right;
+            for (int probeIndex = 0; probeIndex < 3; probeIndex++)
             {
-                return hasCached && cached.Visible;
+                if (lineOfSightChecksRemaining <= 0)
+                {
+                    return hasCached && cached.Visible;
+                }
+
+                Vector3 targetPoint = targetPosition + Vector3.up * probeHeight;
+                if (probeIndex == 1)
+                {
+                    targetPoint += targetRight * probeRadius;
+                }
+                else if (probeIndex == 2)
+                {
+                    targetPoint -= targetRight * probeRadius;
+                }
+
+                lineOfSightChecksRemaining--;
+                if (!HasLineOfSight(origin, targetPoint, settings.lineOfSightMask))
+                {
+                    continue;
+                }
+
+                _lineOfSightCache[key] = new CachedLineOfSight
+                {
+                    Visible = true,
+                    CheckedAt = now
+                };
+                return true;
             }
 
-            lineOfSightChecksRemaining--;
-            bool visible = HasLineOfSight(origin, targetPoint, settings.lineOfSightMask);
             _lineOfSightCache[key] = new CachedLineOfSight
             {
-                Visible = visible,
+                Visible = false,
                 CheckedAt = now
             };
-
-            return visible;
+            return false;
         }
 
         private static bool HasLineOfSight(Vector3 origin, Vector3 targetPoint, LayerMask mask)

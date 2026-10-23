@@ -94,6 +94,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponAimController.cs`
   - Gun pitch and aim point controller.
   - Resolves camera/gun aim rays and pitch constraints.
+  - Applies the server target pitch to the visual gun with frame-rate-independent exponential `Mathf.LerpAngle` convergence using `smoothSpeed`; `smoothSpeed <= 0` preserves immediate snapping for an intentional override.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleGunRecoilController.cs`
   - Root-level, client-side gun presentation controller.
   - On an approved/predicted visual shot, moves its inspector-wired `gun` backward along the gun's current rotated local `-Z` axis at `recoilSpeed`, holds for `returnDelay`, then smoothly returns it to the authored local position with `returnSpeed`.
@@ -121,12 +122,14 @@ Aiming flow:
 - Aim requests are solved through `VehicleAimInputSolver`.
 - `VehicleInputController.ServerSetExternalInput` applies desired aim point/forward, target pitch, and target yaw.
 - Turret and gun constraints are respected by the existing controllers.
+- `WeaponAimController` keeps the authoritative target pitch separate from the visual pitch used for the gun transform, so smoothing removes remote bot jitter without changing projectile direction, lead prediction, or fire validation.
 
 Prefab/reference rule:
 - `VehicleRoot` references should be assigned in prefab/scene inspector.
 - Every registered IA and NV battle-vehicle prefab has one enabled `CameraCollisionController` on the same object as `CameraController`; `CameraController.collisionController` must reference it and `CameraCollisionController.ignoredVehicle` must reference that prefab's root `VehicleRoot`. Its default `collisionMask` excludes the Ignore Raycast layer, `collisionRadius` is `0.3`, `surfacePadding` is `0.08`, and `recoverySpeed` is `24`.
 - Battle vehicle prefabs must assign `VehicleRoot.clientVisibility` and every model renderer in `VehicleClientVisibility.visualRenderers`; missing renderer entries can leak hidden geometry.
 - Every registered IA and NV battle-vehicle prefab has one enabled `VehicleGunRecoilController` on its main vehicle object. `VehicleRoot.gunRecoilController` references it and its `gun` references the same transform as `WeaponAimController.gun`. The default tank-style values are `recoilDistance` `0.18`, `recoilSpeed` `3`, `returnDelay` `0.04`, and `returnSpeed` `0.75`; tune these presentation values per robot without changing firing or projectile settings.
+- Every registered IA and NV battle-vehicle prefab sets `WeaponAimController.smoothSpeed` to `10`, which gives visible aim convergence without making bots snap or visibly tremble when their server aim updates.
 - Battle vehicle prefabs must also assign every non-armor `MeshRenderer` and `SkinnedMeshRenderer` to `VehicleHoverOutline.outlineRenderers`. `outlineSubMeshCounts` must match each renderer's current mesh submesh count; missing entries make only a subset of the robot glow on hover.
 - Every IA prefab under `Assets/Game/Content/Robots/IA` has one enabled root `VehicleBodySwayController`; `VehicleRoot.bodySwayController` and the `Root` target in `VehicleGroundAlignmentController.targets` both point to that same component. Do not place a second sway component on `Root` or `ParentRoot`.
 - The default IA sway tuning is `2` degrees for acceleration, `3` degrees for braking, a `4`-degree total pitch limit, input responses `4`/`8`, spring strength `60`, damping `12`, and maximum pitch speed `90`. `maximumSimulationStep` bounds the simulation after a frame hitch.

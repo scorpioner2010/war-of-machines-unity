@@ -70,6 +70,8 @@ MonoBehaviour:
     turnInPlaceExitAngle: 18
     slowTurnAngle: 55
     stopTurnAngle: 115
+    turnDeadZoneAngle: 4
+    turnInputSmoothing: 7
     slowForwardInput: 0.35
     waypointApproachSlowDistance: 8
     waypointPassDistance: 5
@@ -178,10 +180,11 @@ MonoBehaviour:
     lineOfSightMask:
       serializedVersion: 2
       m_Bits: 265
-    maxLineOfSightChecksPerTick: 24
+    maxLineOfSightChecksPerTick: 96
     lineOfSightRecheckSeconds: 0.5
     spotterEyeHeight: 2
     targetProbeHeight: 1.4
+    targetProbeRadius: 0.75
   matchScene:
     sceneSlotSpacingX: 500
     sceneValidationTimeout: 10

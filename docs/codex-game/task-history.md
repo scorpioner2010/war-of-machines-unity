@@ -12,6 +12,36 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-23 - Dead player freezes after team victory
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: diagnose and fix the match-end deadlock when a connected player dies, waits for the surviving team to win, and remains stuck in the gameplay HUD instead of reaching the end-game/result flow.
+- Acceptance: a dead connected real player still receives the end-game transition after the vehicle despawns; the post-battle result can progress to the main menu; focused regression coverage and Unity/build verification are recorded.
+- Initial finding: `BattleRules.ShouldReceiveEndGame` required `player.playerRoot != null`, while `GameResultUI` waits for `MainMenu`; after the dead vehicle despawned, no EndGame menu was sent and the queued result had no path to display.
+- Implementation: removed the vehicle-root lifetime requirement from the EndGame recipient gate and added focused PlayMode coverage for a connected real player with a null `playerRoot`, plus disconnected/abandoned negative cases. Runtime and test C# projects build successfully; Unity PlayMode execution remains pending because the project Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-23 - Final repeat 10v9 bot battle
+
+- Status: `COMPLETED`
+- Scope: run one final exact Client battle with 10 enemy bots and 9 allied bots after the completed bot AI repairs.
+- Acceptance: battle completes without timeout or crash; final alive counts and runtime movement/turret telemetry are recorded.
+- Verification: Unity batch PlayMode `BotBattle10v9PlayModeTests` passed `1/1` with `0` failures and `0` skipped in `193.208s`; the final battle completed without timeout or crash and ended after the last ally was eliminated. Final telemetry reached `5 enemy / 1 ally`, with maximum observed body direction flips `66` and turret direction flips `74`.
+
+### 2026-10-23 - Deep 10v9 bot battle audit
+
+- Status: `COMPLETED`
+- Scope: run the Client with exactly 10 enemy bots and 9 ally bots, observe the battle to completion, diagnose body oscillation/turret tracking and every recurring movement or combat failure, then fix and rerun.
+- Acceptance: complete live 10v9 observation; root-cause fixes for repeated left/right rotation and turret-follow failures; focused regression coverage or runtime evidence for each production change; successful post-fix battle and Unity verification.
+- Verification: Unity PlayMode `BotAiRegressionPlayModeTests` passed `7/7`; the exact `10 enemy / 9 ally` Client battle passed in `225.609s` and reached `3 enemy / 1 ally` before one team was eliminated. A repeat exact `10 enemy / 9 ally` battle passed in `216.603s` and ended with the last ally eliminated. Runtime fixes covered steering smoothing/dead zones, preservation of steering while the same target moves, stuck-pivot progress, turret yaw hold, no-line-of-fire kite recovery, and a narrower same-team fire-lane blocker radius. CUA visual control was unavailable, so the deep observation used runtime telemetry.
+
+### 2026-10-23 - Make bot navigation, perception, and combat human-like
+
+- Status: `COMPLETED`
+- Scope: run reproducible Client/PlayMode bot scenarios with allied and enemy robots, diagnose spinning/stuck movement, missed visibility around cover, failed moving-target aim, and missed firing opportunities, then fix the root causes and rerun verification.
+- Acceptance: stable open-route navigation; responsive target acquisition and lead aim; authoritative firing when a valid shot exists; sensible team-aware tactical movement; successful post-fix Unity/build verification or a concrete recorded blocker.
+- Verification update: replaced visual bot gun-pitch snapping with frame-rate-independent exponential `Mathf.LerpAngle` convergence, set all eight registered IA/NV robot prefabs to `smoothSpeed: 10`, and added a regression proving smooth convergence is frame-rate independent. Fresh Unity Test Runner `Game.PlayMode.Tests.dll` passed `11/11` tests with `0` failures and `0` skipped in `12.333s`; both C# project builds passed with `0` errors. Interactive post-fix pitch comparison remains a manual limitation because the embedded Game View input/focus path was unreliable; the earlier Client session still verified active ally/enemy combat and movement.
+
 ### 2026-10-23 - Real Unity verification and repair of robot impact decals
 
 - Status: `COMPLETED`

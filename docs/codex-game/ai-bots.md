@@ -37,14 +37,18 @@ Current owner scripts:
   - Resolves target aim points from the centralized turret armor array, health/all-armor bounds, turret transform, or fallback height.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotLineOfFireChecker.cs`
   - Performs combat line-of-fire raycasts and accepts hits on the expected target while ignoring the shooter's own colliders.
+  - When the center aim point is blocked, tests small target-side and vertical exposure offsets so a partially exposed robot can be engaged instead of being treated as completely hidden.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotTargetMotionTracker.cs`
   - Samples target movement at the combat settings interval, smooths the velocity estimate, and iteratively solves projectile travel time before applying lead prediction.
+  - `BotLeadPrediction` is a pure intercept helper used by runtime code and regression tests.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotAimController.cs`
   - Solves aim through `VehicleAimInputSolver` and estimates/validates yaw, pitch, and muzzle alignment.
+- Remote bot gun pitch is presented by `WeaponAimController` with frame-rate-independent exponential smoothing (`smoothSpeed` `10` on registered IA/NV prefabs). The server target pitch and logical projectile aim remain authoritative; fire gates wait for the visual pitch to converge instead of exposing per-tick snapping.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotFireDecision.cs`
   - Gates firing by target hold time, reaction delay, reload state, shooter availability, aim alignment, and the current dispersion threshold configured by `maxFireDispersionMultiplier`/`maxFireDispersionAddDeg`.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatNavigationController.cs`
   - Sends combat navigation intent to `BotNavigator`: move toward the visible map/last-known target position or suppress movement while holding a clean line of fire.
+  - When the same moving target updates its tactical position, it uses `BotNavigator.UpdateTargetPosition` so the path is refreshed without resetting the current steering input or pivot state; a real target switch still uses `SetTargetPosition` and resets those states.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatInputWriter.cs`
   - Sends combat and movement-only server input through `VehicleInputController.ServerSetExternalInput`.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotIdleAimController.cs`
@@ -59,9 +63,11 @@ Current owner scripts:
   - Owns logical map visibility and spotted-memory state used by both player map HUD snapshots and bot target acquisition.
   - Provides `MatchVisibleEnemy` results with the position/yaw visible to the bot's team and whether the target is directly spotted this frame.
   - Bot navigation uses map/last-known positions instead of omniscient live transforms.
+  - Team spotting uses a circular ordered-pair cursor and reserves part of each tick for reacquisition, preventing old spotted pairs from starving newly visible enemies.
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - Test-only UI can add a random enemy bot or random ally bot into the spawned test player's current scene.
   - It creates bot `Player` entries in the test `ServerRoom` and spawns them through `MatchVehicleSpawner.SpawnBotAsync`; it does not implement movement, combat, or waypoint behavior itself.
+  - During a Client Play Mode run, `F1` reopens the expanded test panel after the player vehicle has captured gameplay input.
 - `Assets/Game/Scripts/Server/ServerSettings.cs`
   - Contains `BotWanderSettings` and `BotCombatSettings`.
 - `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`
@@ -78,13 +84,18 @@ Bot movement behavior:
 - Navigator publishes a desired travel direction through `TryGetDesiredTravelDirection` so combat/idle aim can point the turret where the bot is driving.
 - Movement can be suppressed by combat via `SetMovementSuppressed(true)`. While suppressed, navigator still refreshes proximity sensing on its configured cadence and applies a local escape maneuver if another live robot is too close; otherwise it sends zero movement input.
 - Exploration is per-bot state: `BotNavigator` increments a visit count when the nearest graph node changes. With `exploreUnvisitedNodes` enabled, destination selection first searches unvisited nodes at least `minDestinationDistance` away, then least-visited nodes.
+- Steering uses a 4-degree `turnDeadZoneAngle` by default, so tiny waypoint or avoidance errors do not flip the body between left and right. `turnInputSmoothing` defaults to 7 and exponentially smooths steering at the decision cadence, while large-angle pivot turns still stop forward movement normally.
 - Proximity avoidance is server-side and does not use scene-wide searches or runtime component creation. It casts eight horizontal directions at three vertical offsets, ignores the bot's own hierarchy, respects `proximityMask`, and only steers for registered live `VehicleRoot` colliders. A forward hit adds a side-step based on the bot's stable turn bias so a robot does not simply reverse into a queue.
 - Combat navigation uses `BotNavigator.SetTargetPosition` for tactical/map positions. The navigator treats those position targets separately from transform targets, keeps them active after reaching the last waypoint node, and drives the final segment directly to the requested tactical position until combat clears or changes it.
 - `SetTarget` and `SetTargetPosition` clear the current path and allow an immediate repath so bots do not wait on `repathCooldown` before reacting to a new combat navigation command.
+- `UpdateTargetPosition` refreshes a moving target's path without resetting steering smoothing or pivot state, preventing target-motion updates from producing artificial left/right body oscillation.
+- Progress tracking resets whenever a target or movement suppression state changes. Stuck recovery compares both traveled distance and real chassis yaw progress; a pivot that is not actually rotating can now trigger the reverse/turn escape maneuver instead of spinning indefinitely.
 
 Current waypoint arrival behavior:
 - `waypointReachDistance` accepts a waypoint if the bot enters the reach radius.
 - `turnInPlaceEnterAngle` and `turnInPlaceExitAngle` add hysteresis for pivot turning. The bot stops forward movement, rotates in place toward the waypoint, then resumes driving once aligned.
+- `turnDeadZoneAngle` suppresses micro-corrections around a straight heading, and `turnInputSmoothing` prevents the movement controller's angular acceleration from turning a short-lived sign change into visible body oscillation.
+- `VehicleTurretRotationController` holds yaw inside a 0.25-degree target dead zone, so an already aligned turret does not alternate one frame left/right around the target while the body or target position receives tiny updates.
 - `waypointApproachSlowDistance` reduces forward input near the waypoint for tighter arrival.
 - `waypointPassDistance` and `waypointPassedAngle` let the navigator accept a waypoint if the bot passed it nearby instead of circling forever.
 - `HasMovedPastPathSegment` also advances a waypoint if the bot has crossed beyond the segment from the previous waypoint to the current one.
@@ -100,6 +111,7 @@ Bot combat behavior:
 - `requireLineOfSightToAcquire` now controls line-of-fire priority during target scoring; it no longer prevents the bot from moving toward an obstructed map-visible enemy when no better firing target exists.
 - Aim points prefer turret bounds, then health colliders/armor maps, then turret transform, then root fallback height.
 - Bot aim is solved with `VehicleAimInputSolver.SolveForAimPoint` so turret/gun constraints are respected.
+- Line-of-fire is evaluated against the motion-led aim point before firing. If the center is behind a corner, `BotLineOfFireChecker` selects a clear exposed candidate around the target and the same point is used for aim readiness and the shot request.
 - Moving-target aim uses an iterative travel-time estimate (`leadPredictionIterations`, `maxLeadSeconds`) and the smoothed target velocity. Defaults now use full lead, a shorter velocity sample interval, and a smaller reaction window for more aggressive tracking.
 - Bot firing goes through reload and shooter systems, not direct damage calls.
 - Bot combat is now tactic-driven after target selection:
@@ -107,13 +119,14 @@ Bot combat behavior:
   - `FiringPosition`: at medium/far range, holds a clean firing position when allowed and fires only at 95%+ aim readiness.
   - `PeekFromCover`: at medium range, holds to fire when loaded, but backs/side-steps while reloading before peeking again; this is geometric fallback behavior, not full cover-object discovery.
   - `KiteStrongTarget`: when a stronger or healthier target is close, drives away diagonally while keeping the gun on target.
+    - If the target is not currently reachable by line of fire, the bot switches to a rear-side approach instead of retreating farther away from the fight.
   - `FlankDistractedTarget`: when the target is looking away, routes to side/rear positions and delays firing until it has a side/rear or close shot.
   - `FinishWeakTarget`: prioritizes finishing low-HP targets and accepts lower aim-readiness when the shot can likely kill.
   - `DefensiveAnchor`: when low HP or under pressure, prefers holding distance and fires only at 95%+ aim readiness.
 - While a tactic decides to hold and `holdPositionWithLineOfFire` is true, combat suppresses navigation so the bot can aim/fire from the current position instead of circling the target. Hold is limited to the tactic selector's far combat range; beyond that range, bots keep moving toward the target even if they have line of fire.
 - Tactical fire gates use `NetworkWeaponShooter.ServerCurrentDispersionDeg` and `MinDispersionDeg` to estimate aim readiness. Position/defense tactics require 95%+ readiness; close/mobile/finisher tactics can fire earlier when their tactic allows it.
 - Tactical navigation candidates are now adjusted for nearby robots before being sent to `BotNavigator`. The selector checks fixed side/back/forward candidates around the desired tactical point, penalizes positions too close to any active robot, and strongly rejects candidates where a same-team robot sits in the firing segment to the target.
-- If a same-team robot blocks the bot's current firing lane, the bot will not keep `holdPosition`; it disables firing through that ally and drives to a side-step candidate so it can get a cleaner angle instead of sitting behind the ally.
+- If a same-team robot blocks the bot's current firing lane, the bot will not keep `holdPosition`; it disables firing through that ally and drives to a side-step candidate so it can get a cleaner angle instead of sitting behind the ally. The tactical prediction uses a 2.5 m blocker radius; the authoritative line-of-fire raycast remains the final shot check.
 - If the current target disappears from logical map visibility, the target is cleared. Target forgetting is now driven by match visibility/spotted-memory settings instead of direct line-of-fire loss alone.
 - VehicleTest-created bots use the same combat scan. Enemy test bots are assigned to the opposing team from the test player; ally test bots use the same team and are ignored by same-team target filtering.
 - Team target spreading uses only `VehicleBotBrain.CurrentTargetRoot` from allied bots already in the room. It does not reveal hidden enemies or replace `MatchVisibilityService`.
@@ -129,6 +142,8 @@ Important settings:
 - `BotWanderSettings.waypointReachDistance`
 - `BotWanderSettings.turnInPlaceEnterAngle`
 - `BotWanderSettings.turnInPlaceExitAngle`
+- `BotWanderSettings.turnDeadZoneAngle`
+- `BotWanderSettings.turnInputSmoothing`
 - `BotWanderSettings.waypointApproachSlowDistance`
 - `BotWanderSettings.waypointPassDistance`
 - `BotWanderSettings.waypointPassedAngle`
@@ -163,6 +178,8 @@ Important settings:
 - `MatchVisibilityGlobalSettings.guaranteedDetectionRange`
 - `MatchVisibilityGlobalSettings.requireLineOfSight`
 - `MatchVisibilityGlobalSettings.spottedMemorySeconds`
+- `MatchVisibilityGlobalSettings.maxLineOfSightChecksPerTick` (the server profile uses `96`; the budget is shared between maintenance and new-pair acquisition)
+- `MatchVisibilityGlobalSettings.targetProbeRadius` (the server profile uses `0.75`; visibility checks probe the target center and two horizontal side points)
 
 Rules when editing bots:
 - Do not add runtime `AddComponent`, `GetComponent*`, `FindObject*`, tag searches, or scene-wide searches.
