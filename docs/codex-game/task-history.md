@@ -12,6 +12,14 @@ This is the canonical, append-only index of project tasks. It is separate from t
 
 ## Current and recent tasks
 
+### 2026-10-23 - Dead robot invisible collision isolation
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: ensure live vehicles collide only with configured detached non-armor mesh debris after an enemy dies; disable dead-root/gameplay/armor blockers and preserve optimized movable wreck obstacles for bots.
+- Acceptance: no invisible dead-root collision remains; detached mesh colliders stay movable and pushable; bot obstacle detection remains correct; focused verification and documentation are recorded.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+- Verification update: focused Unity PlayMode `DeadRobotDisablesGameplayCollidersAndKeepsOnlyDetachedMeshDebris` passed 1/1 across all eight registered IA/NV prefabs. The full `Game.PlayMode.Tests` run passed 17/20; the three unrelated failures were a server connection failure in `TenEnemyBotsAndNineAllyBotsRunUntilOneTeamFalls` and null player creation in the two `MatchBattleEndPlayModeTests` cases. `DetachedDeathChassisColliderIsAnObstacle` and `ProximityMaskAlwaysIncludesDeathChassisLayer` both passed. Live vehicle drive-through/debris-push reproduction remains pending.
+
 ### 2026-10-23 - Death camera, persistent wrecks, and spectator cycling
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

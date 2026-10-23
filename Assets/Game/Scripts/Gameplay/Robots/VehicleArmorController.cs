@@ -87,6 +87,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             SetCollidersEnabled(turretColliders, value);
             SetCollidersEnabled(hullColliders, value);
+            SetCollidersEnabled(additionalVehicleColliders, value);
         }
 
         public Collider[] GetColliders(ArmorZone zone)

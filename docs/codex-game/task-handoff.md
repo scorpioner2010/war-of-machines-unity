@@ -3,6 +3,25 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-23
+- User request: "помітив серйозний баг, таке відчуття що коли противник загинув я зацеплююсь за невидемі колайдери, це вже баг, я маю зацеплюватися тільким за його меш колайдери які розлетілися при дестрої і також я їх маю дввигати щоб я міг проїхати, але зроби це якось продумано та оптимізовано, продумай цей момент добре і зроби так щоб це була оптимізована логіка"
+- Objective: make dead-robot collision ownership explicit so live vehicles collide only with visible detached mesh debris, never with the dead root or hidden gameplay colliders, while preserving optimized debris obstacles for bots and players.
+- Acceptance criteria:
+  - After death, the dead root and all gameplay/armor colliders stop blocking live vehicles.
+  - Only configured detached non-armor mesh colliders remain physically active as wreck debris.
+  - Debris can be pushed/moved by live vehicles without reintroducing an invisible blocker or heavy per-frame scans.
+  - Bot obstacle detection continues to see active detached debris, while dead robots remain excluded from combat targets.
+  - Focused source/build/runtime checks and documentation are recorded.
+- Assumptions:
+  - The existing per-mesh `DeathLogic.detachableVisuals` physics contract is authoritative; no new runtime component discovery or parent-level fallback collider should be introduced.
+  - Existing user-owned prefab, scene, and unrelated working-tree changes must remain intact.
+- Current work: `DeathLogic` now disables the movement `CharacterController` before death debris detaches; `VehicleArmorController.SetArmorCollidersEnabled(false)` also disables registry-only vehicle colliders. Detached configured mesh colliders keep their own dynamic Rigidbodies and `Chassis` layer, so they remain movable obstacles without a root blocker.
+- Work remaining: perform a live drive-through/debris-push reproduction in a real match; automated collider and bot-obstacle coverage is complete.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/DeathLogic.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleArmorController.cs`, `Assets/Game/Tests/PlayMode/PooledImpactFxVisualSurfacePlayModeTests.cs`, `docs/codex-game/robot-control.md`, `docs/codex-game/ai-bots.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; static audit passed for all 8 registered IA/NV prefabs; `git diff --check` passed. Unity PlayMode `DeadRobotDisablesGameplayCollidersAndKeepsOnlyDetachedMeshDebris` passed 1/1; XML/log are stored at `C:\Users\TorasPC\AppData\LocalLow\Toras\war-of-machines\CodexTestResults\dead-robot-collider-playmode.xml` and `.log`. The full `Game.PlayMode.Tests` run passed 17/20; XML/log are stored at `C:\Users\TorasPC\AppData\LocalLow\Toras\war-of-machines\CodexTestResults\robot-collider-full-playmode.xml` and `.log`. The three failures were unrelated to this task: server connection failure in `TenEnemyBotsAndNineAllyBotsRunUntilOneTeamFalls`, and null player creation in the two `MatchBattleEndPlayModeTests` cases. Relevant bot/debris regressions `DetachedDeathChassisColliderIsAnObstacle` and `ProximityMaskAlwaysIncludesDeathChassisLayer` passed.
+
+## Previous task (death camera, persistent wrecks, and spectator cycling)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-23
 - User request: "супер, тепер треба зробити логіку таку, якщо ми вмерли показується робот який нас вбив 3 секунди (для показу використати ту саму камеру і різ робота противника який нас вбив, але вимкнути можливість крутити камерою) а потім повернутися на місце знищеного нашого танка, якщо гравець потім клікне ліву кнопку миші то він почне стрибати по черзхі по всіх роботах включаючи свого знищеного робота. але для початку тобі треба буде вимкнути зникання знищених роботів, а для ботів додати логіку щоб вони детектили райкастом мертвого робота або його частини і обьїзжали його не їхали на нього. щоб для ботів це був як обсткл. реалізуй цю логіку але дуже продумано спочатку проаналізуй що треба зробибити ростав послідовність тасків та виконай продумано обережно та чітко."
 - Objective: implement a server-authoritative death presentation and spectator flow while retaining destroyed robots as match obstacles for bot navigation.
 - Acceptance criteria:

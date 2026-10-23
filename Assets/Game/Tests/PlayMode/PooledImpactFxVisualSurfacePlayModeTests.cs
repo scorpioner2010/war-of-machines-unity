@@ -601,6 +601,91 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DeadRobotDisablesGameplayCollidersAndKeepsOnlyDetachedMeshDebris()
+        {
+            Type deathLogicType = FindGameType("DeathLogic");
+            FieldInfo detachableVisualsField = deathLogicType.GetField(
+                "detachableVisuals",
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.IsNotNull(detachableVisualsField);
+
+            string[] robotPrefabPaths =
+            {
+                "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab",
+                "Assets/Game/Content/Robots/IA/IA_L2_Colossus/IA_L2_Colossus.prefab",
+                "Assets/Game/Content/Robots/IA/IA_L2_Guardian/IA_L2_Guardian.prefab",
+                "Assets/Game/Content/Robots/IA/IA_L2_Scout/IA_L2_Scout.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L1_Starter/NV_L1_Starter.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L2_Colossus/NV_L2_Colossus.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L2_Guardian/NV_L2_Guardian.prefab",
+                "Assets/Game/Content/Robots/NV/NV_L2_Scout/NV_L2_Scout.prefab"
+            };
+
+            int chassisLayer = LayerMask.NameToLayer("Chassis");
+            Assert.That(chassisLayer, Is.GreaterThanOrEqualTo(0));
+
+            for (int prefabIndex = 0; prefabIndex < robotPrefabPaths.Length; prefabIndex++)
+            {
+                string prefabPath = robotPrefabPaths[prefabIndex];
+                GameObject robotPrefab = LoadAsset<GameObject>(prefabPath, prefabPath);
+                Assert.IsNotNull(robotPrefab, $"Missing robot prefab at {prefabPath}.");
+
+                GameObject robotObject = UnityEngine.Object.Instantiate(robotPrefab);
+                _createdObjects.Add(robotObject);
+                robotObject.SetActive(true);
+                yield return null;
+
+                Component deathLogic = robotObject.GetComponent(deathLogicType);
+                Assert.IsNotNull(deathLogic, $"Missing DeathLogic on {prefabPath}.");
+                Array detachableVisuals = detachableVisualsField.GetValue(deathLogic) as Array;
+                Assert.IsNotNull(detachableVisuals, $"Missing detachable visuals on {prefabPath}.");
+
+                HashSet<Collider> debrisColliders = new HashSet<Collider>();
+                for (int visualIndex = 0; visualIndex < detachableVisuals.Length; visualIndex++)
+                {
+                    object visual = detachableVisuals.GetValue(visualIndex);
+                    FieldInfo colliderField = visual.GetType().GetField(
+                        "collider",
+                        BindingFlags.Instance | BindingFlags.Public);
+                    Collider collider = colliderField.GetValue(visual) as Collider;
+                    if (collider != null)
+                    {
+                        debrisColliders.Add(collider);
+                    }
+                }
+
+                Assert.IsNotEmpty(debrisColliders, $"No detachable debris colliders are configured on {prefabPath}.");
+                Collider[] vehicleColliders = robotObject.GetComponentsInChildren<Collider>(true);
+                InvokeInstance(
+                    deathLogicType,
+                    deathLogic,
+                    "Death",
+                    Array.Empty<Type>(),
+                    Array.Empty<object>());
+                Physics.SyncTransforms();
+
+                for (int colliderIndex = 0; colliderIndex < vehicleColliders.Length; colliderIndex++)
+                {
+                    Collider collider = vehicleColliders[colliderIndex];
+                    if (debrisColliders.Contains(collider))
+                    {
+                        Assert.IsTrue(collider.enabled, $"Detached debris collider was not enabled on {prefabPath}.");
+                        Assert.IsInstanceOf<MeshCollider>(collider, $"Non-mesh collider entered the debris list on {prefabPath}.");
+                        Assert.IsNotNull(collider.attachedRigidbody, $"Detached debris has no Rigidbody on {prefabPath}.");
+                        Assert.IsFalse(collider.attachedRigidbody.isKinematic, $"Detached debris remained kinematic on {prefabPath}.");
+                        Assert.IsTrue(collider.attachedRigidbody.detectCollisions, $"Detached debris disabled collision detection on {prefabPath}.");
+                        Assert.IsNull(collider.transform.parent, $"Detached debris stayed under the dead root on {prefabPath}.");
+                        Assert.AreEqual(chassisLayer, collider.gameObject.layer, $"Detached debris used the wrong layer on {prefabPath}.");
+                    }
+                    else
+                    {
+                        Assert.IsFalse(collider.enabled, $"Dead-root gameplay collider remained active on {prefabPath}: {collider.name}.");
+                    }
+                }
+            }
+        }
+
+        [UnityTest]
         public IEnumerator PersistentWorldImpactDoesNotProjectOntoRobotAfterItEntersImpactVolume()
         {
             Type vehicleRootType = FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot");

@@ -170,6 +170,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             vehicleRoot.armorController.SetArmorCollidersEnabled(false);
         }
 
+        DisableVehicleGameplayColliders();
         DisableConfiguredColliders(collidersToDisableOnDeath);
         Scene mapScene = MapScopedObjectRegistry.ResolveMapScene(GetOwningScene());
 
@@ -398,6 +399,20 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             {
                 collider.enabled = false;
             }
+        }
+    }
+
+    private void DisableVehicleGameplayColliders()
+    {
+        if (vehicleRoot == null || vehicleRoot.objectMover == null)
+        {
+            return;
+        }
+
+        CharacterController movementCollider = vehicleRoot.objectMover.controller;
+        if (movementCollider != null)
+        {
+            movementCollider.enabled = false;
         }
     }
 
