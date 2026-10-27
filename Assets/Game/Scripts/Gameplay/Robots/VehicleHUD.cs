@@ -25,6 +25,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _hasBaseLocalScale;
         private bool _mapVisible = true;
         private bool _isDead;
+        private bool _worldCanvasHidden;
         private GameplayRuntimeSettings _runtimeSettings;
         private string _fallbackDisplayName;
 
@@ -221,6 +222,12 @@ namespace Game.Scripts.Gameplay.Robots
                 Camera camera = ResolveCamera();
                 AlignToCamera(camera);
             }
+        }
+
+        public void SetWorldCanvasHidden(bool hidden)
+        {
+            _worldCanvasHidden = hidden;
+            ApplyRootVisibility();
         }
 
         private void AlignToCamera(Camera camera)
@@ -462,12 +469,17 @@ namespace Game.Scripts.Gameplay.Robots
 
         private bool ShouldDisplayRoot()
         {
-            if (!_mapVisible || _isDead)
+            if (vehicleRoot == null || vehicleRoot.IsMenu)
             {
                 return false;
             }
 
-            if (vehicleRoot == null || vehicleRoot.IsMenu)
+            if (_worldCanvasHidden)
+            {
+                return false;
+            }
+
+            if (!_mapVisible || _isDead)
             {
                 return false;
             }

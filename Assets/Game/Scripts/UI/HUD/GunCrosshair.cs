@@ -2,6 +2,7 @@ using TMPro;
 using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
+using Game.Scripts.Server;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
 using UnityEngine;
@@ -68,12 +69,22 @@ namespace Game.Scripts.UI.HUD
         private string _lastAimReadyText;
         private float _lastChargeProgress = -1f;
         private bool _serverCrosshairEnabled;
+        private CameraController _spectatorCameraController;
+        private VehicleRoot _spectatorTarget;
+        private float _spectatorReloadRemainAtSync;
+        private float _spectatorReloadSyncTime;
+        private bool _spectatorReloadSyncInitialized;
+        private bool _spectatorReloading;
+        private int _spectatorAmmo = int.MinValue;
+        private int _spectatorReloadTenths = int.MinValue;
+        private bool _spectatorReloadStateInitialized;
         private Image _ironAllianceFillFallback;
         private TMP_Text _ironAllianceReloadFallback;
         private TMP_Text _ironAllianceAmmoLeftFallback;
         private TMP_Text _ironAllianceAimStatusFallback;
         private TMP_Text _ironAlliancePenetrationStatusFallback;
         private const string DefaultPenetrationStatusText = "PENETRATION STATUS";
+        public const string PenetrationStatusGlyph = "〰〰〰";
         private string _lastPenetrationStatus = DefaultPenetrationStatusText;
         private const float ChargeFillSmoothingSpeed = 14f;
 
@@ -96,6 +107,8 @@ namespace Game.Scripts.UI.HUD
             ClientGameplaySettings.ServerCrosshairChanged += OnServerCrosshairSettingChanged;
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
             ApplySniperPresentation(false);
+            VehicleRoot.LocalPlayerVehicleChanged += OnLocalPlayerVehicleChanged;
+            BindSpectatorCamera(VehicleRoot.LocalPlayerVehicle);
         }
 
         private void OnDisable()
@@ -106,7 +119,206 @@ namespace Game.Scripts.UI.HUD
             }
 
             ClientGameplaySettings.ServerCrosshairChanged -= OnServerCrosshairSettingChanged;
+            VehicleRoot.LocalPlayerVehicleChanged -= OnLocalPlayerVehicleChanged;
+            UnbindSpectatorCamera();
             Singleton<GunCrosshair>.Unregister(this);
+        }
+
+        private void LateUpdate()
+        {
+            EnsureSpectatorCameraBinding();
+            if (_spectatorCameraController == null || !_spectatorCameraController.IsDeathSpectatorActive)
+            {
+                return;
+            }
+
+            VehicleRoot target = _spectatorCameraController.SpectatorTarget;
+            if (_spectatorTarget != target)
+            {
+                BindSpectatorTarget(target);
+            }
+
+            ApplySpectatorWeaponHud();
+        }
+
+        private void OnLocalPlayerVehicleChanged(VehicleRoot vehicle)
+        {
+            BindSpectatorCamera(vehicle);
+        }
+
+        private void EnsureSpectatorCameraBinding()
+        {
+            VehicleRoot localVehicle = VehicleRoot.LocalPlayerVehicle;
+            CameraController nextController = localVehicle != null ? localVehicle.cameraController : null;
+            if (_spectatorCameraController != nextController)
+            {
+                BindSpectatorCamera(localVehicle);
+            }
+        }
+
+        private void BindSpectatorCamera(VehicleRoot localVehicle)
+        {
+            CameraController nextController = localVehicle != null ? localVehicle.cameraController : null;
+            if (_spectatorCameraController == nextController)
+            {
+                return;
+            }
+
+            UnbindSpectatorCamera();
+            _spectatorCameraController = nextController;
+            if (_spectatorCameraController == null)
+            {
+                return;
+            }
+
+            _spectatorCameraController.SpectatorTargetChanged += OnSpectatorTargetChanged;
+            if (_spectatorCameraController.IsDeathSpectatorActive)
+            {
+                BindSpectatorTarget(_spectatorCameraController.SpectatorTarget);
+            }
+        }
+
+        private void UnbindSpectatorCamera()
+        {
+            if (_spectatorCameraController != null)
+            {
+                _spectatorCameraController.SpectatorTargetChanged -= OnSpectatorTargetChanged;
+            }
+
+            _spectatorCameraController = null;
+            BindSpectatorTarget(null);
+        }
+
+        private void OnSpectatorTargetChanged(VehicleRoot target)
+        {
+            BindSpectatorTarget(target);
+        }
+
+        private void BindSpectatorTarget(VehicleRoot target)
+        {
+            _spectatorTarget = target;
+            _spectatorReloadSyncInitialized = false;
+            _spectatorReloading = false;
+            _spectatorAmmo = int.MinValue;
+            _spectatorReloadTenths = int.MinValue;
+            _spectatorReloadStateInitialized = false;
+        }
+
+        private void ApplySpectatorWeaponHud()
+        {
+            if (_spectatorTarget == null
+                || _spectatorTarget.weaponReloadController == null
+                || _spectatorTarget.shooterNet == null)
+            {
+                return;
+            }
+
+            WeaponReloadController reloadController = _spectatorTarget.weaponReloadController;
+            NetworkWeaponShooter shooter = _spectatorTarget.shooterNet;
+            bool factionChanged = SetFaction(reloadController.ClientFaction);
+            int ammoLeft = reloadController.ClientAmmoLeft;
+            bool isReloading = reloadController.ClientIsReloading;
+            float reloadRemain = GetSpectatorReloadRemain(reloadController, isReloading);
+            SetWeaponChargeProgress(GetSpectatorReloadProgress(reloadController, ammoLeft, isReloading, reloadRemain));
+            ApplySpectatorReloadText(ammoLeft, isReloading, reloadRemain, factionChanged);
+            ApplySpectatorAmmo(ammoLeft);
+
+            float minDispersion = shooter.MinDispersionDeg;
+            float maxDispersion = Mathf.Max(minDispersion, shooter.MaxDispersionDeg);
+            float currentDispersion = shooter.ClientCurrentDispersionDeg;
+            SetAimStatus(currentDispersion, minDispersion, maxDispersion);
+
+            GunDispersionGlobalSettings globalDispersion = RemoteServerSettings.GunDispersion;
+            float uiZoom01 = _spectatorCameraController.GetAimUiZoom01();
+            CameraZoomProfile zoomProfile = _spectatorCameraController.CurrentZoomProfile;
+            float aimingCircleDiameter = zoomProfile != null ? zoomProfile.aimingCircleDiameter : float.NaN;
+            float diameter = globalDispersion.GetUiDiameter(
+                currentDispersion,
+                minDispersion,
+                uiZoom01,
+                aimingCircleDiameter);
+            SetAimingDiameters(diameter, diameter, globalDispersion.uiDiameterLerpSpeed);
+        }
+
+        private float GetSpectatorReloadRemain(WeaponReloadController reloadController, bool isReloading)
+        {
+            float syncedRemain = reloadController.ClientReloadRemain;
+            if (!_spectatorReloadSyncInitialized
+                || _spectatorReloading != isReloading
+                || Mathf.Abs(syncedRemain - _spectatorReloadRemainAtSync) > 0.05f)
+            {
+                _spectatorReloadRemainAtSync = syncedRemain;
+                _spectatorReloadSyncTime = Time.unscaledTime;
+                _spectatorReloadSyncInitialized = true;
+                _spectatorReloading = isReloading;
+            }
+
+            if (!isReloading)
+            {
+                return 0f;
+            }
+
+            float elapsed = Mathf.Max(0f, Time.unscaledTime - _spectatorReloadSyncTime);
+            return Mathf.Max(0f, _spectatorReloadRemainAtSync - elapsed);
+        }
+
+        private static float GetSpectatorReloadProgress(
+            WeaponReloadController reloadController,
+            int ammoLeft,
+            bool isReloading,
+            float reloadRemain)
+        {
+            if (!isReloading)
+            {
+                return ammoLeft > 0 ? 1f : 0f;
+            }
+
+            return Mathf.Clamp01(1f - reloadRemain / reloadController.ClientReloadTime);
+        }
+
+        private void ApplySpectatorAmmo(int ammoLeft)
+        {
+            if (_spectatorAmmo == ammoLeft || ammoLeftText == null)
+            {
+                return;
+            }
+
+            _spectatorAmmo = ammoLeft;
+            ammoLeftText.SetText("{0}", ammoLeft);
+        }
+
+        private void ApplySpectatorReloadText(int ammoLeft, bool isReloading, float reloadRemain, bool force)
+        {
+            if (reloadText == null)
+            {
+                return;
+            }
+
+            int reloadTenths = isReloading ? Mathf.CeilToInt(Mathf.Max(0f, reloadRemain) * 10f) : 0;
+            if (!force
+                && _spectatorReloadStateInitialized
+                && _spectatorReloading == isReloading
+                && _spectatorReloadTenths == reloadTenths
+                && ((ammoLeft > 0) == (_spectatorAmmo > 0)))
+            {
+                return;
+            }
+
+            _spectatorReloadStateInitialized = true;
+            _spectatorReloadTenths = reloadTenths;
+            if (ammoLeft <= 0 && !isReloading)
+            {
+                reloadText.text = "EMPTY";
+                return;
+            }
+
+            if (!isReloading)
+            {
+                reloadText.text = "READY";
+                return;
+            }
+
+            reloadText.SetText("{0:0.0}s", reloadTenths * 0.1f);
         }
 
         public void SetAimingDiameters(float localDiameter, float serverDiameter)

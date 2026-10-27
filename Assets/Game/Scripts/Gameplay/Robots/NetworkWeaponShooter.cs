@@ -125,6 +125,30 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
+        public float MaxDispersionDeg
+        {
+            get
+            {
+                return dispersion != null ? dispersion.MaxDispersion : 0f;
+            }
+        }
+
+        public float ClientCurrentDispersionDeg
+        {
+            get
+            {
+                float minDispersion = MinDispersionDeg;
+                float maxDispersion = MaxDispersionDeg;
+                float syncedDispersion = _serverDispersionDeg.Value;
+                if (syncedDispersion <= 0f)
+                {
+                    return maxDispersion;
+                }
+
+                return Mathf.Clamp(syncedDispersion, minDispersion, maxDispersion);
+            }
+        }
+
         public void ApplyVehicleStats(VehicleRuntimeStats stats)
         {
             if (stats == null)
@@ -783,6 +807,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyCrosshairDispersion()
         {
+            if (IsLocalSpectatorHudActive())
+            {
+                return;
+            }
+
             if (_crosshair == null)
             {
                 _crosshair = Singleton<GunCrosshair>.CurrentOrNull;
@@ -812,6 +841,14 @@ namespace Game.Scripts.Gameplay.Robots
                 aimingCircleDiameter);
             _crosshair.SetAimingDiameters(localDiameter, serverDiameter, globalDispersion.uiDiameterLerpSpeed);
             _crosshair.SetAimStatus(localDeg, dispersion.MinDispersion, dispersion.MaxDispersion);
+        }
+
+        private bool IsLocalSpectatorHudActive()
+        {
+            return vehicleRoot != null
+                   && vehicleRoot.IsOwner
+                   && vehicleRoot.cameraController != null
+                   && vehicleRoot.cameraController.IsDeathSpectatorActive;
         }
 
         private float GetCrosshairUiZoom01()
@@ -1467,11 +1504,11 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (status == (byte)ShotHudStatus.Penetrated)
             {
-                activeCrosshair.SetPenetrationStatus("Penetrated");
+                activeCrosshair.SetPenetrationStatus(GunCrosshair.PenetrationStatusGlyph);
             }
             else if (status == (byte)ShotHudStatus.NotPenetrated)
             {
-                activeCrosshair.SetPenetrationStatus("No penetration");
+                activeCrosshair.SetPenetrationStatus(GunCrosshair.PenetrationStatusGlyph);
             }
             else
             {

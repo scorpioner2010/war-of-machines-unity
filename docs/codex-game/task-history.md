@@ -1,5 +1,21 @@
 # Codex Task History
 
+### 2026-10-27 - Add selected-robot weapon HUD spectating
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: show selected-target ammo, reload, and aim data in the existing gameplay HUD during death spectating, and replace penetrated/not-penetrated labels with `〰〰〰`.
+- Acceptance: weapon HUD follows `SpectatorTarget`, observer-visible synchronized state is used without overriding normal owner prediction, no new scene object is added, and the two penetration outcomes display the requested glyph.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors; focused `git diff --check` and weapon HUD static audit passed. Unity Play Mode remains pending because Unity Editor processes are already open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Fix death spectator target selection and selected-robot HUD
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: preserve death spectating for living allies only, keep the local dead robot as the sole dead-target exception, hide the selected robot's world HP canvas, and route its name/HP to the screen gameplay HUD.
+- Acceptance: active living same-team robots are selectable, dead/enemy targets are excluded, the local dead root remains the current-target exception, `GameplayHUD/VehicleStatusPanel` follows the selected target, and the world HP canvas is hidden during spectating.
+- Correction: the earlier implementation that added a spawned registry, allowed dead/enemy targets, and forced the selected world canvas visible was removed because it implemented the opposite behavior.
+- Implementation: `CameraController` now uses the existing active-vehicle list with alive/same-team filtering; `HealthBarUI` follows target-change events; `VehicleHUD` suppresses only the selected target's world canvas.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors; focused `git diff --check` passed; static target/HUD audit passed. Unity Play Mode remains pending because Unity Editor processes are already open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-27 - Add tactical EndGame snapshot
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Scope: replace the EndGame-only outcome label with a structured tactical snapshot containing result, map, mode, duration, and team score.

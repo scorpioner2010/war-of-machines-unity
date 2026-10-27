@@ -3,6 +3,43 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-27
+- User request: "супер реалізуй це, а там де пробив і не пробив постав ось тайи значок 〰〰〰"
+- Objective: during death spectating, show the selected robot's synchronized reload state, aim/dispersion state, and remaining shell count in the existing gameplay HUD, and replace the penetrated/not-penetrated shot labels with `〰〰〰`.
+- Acceptance criteria:
+  - The HUD weapon panel follows the same selected target as the HP/name panel.
+  - Selected-target ammo, reload state/time/progress, faction reticle, and aim percentage use that target's client-visible synchronized data.
+  - Local owner prediction remains authoritative during normal play; it does not overwrite spectator weapon HUD values after death.
+  - `Penetrated` and `No penetration` both display `〰〰〰`; `Miss` keeps its current meaning.
+  - No new scene object, scene-wide search, or per-robot HUD instance is introduced.
+  - Source/build checks and focused static verification are recorded.
+- Assumptions: FishNet SyncVars on `WeaponReloadController` and `NetworkWeaponShooter` are readable by observers; spectator aim diameter uses the local spectator camera zoom while dispersion uses the selected target's synchronized server value.
+- Current work: `GunCrosshair` now follows the existing spectator target event, consumes observer-safe ammo/reload/faction/dispersion state, and blocks owner weapon HUD writers while spectating.
+- Work remaining: reproduce target switching and HUD transitions in Unity Play Mode, including `〰〰〰` for both penetration outcomes.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`, `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `docs/codex-game/ui-hud.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings; focused `git diff --check` passed; static audit confirmed observer ammo/reload/dispersion binding, owner-HUD suppression during spectating, and removal of the old penetration labels. Unity Play Mode remains pending because Unity Editor processes are already open.
+
+## Previous task (death spectate and selected-robot HP HUD)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
+- User request: "треба перевірити та виправити деякі баги, коли наш робот знищений ми можемо дивитися як грають інші роботи, але ми не можемо вибирати мертвих крім себе, ми також не можем вибирати противників ми переключаємося тільки по своїх і тільки якщо вони живі, і ще одне це коли ми дивимося на робота ХП канвас зникає ХП не відображається в канвасі але воно відображається в шеймплей хад, зад не повинен зникати він показує характеритики вибраного робота ХП і т.д. реалізуй це максимально чітко та оптимізовано"
+- Objective: preserve death spectating while allowing selection only of living allied battle robots, keep the local dead robot as the only dead-target exception, hide the selected robot's world HP canvas, and show its HP/name in the persistent screen gameplay HUD.
+- Acceptance criteria:
+  - After local death, spectator cycling remains available.
+  - Cycling candidates are only alive, non-menu, spawned robots assigned to the local team; enemies and other dead robots are never selectable.
+  - The local destroyed robot may remain the current camera/HUD target as the sole dead-target exception.
+  - During spectating, the selected robot's world-space HP canvas is hidden; HP is not duplicated above the robot.
+  - The screen-space gameplay HUD remains open and its existing vehicle status panel follows the selected robot's name, HP fill, and HP text.
+  - Existing death intro, camera orbit/zoom, input blocking, and battle-end/menu flow remain unchanged unless required for the target filter.
+  - Relevant mechanic documentation, source/build checks, and focused static verification are recorded.
+- Assumptions: the local `VehicleRoot` remains available as the dead-target exception; active vehicle registration already excludes roots disabled by death; the existing `GameplayHUD/VehicleStatusPanel` is the authoritative spectator status surface; no new scene object is required.
+- Current work: the previous implementation was corrected because it added a spawned registry and allowed dead/enemy targets, and it forced the selected world canvas visible contrary to the requested behavior.
+- Work remaining: reproduce local death in Unity Play Mode and confirm left-click cycling skips dead/enemy robots while the selected living ally's world canvas is hidden and the screen HUD follows it.
+- Edited files: `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Game/Scripts/Gameplay/Robots/HealthBarUI.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing System.Net.Http/obsolete API warnings; focused `git diff --check` passed; static references confirm active-list cycling, alive/same-team filtering, target-change HUD binding, and world-canvas suppression. Unity Play Mode remains pending because Unity Editor processes are already open.
+
+## Previous active task (tactical EndGame snapshot)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
 - User request: "2 варіант найкращий реалізуй його"
 - Objective: implement the tactical EndGame snapshot variant using the existing EndGame TMP text: battle result, map, mode, duration, and team score.
 - Acceptance criteria:

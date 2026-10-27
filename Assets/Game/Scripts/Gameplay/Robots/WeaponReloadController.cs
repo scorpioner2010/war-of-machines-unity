@@ -51,6 +51,24 @@ namespace Game.Scripts.Gameplay.Robots
         public int ServerAmmoLeft => _ammoLeft.Value;
         public bool ServerIsReloading => _isReloading.Value;
         public float ServerReloadRemain => _reloadRemain.Value;
+        public int ClientAmmoLeft => Mathf.Max(0, _ammoLeft.Value);
+        public bool ClientIsReloading => _isReloading.Value;
+        public float ClientReloadRemain => Mathf.Max(0f, _reloadRemain.Value);
+        public float ClientReloadTime => Mathf.Max(0.01f, reloadTime);
+        public RobotFaction ClientFaction
+        {
+            get
+            {
+                if (_faction != RobotFaction.Unknown)
+                {
+                    return _faction;
+                }
+
+                return vehicleRoot != null && vehicleRoot.RuntimeStats != null
+                    ? vehicleRoot.RuntimeStats.Faction
+                    : RobotFaction.Unknown;
+            }
+        }
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -249,6 +267,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyHud()
         {
+            if (IsLocalSpectatorHudActive())
+            {
+                return;
+            }
+
             if (!TryResolveCrosshair(false))
             {
                 return;
@@ -291,6 +314,14 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 ApplyReloadText(ReloadHudState.Ready, 0, factionBindingsChanged);
             }
+        }
+
+        private bool IsLocalSpectatorHudActive()
+        {
+            return vehicleRoot != null
+                   && vehicleRoot.IsOwner
+                   && vehicleRoot.cameraController != null
+                   && vehicleRoot.cameraController.IsDeathSpectatorActive;
         }
 
         private float GetWeaponChargeProgress(int ammoLeft, bool isReloading, float reloadRemain)

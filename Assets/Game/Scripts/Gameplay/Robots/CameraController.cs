@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Client;
 using Game.Scripts.Diagnostics;
+using Game.Scripts.Networking.Lobby;
 using Game.Scripts.UI.HUD;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
@@ -31,12 +33,16 @@ namespace Game.Scripts.Gameplay.Robots
         private float _deathSpectatorIntroEndTime;
         private int _pendingKillerObjectId = -1;
         private VehicleRoot _spectatorTarget;
-        private VehicleRoot _spectatorVisibilityTarget;
+        private VehicleRoot _spectatorCanvasTarget;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
 
         public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
         public CameraZoomProfile CurrentZoomProfile => GetZoomProfile(_currentZoomStep);
         public int CurrentZoomStep => _currentZoomStep;
+        public bool IsDeathSpectatorActive => _deathSpectatorActive;
+        public VehicleRoot SpectatorTarget => _spectatorTarget;
+
+        public event Action<VehicleRoot> SpectatorTargetChanged;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -92,9 +98,9 @@ namespace Game.Scripts.Gameplay.Robots
                 vehicleRoot.health.OnClientDeath -= HandleClientDeath;
             }
 
-            if (_spectatorVisibilityTarget != null && _spectatorVisibilityTarget.clientVisibility != null)
+            if (_spectatorCanvasTarget != null && _spectatorCanvasTarget.vehicleHUD != null)
             {
-                _spectatorVisibilityTarget.clientVisibility.SetSpectatorVisibility(false);
+                _spectatorCanvasTarget.vehicleHUD.SetWorldCanvasHidden(false);
             }
         }
 
@@ -287,13 +293,13 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (_pendingKillerObjectId < 0
                 || !VehicleColliderRegistry.TryGetRoot(_pendingKillerObjectId, out VehicleRoot killerRoot)
-                || !IsSpectatorCandidate(killerRoot))
+                || !IsLiveBattleVehicle(killerRoot))
             {
                 return;
             }
 
             _pendingKillerObjectId = -1;
-            SetSpectatorTarget(killerRoot);
+            SetSpectatorTarget(killerRoot, true);
         }
 
         private void CycleSpectatorTarget()
@@ -329,7 +335,49 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private static bool IsSpectatorCandidate(VehicleRoot candidate)
+        private static bool IsLiveBattleVehicle(VehicleRoot candidate)
+        {
+            return candidate != null
+                   && !candidate.IsMenu
+                   && candidate.health != null
+                   && candidate.networkObject != null
+                   && candidate.networkObject.IsSpawned
+                   && !candidate.health.IsDead;
+        }
+
+        private bool IsSpectatorCandidate(VehicleRoot candidate)
+        {
+            if (!IsLiveBattleVehicle(candidate) || vehicleRoot == null)
+            {
+                return false;
+            }
+
+            if (vehicleRoot.characterInit == null || candidate.characterInit == null)
+            {
+                return false;
+            }
+
+            return MatchTeamUtility.AreSameAssignedTeam(
+                vehicleRoot.characterInit.Team.Value,
+                candidate.characterInit.Team.Value);
+        }
+
+        private bool IsAllowedSpectatorTarget(VehicleRoot target, bool allowAutomaticKillerTarget)
+        {
+            if (target == vehicleRoot)
+            {
+                return IsValidBattleVehicle(target);
+            }
+
+            if (allowAutomaticKillerTarget)
+            {
+                return IsLiveBattleVehicle(target);
+            }
+
+            return IsSpectatorCandidate(target);
+        }
+
+        private static bool IsValidBattleVehicle(VehicleRoot candidate)
         {
             return candidate != null
                    && !candidate.IsMenu
@@ -338,9 +386,9 @@ namespace Game.Scripts.Gameplay.Robots
                    && candidate.networkObject.IsSpawned;
         }
 
-        private void SetSpectatorTarget(VehicleRoot target)
+        private void SetSpectatorTarget(VehicleRoot target, bool allowAutomaticKillerTarget = false)
         {
-            if (!IsSpectatorCandidate(target))
+            if (!IsAllowedSpectatorTarget(target, allowAutomaticKillerTarget))
             {
                 target = vehicleRoot;
             }
@@ -350,18 +398,20 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            if (_spectatorVisibilityTarget != null && _spectatorVisibilityTarget != target
-                && _spectatorVisibilityTarget.clientVisibility != null)
+            if (_spectatorCanvasTarget != null && _spectatorCanvasTarget != target
+                && _spectatorCanvasTarget.vehicleHUD != null)
             {
-                _spectatorVisibilityTarget.clientVisibility.SetSpectatorVisibility(false);
+                _spectatorCanvasTarget.vehicleHUD.SetWorldCanvasHidden(false);
             }
 
             _spectatorTarget = target;
-            _spectatorVisibilityTarget = target;
-            if (target.clientVisibility != null)
+            _spectatorCanvasTarget = target;
+            if (target.vehicleHUD != null)
             {
-                target.clientVisibility.SetSpectatorVisibility(true);
+                target.vehicleHUD.SetWorldCanvasHidden(true);
             }
+
+            SpectatorTargetChanged?.Invoke(target);
 
             Transform targetRig = GetTargetRig(target);
             if (targetRig == null)
