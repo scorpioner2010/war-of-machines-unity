@@ -58603,6 +58603,8 @@ MonoBehaviour:
     worldHpBarScaleMaxDistance: 170
     worldHpBarMinDistanceScale: 0.3
     worldHpBarMaxDistanceScale: 6
+    worldHpBarCanvasFadeStartDistance: 5
+    worldHpBarCanvasFullyTransparentDistance: 3
     mapAllyIconColor: {r: 0.1, g: 0.35, b: 1, a: 1}
     mapEnemyIconColor: {r: 1, g: 0.08, b: 0.04, a: 1}
     mapDestroyedIconColor: {r: 0, g: 0, b: 0, a: 1}

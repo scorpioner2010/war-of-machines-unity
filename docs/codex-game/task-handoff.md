@@ -2,21 +2,24 @@
 
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Follow-up report: the user configured the fade distances, entered gameplay, and reported that allied robot HP canvases remain visible at close camera distance.
+- Follow-up objective: ensure the shared nested `NameCanvas` prefab preserves its root `CanvasGroup` reference so the existing distance fade drives every runtime robot canvas.
 - Started: 2026-10-27
-- User request: "супер реалізуй це, а там де пробив і не пробив постав ось тайи значок 〰〰〰"
-- Objective: during death spectating, show the selected robot's synchronized reload state, aim/dispersion state, and remaining shell count in the existing gameplay HUD, and replace the penetrated/not-penetrated shot labels with `〰〰〰`.
+- User request: "додай параметр, це відстань до камери коли NameCanvas який на роботі починає зникати плавно і параметр де повністю має бути прозорість 0, корчое на канвасі зтеба міняти канвас груп прозорість від 2 параметрів, ставим для прикладу ось такі параметри початок уходу в прозорість 5 юнітів. повністю прозорий канвас 3 юніта. якщо хп до камери знаходиться ближче чим 3 воно повністю прозоре (можна навіть віимкнути геймобджект якщо це додасть оптимізації) якщо 4 відстань від NameCanvas до камери значить канвас груп має бути 0.5, якщо 6 має бути 1, 7 - 1, 5 - 1, 2 - 0. я надіюся ти поняв що за параметри? їх треба додати в налаштування десь в клієнт сетінгс ріалтайм щоб я їх міг налаштувати."
+- Objective: fade every robot `NameCanvas` by distance to the main gameplay orbit camera through one serialized `CanvasGroup`, with configurable fade-start and fully-transparent distances in `ClientSettings.gameplayRuntime`.
 - Acceptance criteria:
-  - The HUD weapon panel follows the same selected target as the HP/name panel.
-  - Selected-target ammo, reload state/time/progress, faction reticle, and aim percentage use that target's client-visible synchronized data.
-  - Local owner prediction remains authoritative during normal play; it does not overwrite spectator weapon HUD values after death.
-  - `Penetrated` and `No penetration` both display `〰〰〰`; `Miss` keeps its current meaning.
-  - No new scene object, scene-wide search, or per-robot HUD instance is introduced.
-  - Source/build checks and focused static verification are recorded.
-- Assumptions: FishNet SyncVars on `WeaponReloadController` and `NetworkWeaponShooter` are readable by observers; spectator aim diameter uses the local spectator camera zoom while dispersion uses the selected target's synchronized server value.
-- Current work: `GunCrosshair` now follows the existing spectator target event, consumes observer-safe ammo/reload/faction/dispersion state, and blocks owner weapon HUD writers while spectating.
-- Work remaining: reproduce target switching and HUD transitions in Unity Play Mode, including `〰〰〰` for both penetration outcomes.
-- Edited files: `Assets/Game/Scripts/Gameplay/Robots/WeaponReloadController.cs`, `Assets/Game/Scripts/Gameplay/Robots/NetworkWeaponShooter.cs`, `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `docs/codex-game/ui-hud.md`, this handoff, and `docs/codex-game/task-history.md`.
-- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings; focused `git diff --check` passed; static audit confirmed observer ammo/reload/dispersion binding, owner-HUD suppression during spectating, and removal of the old penetration labels. Unity Play Mode remains pending because Unity Editor processes are already open.
+  - At distances greater than or equal to the fade-start distance, the world canvas alpha is `1`.
+  - At distances less than or equal to the fully-transparent distance, the world canvas alpha is `0`.
+  - Between the two settings, alpha is linearly interpolated; defaults produce `6 -> 1`, `5 -> 1`, `4 -> 0.5`, `3 -> 0`, and `2 -> 0`.
+  - Distance is measured from each `NameCanvas` to `CameraSync.gameplayCamera`, including spectator orbit-camera movement.
+  - The existing world-canvas visibility rules remain intact, and alpha `0` does not disable the `VehicleHUD` owner that must continue updating HP/name state.
+  - Both distances are editable under the runtime client settings and invalid/reversed values are sanitized safely.
+  - No runtime component creation or scene-wide component lookup is introduced.
+- Assumptions: `NameCanvas.prefab` is the shared source for all robot world canvases; its root `VehicleHUD` can hold the serialized `CanvasGroup`; keeping the visual object active at alpha `0` is safer than disabling the owner component.
+- Current work: removed the broken per-robot CanvasGroup overrides and kept one serialized root CanvasGroup on the shared `NameCanvas.prefab`; all eight production prefabs now resolve that same reference through their nested instance.
+- Work remaining: confirm the visual fade once in the user's normal Unity Play Mode at the configured camera distances; the automated asset/reference and alpha tests are passing.
+- Edited files: the eight files under `Assets/Game/Content/Robots/IA` and `Assets/Game/Content/Robots/NV`, `Assets/Game/Content/UI/Prefabs/World/NameCanvas.prefab`, `Assets/Game/Scripts/Client/ClientSettings.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`, `Assets/Editor/VehicleHudCanvasFadeEditModeTests.cs`, `Assets/Game/Scenes/Client.unity`, and the related docs.
+- Verification: the initial real Play Mode probe reproduced the bug with `camera=GameplayCamera` but `group=null`; after the fix, Unity EditMode tests passed `2/2`, including all 8 production prefab instances and alpha `0.5/0/1` at distances `4/3/6`; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing `System.Net.Http` warnings; `git diff --check` passed. A headless `-executeMethod` Play transition did not complete, so final visual confirmation remains manual.
 
 ## Previous task (death spectate and selected-robot HP HUD)
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

@@ -117,6 +117,11 @@ namespace Game.Scripts.Client
         public float worldHpBarMinDistanceScale = 1f;
         [Tooltip("Множник масштабу смуги HP далеко від камери.")]
         public float worldHpBarMaxDistanceScale = 5f;
+        [Header("Прозорість world-space NameCanvas")]
+        [Tooltip("Відстань до gameplay-камери, з якої NameCanvas починає плавно ставати прозорим.")]
+        public float worldHpBarCanvasFadeStartDistance = 5f;
+        [Tooltip("Відстань до gameplay-камери, на якій NameCanvas стає повністю прозорим.")]
+        public float worldHpBarCanvasFullyTransparentDistance = 3f;
 
         [Header("Карта")]
         [Tooltip("Колір іконок союзників на мінікарті та повній карті.")]
@@ -256,6 +261,21 @@ namespace Game.Scripts.Client
                 worldHpBarMaxDistanceScale = worldHpBarMinDistanceScale;
             }
 
+            worldHpBarCanvasFadeStartDistance = ClampFinite(
+                worldHpBarCanvasFadeStartDistance,
+                0.01f,
+                Default.worldHpBarCanvasFadeStartDistance);
+            worldHpBarCanvasFullyTransparentDistance = ClampFinite(
+                worldHpBarCanvasFullyTransparentDistance,
+                0f,
+                Default.worldHpBarCanvasFullyTransparentDistance);
+            if (worldHpBarCanvasFullyTransparentDistance >= worldHpBarCanvasFadeStartDistance)
+            {
+                worldHpBarCanvasFullyTransparentDistance = Mathf.Max(
+                    0f,
+                    worldHpBarCanvasFadeStartDistance - 0.01f);
+            }
+
             mapAllyIconColor = ClampColor(mapAllyIconColor, Default.mapAllyIconColor);
             mapEnemyIconColor = ClampColor(mapEnemyIconColor, Default.mapEnemyIconColor);
             mapDestroyedIconColor = ClampColor(mapDestroyedIconColor, Default.mapDestroyedIconColor);
@@ -321,6 +341,8 @@ namespace Game.Scripts.Client
             worldHpBarScaleMaxDistance = source.worldHpBarScaleMaxDistance;
             worldHpBarMinDistanceScale = source.worldHpBarMinDistanceScale;
             worldHpBarMaxDistanceScale = source.worldHpBarMaxDistanceScale;
+            worldHpBarCanvasFadeStartDistance = source.worldHpBarCanvasFadeStartDistance;
+            worldHpBarCanvasFullyTransparentDistance = source.worldHpBarCanvasFullyTransparentDistance;
             mapAllyIconColor = source.mapAllyIconColor;
             mapEnemyIconColor = source.mapEnemyIconColor;
             mapDestroyedIconColor = source.mapDestroyedIconColor;

@@ -6,6 +6,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHUD.cs`
   - Robot-prefab world HP/vehicle-name HUD root and root-aware binding.
   - Owns rotating the world HP bar toward the gameplay camera and scaling it by camera distance.
+  - Uses the serialized root `CanvasGroup` from `Assets/Game/Content/UI/Prefabs/World/NameCanvas.prefab` to fade the entire name/HP canvas by distance to `CameraSync.gameplayCamera`. `worldHpBarCanvasFadeStartDistance` keeps alpha at `1`, `worldHpBarCanvasFullyTransparentDistance` produces alpha `0`, and the interval between them is linear.
   - Subscribes to `VehicleHealth.OnHealthChanged` and `OnDamaged`, so the HP fill is initialized on spawn and updates on later health changes.
   - Consumes `VehicleRuntimeStats` and displays the robot name, falling back to its code and then prefab instance name until stats arrive.
   - Uses the same map/spotting visibility result as the vehicle model: the name and HP disappear when the robot disappears from the map.
@@ -14,7 +15,7 @@ Current owner scripts:
   - Never displays the world vehicle name, HP bar, or floating damage text for the locally owned gameplay vehicle; the owner uses the screen-space HUD health display instead.
   - Never displays the world vehicle name or HP bar for a main-menu robot preview. `VehicleRoot.Init(true)` refreshes this gate after assigning the menu context.
   - `SetWorldCanvasHidden(true)` suppresses the selected robot's world-space name/HP canvas during death spectating, so its HP is presented only by the screen-space gameplay HUD; `CameraController` clears it when the target changes or is destroyed.
-  - `Assets/Game/NameCanvas.prefab` assigns overlay materials to its TMP text and HP images. Those materials use the Overlay render queue with `ZTest Always`, and the Canvas overrides sorting at order `32767`, so map geometry and walls do not occlude the presentation.
+- `Assets/Game/Content/UI/Prefabs/World/NameCanvas.prefab` assigns overlay materials to its TMP text and HP images and wires the root `CanvasGroup` to `VehicleHUD.nameCanvasGroup`. Production IA/NV robot prefabs inherit this shared nested-prefab binding; their instances are covered by `Assets/Editor/VehicleHudCanvasFadeEditModeTests.cs` so no per-robot duplicate CanvasGroup override is required. Those materials use the Overlay render queue with `ZTest Always`, and the Canvas overrides sorting at order `32767`, so map geometry and walls do not occlude the presentation.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleClientVisibility.cs`
   - Client-only presenter for the spawned vehicle's 3D visibility.
   - Reads the local team's authoritative snapshot from `GameplayMapVisibilityState` by FishNet object ID.
@@ -117,6 +118,7 @@ Rules when editing HUD/UI:
 - Do not let client-only UI state drive authoritative gameplay.
 - Prefer inspector-wired references for UI components.
 - Keep map markers, enemy model visibility, and `NameCanvas` activation on the same authoritative snapshot. Rendering through walls applies only while that snapshot still contains the robot.
+- Keep `NameCanvas` fade visual-only: alpha `0` must not disable the root `VehicleHUD`, because it still owns HP/name binding and may be the selected spectating target. The fade distance is measured against the shared gameplay orbit camera, not a per-robot camera.
 - For local hit feedback, use `DamageScreen` and `VehicleHealth.OnDamaged`; do not poll health or search for the local vehicle from the scene.
 - Keep Client menus and HUD in their owning scene. Client test mode must use its serialized `sceneGameplayHud` and `sceneGameplayCanvas` references; do not split one menu between scene objects and prefabs.
 - Keep the existing `Client.unity/Canvas/GameplayHUD` assigned to the `GameplayHUD` entry of the scene `MenuManager`; do not add a second HUD instance or spawn UI at runtime.

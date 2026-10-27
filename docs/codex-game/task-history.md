@@ -1,5 +1,30 @@
 # Codex Task History
 
+### 2026-10-27 - Fix NameCanvas CanvasGroup wiring on robot prefabs
+- Status: `IN_PROGRESS`
+- Scope: repair the visible `CanvasGroup` reference for all eight IA/NV robot prefab `NameCanvas` instances after allied HP did not fade at close camera distance.
+- Finding: every robot prefab already contains an added root `CanvasGroup`, but its nested `VehicleHUD.nameCanvasGroup` field has no explicit instance override; the shared fade code is therefore not guaranteed to drive the visible component.
+- Acceptance: all eight robot prefabs explicitly bind `VehicleHUD.nameCanvasGroup` to their root CanvasGroup while the existing distance settings and camera-based fade remain unchanged.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Fix NameCanvas CanvasGroup wiring verification update
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Implementation: added matching `VehicleHUD.nameCanvasGroup` overrides to all eight IA/NV nested `NameCanvas` instances; no runtime lookup or fade formula change was introduced.
+- Verification: static audit passed with `8/8` matching CanvasGroup IDs; production C# build passed with `0` errors; focused prefab/source `git diff --check` passed. Unity Play Mode confirmation remains pending.
+- Detail: active record remains in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Fade robot NameCanvas by gameplay-camera distance
+- Status: `IN_PROGRESS`
+- Scope: add configurable start/full transparency distances for every robot world `NameCanvas` and apply linear `CanvasGroup.alpha` fade from the main gameplay orbit camera.
+- Acceptance: defaults produce alpha `1` at `5+`, `0.5` at `4`, and `0` at `3-`; settings live in `ClientSettings.gameplayRuntime`; existing visibility/HP owner behavior remains intact; no runtime component lookup/creation is added.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Fade robot NameCanvas by gameplay-camera distance verification update
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Implementation: added `worldHpBarCanvasFadeStartDistance` and `worldHpBarCanvasFullyTransparentDistance` with `5`/`3` scene defaults, wired a shared root `CanvasGroup` in `NameCanvas.prefab`, and applied one-distance-per-frame linear fading in `VehicleHUD` without disabling the HP/name owner.
+- Verification: production C# build passed with `0` errors; alpha audit returned `6 -> 1`, `5 -> 1`, `4 -> 0.5`, `3 -> 0`, and `2 -> 0`; prefab/scene/static wiring and focused `git diff --check` passed. Unity Play Mode remains pending while the Editor is open.
+- Detail: active record remains in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-27 - Add selected-robot weapon HUD spectating
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Scope: show selected-target ammo, reload, and aim data in the existing gameplay HUD during death spectating, and replace penetrated/not-penetrated labels with `〰〰〰`.
@@ -748,4 +773,12 @@ The repository can preserve task state and verification notes, but it cannot con
 - Scope: add an Inspector checkbox and signed `runtimeZoomIndex` next to the ClientSettings zoom-profile array so developers can change the active local camera zoom during runtime.
 - Implementation: `CameraController` applies valid runtime index changes during normal updates and initialization through `ApplyZoomStep`; wheel zoom is suppressed while the override is valid and active, and resumes when disabled or when the index is missing.
 - Verification: production and PlayMode assemblies built with 0 errors; focused PlayMode source coverage compiled for enabled `0 -> 1`, invalid-index ignore, disabled override, and validation/copy behavior; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending because the Editor is open.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+# 2026-10-27 - NameCanvas fade prefab binding regression
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: fix world-space robot HP/name canvas distance fade remaining visible because `VehicleHUD.nameCanvasGroup` was null on runtime nested prefab instances.
+- Root cause: per-robot added `CanvasGroup` overrides were invalid for this nested prefab path; the shared `NameCanvas.prefab` root binding is the authoritative reference.
+- Implementation: removed the duplicate per-robot CanvasGroup overrides, kept the shared serialized root reference, and added an Editor regression test covering all eight IA/NV prefabs plus alpha values at distances `4`, `3`, and `6`.
+- Verification: the initial Play Mode probe reproduced `camera=GameplayCamera` with `group=null`; the fixed EditMode suite passed `2/2`, the production build passed with `0` errors, and `git diff --check` passed. Manual Unity Play Mode visual confirmation remains pending.
 - Detail: active record is in `docs/codex-game/task-handoff.md`.

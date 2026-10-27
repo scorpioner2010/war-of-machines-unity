@@ -14,6 +14,7 @@ namespace Game.Scripts.Gameplay.Robots
         private Camera _mainCamera;
         [SerializeField] private TMP_Text nickName;
         [SerializeField] private Image hpView;
+        [SerializeField] private CanvasGroup nameCanvasGroup;
         public FloatingDamageText floatingTextPrefab;
         [SerializeField, Min(0)] private int floatingTextPoolPrewarmCount = 8;
         [SerializeField, Min(1)] private int floatingTextPoolMaxInactive = 32;
@@ -237,46 +238,67 @@ namespace Game.Scripts.Gameplay.Robots
                 transform.forward = camera.transform.forward;
             }
 
-            ApplyDistanceScale(camera);
+            ApplyDistanceEffects(camera);
         }
 
-        private void ApplyDistanceScale(Camera camera)
+        private void ApplyDistanceEffects(Camera camera)
         {
             CaptureBaseLocalScale();
 
             if (camera == null)
             {
                 ResetDistanceScale();
+                ApplyNameCanvasAlpha(1f);
                 return;
             }
 
             GameplayRuntimeSettings settings = GetRuntimeSettings();
-            if (!settings.worldHpBarDistanceScaleEnabled)
-            {
-                ResetDistanceScale();
-                return;
-            }
-
             Transform cameraTransform = camera.transform;
             Vector3 offset = transform.position - cameraTransform.position;
             float distance = Mathf.Sqrt(offset.sqrMagnitude);
-            float minDistance = settings.worldHpBarScaleMinDistance;
-            float maxDistance = settings.worldHpBarScaleMaxDistance;
-            if (maxDistance <= minDistance)
+            if (settings.worldHpBarDistanceScaleEnabled)
             {
-                maxDistance = minDistance + 0.01f;
+                float minDistance = settings.worldHpBarScaleMinDistance;
+                float maxDistance = settings.worldHpBarScaleMaxDistance;
+                if (maxDistance <= minDistance)
+                {
+                    maxDistance = minDistance + 0.01f;
+                }
+
+                float minScale = settings.worldHpBarMinDistanceScale;
+                float maxScale = settings.worldHpBarMaxDistanceScale;
+                if (maxScale < minScale)
+                {
+                    maxScale = minScale;
+                }
+
+                float distance01 = Mathf.InverseLerp(minDistance, maxDistance, distance);
+                float scale = Mathf.Lerp(minScale, maxScale, distance01);
+                transform.localScale = _baseLocalScale * scale;
+            }
+            else
+            {
+                ResetDistanceScale();
             }
 
-            float minScale = settings.worldHpBarMinDistanceScale;
-            float maxScale = settings.worldHpBarMaxDistanceScale;
-            if (maxScale < minScale)
+            float fadeStartDistance = settings.worldHpBarCanvasFadeStartDistance;
+            float fullyTransparentDistance = settings.worldHpBarCanvasFullyTransparentDistance;
+            float alpha = distance <= fullyTransparentDistance
+                ? 0f
+                : distance >= fadeStartDistance
+                    ? 1f
+                    : Mathf.InverseLerp(fullyTransparentDistance, fadeStartDistance, distance);
+            ApplyNameCanvasAlpha(alpha);
+        }
+
+        private void ApplyNameCanvasAlpha(float alpha)
+        {
+            if (nameCanvasGroup == null || Mathf.Approximately(nameCanvasGroup.alpha, alpha))
             {
-                maxScale = minScale;
+                return;
             }
 
-            float distance01 = Mathf.InverseLerp(minDistance, maxDistance, distance);
-            float scale = Mathf.Lerp(minScale, maxScale, distance01);
-            transform.localScale = _baseLocalScale * scale;
+            nameCanvasGroup.alpha = alpha;
         }
 
         private Camera ResolveCamera()

@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 527776816946263243}
   - component: {fileID: 8301958346013853185}
   - component: {fileID: 8419437673525612707}
+  - component: {fileID: 920000000000000001}
   m_Layer: 0
   m_Name: NameCanvas
   m_TagString: Untagged
@@ -270,7 +271,20 @@ MonoBehaviour:
   vehicleRoot: {fileID: 0}
   nickName: {fileID: 1708463725538953413}
   hpView: {fileID: 6888389142017244291}
+  nameCanvasGroup: {fileID: 920000000000000001}
   floatingTextPrefab: {fileID: 0}
+--- !u!225 &920000000000000001
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3163261354685738656}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &8062004295221571761
 GameObject:
   m_ObjectHideFlags: 0
