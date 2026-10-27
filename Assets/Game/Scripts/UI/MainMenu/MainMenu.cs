@@ -16,6 +16,9 @@ namespace Game.Scripts.UI.MainMenu
         [SerializeField] private Button developmentTreeButton;
         [SerializeField] private Button freeXpButton;
         [SerializeField] private FreeXpConversionPopup freeXpConversionPopup;
+        [SerializeField] private Button profileButton;
+        [SerializeField] private GameObject profileStatisticsPopup;
+        [SerializeField] private ProfileStatisticsPopup profileStatisticsPopupView;
 
         [SerializeField] private TMP_Text user;
         [SerializeField] private TMP_Text bolts;
@@ -74,6 +77,11 @@ namespace Game.Scripts.UI.MainMenu
                 freeXpButton.onClick.AddListener(freeXpConversionPopup.Show);
             }
 
+            if (profileButton != null && profileStatisticsPopup != null)
+            {
+                profileButton.onClick.AddListener(ShowProfileStatisticsPopup);
+            }
+
             MenuManager.OnEnable += type =>
             {
                 if (type == MenuType.MainMenu)
@@ -81,6 +89,47 @@ namespace Game.Scripts.UI.MainMenu
                     ProfileServer.UpdateProfile();
                 }
             };
+        }
+
+        public void ShowProfileStatisticsPopup()
+        {
+            if (profileStatisticsPopup == null)
+            {
+                return;
+            }
+
+            profileStatisticsPopup.SetActive(true);
+            profileStatisticsPopup.transform.SetAsLastSibling();
+            if (profileStatisticsPopupView != null)
+            {
+                profileStatisticsPopupView.Open();
+            }
+            else
+            {
+                ProfileServer.RequestProfileStatistics();
+            }
+        }
+
+        public void HideProfileStatisticsPopup()
+        {
+            if (profileStatisticsPopupView != null)
+            {
+                profileStatisticsPopupView.Close();
+            }
+            else if (profileStatisticsPopup != null)
+            {
+                profileStatisticsPopup.SetActive(false);
+            }
+        }
+
+        public void UpdateProfileStatistics(PlayerStatisticsDto statistics)
+        {
+            profileStatisticsPopupView?.ApplyStatistics(statistics);
+        }
+
+        public void ShowProfileStatisticsError(string message)
+        {
+            profileStatisticsPopupView?.ShowError(message);
         }
 
         public void UpdatePlayerInfo(PlayerProfile profile)

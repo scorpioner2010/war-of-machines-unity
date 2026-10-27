@@ -38,6 +38,36 @@ namespace Game.Scripts
             return (false, resp, default);
         }
 
+        public static async UniTask<(bool isSuccess, string message, PlayerStatisticsDto statistics)> GetMyStatistics(string token)
+        {
+            string url = HttpLink.APIBase + "/players/me/statistics";
+
+            var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
+            {
+                downloadHandler = new DownloadHandlerBuffer(),
+                certificateHandler = new AcceptAllCertificates()
+            };
+
+            req.SetRequestHeader("Authorization", "Bearer " + token);
+
+            try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+
+            string resp = req.downloadHandler?.text ?? string.Empty;
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                PlayerStatisticsDto statistics = JsonUtility.FromJson<PlayerStatisticsDto>(resp);
+                if (statistics != null && statistics.vehicles == null)
+                {
+                    statistics.vehicles = new VehicleStatisticsDto[0];
+                }
+
+                return (statistics != null, resp, statistics);
+            }
+
+            return (false, resp, null);
+        }
+
         public static async UniTask<(bool isSuccess, string message)> SetActiveVehicle(int vehicleId, string token)
         {
             string url = HttpLink.APIBase + "/players/me/active/" + vehicleId;
@@ -223,5 +253,59 @@ namespace Game.Scripts.API.Models
         public string code;
         public string name;
         public float viewRange;
+    }
+
+    [System.Serializable]
+    public class PlayerStatisticsDto
+    {
+        public string username;
+        public int mmr;
+        public int bolts;
+        public int adamant;
+        public int freeXp;
+        public int battles;
+        public int wins;
+        public int losses;
+        public int draws;
+        public float winRate;
+        public int kills;
+        public int damage;
+        public float averageDamage;
+        public float averageKills;
+        public int xpEarned;
+        public int boltsEarned;
+        public int freeXpEarned;
+        public int mmrDelta;
+        public string lastBattleAt;
+        public VehicleStatisticsDto[] vehicles;
+    }
+
+    [System.Serializable]
+    public class VehicleStatisticsDto
+    {
+        public int vehicleId;
+        public string code;
+        public string name;
+        public string factionCode;
+        public string branch;
+        public int tier;
+        public bool isOwned;
+        public bool isActive;
+        public int currentXp;
+        public int battles;
+        public int wins;
+        public int losses;
+        public int draws;
+        public float winRate;
+        public int kills;
+        public int damage;
+        public float averageDamage;
+        public float averageKills;
+        public int bestKills;
+        public int bestDamage;
+        public int xpEarned;
+        public int boltsEarned;
+        public int freeXpEarned;
+        public string lastPlayedAt;
     }
 }

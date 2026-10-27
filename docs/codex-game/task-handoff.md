@@ -1,6 +1,192 @@
 # Codex Task Handoff
 
 ## Active task
+- Status: `COMPLETED`
+- Started: 2026-10-27
+- User request: "для ProfileVehicleRowTemplate підтягни іконку робота"
+- Objective: display the selected robot's catalog icon inside every generated `ProfileVehicleRowTemplate` row.
+- Acceptance criteria:
+  - The row template has a serialized robot-icon `Image` reference.
+  - `ProfileVehicleRow.Setup` resolves the row's `VehicleStatisticsDto.code` through `GameResourceManager.GetIcon` and assigns the sprite without runtime component lookup.
+  - Missing icons clear the image safely and do not break row selection/click behavior.
+  - The scene template, source responsibility map, and task record document the new icon binding.
+  - Static wiring/source validation passes; no unrelated UI behavior changes are introduced.
+- Assumptions: the existing `GameResourceManager` catalog icons are the intended art source, and the scene-owned row template is the authoritative hierarchy for generated profile rows.
+- Current work: `ProfileVehicleRow` assigns each row's serialized `VehicleIcon` from `GameResourceManager.GetIcon(vehicle.code)` and hides it safely when the catalog has no icon.
+- Work remaining: none for the requested icon binding.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/ProfileVehicleRow.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static icon wiring/source audit passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings. Play Mode was not run for this focused request.
+
+## Previous active task (stale first profile row highlight)
+- Status: `COMPLETED`
+- Started: 2026-10-27
+- User request: "не треба тестувати я протестив все ок, єдине помітив ще баг що перший робот має сталий зелений бекграунд навіть якщо він не вибраний, це візуальний баг виправ це також ось скрін, 1 робот не вибраний а другий інший робот внизу вибраний там все ок"
+- Objective: ensure the profile vehicle list shows the selected tint on exactly one row and restores the first row to its normal color after another robot is selected.
+- Acceptance criteria:
+  - The first robot row is not visibly selected when another row is selected.
+  - `ProfileVehicleRow` remains the single owner of the row selection background color.
+  - The scene template's native Button transition and generic `ButtonComponent` visual state cannot overwrite the custom selection color.
+  - Existing row click behavior and click sound remain available.
+  - The fix is recorded in the mechanic documentation and static project checks are recorded without repeating Play Mode testing.
+- Assumptions: the serialized `ProfileVehicleRowTemplate` in `Client.unity` is the authoritative source for generated profile rows; the user's previous Play Mode test already covered selection and other popup behavior.
+- Current work: `ProfileVehicleRow` is now the only selection-color owner for generated profile rows; the scene template no longer applies generic Button tint to its background.
+- Work remaining: none for the requested visual fix.
+- Edited files: `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static selection-color audit passed for template transition, empty `ButtonComponent.childGraphics`, row reset logic, and the custom background owner. Documentation diff check passed. `git diff --check` still reports the existing blank serialized YAML fields in `Client.unity`; no Unity Play Mode test was repeated because the user explicitly confirmed prior testing.
+
+## Previous active task (selected robot percentages and Close button)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
+- User request: "ти не поняв, пояснюю ще раз, бар показує статистику вибраного робота, вибраного робота зі списку, по замовчуваею вибирається 1 робот в списку. там де вінс WinsLabel показується в процентах не 304 WINS в 54% WINS, луз так само в процентах, в сумы маэ бути 100% тепер поняв як треба переробити? також помітив кнопка клоус не праццює її теж підключи щоб працювала і протестуй чи все ок"
+- Objective: make `RecordPanel` follow the selected vehicle row, display win/loss percentages summing to 100%, select the first row by default, and make the popup Close button functional.
+- Acceptance criteria:
+  - Selecting a robot row updates `RecordPanel` from that robot's `VehicleStatisticsDto`.
+  - `WinsLabel` and `LossesLabel` show percentages, not counts, and total `100%` for a robot with battles.
+  - `WinsBar.fillAmount` equals the selected robot win percentage from `wins / (wins + losses)`; `LossesBar`/background remains full as the track.
+  - The first returned robot is selected automatically and its record is shown immediately.
+  - Close hides the popup, clears stale rows, and can be reopened safely.
+  - Unity C# build and static wiring checks pass; verification results are recorded.
+- Assumptions: the requested win/loss percentages use decisive results (`wins + losses`), while draws are not included in the 100% split; the selected robot's existing `VehicleStatisticsDto` is authoritative.
+- Current work: `ProfileStatisticsPopup` now updates the record bar and percentage labels from the selected vehicle, selects the first row by default, and clears the popup through `Close`; the scene CloseButton is raycastable and remains wired to `MainMenu.HideProfileStatisticsPopup`, which delegates to the presenter.
+- Work remaining: repeat the manual Unity Play Mode check for clicking a different row, clicking `CLOSE`, and reopening after the computer-use check was interrupted by the user's physical `Escape` key.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/ProfileStatisticsPopup.cs`, `Assets/Game/Scripts/UI/MainMenu/MainMenu.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, `docs/codex-game/api-resources.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings. Static audit passed for first-row selection, selected-robot ratio/labels, Close listener, scene CloseButton raycast/target, all `15` demo records, and all `15` percentage splits totaling `100%`. Unity Play Mode inspection displayed a selected robot with percentage labels/bar; the UI automation was stopped by the user's physical `Escape` before Close/reopen could be completed.
+
+## Previous active task (overall record bar)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
+- User request: "запрограмуй панель RecordPanel, тобі треба просто рухати WinsBar - fill amount, наприклад побєд 75% ставиш fill amount 0.75 і сетиг він та луз текст, запрограмуй це не тільки для текстового а для общого режима"
+- Objective: make `RecordPanel` use `WinsBar.fillAmount` as the overall win percentage and update the wins/losses labels for every statistics source, including the offline test profile.
+- Acceptance criteria:
+  - `WinsBar.fillAmount` equals `wins / battles`, clamped to `0..1`; 75% wins renders as `0.75`.
+  - Wins and losses labels always use the current overall `PlayerStatisticsDto` values.
+  - The record background remains full; no second bar is used as an independent losses percentage.
+  - Loading, unavailable, error, and zero-result states reset the win fill and labels safely.
+  - Runtime behavior is documented and the project compiles.
+- Assumptions: overall battles include draws, so draws remain part of the denominator and unused fill is visible as the background track.
+- Current work: `ProfileStatisticsPopup` calculates the overall win fill from `wins / battles`, sets both overall record labels, and keeps the serialized `Background` track full for live and offline DTOs.
+- Work remaining: verify the popup visually in Unity Play Mode with offline test mode enabled.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/ProfileStatisticsPopup.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings. Static scene/source audit passed for the renamed background reference, `WinsBar` overall denominator, reset states, and absence of the old independent losses-fill usage. Focused source/documentation `git diff --check` passed. Manual Unity Play Mode remains pending.
+
+## Previous active task (offline profile demo data)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
+- User request: "при тестувані ClientMenuTestMode меню профіль пусте, тобі треба заповнити його різноманітними даними для тестування, зроби це максимально розумно та чітко заповни добре, додай 15 різноманітних роботів, і реалістичні дані для всього"
+- Objective: populate the offline ClientMenuTestMode profile popup with a coherent local demo profile, 15 varied valid robot entries, and realistic overall/per-robot statistics.
+- Acceptance criteria:
+  - Offline profile statistics open with populated general values, record labels/bars, and a selectable list of 15 robots.
+  - Each robot has a valid RobotRegistry code, distinct test identity/role, tier, ownership state, battle history, win/loss/draw totals, damage, kills, rewards, and last-played timestamp.
+  - Overall totals are calculated consistently from the per-robot history, including win rate, averages, and reward totals.
+  - Production/API behavior remains unchanged; fabricated data is used only while ClientMenuTestMode is enabled.
+  - Client scene serialization, Unity C# build/static checks, and relevant mechanic documentation are recorded.
+- Assumptions:
+  - The current registry has eight real visual codes, so the 15 demo entries may represent distinct loadout/profile variants while reusing only those validated codes.
+  - Existing profile popup fields remain the presentation surface; no new runtime UI hierarchy is required.
+- Current work: `ClientMenuTestMode` now owns 15 serialized profile variants and derives overall statistics from their per-robot history; `ProfileServer` routes only the offline test path to that DTO; `RobotView` resolves duplicate visual-code variants by ID first.
+- Work remaining: open `Client.unity` in Play Mode with `enableOfflineMenuTest` enabled and confirm the profile popup shows all 15 rows, scrolls, and updates the selected robot panel.
+- Edited files: `Assets/Game/Scripts/Testing/ClientMenuTestMode.cs`, `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs`, `Assets/Game/Scripts/UI/MainMenu/RobotView.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, `docs/codex-game/api-resources.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: scene audit found `15` serialized entries, `15` unique IDs, `0` invalid registry codes, `0` duplicate IDs, and consistent per-robot totals (`528` battles, `304` wins, `206` losses, `18` draws, `674` kills, `539700` damage). `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings. Focused source/documentation `git diff --check` passed; the large pre-existing Unity scene diff still reports blank serialized YAML fields as trailing whitespace. Manual Unity Play Mode remains pending.
+
+## Previous active task (profile win/loss progress bar)
+- Status: `IN_PROGRESS`
+- Started: 2026-10-24
+- User request: "все працює оказується просто сцену треба було перезавантажити, але я помітив що прогрес бар він та луз справа внизу не працює, глянь скрін і виправ це"
+- Objective: fix the profile popup's bottom win/loss record visualization so the two live fills use one shared full-width track and correctly represent the server-provided result ratio.
+- Acceptance criteria:
+  - Wins and losses render in one continuous record bar with a shared boundary based on live results.
+  - The bar does not depend on two separated rectangles or stale fixed scene proportions.
+  - Zero-result responses render an empty bar without invalid fill values.
+  - Existing labels, API statistics, popup scrolling, row selection, and close behavior remain unchanged.
+  - Unity build, scene/static audit, and documentation are recorded.
+- Assumptions:
+  - `wins` and `losses` are the authoritative result counts from `PlayerStatisticsDto`; draws or unresolved matches are represented by the remaining empty track space.
+  - The scene can be updated by the existing editor rebuild tool without changing the API contract.
+- Current work: the screenshot shows the old two-position bar layout; the presenter already calculates live win/loss ratios but the scene places the fills in separate rectangles.
+- Work remaining: change the runtime fill calculation and editor-generated record layout, rebuild/save the scene, run build/static checks, and document verification.
+- Edited files: pending code/scene changes plus this handoff and `docs/codex-game/task-history.md`.
+- Verification: screenshot inspected; code and scene fixes are pending.
+
+## Previous active task (rebuild profile statistics popup from scratch)
+## Archived active-task detail
+- Status: `IN_PROGRESS`
+- Started: 2026-10-24
+- User request: "ти дуже довго не можеш виправити цю проблему тому давай ти побудуєш це вікно з нуля, видали старий попап та побудуй новий з працюючим скролом і кнопками і щоб попап міг закриватися і повноціно працювати"
+- Objective: remove the broken profile statistics popup hierarchy from `Client.unity` and generate a clean scene-owned replacement with a reliable vertical robot-history list, clickable rows, live right-panel statistics, and deterministic close/reopen behavior.
+- Acceptance criteria:
+  - `ButtonProfile` opens the rebuilt popup and the popup is inactive at scene startup.
+  - Every non-null vehicle in the live API response has one visibly separated selectable row.
+  - The robot list uses a clipped vertical `ScrollRect` with content sizing that supports wheel and drag scrolling.
+  - Selecting any row updates the selected color, robot name, tier, battles, wins, win rate, average damage, and icon.
+  - Close hides the popup; reopening clears old rows and reloads the current server response.
+  - Unity build, scene wiring audit, and manual Play Mode checks are recorded.
+- Assumptions:
+  - Existing API DTOs and server proxy remain the source of live statistics; no fabricated fallback statistics are added.
+  - Standard existing UI sprites and differentiated tint colors remain acceptable until the user replaces art assets.
+- Current work: replacing the previous hand-tuned popup hierarchy and manual row-positioning workaround with an editor-generated hierarchy using `VerticalLayoutGroup`, `ContentSizeFitter`, `LayoutElement`, `RectMask2D`, and serialized button/presenter references.
+- Work remaining: replace the runtime presenter, run the editor rebuild, compile, audit the new scene, and verify open/scroll/select/close/reopen in Play Mode.
+- Edited files: `Assets/Game/Scenes/Client.unity`, `Assets/Game/Scripts/UI/MainMenu/ProfileStatisticsPopup.cs`, `Assets/Game/Scripts/UI/MainMenu/ProfileVehicleRow.cs`, a temporary editor rebuild tool, this handoff, `docs/codex-game/task-history.md`, and `docs/codex-game/menus-settings-progression.md`.
+- Verification: previous popup implementation was not accepted after manual Play Mode showed overlapping rows and row clicks did not update the right panel. The new implementation is not yet verified.
+
+## Previous active task (selectable scrollable played-robot list)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-24
+- User request: "роботи в списку це список роботів на яких грав гравець, коли ми клікаємо на якогось робота це підтягується в праву панель і відображає ці характеристики, зверху общі характеристики справа конкретні характеристики вибраного робота, там має відобраєатися стільки роботів на скількох грав гравець, це вертикальний скрол і по роботам можна клікати щоб дивитися статистику. виправ це"
+- Objective: replace the fixed six-row profile list with a scene-owned vertical ScrollRect and runtime-instantiated selectable vehicle rows; selecting any played vehicle must update the right-hand statistics panel from the existing live API response.
+- Acceptance criteria:
+  - Every vehicle in the server `vehicles` array is represented, not only the first six entries.
+  - The list scrolls vertically inside the left profile panel and each row is clickable.
+  - The selected row is visibly marked and the right panel displays that vehicle's name, tier, battles, wins, win rate, average damage, and icon.
+  - Loading, empty, error, offline, close, and reopen states clear stale dynamic rows safely.
+  - Client build, scene/static wiring audit, and menu documentation are updated.
+- Assumptions:
+  - The existing `ProfileVehicleRow` scene object is the serialized template; runtime code instantiates clones and does not add required UI components.
+  - Server ordering remains the default list order, with the first returned vehicle selected initially.
+- Current work: `ProfileStatisticsPopup` now instantiates one `ProfileVehicleRow` clone per non-null vehicle returned by the live API, selects the first row initially, and routes row clicks to the right-hand vehicle panel. `Client.unity` now owns the inactive row template, vertical `ScrollRect`, clipped viewport, vertical layout content, and serialized presenter references.
+- Work remaining: perform a manual Unity Play Mode check with more than six played vehicles to confirm wheel/drag scrolling and selection visuals in the open Editor.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/ProfileStatisticsPopup.cs`, `Assets/Game/Scripts/UI/MainMenu/ProfileVehicleRow.cs`, its meta file, `Assets/Game/Scenes/Client.unity`, this handoff, `docs/codex-game/task-history.md`, and `docs/codex-game/menus-settings-progression.md`.
+- Verification: `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and only the existing System.Net.Http/FishNet warnings. Static scene audit passed for the ScrollRect content/viewport/template references, row Button/ProfileVehicleRow wiring, inactive legacy rows, and presenter references. Manual Play Mode verification remains pending.
+
+## Previous active task (live profile statistics)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-24
+- User request: "супер, але тепер треба його запрограмувати, всі дані мають підтягуватися з сервера, реальна статистика гравця, реальні танки на яких він грав, реальна статистика кожного танка на якому грав гравець, короче статистика має бути реально жива і чітка, також ти можеш перевірити апі що ти можеш підтягнути звідти і якщо щось не можеш підтягнути реалізуй це в апі щоб це реально було, статистика має бути щось типу профіля як в грі ворлд оф танкс, добре все продумай та реалізуй"
+- Objective: replace the profile popup placeholders with live authenticated player and vehicle statistics loaded from the API's persisted match history, using the existing server-mediated Unity API flow.
+- Acceptance criteria:
+  - The backend exposes an authenticated current-player statistics contract with overall record, economy/reward totals, and per-played-vehicle aggregates.
+  - The Unity server proxy requests that contract for the logged-in player; the popup never fabricates production statistics.
+  - The popup displays live battles, wins, losses, win rate, MMR, record bars, played vehicles, and per-vehicle battle/win/damage data.
+  - Loading, empty-history, API-error, offline-test, close, and repeated-open behavior are explicit and safe.
+  - Client/backend builds and relevant static or runtime checks are recorded; project and API documentation stay current.
+- Assumptions:
+  - `MatchParticipant` history is the authoritative source for completed battles; no new aggregate table is needed unless implementation proves otherwise.
+  - Vehicles that were played and later sold remain visible through historical vehicle references.
+  - Offline menu test mode must show an unavailable/empty state rather than inventing server statistics.
+- Current work: implemented `GET /players/me/statistics` from persisted `MatchParticipant` history, the Unity API DTO/request, the FishNet server proxy, and the scene-bound `ProfileStatisticsPopup` presenter. The profile button opens the popup, requests fresh authenticated data, and renders overall plus per-played-vehicle aggregates.
+- Work remaining: run the live Unity Play Mode/manual reproduction with a logged-in client and confirm the deployed API/database contain the expected match history and vehicle icons. No code or API work remains for the requested contract.
+- Edited files: `WarOfMachinesAPI/Controllers/PlayersController.cs`, backend API docs, `Assets/Game/Scripts/API/Endpoints/PlayersManager.cs`, `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs`, `Assets/Game/Scripts/UI/MainMenu/MainMenu.cs`, `Assets/Game/Scripts/UI/MainMenu/ProfileStatisticsPopup.cs`, `Assets/Game/Scenes/Client.unity`, Unity API/menu docs, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: `dotnet build WarOfMachinesAPI.csproj --no-restore --nologo` passed with 0 errors and 7 pre-existing warnings. `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors and 2 pre-existing dependency warnings; the generated project temporarily included the new script for this check and was restored afterward. Static scene audit passed for the presenter reference, `ButtonProfile` open event, close event, and both Filled record bars. Manual Play Mode/API-environment verification remains pending.
+
+## Previous active task (profile popup scene and ButtonProfile wiring)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-24
+- User request: "реалізуй ось такий попап, спрайти візьми стандартні просто змінюй кольори щоб не було в одному тоні, попап створи в сцені слієнт в канвасі там де попап конвертації опиту, після того як ти все створиш і налаштуєш я вже інтенгрую та налаштую спрайти та бекграунди"
+- Objective: create the requested profile/statistics popup as scene-owned UI under the existing Client Canvas popup area, using standard Unity UI sprites with differentiated colors and inspector-wired placeholder content.
+- Acceptance criteria:
+  - The popup exists in `Client.unity` under the Canvas near the existing `FreeXpConversionPopup`.
+  - The layout follows the supplied reference: general statistics strip, robots-played list, and vehicle-statistics panel.
+  - Placeholder UI uses standard sprites/colors only; no generated or replacement background assets are added.
+  - The popup is self-contained and ready for the user to replace sprites/backgrounds and integrate data later.
+  - Scene serialization, build/static checks, and documentation are updated.
+- Assumptions:
+  - The reference is a profile/statistics popup, not a request to replace the existing main-menu profile screen.
+  - The popup root remains inactive by default so Client startup is unchanged; it uses static placeholder values until runtime integration is requested.
+- Current work: `Client.unity` now contains the scene-owned `Canvas/ProfileStatisticsPopup` next to `FreeXpConversionPopup`; it is inactive by default and uses existing project sprites plus tinted standard UI Images. `ButtonProfile` has a persistent scene `onClick` to `MainMenu.ShowProfileStatisticsPopup`, with the same serialized references also registered at runtime as a fallback.
+- Work remaining: optional manual visual inspection in the Unity Editor; runtime profile-data integration and close-button wiring remain intentionally outside this task.
+- Edited files: `Assets/Game/Scripts/UI/MainMenu/MainMenu.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: Unity editor builder completed and saved the scene; serialized counts are 1 popup root, 1 window, 5 general-stat cards, 6 robot rows, 1 vehicle panel, 4 vehicle stat cards, 1 record panel, and 1 close-button placeholder. `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors. Static wiring audit passed for `ButtonProfile`, its persistent `ShowProfileStatisticsPopup` call, `MainMenu.profileButton`, and `MainMenu.profileStatisticsPopup`. The headless Unity scene-load log opened `Client.unity` without scene-load errors; Unity returned code `1` because the local licensing client reported validation failure. `git diff --check` reports Unity's existing blank serialized YAML fields as trailing whitespace; documentation-only diff check passed.
+
+## Previous active task (per-zoom base diameter bloom regression)
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-24
 - User request: "Ти зламав круг зведення: параметри, які ми зробили, мають визначати круг у повністю зведеному стані, але круг розбросу більше не збільшується як раніше. Знайди, де це поламано, і не ламай поведінку повністю зведеного стану."

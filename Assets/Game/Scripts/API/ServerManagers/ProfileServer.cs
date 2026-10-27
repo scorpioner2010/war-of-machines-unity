@@ -65,6 +65,30 @@ namespace Game.Scripts.API.ServerManagers
             _in.ConvertFreeXpServerRpc(vehicleId, amount);
         }
 
+        public static void RequestProfileStatistics()
+        {
+            if (ClientMenuTestMode.TryCreateProfileStatistics(out PlayerStatisticsDto localTestStatistics))
+            {
+                MainMenu.In?.UpdateProfileStatistics(localTestStatistics);
+                return;
+            }
+
+            if (ClientMenuTestMode.IsEnabled)
+            {
+                ProfileStatisticsPopup.In?.ShowUnavailable("Server statistics are unavailable in offline menu test mode.");
+                return;
+            }
+
+            if (_in == null)
+            {
+                ProfileStatisticsPopup.In?.ShowError("Profile service is not available.");
+                return;
+            }
+
+            ProfileStatisticsPopup.In?.ShowLoading();
+            _in.GetProfileStatisticsServerRpc();
+        }
+
         [ServerRpc(RequireOwnership = false)]
         private void GetProfileServerRpc(NetworkConnection sender = null)
         {
@@ -106,6 +130,17 @@ namespace Game.Scripts.API.ServerManagers
             ConvertFreeXpAsync(sender, vehicleId, amount).Forget();
         }
 
+        [ServerRpc(RequireOwnership = false)]
+        private void GetProfileStatisticsServerRpc(NetworkConnection sender = null)
+        {
+            if (sender == null)
+            {
+                return;
+            }
+
+            RequestProfileStatisticsAsync(sender).Forget();
+        }
+
         private async UniTask ConvertFreeXpAsync(NetworkConnection sender, int vehicleId, int amount)
         {
             if (vehicleId <= 0 || amount <= 0)
@@ -123,6 +158,19 @@ namespace Game.Scripts.API.ServerManagers
 
             (bool ok, string message) result = await UserVehiclesManager.ConvertFreeXp(vehicleId, amount, token);
             TargetRpcConvertFreeXp(sender, result.ok, result.message);
+        }
+
+        private async UniTask RequestProfileStatisticsAsync(NetworkConnection sender)
+        {
+            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (string.IsNullOrEmpty(token))
+            {
+                TargetRpcUpdateProfileStatistics(sender, false, "Not logged in.", null);
+                return;
+            }
+
+            (bool isSuccess, string message, PlayerStatisticsDto statistics) data = await PlayersManager.GetMyStatistics(token);
+            TargetRpcUpdateProfileStatistics(sender, data.isSuccess, data.message, data.statistics);
         }
 
         [TargetRpc]
@@ -144,6 +192,18 @@ namespace Game.Scripts.API.ServerManagers
             FreeXpConversionPopup.NotifyConversionFailed();
             Popup.ShowText(errorMessage, Color.red);
             StandardLoadingOverlay.Hide();
+        }
+
+        [TargetRpc]
+        private void TargetRpcUpdateProfileStatistics(NetworkConnection target, bool success, string errorMessage, PlayerStatisticsDto statistics)
+        {
+            if (success && statistics != null)
+            {
+                MainMenu.In?.UpdateProfileStatistics(statistics);
+                return;
+            }
+
+            MainMenu.In?.ShowProfileStatisticsError(errorMessage);
         }
 
         private async UniTask TargetRpcUpdateProfileAsync(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)

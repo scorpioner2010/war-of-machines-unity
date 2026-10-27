@@ -345,6 +345,15 @@ namespace Game.Scripts.UI.MainMenu
                 return null;
             }
 
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                VehicleLite vehicle = vehicles[i];
+                if (vehicle != null && vehicle.id == vehicleId)
+                {
+                    return vehicle;
+                }
+            }
+
             if (!string.IsNullOrEmpty(code))
             {
                 for (int i = 0; i < vehicles.Length; i++)
@@ -354,15 +363,6 @@ namespace Game.Scripts.UI.MainMenu
                     {
                         return vehicle;
                     }
-                }
-            }
-
-            for (int i = 0; i < vehicles.Length; i++)
-            {
-                VehicleLite vehicle = vehicles[i];
-                if (vehicle != null && vehicle.id == vehicleId)
-                {
-                    return vehicle;
                 }
             }
 

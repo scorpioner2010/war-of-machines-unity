@@ -1,5 +1,89 @@
 # Codex Task History
 
+### 2026-10-27 - Add robot icons to profile vehicle rows
+- Status: `COMPLETED`
+- Scope: show each robot's catalog icon in the generated `ProfileVehicleRowTemplate` row.
+- Acceptance: serialized row icon reference, code-based icon binding from `VehicleStatisticsDto.code`, safe missing-icon behavior, and static scene/source validation.
+- Verification: serialized `VehicleIcon` wiring, non-raycastable icon state, catalog lookup, safe missing-icon behavior, and runtime-lookup audit passed; Unity C# build passed with `0` errors. Play Mode was not run for this focused request.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Fix stale first profile row highlight
+- Status: `COMPLETED`
+- Scope: ensure only the selected profile robot row uses the selected background tint; the first row must return to normal when another row is selected.
+- Finding: the row background was both the custom `ProfileVehicleRow` selection image and a target of generic Button state tinting, so deselection could restore the authored green color.
+- Implementation: disabled the native Button transition and cleared `ButtonComponent.childGraphics` on `ProfileVehicleRowTemplate`; `ProfileVehicleRow` remains the only selection-color owner.
+- Verification: static selection-color audit and documentation diff check passed. The scene diff retains existing blank serialized YAML fields reported by `git diff --check`; Unity Play Mode was intentionally not repeated per the user's instruction.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Selected robot record percentages and Close button
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: bind `RecordPanel` to the selected robot, show win/loss percentages totaling 100%, select the first row by default, and repair the popup Close button.
+- Implementation: selected row changes `WinsBar`, `WinsLabel`, `LossesLabel`, and the record title using `VehicleStatisticsDto`; the first valid vehicle is selected on load; `Close` clears rows and deactivates the popup; the scene CloseButton image now receives raycasts and delegates through `MainMenu` to the presenter.
+- Verification: Unity C# build passed with `0` errors; static audit passed for all 15 demo percentage splits, selected-row routing, and Close wiring. Play Mode showed selected-robot percentages before the user's physical `Escape` interrupted UI automation; Close/reopen manual verification remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Program RecordPanel overall win bar
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: drive `WinsBar.fillAmount` from the overall win percentage and set wins/losses text in all profile modes.
+- Implementation: `ProfileStatisticsPopup` now uses `wins / battles` for `WinsBar.fillAmount`, keeps the `RecordPanel` background at full fill, and sets the overall wins/losses labels from the same DTO. Scene serialization now names the background reference correctly.
+- Verification: Unity C# build passed with `0` errors; static source/scene audit and focused `git diff --check` passed. Manual Unity Play Mode verification remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Populate offline profile demo data
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: populate `ClientMenuTestMode` with 15 valid robot variants and coherent per-robot profile history so the offline profile popup is useful for UI testing.
+- Implementation: added scene-serialized battle/reward fields, local statistics aggregation, and offline routing through `ProfileServer`; production API behavior remains unchanged.
+- Verification: scene audit found 15 serialized entries, 15 unique IDs, 0 invalid registry codes, and internally consistent history totals; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors; focused source/documentation `git diff --check` passed. The large pre-existing Unity scene diff still reports blank serialized YAML fields as trailing whitespace. Manual Play Mode confirmation of the 15-row scroll/select flow remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Fix profile win/loss progress bars
+
+- Status: `IN_PROGRESS`
+- Scope: correct the profile popup record bar so wins and losses share one full-width track and display live proportions.
+- Acceptance: win/loss fill aligns at the same boundary, labels remain correct, zero-battle responses render an empty bar, and the scene/build checks pass.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Rebuild profile statistics popup from scratch
+
+- Status: `IN_PROGRESS`
+- Scope: remove the broken profile popup hierarchy and rebuild a scene-owned popup with a reliable vertical `ScrollRect`, selectable robot rows, live vehicle details, and a working close button.
+- Acceptance: `ButtonProfile` opens the new popup, every server-returned robot appears in a correctly spaced vertical list, wheel/drag scrolling works, row clicks update the right panel, and Close hides the popup without stale rows on reopen.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Selectable scrollable played-robot list
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: replace the fixed six-row profile list with a vertical scrollable list containing every robot returned by live player history; clicking a row updates the right-hand vehicle statistics panel.
+- Acceptance: the scene owns a ScrollRect/content/template row, runtime rows are clickable and selectable, the right panel reflects the selected robot, empty/loading/error states clear stale rows, and build/static checks pass.
+- Implementation: added `ProfileVehicleRow`, changed the popup to instantiate every server-returned vehicle row, and converted `RobotsPlayedPanel` to a clipped vertical `ScrollRect` with serialized template/content references. The selected row updates name, tier, battles, wins, win rate, average damage, and icon in the right panel.
+- Verification: Unity C# build passed with 0 errors; static scene audit passed for the ScrollRect, viewport/content, row template Button/presenter, and popup references. Manual Play Mode with more than six vehicles remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Live profile statistics
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: replace the scene placeholder profile popup with authenticated server-backed player and per-vehicle statistics aggregated from persisted match history, including loading/error/empty states and close behavior.
+- Finding: the API already persists `MatchParticipant` rows with user, vehicle, result, kills, damage, XP, rewards, and match timestamps, but it has no current-player statistics route; Unity has no statistics DTO/request/presenter.
+- Implementation: added `GET /players/me/statistics`, a Unity `PlayersManager` DTO/request, a FishNet `ProfileServer` proxy, and a scene-bound presenter that renders live overall/per-vehicle values without fabricated production data. Added explicit loading, empty-history, API-error, offline, close, and reopen behavior.
+- Verification: backend and Unity C# builds passed with 0 errors; static scene wiring audit passed for `ButtonProfile`, presenter references, close event, and Filled record bars. Live Play Mode with a logged-in client and deployed API data remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-24 - Per-zoom base diameter bloom regression
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: restore movement/turret/shot dispersion growth above the configured per-zoom fully-aimed reticle diameter while preserving fractional, zero, oversized, and runtime zoom behavior.
+- Verification: production and PlayMode assemblies built with 0 errors; compiled reticle harness returned `20`, `35`, `400`, `415`, and `15`; `git diff --check` passed. Unity PlayMode/Inspector confirmation remains pending because the Editor is open.
+- Detail: archived in `docs/codex-game/task-handoff.md` under the prior active-task record.
+
+### 2026-10-24 - Profile statistics popup scene layout
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add the requested profile/statistics popup to `Client.unity` beside `FreeXpConversionPopup`, with general statistics, robots played, vehicle statistics, record bar, and close-button placeholder sections.
+- Implementation: used existing `InfoPanel.png` and `Button_Default.png` sprites plus standard UI Images with differentiated tints; the root remains inactive by default and `MainMenu.ButtonProfile` is inspector-wired to activate it and bring it above the Canvas. Profile values, sprites, backgrounds, and close behavior remain integration points for the user.
+- Verification: scene serialization and profile-button wiring audits passed, including the persistent `ButtonProfile` event; `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with 0 errors; headless Unity opened the Client scene without scene-load errors, but returned code `1` because the local licensing client failed validation. Manual visual inspection, runtime profile-data integration, and close-button behavior remain pending by design.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
 This is the canonical, append-only index of project tasks. It is separate from the ChatGPT/Codex conversation sidebar: deleting or losing a chat does not remove these repository records, and this file cannot restore a conversation that was never saved by the client.
 
 ## Update rules
