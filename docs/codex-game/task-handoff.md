@@ -1,21 +1,39 @@
 # Codex Task Handoff
 
 ## Active task
-- Status: `COMPLETED`
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-27
-- User request: "для ProfileVehicleRowTemplate підтягни іконку робота"
-- Objective: display the selected robot's catalog icon inside every generated `ProfileVehicleRowTemplate` row.
+- User request: "2 варіант найкращий реалізуй його"
+- Objective: implement the tactical EndGame snapshot variant using the existing EndGame TMP text: battle result, map, mode, duration, and team score.
 - Acceptance criteria:
-  - The row template has a serialized robot-icon `Image` reference.
-  - `ProfileVehicleRow.Setup` resolves the row's `VehicleStatisticsDto.code` through `GameResourceManager.GetIcon` and assigns the sprite without runtime component lookup.
-  - Missing icons clear the image safely and do not break row selection/click behavior.
-  - The scene template, source responsibility map, and task record document the new icon binding.
-  - Static wiring/source validation passes; no unrelated UI behavior changes are introduced.
-- Assumptions: the existing `GameResourceManager` catalog icons are the intended art source, and the scene-owned row template is the authoritative hierarchy for generated profile rows.
-- Current work: `ProfileVehicleRow` assigns each row's serialized `VehicleIcon` from `GameResourceManager.GetIcon(vehicle.code)` and hides it safely when the catalog has no icon.
-- Work remaining: none for the requested icon binding.
-- Edited files: `Assets/Game/Scripts/UI/MainMenu/ProfileVehicleRow.cs`, `Assets/Game/Scenes/Client.unity`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
-- Verification: static icon wiring/source audit passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings. Play Mode was not run for this focused request.
+  - EndGame displays a structured tactical snapshot instead of only `WIN`/`LOSE`/`DRAW`.
+  - Map comes from the authoritative server room location, duration from the authoritative match timer, and team scores from authoritative player kills.
+  - The current team-elimination mode is shown as `TEAM BATTLE` without adding a new mode contract.
+  - Existing EndGame delay, OK navigation, GameResult queue, and result colors remain functional.
+  - No new scene objects or image assets are required; source/build and documentation checks pass.
+- Assumptions: the existing EndGame `status` TMP field is the presentation surface; `selectedLocation` is the map identifier, `Player.kills` is the authoritative team score, and a missing snapshot falls back to readable placeholders.
+- Current work: `GameplaySpawner` sends the room map, elapsed duration, and TeamA/TeamB kill totals through the EndGame TargetRpc; `EndGameUI` renders them with `BATTLE COMPLETE`, outcome color, `TEAM BATTLE`, and readable tactical lines in the existing TMP field.
+- Work remaining: open a real match in Unity Play Mode and confirm the seven-line snapshot fits the serialized EndGame text box and that `OK` still returns to MainMenu/GameResult.
+- Edited files: `Assets/Game/Scripts/UI/Lobby/EndGameUI.cs`, `Assets/Game/Scripts/Networking/Lobby/GameplaySpawner.cs`, `docs/codex-game/match-lobby-spawn.md`, `docs/codex-game/menus-settings-progression.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static EndGame snapshot audit passed; targeted `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing System.Net.Http/obsolete API warnings. Unity Play Mode visual/flow verification remains pending.
+
+## Previous active task (post-battle GameResult rich text)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
+- User request: "гейм резалт виглядаєж ось так, короче кажучи дуже некрасиво
+глянь скрін, тобі треба красиво написати текством і використати різні фішки типу кольори і т.д. щоб відтворити красивий структурований гейм резалт використовуючи тільки текст. кольорова гама треба щоб ти підігнав це під стиль юая [@ai-chat-attachment-2346244676420663826.png](file:///C:/Users/TorasPC/AppData/Local/Temp/ai-chat-attachment-2346244676420663826.png)"
+- Objective: replace the plain post-battle result summary with a structured TMP rich-text report using only text, color tags, hierarchy, and the existing UI layout.
+- Acceptance criteria:
+  - `GameResultUI` renders a clear result header, outcome, rewards, and combat-performance sections in one existing TMP text element.
+  - Result, reward, pending, and combat values use a coherent dark graphite / olive / bronze-gold palette with outcome-specific accent colors.
+  - Existing result data, pending-reward behavior, close flow, and menu routing remain unchanged.
+  - No new scene objects or non-text UI assets are required.
+  - Source/build and documentation checks pass.
+- Assumptions: the existing `GameResult` TMP text box is the authoritative presentation surface; TMP rich text is enabled and can provide the requested visual hierarchy without scene changes.
+- Current work: `GameResultUI.BuildSummary` now produces a structured TMP rich-text debrief with outcome colors, bronze-gold section headers, colored values, and an explicit pending-reward state; data and close/menu flow are unchanged.
+- Work remaining: open the result popup in Unity Play Mode and visually confirm the report fits the existing text box at the project resolution.
+- Edited files: `Assets/Game/Scripts/UI/Lobby/GameResultUI.cs`, `docs/codex-game/menus-settings-progression.md`, `docs/codex-game/match-lobby-spawn.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: static rich-text marker audit passed; targeted `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing System.Net.Http/obsolete API warnings. Unity Play Mode visual verification remains pending.
 
 ## Previous active task (stale first profile row highlight)
 - Status: `COMPLETED`

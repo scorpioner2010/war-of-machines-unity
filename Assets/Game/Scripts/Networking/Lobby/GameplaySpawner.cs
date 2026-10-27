@@ -754,6 +754,10 @@ namespace Game.Scripts.Networking.Lobby
 
             serverRoom.isGameFinished = true;
             serverRoom.Visibility.Stop();
+            string mapName = GetEndGameMapName(serverRoom);
+            int durationSeconds = GetEndGameDurationSeconds(serverRoom);
+            int teamAScore = GetTeamKillScore(serverRoom, MatchTeam.TeamA);
+            int teamBScore = GetTeamKillScore(serverRoom, MatchTeam.TeamB);
 
             foreach (Player player in serverRoom.GetPlayers())
             {
@@ -767,7 +771,13 @@ namespace Game.Scripts.Networking.Lobby
 
                 if (BattleRules.ShouldReceiveEndGame(player))
                 {
-                    TargetShowEndGameRpc(player.Connection, result);
+                    TargetShowEndGameRpc(
+                        player.Connection,
+                        result,
+                        mapName,
+                        durationSeconds,
+                        teamAScore,
+                        teamBScore);
                 }
             }
 
@@ -854,9 +864,15 @@ namespace Game.Scripts.Networking.Lobby
         }
 
         [TargetRpc]
-        private void TargetShowEndGameRpc(NetworkConnection target, EndGameResult result)
+        private void TargetShowEndGameRpc(
+            NetworkConnection target,
+            EndGameResult result,
+            string mapName,
+            int durationSeconds,
+            int teamAScore,
+            int teamBScore)
         {
-            ShowEndGameDelayed(result).Forget();
+            ShowEndGameDelayed(result, mapName, durationSeconds, teamAScore, teamBScore).Forget();
         }
 
         private void SendGameResult(NetworkConnection target, PlayerBattleResult result)
@@ -891,7 +907,12 @@ namespace Game.Scripts.Networking.Lobby
             GameResultUI.Enqueue(roomId, result, kills, damage, xpEarned, bolts, freeXp, mmrDelta, rewardsAvailable);
         }
 
-        private async UniTask ShowEndGameDelayed(EndGameResult result)
+        private async UniTask ShowEndGameDelayed(
+            EndGameResult result,
+            string mapName,
+            int durationSeconds,
+            int teamAScore,
+            int teamBScore)
         {
             await UniTask.Delay(GetEndGameDelayMilliseconds(), cancellationToken: this.GetCancellationTokenOnDestroy());
 
@@ -899,7 +920,52 @@ namespace Game.Scripts.Networking.Lobby
             Cursor.visible = true;
 
             MenuManager.OpenMenu(MenuType.EndGame);
-            EndGameUI.Show(result);
+            EndGameUI.Show(result, mapName, durationSeconds, teamAScore, teamBScore);
+        }
+
+        private static string GetEndGameMapName(ServerRoom serverRoom)
+        {
+            if (!string.IsNullOrWhiteSpace(serverRoom.selectedLocation))
+            {
+                return serverRoom.selectedLocation;
+            }
+
+            return serverRoom.loadedSceneName;
+        }
+
+        private static int GetEndGameDurationSeconds(ServerRoom serverRoom)
+        {
+            MatchSceneGlobalSettings matchScene = ServerSettings.GetMatchScene();
+            int matchDurationSeconds = Mathf.Max(0, Mathf.RoundToInt(matchScene.matchDurationSeconds));
+            if (serverRoom.gameplayTimer == null)
+            {
+                return matchDurationSeconds;
+            }
+
+            float remainingSeconds = serverRoom.gameplayTimer.Timer.Value;
+            if (float.IsNaN(remainingSeconds) || float.IsInfinity(remainingSeconds))
+            {
+                return matchDurationSeconds;
+            }
+
+            int elapsedSeconds = Mathf.RoundToInt(matchDurationSeconds - Mathf.Max(0f, remainingSeconds));
+            return Mathf.Clamp(elapsedSeconds, 0, matchDurationSeconds);
+        }
+
+        private static int GetTeamKillScore(ServerRoom serverRoom, MatchTeam team)
+        {
+            int score = 0;
+            List<Player> players = serverRoom.GetPlayers();
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player != null && player.team == team)
+                {
+                    score += Mathf.Max(0, player.kills);
+                }
+            }
+
+            return score;
         }
 
         private void ReleaseSceneSlotForHandle(int sceneHandle)

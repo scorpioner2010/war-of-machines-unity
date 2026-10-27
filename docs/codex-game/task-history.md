@@ -1,5 +1,19 @@
 # Codex Task History
 
+### 2026-10-27 - Add tactical EndGame snapshot
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: replace the EndGame-only outcome label with a structured tactical snapshot containing result, map, mode, duration, and team score.
+- Acceptance: authoritative server data, existing EndGame/GameResult flow preserved, TMP-only presentation, no new scene objects, and source/build verification.
+- Verification: static EndGame snapshot audit passed; targeted `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings. Unity Play Mode visual/flow verification remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Restyle post-battle game result text
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: replace the plain centered result list with a structured TMP rich-text report using only text formatting and a War of Machines palette.
+- Acceptance: outcome hierarchy, colored rewards/combat sections, pending-reward clarity, unchanged data/close flow, no scene-object additions, and source/build verification.
+- Verification: static rich-text marker audit passed; targeted `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing dependency/obsolete API warnings. Unity Play Mode visual fit remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-27 - Add robot icons to profile vehicle rows
 - Status: `COMPLETED`
 - Scope: show each robot's catalog icon in the generated `ProfileVehicleRowTemplate` row.

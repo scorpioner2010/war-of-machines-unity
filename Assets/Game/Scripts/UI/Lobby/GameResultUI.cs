@@ -13,6 +13,15 @@ namespace Game.Scripts.UI.Lobby
     {
         private const int ResultDisplayDelayMilliseconds = 2000;
         private const int QueuedResultDisplayDelayMilliseconds = 350;
+        private const string GoldColor = "#D6B56A";
+        private const string OliveColor = "#7C8568";
+        private const string LabelColor = "#C1C2B4";
+        private const string ValueColor = "#F1EEE2";
+        private const string MutedColor = "#8E9583";
+        private const string PendingColor = "#D7A85C";
+        private const string WinColor = "#86BD6A";
+        private const string LoseColor = "#C86B5A";
+        private const string DrawColor = "#83A7B8";
 
         private static GameResultUI _in;
         private static readonly Queue<ResultData> PendingResults = new Queue<ResultData>();
@@ -274,7 +283,7 @@ namespace Game.Scripts.UI.Lobby
         {
             if (result == "win")
             {
-                return "WIN";
+                return "VICTORY";
             }
 
             if (result == "draw")
@@ -282,35 +291,80 @@ namespace Game.Scripts.UI.Lobby
                 return "DRAW";
             }
 
-            return "LOSE";
+            return "DEFEAT";
         }
 
         private static string BuildSummary(ResultData data)
         {
-            string summary =
-                $"Battle result: {FormatResult(data.Result)}\n";
+            string result = FormatResult(data.Result);
+            string resultColor = GetResultColor(data.Result);
+            string rewardLines;
 
             if (data.RewardsAvailable)
             {
-                summary +=
-                    $"XP: {data.XpEarned}\n" +
-                    $"Bolts: {data.Bolts}\n" +
-                    $"Free XP: {data.FreeXp}\n" +
-                    $"MMR: {FormatSigned(data.MmrDelta)}\n";
+                rewardLines =
+                    BuildValueLine("XP EARNED", data.XpEarned.ToString(), GoldColor) + "\n" +
+                    BuildValueLine("BOLTS", data.Bolts.ToString(), GoldColor) + "\n" +
+                    BuildValueLine("FREE XP", data.FreeXp.ToString(), GoldColor) + "\n" +
+                    BuildValueLine("MMR", FormatSigned(data.MmrDelta), GetMmrColor(data.MmrDelta));
             }
             else
             {
-                summary +=
-                    "Rewards: synchronizing. Close this window to refresh your profile.\n" +
-                    "XP: pending\n" +
-                    "Bolts: pending\n" +
-                    "Free XP: pending\n" +
-                    "MMR: pending\n";
+                rewardLines =
+                    $"<size=12><color={PendingColor}><b>REWARDS / SYNCHRONIZING</b></color></size>\n" +
+                    $"<size=11><color={MutedColor}>Close to refresh your profile</color></size>\n" +
+                    BuildValueLine("XP", "PENDING", PendingColor) + "\n" +
+                    BuildValueLine("BOLTS", "PENDING", PendingColor) + "\n" +
+                    BuildValueLine("FREE XP", "PENDING", PendingColor) + "\n" +
+                    BuildValueLine("MMR", "PENDING", PendingColor);
             }
 
-            return summary +
-                   $"Kills: {data.Kills}\n" +
-                   $"Damage: {data.Damage}";
+            return
+                $"<align=center><size=24><color={GoldColor}><b>MISSION DEBRIEF</b></color></size>\n" +
+                $"<size=11><color={OliveColor}>------------------------------</color></size>\n" +
+                $"<size=27><color={resultColor}><b>{result}</b></color></size>\n" +
+                $"<size=11><color={MutedColor}>BATTLE RESULT</color></size>\n\n" +
+                $"<size=15><color={GoldColor}><b>REWARDS</b></color></size>\n" +
+                rewardLines + "\n\n" +
+                $"<size=15><color={GoldColor}><b>COMBAT PERFORMANCE</b></color></size>\n" +
+                BuildValueLine("KILLS", data.Kills.ToString(), ValueColor) + "\n" +
+                BuildValueLine("DAMAGE", data.Damage.ToString(), ValueColor) +
+                "</align>";
+        }
+
+        private static string BuildValueLine(string label, string value, string valueColor)
+        {
+            return $"<size=14><color={LabelColor}>{label}</color> <color={OliveColor}>:</color> <color={valueColor}><b>{value}</b></color></size>";
+        }
+
+        private static string GetResultColor(string result)
+        {
+            if (result == "win")
+            {
+                return WinColor;
+            }
+
+            if (result == "draw")
+            {
+                return DrawColor;
+            }
+
+            return LoseColor;
+        }
+
+        private static string GetMmrColor(int value)
+        {
+            if (value > 0)
+            {
+                return WinColor;
+            }
+
+            if (value < 0)
+            {
+                return LoseColor;
+            }
+
+            return ValueColor;
         }
 
         private static string FormatSigned(int value)

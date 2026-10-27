@@ -78,8 +78,8 @@ Post-battle result flow:
 1. `GameplaySpawner` finishes the room and `MatchResultService` posts the real-player inputs to `/matches/{matchId}/end`.
 2. The API returns stored per-match XP, Bolts, Free XP, and MMR for the same `userId`; participant history is the fallback if the immediate response is incomplete.
 3. A complete authoritative payload is delivered with `RewardsAvailable = true`. An unavailable or historical incomplete payload is delivered as pending while preserving room-authoritative kills and damage.
-4. The EndGame menu is delivered before `GameResultUI`; closing EndGame returns to MainMenu, allowing the queued result popup to appear. A dead player's despawned vehicle must not suppress this transition, otherwise the result queue would wait indefinitely for MainMenu behind the gameplay HUD.
-5. `GameResultUI` confirms receipt when closed and refreshes the profile, so persistent totals are reloaded after the popup.
+4. The EndGame menu is delivered before `GameResultUI`; `GameplaySpawner` sends the EndGame snapshot with the authoritative room map identifier, elapsed match duration, and TeamA/TeamB kill totals. `EndGameUI` presents those values with the current `TEAM BATTLE` mode in its existing TMP status field. Closing EndGame returns to MainMenu, allowing the queued result popup to appear. A dead player's despawned vehicle must not suppress this transition, otherwise the result queue would wait indefinitely for MainMenu behind the gameplay HUD.
+5. `GameResultUI` confirms receipt when closed and refreshes the profile, so persistent totals are reloaded after the popup. Its existing single TMP text field presents a structured rich-text debrief with bronze-gold section headers, outcome-specific status color, separate reward/combat sections, and an amber pending-reward state; this is presentation-only and does not change the authoritative result payload.
 
 Rules when editing match/spawn:
 - Keep room state authoritative on server.
