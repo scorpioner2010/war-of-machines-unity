@@ -18,6 +18,8 @@ Current owner scripts:
   - Suppresses its complete world-space presentation on the local owner's gameplay vehicle, independently of spotting updates and nickname initialization.
   - Suppresses the same world-space presentation for menu-preview vehicles after `VehicleRoot.Init(true)`.
   - `SetWorldCanvasHidden(true)` suppresses the selected target's world-space name/HP canvas during death spectating; clearing the target restores normal map/owner/death visibility.
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`
+  - Owns the local screen-space `SpeedHud` update. In death spectator mode it binds to `CameraController.SpectatorTarget`, samples that target's client-visible movement transform, and resets the smoothed value when the selected robot changes; remote vehicle HUD initializers do not write the shared speed label.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleClientVisibility.cs`
   - Owns client-side rendering visibility for a spawned vehicle without changing network/gameplay activation.
   - On a server-only spawn, disables every inspector-wired visual renderer but keeps its visual GameObjects, colliders, and rigidbodies available for server-side death debris and bot obstacle detection.

@@ -2,6 +2,23 @@
 
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
+- User request: "треба виправити 2 бага, 1 це коли в спектатор режимі ми обираєм знищеного робота (свого) то приціл треба вимкнути CrosshairType. другий баг це швидкість теж має працювати конкретного вибраного робота в хаді в спектатор режимі"
+- Objective: hide both faction `CrosshairType` roots while the death spectator is viewing the local destroyed robot, and make the screen-space speed HUD sample the currently selected spectator robot.
+- Acceptance criteria:
+  - Selecting the local destroyed robot in death spectator mode hides `CrosshairType1` and `CrosshairType2`.
+  - Selecting a living allied spectator target restores the correct faction crosshair; normal owner crosshair behavior is unchanged.
+  - The speed HUD displays and smoothly updates the selected spectator robot's movement speed, including after target changes.
+  - The local dead robot remains the only dead-target exception and no enemy/dead-target selection rules are widened.
+  - No runtime component creation, scene-wide lookup, server authority, or unrelated HUD behavior changes are introduced.
+- Assumptions: `CameraController.SpectatorTargetChanged` is the authoritative target-change event; the owner `VehicleHudInitializer` is the single presenter allowed to write `SpeedHud`; remote vehicle transforms are the client-visible speed source.
+- Current work: `GunCrosshair` now hides both faction roots only for the local destroyed spectator target and restores the selected faction root for living targets; `VehicleHudInitializer` now binds the selected target's movement transform and resets/smooths the shared speed HUD on target changes. Added focused editor tests for the dead-local predicate and selected movement transform.
+- Work remaining: run the Unity EditMode suite and a normal death-spectator Play Mode check after the open Unity Editor is closed; no code or asset changes are required for that verification.
+- Edited files: `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`, `Assets/Editor/SpectatorHudEditModeTests.cs`, `docs/codex-game/ui-hud.md`, `docs/codex-game/robot-control.md`, this handoff, and `docs/codex-game/task-history.md`.
+- Verification: targeted static assertions passed for both visibility and selected-target speed paths; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and existing warnings; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal` passed with `0` errors and existing warnings; `git diff --check` passed. Unity EditMode/Play Mode were not run because Unity Editor process `25812` currently has this project open.
+
+## Previous task (NameCanvas fade prefab binding regression)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Follow-up report: the user configured the fade distances, entered gameplay, and reported that allied robot HP canvases remain visible at close camera distance.
 - Follow-up objective: ensure the shared nested `NameCanvas` prefab preserves its root `CanvasGroup` reference so the existing distance fade drives every runtime robot canvas.
 - Started: 2026-10-27

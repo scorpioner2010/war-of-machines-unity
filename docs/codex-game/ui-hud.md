@@ -25,7 +25,8 @@ Current owner scripts:
   - Clears hover outline while hidden. `VehicleAutoAimController` and `VehicleHoverOutline` also reject targets whose presenter is hidden.
   - Refreshes on visibility snapshots, local-player changes, and `VehicleNetworkInitializer.ClientTeamChanged`, covering teams assigned by the server after FishNet spawn.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`
-  - Initializes HUD for a vehicle owner.
+  - Initializes HUD for a vehicle owner and owns the only `SpeedHud` writer.
+  - During death spectating, subscribes to `CameraController.SpectatorTargetChanged` and samples the selected target's inspector-wired `VehicleMovementController` transform with the existing interval, multiplier, smoothing, and stop-snap settings; changing targets resets the display to zero before sampling the new robot.
 - `Assets/Game/Scripts/Gameplay/HealthBar.cs`
   - Inspector-wired holder for the local vehicle HP slider/fill image, HP value, and vehicle-name label in `Client.unity/Canvas/GameplayHUD/GameplayHudContent/GameplayHudPanels/VehicleStatusPanel`.
   - `SetNormalizedValue` updates either the legacy `Slider` or the new `Image` fill, so the `VehicleStatusPanel/barHp` image can replace the removed slider without changing the health presenter.
@@ -45,6 +46,7 @@ Current owner scripts:
   - The new `GameplayHudContent` wiring uses `AmmoCountText` for remaining ammunition, `ReloadStatusText` for reload status, `AimStatus` for the aim label, `GameplayHudContent` as the regular HUD root, and `SniperScopeOverlay` as the scope overlay.
   - Owns the inspector-wired faction reticle bindings: `CrosshairType1` for `RobotFaction.IronAlliance` and `CrosshairType2` for `RobotFaction.NovaSyndicate`; the active local reticle, optional server reticle, reload fill, reload text, ammo text, aim-status text, and penetration-status text are switched together so every HUD calculation follows the selected robot.
   - During death spectating, follows `CameraController.SpectatorTarget` and presents that target's observer-visible ammo, reload state/progress, faction, and server-synchronized dispersion in the same HUD; the local owner's weapon presenters stop overwriting these values.
+  - When the selected spectator target is the local destroyed robot, both faction `CrosshairType` roots are hidden. Selecting a living allied target restores only its faction root; normal owner crosshair behavior remains unchanged.
   - `CameraController` treats every forward zoom profile with `showReticle = true` as sniper presentation: the regular HUD is replaced by the black `SniperScopeOverlay` and central sniper reticle, while the profile's camera/FOV values remain authoritative. The wheel can move between multiple flagged profiles without hiding the overlay. This flag controls the scope overlay, not the ordinary projectile-dispersion ring.
   - `WeaponReloadController` receives a binding-change result and forces the current ammo/reload values into the newly selected target, preventing cached IA values from leaving the NV UI stale. Aim-status caches are also invalidated when the target text changes.
   - Initializes the active penetration-status label to `PENETRATION STATUS` and preserves the last `Miss` or `〰〰〰` result when the faction reticle changes; both penetrated and non-penetrated hits use the requested `〰〰〰` glyph.

@@ -782,3 +782,12 @@ The repository can preserve task state and verification notes, but it cannot con
 - Implementation: removed the duplicate per-robot CanvasGroup overrides, kept the shared serialized root reference, and added an Editor regression test covering all eight IA/NV prefabs plus alpha values at distances `4`, `3`, and `6`.
 - Verification: the initial Play Mode probe reproduced `camera=GameplayCamera` with `group=null`; the fixed EditMode suite passed `2/2`, the production build passed with `0` errors, and `git diff --check` passed. Manual Unity Play Mode visual confirmation remains pending.
 - Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Spectator crosshair and speed HUD fixes
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: hide both `CrosshairType` roots when the local destroyed robot is selected in death spectator mode, and make the speed HUD follow the selected spectator robot.
+- Root causes identified: `GunCrosshair` has no visibility override for the local dead spectator target; `VehicleHudInitializer` samples only its owner `vehicleRoot` and never binds `CameraController.SpectatorTarget`.
+- Implementation: `GunCrosshair` now suppresses both faction roots only for the local destroyed spectator target and restores the selected faction root for living targets; `VehicleHudInitializer` subscribes to target changes, samples the selected robot transform, and resets/smooths the shared speed label per target.
+- Verification: focused static assertions passed; production and editor `dotnet build` commands passed with `0` errors; `git diff --check` passed. Unity EditMode/Play Mode remain pending because the project Editor is open.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.

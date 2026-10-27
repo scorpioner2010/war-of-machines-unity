@@ -71,6 +71,7 @@ namespace Game.Scripts.UI.HUD
         private bool _serverCrosshairEnabled;
         private CameraController _spectatorCameraController;
         private VehicleRoot _spectatorTarget;
+        private bool _activeFactionIsNova;
         private float _spectatorReloadRemainAtSync;
         private float _spectatorReloadSyncTime;
         private bool _spectatorReloadSyncInitialized;
@@ -139,6 +140,7 @@ namespace Game.Scripts.UI.HUD
             }
 
             ApplySpectatorWeaponHud();
+            ApplyFactionCrosshairVisibility();
         }
 
         private void OnLocalPlayerVehicleChanged(VehicleRoot vehicle)
@@ -202,10 +204,12 @@ namespace Game.Scripts.UI.HUD
             _spectatorAmmo = int.MinValue;
             _spectatorReloadTenths = int.MinValue;
             _spectatorReloadStateInitialized = false;
+            ApplyFactionCrosshairVisibility();
         }
 
         private void ApplySpectatorWeaponHud()
         {
+            ApplyFactionCrosshairVisibility();
             if (_spectatorTarget == null
                 || _spectatorTarget.weaponReloadController == null
                 || _spectatorTarget.shooterNet == null)
@@ -349,6 +353,7 @@ namespace Game.Scripts.UI.HUD
         public bool SetFaction(RobotFaction faction)
         {
             bool useNovaReticle = faction == RobotFaction.NovaSyndicate;
+            _activeFactionIsNova = useNovaReticle;
             RectTransform nextReticle = useNovaReticle ? novaSyndicateReticle : ironAllianceReticle;
             RectTransform nextServerReticle = useNovaReticle
                 ? novaSyndicateServerReticle
@@ -380,15 +385,7 @@ namespace Game.Scripts.UI.HUD
                 nextPenetrationStatusText ??= _ironAlliancePenetrationStatusFallback;
             }
 
-            if (ironAllianceCrosshairRoot != null)
-            {
-                ironAllianceCrosshairRoot.SetActive(!useNovaReticle);
-            }
-
-            if (novaSyndicateCrosshairRoot != null)
-            {
-                novaSyndicateCrosshairRoot.SetActive(useNovaReticle);
-            }
+            ApplyFactionCrosshairVisibility();
 
             bool bindingsChanged = crosshair != nextReticle
                                    || serverCrosshair != nextServerReticle
@@ -712,6 +709,70 @@ namespace Game.Scripts.UI.HUD
             {
                 crosshair.gameObject.SetActive(true);
             }
+
+            ApplyFactionCrosshairVisibility();
+        }
+
+        private void ApplyFactionCrosshairVisibility()
+        {
+            bool hideCrosshair = ShouldHideSpectatorCrosshair();
+            if (hideCrosshair)
+            {
+                if (ironAllianceCrosshairRoot != null)
+                {
+                    ironAllianceCrosshairRoot.SetActive(false);
+                }
+
+                if (novaSyndicateCrosshairRoot != null)
+                {
+                    novaSyndicateCrosshairRoot.SetActive(false);
+                }
+
+                return;
+            }
+
+            if (ironAllianceCrosshairRoot != null)
+            {
+                bool shouldEnableIronAlliance = !_activeFactionIsNova;
+                if (ironAllianceCrosshairRoot.activeSelf != shouldEnableIronAlliance)
+                {
+                    ironAllianceCrosshairRoot.SetActive(shouldEnableIronAlliance);
+                }
+            }
+
+            if (novaSyndicateCrosshairRoot != null)
+            {
+                bool shouldEnableNovaSyndicate = _activeFactionIsNova;
+                if (novaSyndicateCrosshairRoot.activeSelf != shouldEnableNovaSyndicate)
+                {
+                    novaSyndicateCrosshairRoot.SetActive(shouldEnableNovaSyndicate);
+                }
+            }
+        }
+
+        private bool ShouldHideSpectatorCrosshair()
+        {
+            if (_spectatorCameraController == null
+                || !_spectatorCameraController.IsDeathSpectatorActive
+                || _spectatorTarget == null
+                || _spectatorTarget != _spectatorCameraController.vehicleRoot
+                || _spectatorTarget.health == null)
+            {
+                return false;
+            }
+
+            return ShouldHideSpectatorCrosshairState(
+                _spectatorCameraController.IsDeathSpectatorActive,
+                _spectatorTarget == _spectatorCameraController.vehicleRoot,
+                _spectatorTarget.health.IsDead);
+        }
+
+        private static bool ShouldHideSpectatorCrosshairState(
+            bool deathSpectatorActive,
+            bool isLocalTarget,
+            bool targetIsDead)
+        {
+            return deathSpectatorActive && isLocalTarget && targetIsDead;
         }
 
         private void ApplySniperHudVisibility(bool sniperMode)
