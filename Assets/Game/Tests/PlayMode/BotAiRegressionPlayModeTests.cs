@@ -220,6 +220,38 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator BotCombatHoldsReadyDirectShotsAndReleasesDuringReload()
+        {
+            Type combatType = Type.GetType(
+                "Game.Scripts.AI.WaypointGraph.BotCombatController, Assembly-CSharp");
+            Assert.IsNotNull(combatType);
+
+            MethodInfo shouldHold = combatType.GetMethod(
+                "ShouldHoldPositionForCombat",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(shouldHold);
+
+            bool holdsBeforeShot = (bool)shouldHold.Invoke(
+                null,
+                new object[] { true, false, true, true, true, true, true });
+            bool releasesDuringReload = (bool)shouldHold.Invoke(
+                null,
+                new object[] { true, true, true, true, true, false, true });
+            bool movesTowardBlockedTarget = (bool)shouldHold.Invoke(
+                null,
+                new object[] { true, false, true, false, true, true, true });
+            bool movesTowardMemoryTarget = (bool)shouldHold.Invoke(
+                null,
+                new object[] { true, false, false, true, true, true, true });
+
+            Assert.IsTrue(holdsBeforeShot);
+            Assert.IsFalse(releasesDuringReload);
+            Assert.IsFalse(movesTowardBlockedTarget);
+            Assert.IsFalse(movesTowardMemoryTarget);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator BotPivotCountsOnlyRealYawProgressAsMovement()
         {
             Type navigatorType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");

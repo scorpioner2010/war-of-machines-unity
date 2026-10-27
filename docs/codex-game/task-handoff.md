@@ -3,6 +3,23 @@
 ## Active task
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Started: 2026-10-27
+- User request: "треба пофіксити ботів, вони дуже часто крутяться на місці а точніше сказати дьоргаються вправо та вліво, проблема в тому що башня є дочірнім обьектом по трансформу яка повторює рух корпуса, як в танка, якщо робот навівся на противника але при цьому гусеницями повертається вправо та вліво то пушка буде збиватися і заново наводитися і заново зводитися це сама головна проблема ботів вони не можуть нормально наводитися по постійно дьоргаються вправо та вліво, треба щоб ти пофіксив цей баг, якщо бот бачить чіль він зводиться він не має рухатися і коли вже зробив постріл і в цього перезарядка тоді він може рухатися, щоб не було цього бага, ти маєш виправити це і потім ти маєш провести тестування цього, і впевнитися що боти тепер реагують чітко і не трясуться на місці"
+- Objective: make a bot stop chassis movement while it has a directly visible target, is loaded, and is aiming; allow movement again after the authoritative shot starts reload, without reintroducing left/right steering oscillation.
+- Acceptance criteria:
+  - A bot with a visible target and ready weapon suppresses chassis movement while it aligns and waits to fire.
+  - After the bot fires and enters reload, combat may issue movement/navigation input again.
+  - Turret aim uses the stable hull state while firing; body turn corrections do not repeatedly disturb aim or flip right/left.
+  - Existing target visibility, line-of-fire, reload, server authority, tactic selection, and no-target wandering behavior remain intact.
+  - Add focused automated coverage for the hold/reload transition and run the available Unity/build/static verification; record any Play Mode limitation explicitly.
+- Assumptions: the current tactic selector/fire decision is the intended owner of hold-vs-move policy; a target that is only remembered on the map must not be treated as directly visible for the no-movement firing hold.
+- Current work: `BotCombatController` now suppresses chassis movement while a directly spotted target has clean line of fire, the weapon is ready, and the tactic permits firing; it releases both tactic and aim holds during authoritative reload. Added a focused regression test and documented the changed `holdPositionWithLineOfFire` behavior.
+- Work remaining: reproduce the full live `10v9` battle and confirm telemetry shows no repeated hull left/right jitter while bots aim; the API and dedicated server are now online (`https://localhost:7216`, UDP `7770`), but the existing `BotBattle10v9PlayModeTests` setup stops before bot spawn because its Client-scene server/client owner bootstrap is not ready, so no live flip telemetry was produced. No further bot code changes are currently required.
+- Edited files: `Assets/Game/Scripts/AI/WaypointGraph/BotCombatController.cs`, `Assets/Game/Tests/PlayMode/BotAiRegressionPlayModeTests.cs`, `docs/codex-game/ai-bots.md`, `docs/codex-game/server-settings.md`, this handoff, and `docs/codex-game/task-history.md`; the unrelated existing user modification to `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset` is preserved.
+- Verification: `git diff --check` passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing `System.Net.Http`/obsolete API warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:minimal` passed with `0` errors; Unity PlayMode `Game.Tests.PlayMode.BotAiRegressionPlayModeTests` passed `10/10`, including `BotCombatHoldsReadyDirectShotsAndReleasesDuringReload`, `BotSteeringSuppressesMicroOscillationAndSmoothsDirectionChanges`, and `BotTurretHoldsInsideMicroYawDeadZone`. With the user server active, `BotBattle10v9PlayModeTests` was retried through the external connection and an isolated local-host path; both stopped before bot spawn because `IsNetworkReady`/owner scene bootstrap did not become ready, so hull/turret flip telemetry remains pending.
+
+## Previous task (spectator crosshair and speed HUD fixes)
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Started: 2026-10-27
 - User request: "треба виправити 2 бага, 1 це коли в спектатор режимі ми обираєм знищеного робота (свого) то приціл треба вимкнути CrosshairType. другий баг це швидкість теж має працювати конкретного вибраного робота в хаді в спектатор режимі"
 - Objective: hide both faction `CrosshairType` roots while the death spectator is viewing the local destroyed robot, and make the screen-space speed HUD sample the currently selected spectator robot.
 - Acceptance criteria:

@@ -323,6 +323,15 @@ This is the canonical, append-only index of project tasks. It is separate from t
 - Verification: all eight PNGs are 1024x1024 RGBA with transparency retained; `.meta` sidecars are unchanged. Original PNGs were backed up under `work/robot-images-1024-originals`.
 - Detail: active task record is in `docs/codex-game/task-handoff.md`.
 
+### 2026-10-27 - Bot firing hold and chassis jitter fix
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: stop bots from turning the chassis left/right while a directly visible target is being aimed and the weapon is ready; allow movement again after the shot enters reload.
+- Acceptance: preserve visibility, line-of-fire, reload, tactic, and server-authority rules; add focused hold/reload coverage; verify through builds/static checks and available Unity tests or document the Play Mode limitation.
+- Implementation: `BotCombatController` now gates both tactic and aim movement holds on `WeaponReloadController.ServerCanFire`; direct spotted targets with clean line of fire hold the chassis while aim/dispersion settles, and reload releases movement. Updated AI/settings docs and added `BotCombatHoldsReadyDirectShotsAndReleasesDuringReload`.
+- Verification: production and PlayMode test builds passed with `0` errors; Unity `Game.Tests.PlayMode.BotAiRegressionPlayModeTests` passed `10/10`. The API and user server were online (`https://localhost:7216`, UDP `7770`), but the existing `BotBattle10v9PlayModeTests` setup failed before spawn because its server/client owner bootstrap did not become ready; an isolated local-host retry reached FishNet connection but had the same pre-spawn bootstrap failure, so no flip telemetry was produced.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
 ### 2026-10-22 - Keep reticle narrowing continuous to full aim
 
 - Status: `IMPLEMENTED_NEEDS_VERIFICATION`

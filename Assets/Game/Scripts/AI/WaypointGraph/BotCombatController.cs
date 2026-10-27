@@ -222,30 +222,67 @@ namespace Game.Scripts.AI.WaypointGraph
                 aimReadiness01,
                 now);
             BotCombatTacticDecision tacticDecision = _tacticSelector.Tick(tacticContext);
-            _navigationController.UpdateForTarget(
-                settings,
-                _state.TargetRoot,
-                tacticDecision.NavigationPosition,
-                tacticDecision.HoldPosition);
 
             if (!aimResult.HasState)
             {
+                _navigationController.UpdateForTarget(
+                    settings,
+                    _state.TargetRoot,
+                    tacticDecision.NavigationPosition,
+                    tacticDecision.HoldPosition);
                 _inputWriter.ClearCombatInput(_vehicleRoot);
                 return;
             }
 
+            bool weaponCanFire = _vehicleRoot.weaponReloadController != null
+                                 && _vehicleRoot.weaponReloadController.ServerCanFire;
             bool shoot = tacticDecision.AllowFire
                          && hasLineOfFire
                          && aimReadiness01 >= tacticDecision.RequiredAimReadiness01
                          && _fireDecision.CanShootAtTarget(_vehicleRoot, _state, aimResult, aimPoint, settings, now);
 
-            Vector2 move = tacticDecision.HoldPosition ? Vector2.zero : _vehicleRoot.inputManager.Move;
+            bool holdPosition = ShouldHoldPositionForCombat(
+                settings.holdPositionWithLineOfFire,
+                tacticDecision.HoldPosition,
+                _state.TargetIsDirectlySpotted,
+                hasLineOfFire,
+                aimResult.HasState,
+                weaponCanFire,
+                tacticDecision.AllowFire);
+            _navigationController.UpdateForTarget(
+                settings,
+                _state.TargetRoot,
+                tacticDecision.NavigationPosition,
+                holdPosition);
+
+            Vector2 move = holdPosition ? Vector2.zero : _vehicleRoot.inputManager.Move;
             _inputWriter.ApplyCombatInput(_vehicleRoot, aimResult, shoot, move);
 
             if (shoot && _vehicleRoot.weaponReloadController != null)
             {
                 _vehicleRoot.weaponReloadController.ServerTryFireAuthoritative();
             }
+        }
+
+        internal static bool ShouldHoldPositionForCombat(
+            bool holdPositionWithLineOfFire,
+            bool tacticWantsToHold,
+            bool targetIsDirectlySpotted,
+            bool hasLineOfFire,
+            bool hasAimSolution,
+            bool weaponCanFire,
+            bool tacticAllowsFire)
+        {
+            if (!weaponCanFire || !tacticAllowsFire)
+            {
+                return false;
+            }
+
+            return tacticWantsToHold
+                   || (holdPositionWithLineOfFire
+                       && targetIsDirectlySpotted
+                       && hasLineOfFire
+                       && hasAimSolution);
         }
 
         private void ClearTarget()
