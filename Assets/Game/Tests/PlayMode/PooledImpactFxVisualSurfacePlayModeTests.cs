@@ -16,7 +16,7 @@ namespace Game.Tests.PlayMode
         private const string RobotPrefabPath =
             "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab";
         private const string FencePrefabPath =
-            "Assets/Game/Content/Map_v100_v200/Environment/Fences/Concrete_fences/Concrete_fence_v1/Concrete_fence_v1_wall_set_v2.prefab";
+                "Assets/Game/Content/IndustrialMap_v100_v200/Environment/Fences/ConcreteFences/Concrete_fence_v1/Concrete_fence_v1_wall_set_v2.prefab";
         private const string RobotImpactFxPrefabPath =
             "Assets/Game/Content/Combat/Projectiles/ImpactRobot/RobotImpact.prefab";
         private const string OtherObjectImpactFxPrefabPath =
