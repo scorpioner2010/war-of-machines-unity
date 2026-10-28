@@ -130,6 +130,42 @@ namespace Game.Scripts.Client
         public Color mapEnemyIconColor = new Color(1f, 0.08f, 0.04f, 1f);
         [Tooltip("Колір іконок знищених роботів на мінікарті та повній карті.")]
         public Color mapDestroyedIconColor = Color.black;
+        [Tooltip("Масштаб лише фонового зображення мінікарти. 1 залишає базовий розмір сцени.")]
+        public float mapMiniMapImageScale = 1f;
+        [Tooltip("Додатковий горизонтальний множник масштабу фону мінікарти. Застосовується поверх mapMiniMapImageScale.")]
+        public float mapMiniMapImageScaleX = 1f;
+        [Tooltip("Додатковий вертикальний множник масштабу фону мінікарти. Застосовується поверх mapMiniMapImageScale.")]
+        public float mapMiniMapImageScaleY = 1f;
+        [Tooltip("Піксельний X/Y-офсет лише фонового зображення мінікарти відносно центру MiniMapRoot.")]
+        public Vector2 mapMiniMapImageOffset = Vector2.zero;
+        [Tooltip("Масштаб лише фонового зображення великої карти.")]
+        public float mapFullMapImageScale = 1f;
+        [Tooltip("Додатковий горизонтальний множник масштабу фону великої карти.")]
+        public float mapFullMapImageScaleX = 1f;
+        [Tooltip("Додатковий вертикальний множник масштабу фону великої карти.")]
+        public float mapFullMapImageScaleY = 1f;
+        [Tooltip("Піксельний X/Y-офсет лише фонового зображення великої карти.")]
+        public Vector2 mapFullMapImageOffset = Vector2.zero;
+        [Tooltip("Горизонтальний масштаб незалежного canvas-маркера роботів на великій карті.")]
+        public float mapFullMapRobotCanvasScaleX = 1f;
+        [Tooltip("Вертикальний масштаб незалежного canvas-маркера роботів на великій карті.")]
+        public float mapFullMapRobotCanvasScaleY = 1f;
+        [Tooltip("Піксельний X/Y-офсет canvas-маркера роботів на великій карті.")]
+        public Vector2 mapFullMapRobotCanvasOffset = Vector2.zero;
+        [Tooltip("Горизонтальний масштаб незалежного canvas-маркера роботів на мінікарті.")]
+        public float mapMiniMapRobotCanvasScaleX = 1f;
+        [Tooltip("Вертикальний масштаб незалежного canvas-маркера роботів на мінікарті.")]
+        public float mapMiniMapRobotCanvasScaleY = 1f;
+        [Tooltip("Піксельний X/Y-офсет незалежного canvas-маркера роботів відносно рамки мінікарти.")]
+        public Vector2 mapMiniMapRobotCanvasOffset = Vector2.zero;
+        [Tooltip("Глобальний масштаб усіх маркерів роботів на мінікарті, включно з іконкою локального гравця.")]
+        public float mapMiniMapIconScale = 1f;
+        [Tooltip("Додатковий горизонтальний множник масштабу маркерів роботів на мінікарті.")]
+        public float mapMiniMapIconScaleX = 1f;
+        [Tooltip("Додатковий вертикальний множник масштабу маркерів роботів на мінікарті.")]
+        public float mapMiniMapIconScaleY = 1f;
+        [Tooltip("Піксельний X/Y-офсет усіх маркерів роботів на мінікарті відносно їхньої розрахованої позиції.")]
+        public Vector2 mapMiniMapIconOffset = Vector2.zero;
         [Tooltip("Чи повертати іконки роботів на карті за напрямком їхнього корпусу.")]
         public bool mapRotateIcons = true;
         [Tooltip("Масштаб іконок союзників і противників відносно іконки локального гравця.")]
@@ -279,6 +315,24 @@ namespace Game.Scripts.Client
             mapAllyIconColor = ClampColor(mapAllyIconColor, Default.mapAllyIconColor);
             mapEnemyIconColor = ClampColor(mapEnemyIconColor, Default.mapEnemyIconColor);
             mapDestroyedIconColor = ClampColor(mapDestroyedIconColor, Default.mapDestroyedIconColor);
+            mapMiniMapImageScale = ClampFinite(mapMiniMapImageScale, 0.1f, Default.mapMiniMapImageScale);
+            mapMiniMapImageScaleX = ClampFinite(mapMiniMapImageScaleX, 0.1f, Default.mapMiniMapImageScaleX);
+            mapMiniMapImageScaleY = ClampFinite(mapMiniMapImageScaleY, 0.1f, Default.mapMiniMapImageScaleY);
+            mapMiniMapImageOffset = ClampFinite(mapMiniMapImageOffset, Default.mapMiniMapImageOffset);
+            mapFullMapImageScale = ClampFinite(mapFullMapImageScale, 0.1f, Default.mapFullMapImageScale);
+            mapFullMapImageScaleX = ClampFinite(mapFullMapImageScaleX, 0.1f, Default.mapFullMapImageScaleX);
+            mapFullMapImageScaleY = ClampFinite(mapFullMapImageScaleY, 0.1f, Default.mapFullMapImageScaleY);
+            mapFullMapImageOffset = ClampFinite(mapFullMapImageOffset, Default.mapFullMapImageOffset);
+            mapFullMapRobotCanvasScaleX = ClampFinite(mapFullMapRobotCanvasScaleX, 0.1f, Default.mapFullMapRobotCanvasScaleX);
+            mapFullMapRobotCanvasScaleY = ClampFinite(mapFullMapRobotCanvasScaleY, 0.1f, Default.mapFullMapRobotCanvasScaleY);
+            mapFullMapRobotCanvasOffset = ClampFinite(mapFullMapRobotCanvasOffset, Default.mapFullMapRobotCanvasOffset);
+            mapMiniMapRobotCanvasScaleX = ClampFinite(mapMiniMapRobotCanvasScaleX, 0.1f, Default.mapMiniMapRobotCanvasScaleX);
+            mapMiniMapRobotCanvasScaleY = ClampFinite(mapMiniMapRobotCanvasScaleY, 0.1f, Default.mapMiniMapRobotCanvasScaleY);
+            mapMiniMapRobotCanvasOffset = ClampFinite(mapMiniMapRobotCanvasOffset, Default.mapMiniMapRobotCanvasOffset);
+            mapMiniMapIconScale = ClampFinite(mapMiniMapIconScale, 0.1f, Default.mapMiniMapIconScale);
+            mapMiniMapIconScaleX = ClampFinite(mapMiniMapIconScaleX, 0.1f, Default.mapMiniMapIconScaleX);
+            mapMiniMapIconScaleY = ClampFinite(mapMiniMapIconScaleY, 0.1f, Default.mapMiniMapIconScaleY);
+            mapMiniMapIconOffset = ClampFinite(mapMiniMapIconOffset, Default.mapMiniMapIconOffset);
             mapTrackedVehicleIconScale = ClampFinite(mapTrackedVehicleIconScale, 0.1f, Default.mapTrackedVehicleIconScale);
             mapTrackedVehicleRefreshInterval = ClampFinite(mapTrackedVehicleRefreshInterval, 0.1f, Default.mapTrackedVehicleRefreshInterval);
             autoAimMaxAcquireDistance = ClampFinite(autoAimMaxAcquireDistance, 0.1f, Default.autoAimMaxAcquireDistance);
@@ -346,6 +400,24 @@ namespace Game.Scripts.Client
             mapAllyIconColor = source.mapAllyIconColor;
             mapEnemyIconColor = source.mapEnemyIconColor;
             mapDestroyedIconColor = source.mapDestroyedIconColor;
+            mapMiniMapImageScale = source.mapMiniMapImageScale;
+            mapMiniMapImageScaleX = source.mapMiniMapImageScaleX;
+            mapMiniMapImageScaleY = source.mapMiniMapImageScaleY;
+            mapMiniMapImageOffset = source.mapMiniMapImageOffset;
+            mapFullMapImageScale = source.mapFullMapImageScale;
+            mapFullMapImageScaleX = source.mapFullMapImageScaleX;
+            mapFullMapImageScaleY = source.mapFullMapImageScaleY;
+            mapFullMapImageOffset = source.mapFullMapImageOffset;
+            mapFullMapRobotCanvasScaleX = source.mapFullMapRobotCanvasScaleX;
+            mapFullMapRobotCanvasScaleY = source.mapFullMapRobotCanvasScaleY;
+            mapFullMapRobotCanvasOffset = source.mapFullMapRobotCanvasOffset;
+            mapMiniMapRobotCanvasScaleX = source.mapMiniMapRobotCanvasScaleX;
+            mapMiniMapRobotCanvasScaleY = source.mapMiniMapRobotCanvasScaleY;
+            mapMiniMapRobotCanvasOffset = source.mapMiniMapRobotCanvasOffset;
+            mapMiniMapIconScale = source.mapMiniMapIconScale;
+            mapMiniMapIconScaleX = source.mapMiniMapIconScaleX;
+            mapMiniMapIconScaleY = source.mapMiniMapIconScaleY;
+            mapMiniMapIconOffset = source.mapMiniMapIconOffset;
             mapRotateIcons = source.mapRotateIcons;
             mapTrackedVehicleIconScale = source.mapTrackedVehicleIconScale;
             mapTrackedVehicleRefreshInterval = source.mapTrackedVehicleRefreshInterval;
@@ -493,6 +565,13 @@ namespace Game.Scripts.Client
             }
 
             return value;
+        }
+
+        private static Vector2 ClampFinite(Vector2 value, Vector2 fallback)
+        {
+            return new Vector2(
+                ClampFinite(value.x, fallback.x),
+                ClampFinite(value.y, fallback.y));
         }
 
         private static bool IsFinite(float value)

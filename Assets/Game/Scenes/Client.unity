@@ -168,7 +168,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -307,7 +307,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.3584906, g: 0.35201934, b: 0.15895337, a: 1}
@@ -661,8 +661,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: beec20bd74e97c74d863024397cd6e48, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   button: {fileID: 20836462}
   childGraphics:
   - {fileID: 522708654}
@@ -676,7 +676,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
@@ -720,7 +720,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -20035,13 +20035,13 @@ RectTransform:
   m_Children:
   - {fileID: 2003448333}
   - {fileID: 9651174292}
-  - {fileID: 9216661755}
   - {fileID: 1740751187}
   - {fileID: 1558844968}
   - {fileID: 1540249549}
-  - {fileID: 9216661591}
   - {fileID: 117176390}
   - {fileID: 1300193616}
+  - {fileID: 9216661755}
+  - {fileID: 9216661591}
   m_Father: {fileID: 2052894808}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -57892,7 +57892,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 9216661745}
+  m_Father: {fileID: 9216663001}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -57967,7 +57967,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 9216661591}
+  m_Father: {fileID: 9216663003}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -58002,7 +58002,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1cd725c53a41a6d40bd07d56f9433906, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 4e2f2ebf1ac0f2246a20e836e63e56c6, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -58078,7 +58078,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9216661581}
-  - {fileID: 9216661571}
+  - {fileID: 9216663003}
   m_Father: {fileID: 765982653}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -58114,7 +58114,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1cd725c53a41a6d40bd07d56f9433906, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 4e2f2ebf1ac0f2246a20e836e63e56c6, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -58151,7 +58151,7 @@ RectTransform:
   m_GameObject: {fileID: 9216661734}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.6, y: 1.6, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9216661745}
@@ -58244,7 +58244,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9216661735}
-  - {fileID: 9216661533}
+  - {fileID: 9216663001}
   m_Father: {fileID: 9216661755}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -58359,15 +58359,89 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   miniMapImage: {fileID: 9216661733}
+  miniMapRobotCanvas: {fileID: 9216663001}
   fullMapImage: {fileID: 9216661579}
+  fullMapRobotCanvas: {fileID: 9216663003}
   localPlayerIconMini: {fileID: 9216661533}
   localPlayerIconFull: {fileID: 9216661571}
   fullMapRoot: {fileID: 9216661590}
   alliedVehicleIcon: {fileID: 21300000, guid: 14c3aeab0aa2c344b8e0fa2c49e727df, type: 3}
   enemyVehicleIcon: {fileID: 21300000, guid: 97de982950fc9954787b7d829b8bee4e, type: 3}
-  worldMin: {x: 0, y: 0}
-  worldMax: {x: 256, y: 256}
-  useActiveTerrainBounds: 1
+  worldMin: {x: -28.57465, y: -57.80953}
+  worldMax: {x: 83.14465, y: 53.90977}
+  useActiveTerrainBounds: 0
+--- !u!1 &9216663000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9216663001}
+  m_Layer: 5
+  m_Name: MiniMapRobotCanvas
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &9216663001
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9216663000}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 9216661533}
+  m_Father: {fileID: 9216661745}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &9216663002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9216663003}
+  m_Layer: 5
+  m_Name: FullMapRobotCanvas
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &9216663003
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9216663002}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 9216661571}
+  m_Father: {fileID: 9216661591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 700, y: 700}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &9549849798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58616,6 +58690,24 @@ MonoBehaviour:
     mapAllyIconColor: {r: 0.1, g: 0.35, b: 1, a: 1}
     mapEnemyIconColor: {r: 1, g: 0.08, b: 0.04, a: 1}
     mapDestroyedIconColor: {r: 0, g: 0, b: 0, a: 1}
+    mapMiniMapImageScale: 1.83
+    mapMiniMapImageScaleX: 1
+    mapMiniMapImageScaleY: 1
+    mapMiniMapImageOffset: {x: -16.53, y: 62.91}
+    mapFullMapImageScale: 1.83
+    mapFullMapImageScaleX: 1
+    mapFullMapImageScaleY: 1
+    mapFullMapImageOffset: {x: -36.25, y: 137.96053}
+    mapFullMapRobotCanvasScaleX: 0.95
+    mapFullMapRobotCanvasScaleY: 0.95
+    mapFullMapRobotCanvasOffset: {x: -21.92982, y: 92.58772}
+    mapMiniMapRobotCanvasScaleX: 0.95
+    mapMiniMapRobotCanvasScaleY: 0.95
+    mapMiniMapRobotCanvasOffset: {x: -10, y: 42.22}
+    mapMiniMapIconScale: 2
+    mapMiniMapIconScaleX: 1
+    mapMiniMapIconScaleY: 1
+    mapMiniMapIconOffset: {x: 0, y: 0}
     mapRotateIcons: 1
     mapTrackedVehicleIconScale: 0.8
     mapTrackedVehicleRefreshInterval: 0.5
@@ -59140,7 +59232,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1e1f72a4f3d4e67a9d2b8c6f0e5a431, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableVehicleTestMode: 0
+  enableVehicleTestMode: 1
   controller: {fileID: 2000100000012}
   networkManager: {fileID: 1509948893}
   registry: {fileID: 11400000, guid: e789c05f8eea53d409cd152d7bda366e, type: 2}
@@ -60573,7 +60665,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -60603,7 +60695,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -60647,8 +60739,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: beec20bd74e97c74d863024397cd6e48, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   button: {fileID: 990100000000000005}
   childGraphics:
   - {fileID: 990100000000000009}
@@ -60689,7 +60781,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -60837,7 +60929,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 0.25, g: 1, b: 0.35, a: 1}

@@ -997,7 +997,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 2
+  <PrefabId>k__BackingField: 3
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 4476601396108388577
   <SceneId>k__BackingField: 0
@@ -1450,7 +1450,7 @@ MonoBehaviour:
   footOffset: 0
   inputThreshold: 0.01
   stepDistance: 1.1
-  stepHeight: 0.5
+  stepHeight: 0.3
   stepCycleDuration: 1
   turnLiftHeight: 0.4
   turnStepDuration: 0.25
@@ -1630,13 +1630,13 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 1.3
-  m_Radius: 0.6
+  m_Height: 1
+  m_Radius: 0.7
   m_SlopeLimit: 35
   m_StepOffset: 0.05
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: -0.2, z: 0}
+  m_Center: {x: 0, y: -0.16, z: 0}
 --- !u!1 &1553191984834889495
 GameObject:
   m_ObjectHideFlags: 0

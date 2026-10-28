@@ -94,7 +94,7 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 4294967295
   botCombat:
-    enabled: 1
+    enabled: 0
     thinkInterval: 0.12
     targetScanInterval: 0.35
     maxAcquireDistance: 800

@@ -134,6 +134,42 @@ namespace Toras.Editor
                     "Колір іконок видимих противників на карті. Наприклад: червоний чітко відділяє ворога від союзників.",
                 ["gameplayRuntime.mapDestroyedIconColor"] =
                     "Колір іконок знищених машин на карті. Наприклад: чорний показує, що машина більше не активна.",
+                ["gameplayRuntime.mapMiniMapImageScale"] =
+                    "Масштаб лише фонового зображення мінікарти. Наприклад: 0.8 робить карту меншою всередині її рамки без зміни canvas маркерів.",
+                ["gameplayRuntime.mapMiniMapImageScaleX"] =
+                    "Додатковий горизонтальний множник масштабу фону мінікарти. Наприклад: 0.95 трохи стискає карту по X.",
+                ["gameplayRuntime.mapMiniMapImageScaleY"] =
+                    "Додатковий вертикальний множник масштабу фону мінікарти. Наприклад: 1.05 трохи розтягує карту по Y.",
+                ["gameplayRuntime.mapMiniMapImageOffset"] =
+                    "Піксельний X/Y-офсет лише фонового зображення мінікарти відносно центру рамки.",
+                ["gameplayRuntime.mapFullMapImageScale"] =
+                    "Масштаб лише фонового зображення великої карти; не змінює canvas маркерів.",
+                ["gameplayRuntime.mapFullMapImageScaleX"] =
+                    "Додатковий горизонтальний масштаб фонового зображення великої карти.",
+                ["gameplayRuntime.mapFullMapImageScaleY"] =
+                    "Додатковий вертикальний масштаб фонового зображення великої карти.",
+                ["gameplayRuntime.mapFullMapImageOffset"] =
+                    "Піксельний X/Y-офсет лише фонового зображення великої карти.",
+                ["gameplayRuntime.mapFullMapRobotCanvasScaleX"] =
+                    "Горизонтальний масштаб незалежного canvas маркерів великої карти.",
+                ["gameplayRuntime.mapFullMapRobotCanvasScaleY"] =
+                    "Вертикальний масштаб незалежного canvas маркерів великої карти.",
+                ["gameplayRuntime.mapFullMapRobotCanvasOffset"] =
+                    "Піксельний X/Y-офсет незалежного canvas маркерів великої карти.",
+                ["gameplayRuntime.mapMiniMapRobotCanvasScaleX"] =
+                    "Горизонтальний масштаб незалежного canvas-маркера роботів. Наприклад: 0.95 стискає координатну область маркерів по X без зміни картинки.",
+                ["gameplayRuntime.mapMiniMapRobotCanvasScaleY"] =
+                    "Вертикальний масштаб незалежного canvas-маркера роботів. Наприклад: 1.05 розтягує координатну область маркерів по Y без зміни картинки.",
+                ["gameplayRuntime.mapMiniMapRobotCanvasOffset"] =
+                    "Піксельний X/Y-офсет незалежного canvas-маркера роботів відносно рамки мінікарти.",
+                ["gameplayRuntime.mapMiniMapIconScale"] =
+                    "Глобальний масштаб усіх маркерів роботів на мінікарті, включно з локальним гравцем. Наприклад: 0.75 робить маркери компактнішими.",
+                ["gameplayRuntime.mapMiniMapIconScaleX"] =
+                    "Додатковий горизонтальний множник масштабу маркерів роботів. Наприклад: 0.8 робить canvas маркерів вужчим.",
+                ["gameplayRuntime.mapMiniMapIconScaleY"] =
+                    "Додатковий вертикальний множник масштабу маркерів роботів. Наприклад: 1.2 робить canvas маркерів вищим.",
+                ["gameplayRuntime.mapMiniMapIconOffset"] =
+                    "Піксельний X/Y-офсет усіх маркерів роботів відносно їхньої розрахованої позиції.",
                 ["gameplayRuntime.mapRotateIcons"] =
                     "Повертає іконки машин на карті за напрямком їхнього корпусу. Наприклад: увімкніть, щоб бачити, куди їде союзник.",
                 ["gameplayRuntime.mapTrackedVehicleIconScale"] =

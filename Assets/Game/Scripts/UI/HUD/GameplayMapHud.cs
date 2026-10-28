@@ -11,7 +11,9 @@ namespace Game.Scripts.UI.HUD
     public class GameplayMapHud : MonoBehaviour
     {
         public Image miniMapImage;
+        public RectTransform miniMapRobotCanvas;
         public Image fullMapImage;
+        public RectTransform fullMapRobotCanvas;
         public RectTransform localPlayerIconMini;
         public RectTransform localPlayerIconFull;
         public GameObject fullMapRoot;
@@ -22,7 +24,9 @@ namespace Game.Scripts.UI.HUD
         public bool useActiveTerrainBounds = true;
 
         private VehicleRoot _localPlayer;
+        private RectTransform _miniMapImageRect;
         private RectTransform _miniMapRect;
+        private RectTransform _fullMapImageRect;
         private RectTransform _fullMapRect;
         private Terrain _terrainBoundsSource;
         private bool _terrainBoundsResolved;
@@ -30,6 +34,16 @@ namespace Game.Scripts.UI.HUD
         private int _appliedVisibilityVersion = -1;
         private Color _localPlayerMiniIconColor;
         private Color _localPlayerFullIconColor;
+        private Vector3 _miniMapImageBaseScale = Vector3.one;
+        private Vector2 _miniMapImageBasePosition;
+        private Vector3 _miniMapRobotCanvasBaseScale = Vector3.one;
+        private Vector2 _miniMapRobotCanvasBasePosition;
+        private Vector3 _fullMapImageBaseScale = Vector3.one;
+        private Vector2 _fullMapImageBasePosition;
+        private Vector3 _fullMapRobotCanvasBaseScale = Vector3.one;
+        private Vector2 _fullMapRobotCanvasBasePosition;
+        private Vector3 _localPlayerMiniIconBaseScale = Vector3.one;
+        private Vector3 _localPlayerFullIconBaseScale = Vector3.one;
         private Graphic _localPlayerMiniIconGraphic;
         private Graphic _localPlayerFullIconGraphic;
         private bool _hasLocalPlayerMiniIconColor;
@@ -41,6 +55,7 @@ namespace Game.Scripts.UI.HUD
         {
             CacheRects();
             CacheLocalPlayerIconColors();
+            CacheBaseScales();
             RefreshTerrainBounds();
             _fullMapVisible = true;
             SetFullMapVisible(false);
@@ -67,6 +82,7 @@ namespace Game.Scripts.UI.HUD
             using (ProfileScope.Measure("Client.UI.GameplayMapHud.Update", DiagnosticsCategories.Ui))
             {
                 _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+                ApplyRuntimeVisualSettings();
 
                 if (useActiveTerrainBounds && (!_terrainBoundsResolved || _terrainBoundsSource == null))
                 {
@@ -93,8 +109,8 @@ namespace Game.Scripts.UI.HUD
                     Vector3 worldPosition = trackedTransform.position;
                     float yaw = trackedTransform.eulerAngles.y;
 
-                    UpdateIcon(_miniMapRect, localPlayerIconMini, worldPosition, yaw, true);
-                    UpdateIcon(_fullMapRect, localPlayerIconFull, worldPosition, yaw, _fullMapVisible);
+                    UpdateIcon(_miniMapRect, localPlayerIconMini, worldPosition, yaw, true, _runtimeSettings.mapMiniMapIconOffset);
+                    UpdateIcon(_fullMapRect, localPlayerIconFull, worldPosition, yaw, _fullMapVisible, Vector2.zero);
                     ApplyLocalPlayerIconColor();
                 }
                 else
@@ -121,8 +137,128 @@ namespace Game.Scripts.UI.HUD
 
         private void CacheRects()
         {
-            _miniMapRect = miniMapImage != null ? miniMapImage.rectTransform : null;
-            _fullMapRect = fullMapImage != null ? fullMapImage.rectTransform : null;
+            _miniMapImageRect = miniMapImage != null ? miniMapImage.rectTransform : null;
+            _miniMapRect = miniMapRobotCanvas != null
+                ? miniMapRobotCanvas
+                : _miniMapImageRect;
+            _fullMapImageRect = fullMapImage != null ? fullMapImage.rectTransform : null;
+            _fullMapRect = fullMapRobotCanvas != null
+                ? fullMapRobotCanvas
+                : _fullMapImageRect;
+        }
+
+        private void CacheBaseScales()
+        {
+            if (_miniMapImageRect != null)
+            {
+                _miniMapImageBaseScale = _miniMapImageRect.localScale;
+                _miniMapImageBasePosition = _miniMapImageRect.anchoredPosition;
+            }
+
+            if (_miniMapRect != null)
+            {
+                _miniMapRobotCanvasBaseScale = _miniMapRect.localScale;
+                _miniMapRobotCanvasBasePosition = _miniMapRect.anchoredPosition;
+            }
+
+            if (_fullMapImageRect != null)
+            {
+                _fullMapImageBaseScale = _fullMapImageRect.localScale;
+                _fullMapImageBasePosition = _fullMapImageRect.anchoredPosition;
+            }
+
+            if (_fullMapRect != null)
+            {
+                _fullMapRobotCanvasBaseScale = _fullMapRect.localScale;
+                _fullMapRobotCanvasBasePosition = _fullMapRect.anchoredPosition;
+            }
+
+            if (localPlayerIconMini != null)
+            {
+                _localPlayerMiniIconBaseScale = localPlayerIconMini.localScale;
+            }
+
+            if (localPlayerIconFull != null)
+            {
+                _localPlayerFullIconBaseScale = localPlayerIconFull.localScale;
+            }
+        }
+
+        private void ApplyRuntimeVisualSettings()
+        {
+            float miniMapImageScale = Mathf.Max(0.1f, _runtimeSettings.mapMiniMapImageScale);
+            Vector3 miniMapImageScaleVector = new Vector3(
+                miniMapImageScale * Mathf.Max(0.1f, _runtimeSettings.mapMiniMapImageScaleX),
+                miniMapImageScale * Mathf.Max(0.1f, _runtimeSettings.mapMiniMapImageScaleY),
+                1f);
+            if (_miniMapImageRect != null)
+            {
+                _miniMapImageRect.localScale = Vector3.Scale(_miniMapImageBaseScale, miniMapImageScaleVector);
+                _miniMapImageRect.anchoredPosition = _miniMapImageBasePosition + _runtimeSettings.mapMiniMapImageOffset;
+            }
+
+            if (_miniMapRect != null && _miniMapRect != _miniMapImageRect)
+            {
+                Vector3 miniMapRobotCanvasScaleVector = new Vector3(
+                    Mathf.Max(0.1f, _runtimeSettings.mapMiniMapRobotCanvasScaleX),
+                    Mathf.Max(0.1f, _runtimeSettings.mapMiniMapRobotCanvasScaleY),
+                    1f);
+                _miniMapRect.localScale = Vector3.Scale(_miniMapRobotCanvasBaseScale, miniMapRobotCanvasScaleVector);
+                _miniMapRect.anchoredPosition = _miniMapRobotCanvasBasePosition
+                    + _runtimeSettings.mapMiniMapRobotCanvasOffset;
+            }
+
+            float fullMapImageScale = Mathf.Max(0.1f, _runtimeSettings.mapFullMapImageScale);
+            Vector3 fullMapImageScaleVector = new Vector3(
+                fullMapImageScale * Mathf.Max(0.1f, _runtimeSettings.mapFullMapImageScaleX),
+                fullMapImageScale * Mathf.Max(0.1f, _runtimeSettings.mapFullMapImageScaleY),
+                1f);
+            if (_fullMapImageRect != null)
+            {
+                _fullMapImageRect.localScale = Vector3.Scale(_fullMapImageBaseScale, fullMapImageScaleVector);
+                _fullMapImageRect.anchoredPosition = _fullMapImageBasePosition + _runtimeSettings.mapFullMapImageOffset;
+            }
+
+            if (_fullMapRect != null && _fullMapRect != _fullMapImageRect)
+            {
+                Vector3 fullMapRobotCanvasScaleVector = new Vector3(
+                    Mathf.Max(0.1f, _runtimeSettings.mapFullMapRobotCanvasScaleX),
+                    Mathf.Max(0.1f, _runtimeSettings.mapFullMapRobotCanvasScaleY),
+                    1f);
+                _fullMapRect.localScale = Vector3.Scale(_fullMapRobotCanvasBaseScale, fullMapRobotCanvasScaleVector);
+                _fullMapRect.anchoredPosition = _fullMapRobotCanvasBasePosition
+                    + _runtimeSettings.mapFullMapRobotCanvasOffset;
+            }
+
+            float miniMapIconScale = Mathf.Max(0.1f, _runtimeSettings.mapMiniMapIconScale);
+            Vector3 miniMapIconScaleVector = new Vector3(
+                miniMapIconScale * Mathf.Max(0.1f, _runtimeSettings.mapMiniMapIconScaleX),
+                miniMapIconScale * Mathf.Max(0.1f, _runtimeSettings.mapMiniMapIconScaleY),
+                1f);
+            if (localPlayerIconMini != null)
+            {
+                localPlayerIconMini.localScale = Vector3.Scale(_localPlayerMiniIconBaseScale, miniMapIconScaleVector);
+            }
+
+            for (int i = 0; i < _trackedVehicleIcons.Count; i++)
+            {
+                TrackedVehicleIcon icon = _trackedVehicleIcons[i];
+                if (icon.MiniIcon != null)
+                {
+                    icon.MiniIcon.localScale = Vector3.Scale(_localPlayerMiniIconBaseScale, miniMapIconScaleVector);
+                    icon.MiniIcon.sizeDelta = localPlayerIconMini != null
+                        ? localPlayerIconMini.sizeDelta * Mathf.Max(0.1f, _runtimeSettings.mapTrackedVehicleIconScale)
+                        : icon.MiniIcon.sizeDelta;
+                }
+
+                if (icon.FullIcon != null)
+                {
+                    icon.FullIcon.localScale = _localPlayerFullIconBaseScale;
+                    icon.FullIcon.sizeDelta = localPlayerIconFull != null
+                        ? localPlayerIconFull.sizeDelta * Mathf.Max(0.1f, _runtimeSettings.mapTrackedVehicleIconScale)
+                        : icon.FullIcon.sizeDelta;
+                }
+            }
         }
 
         private static Transform GetTrackedTransform(VehicleRoot vehicleRoot)
@@ -228,8 +364,8 @@ namespace Game.Scripts.UI.HUD
             for (int i = _trackedVehicleIcons.Count - 1; i >= 0; i--)
             {
                 TrackedVehicleIcon icon = _trackedVehicleIcons[i];
-                UpdateIcon(_miniMapRect, icon.MiniIcon, icon.WorldPosition, icon.Yaw, true);
-                UpdateIcon(_fullMapRect, icon.FullIcon, icon.WorldPosition, icon.Yaw, _fullMapVisible);
+                UpdateIcon(_miniMapRect, icon.MiniIcon, icon.WorldPosition, icon.Yaw, true, _runtimeSettings.mapMiniMapIconOffset);
+                UpdateIcon(_fullMapRect, icon.FullIcon, icon.WorldPosition, icon.Yaw, _fullMapVisible, Vector2.zero);
             }
         }
 
@@ -282,7 +418,17 @@ namespace Game.Scripts.UI.HUD
 
             RectTransform icon = Instantiate(template, template.parent);
             icon.name = iconName;
-            icon.localScale = template.localScale;
+            bool isMiniMapIcon = template == localPlayerIconMini;
+            icon.localScale = isMiniMapIcon
+                ? Vector3.Scale(
+                    _localPlayerMiniIconBaseScale,
+                    new Vector3(
+                        Mathf.Max(0.1f, _runtimeSettings.mapMiniMapIconScale)
+                            * Mathf.Max(0.1f, _runtimeSettings.mapMiniMapIconScaleX),
+                        Mathf.Max(0.1f, _runtimeSettings.mapMiniMapIconScale)
+                            * Mathf.Max(0.1f, _runtimeSettings.mapMiniMapIconScaleY),
+                        1f))
+                : _localPlayerFullIconBaseScale;
             icon.sizeDelta = template.sizeDelta * Mathf.Max(0.1f, _runtimeSettings.mapTrackedVehicleIconScale);
             SetIconVisible(icon, false);
 
@@ -406,7 +552,8 @@ namespace Game.Scripts.UI.HUD
             RectTransform iconRect,
             Vector3 worldPosition,
             float yaw,
-            bool visible)
+            bool visible,
+            Vector2 positionOffset)
         {
             if (!visible || mapRect == null || iconRect == null || !TryGetNormalizedPosition(worldPosition, out Vector2 normalized))
             {
@@ -421,7 +568,7 @@ namespace Game.Scripts.UI.HUD
                 (normalized.x - mapRect.pivot.x) * rect.width,
                 (normalized.y - mapRect.pivot.y) * rect.height);
 
-            iconRect.position = mapRect.TransformPoint(localMapPosition);
+            iconRect.position = mapRect.TransformPoint(localMapPosition) + (Vector3)positionOffset;
 
             if (_runtimeSettings.mapRotateIcons)
             {

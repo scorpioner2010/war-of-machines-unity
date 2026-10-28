@@ -1268,13 +1268,13 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 1.2
+  m_Height: 1
   m_Radius: 0.56
   m_SlopeLimit: 35
   m_StepOffset: 0.05
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: -0.35, z: 0}
+  m_Center: {x: 0, y: -0.46, z: 0}
 --- !u!1 &5084527245710847619
 GameObject:
   m_ObjectHideFlags: 0
@@ -3874,7 +3874,7 @@ PrefabInstance:
     - target: {fileID: 1708463725538953413, guid: 9043c1ae5d088df4690974177aa623d2,
         type: 3}
       propertyPath: m_fontAsset
-      value:
+      value: 
       objectReference: {fileID: 11400000, guid: cd0bf33debf46ed4798364c9a60440d0,
         type: 2}
     - target: {fileID: 1708463725538953413, guid: 9043c1ae5d088df4690974177aa623d2,
@@ -4046,19 +4046,13 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 1634966615955596675}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &4419922432205540131 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3163261354685738656, guid: 9043c1ae5d088df4690974177aa623d2,
-    type: 3}
-  m_PrefabInstance: {fileID: 1634966615955596675}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &7090715909562496288 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8419437673525612707, guid: 9043c1ae5d088df4690974177aa623d2,
     type: 3}
   m_PrefabInstance: {fileID: 1634966615955596675}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4419922432205540131}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f117a6f87a7b7934c8bd7a3cda064e2d, type: 3}

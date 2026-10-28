@@ -87,6 +87,10 @@ Current owner scripts:
   - When the test controller spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`
   - Gameplay map HUD for `MiniMapRoot` and `FullMapRoot`.
+  - Keeps `MiniMapImage` and the independent `MiniMapRobotCanvas` as separate presentation layers: image scale/X/Y/offset changes do not scale or move the robot marker coordinate canvas.
+  - Keeps `FullMapImage` and the independent `FullMapRobotCanvas` as separate presentation layers as well, so full-map alignment is not affected by mini-map tuning.
+  - Reads separate full-map and mini-map image scale/X/Y/offset, robot-canvas scale/X/Y/offset, marker X/Y scale, and marker offset from `ClientSettings.gameplayRuntime` every frame, so both map views can be tuned during Play Mode without changing the scene hierarchy.
+  - Keeps `mapTrackedVehicleIconScale` as the relative size of tracked robot markers compared with the local-player marker; existing markers are resized immediately when the setting changes.
   - Continues refreshing tracked ally/enemy markers during death spectator mode after the local network vehicle is despawned; only the dead local-player icon is hidden.
   - Cloned tracked-vehicle markers receive the serialized `friendly_marker.png` or `enemy_marker.png` sprite while visibility, relation color, and destroyed-state behavior continue to come from `GameplayMapVisibilityState`.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapVisibilityState.cs`
