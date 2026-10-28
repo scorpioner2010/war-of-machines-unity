@@ -109,6 +109,7 @@ namespace Game.Scripts.UI.HUD
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
             ApplySniperPresentation(false);
             VehicleRoot.LocalPlayerVehicleChanged += OnLocalPlayerVehicleChanged;
+            CameraController.DeathSpectatorCameraChanged += OnDeathSpectatorCameraChanged;
             BindSpectatorCamera(VehicleRoot.LocalPlayerVehicle);
         }
 
@@ -121,6 +122,7 @@ namespace Game.Scripts.UI.HUD
 
             ClientGameplaySettings.ServerCrosshairChanged -= OnServerCrosshairSettingChanged;
             VehicleRoot.LocalPlayerVehicleChanged -= OnLocalPlayerVehicleChanged;
+            CameraController.DeathSpectatorCameraChanged -= OnDeathSpectatorCameraChanged;
             UnbindSpectatorCamera();
             Singleton<GunCrosshair>.Unregister(this);
         }
@@ -148,10 +150,15 @@ namespace Game.Scripts.UI.HUD
             BindSpectatorCamera(vehicle);
         }
 
+        private void OnDeathSpectatorCameraChanged(CameraController cameraController)
+        {
+            BindSpectatorCamera(VehicleRoot.LocalPlayerVehicle);
+        }
+
         private void EnsureSpectatorCameraBinding()
         {
             VehicleRoot localVehicle = VehicleRoot.LocalPlayerVehicle;
-            CameraController nextController = localVehicle != null ? localVehicle.cameraController : null;
+            CameraController nextController = ResolveSpectatorCamera(localVehicle);
             if (_spectatorCameraController != nextController)
             {
                 BindSpectatorCamera(localVehicle);
@@ -160,7 +167,7 @@ namespace Game.Scripts.UI.HUD
 
         private void BindSpectatorCamera(VehicleRoot localVehicle)
         {
-            CameraController nextController = localVehicle != null ? localVehicle.cameraController : null;
+            CameraController nextController = ResolveSpectatorCamera(localVehicle);
             if (_spectatorCameraController == nextController)
             {
                 return;
@@ -178,6 +185,16 @@ namespace Game.Scripts.UI.HUD
             {
                 BindSpectatorTarget(_spectatorCameraController.SpectatorTarget);
             }
+        }
+
+        private static CameraController ResolveSpectatorCamera(VehicleRoot localVehicle)
+        {
+            if (localVehicle != null && localVehicle.cameraController != null)
+            {
+                return localVehicle.cameraController;
+            }
+
+            return CameraController.ActiveDeathSpectator;
         }
 
         private void UnbindSpectatorCamera()
@@ -752,9 +769,17 @@ namespace Game.Scripts.UI.HUD
 
         private bool ShouldHideSpectatorCrosshair()
         {
-            if (_spectatorCameraController == null
-                || !_spectatorCameraController.IsDeathSpectatorActive
-                || _spectatorTarget == null
+            if (_spectatorCameraController == null || !_spectatorCameraController.IsDeathSpectatorActive)
+            {
+                return false;
+            }
+
+            if (_spectatorCameraController.IsDeathSpectatorWreck)
+            {
+                return true;
+            }
+
+            if (_spectatorTarget == null
                 || _spectatorTarget != _spectatorCameraController.vehicleRoot
                 || _spectatorTarget.health == null)
             {

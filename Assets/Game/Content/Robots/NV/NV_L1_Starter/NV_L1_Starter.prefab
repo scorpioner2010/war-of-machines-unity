@@ -1441,7 +1441,7 @@ MonoBehaviour:
   stepDistance: 1.1
   stepHeight: 0.5
   stepCycleDuration: 1
-  turnLiftHeight: 0.4
+  turnLiftHeight: 0.3
   turnStepDuration: 0.25
   animTransitionSpeed: 15
   strideSpeedSmoothing: 12

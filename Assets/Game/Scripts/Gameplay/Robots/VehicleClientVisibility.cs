@@ -19,6 +19,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _visibilityOverride;
         private bool _hasSpectatorVisibilityOverride;
         private bool _spectatorPreviousVisibility;
+        private MatchTeam _localPlayerTeam = MatchTeam.None;
 
         public bool IsVisible => _hasAppliedVisibility && _isVisible;
         public bool ServerVisualsHidden => _serverVisualsHidden;
@@ -167,6 +168,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void HandleLocalPlayerVehicleChanged(VehicleRoot localPlayer)
         {
+            CacheLocalPlayerTeam(localPlayer);
             _refreshRequested = true;
         }
 
@@ -187,6 +189,12 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            if (_hasSpectatorVisibilityOverride)
+            {
+                ApplyVisibility(true);
+                return;
+            }
+
             if (_hasVisibilityOverride)
             {
                 ApplyVisibility(_visibilityOverride);
@@ -200,33 +208,33 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             VehicleRoot localPlayer = VehicleRoot.LocalPlayerVehicle;
+            CacheLocalPlayerTeam(localPlayer);
             if (vehicleRoot.IsOwner || vehicleRoot == localPlayer)
             {
                 ApplyVisibility(true);
                 return;
             }
 
-            if (localPlayer == null)
+            if (!MatchTeamUtility.IsAssigned(_localPlayerTeam))
             {
                 ApplyVisibility(false);
                 return;
             }
 
-            if (vehicleRoot.characterInit == null || localPlayer.characterInit == null)
+            if (vehicleRoot.characterInit == null)
             {
                 ApplyVisibility(false);
                 return;
             }
 
-            MatchTeam localTeam = localPlayer.characterInit.Team.Value;
             MatchTeam targetTeam = vehicleRoot.characterInit.Team.Value;
-            if (!MatchTeamUtility.IsAssigned(localTeam) || !MatchTeamUtility.IsAssigned(targetTeam))
+            if (!MatchTeamUtility.IsAssigned(targetTeam))
             {
                 ApplyVisibility(false);
                 return;
             }
 
-            if (MatchTeamUtility.AreSameAssignedTeam(localTeam, targetTeam))
+            if (MatchTeamUtility.AreSameAssignedTeam(_localPlayerTeam, targetTeam))
             {
                 ApplyVisibility(true);
                 return;
@@ -235,8 +243,25 @@ namespace Game.Scripts.Gameplay.Robots
             int objectId = vehicleRoot.networkObject != null
                 ? vehicleRoot.networkObject.ObjectId
                 : -1;
-            bool visible = GameplayMapVisibilityState.TryGetRelation(objectId, out _);
+            bool visible = GameplayMapVisibilityState.TryGetRelation(
+                               objectId,
+                               out MapVehicleVisibilityRelation relation)
+                           && relation == MapVehicleVisibilityRelation.Enemy;
             ApplyVisibility(visible);
+        }
+
+        private void CacheLocalPlayerTeam(VehicleRoot localPlayer)
+        {
+            if (localPlayer == null || localPlayer.characterInit == null)
+            {
+                return;
+            }
+
+            MatchTeam team = localPlayer.characterInit.Team.Value;
+            if (MatchTeamUtility.IsAssigned(team))
+            {
+                _localPlayerTeam = team;
+            }
         }
 
         private void ApplyVisibility(bool visible)

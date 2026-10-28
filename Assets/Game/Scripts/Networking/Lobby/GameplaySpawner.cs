@@ -364,7 +364,7 @@ namespace Game.Scripts.Networking.Lobby
                     positions,
                     yaws,
                     remainingVisibilitySeconds,
-                    NetworkChannel.Unreliable);
+                    NetworkChannel.Reliable);
             }
         }
 
@@ -379,7 +379,7 @@ namespace Game.Scripts.Networking.Lobby
             Vector3[] positions,
             float[] yaws,
             float[] remainingVisibilitySeconds,
-            NetworkChannel channel = NetworkChannel.Unreliable)
+            NetworkChannel channel = NetworkChannel.Reliable)
         {
             using (ProfileScope.Measure("Client.NetworkSnapshot.Receive", DiagnosticsCategories.Network))
             {

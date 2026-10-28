@@ -95,7 +95,7 @@ namespace Game.Scripts.AI.WaypointGraph
             }
 
             desiredDirection.Normalize();
-            Vector3 muzzleForward = vehicleRoot.weaponAimAtCamera.GetLogicalAimForwardWorld();
+            Vector3 muzzleForward = vehicleRoot.weaponAimAtCamera.GetCurrentAimForwardWorld();
             if (!BotCombatUtility.IsFinite(muzzleForward) || muzzleForward.sqrMagnitude <= 0.000001f)
             {
                 return float.PositiveInfinity;

@@ -4,6 +4,7 @@ using FishNet.Object.Synchronizing;
 using Game.Scripts.AI.WaypointGraph;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.MenuController;
+using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Server;
 using UnityEngine;
 
@@ -30,6 +31,12 @@ namespace Game.Scripts.Gameplay.Robots
         private readonly SyncVar<Vector2> _animMove = new(Vector2.zero);
         private readonly SyncVar<bool> _animShoot = new(false);
         private readonly SyncVar<bool> _animAction = new(false);
+        private readonly SyncVar<bool> _autonomousControl = new(false);
+        private readonly SyncVar<bool> _replicatedAimActive = new(false);
+        private readonly SyncVar<float> _replicatedAimYaw = new();
+        private readonly SyncVar<float> _replicatedAimPitch = new();
+        private readonly SyncVar<Vector3> _replicatedAimPoint = new();
+        private readonly SyncVar<Vector3> _replicatedAimForward = new();
 
         private float _nextSendTime;
 
@@ -68,6 +75,19 @@ namespace Game.Scripts.Gameplay.Robots
             _controlsBlocked = blocked;
         }
 
+        public bool IsAutonomous => _autonomousControl.Value;
+        public bool HasReplicatedAim => _replicatedAimActive.Value;
+
+        public void RequestAutonomousControl(bool enabled)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            SetAutonomousControlServerRpc(enabled);
+        }
+
         [Server]
         public void ApplyBotInput(float forward, float turn)
         {
@@ -92,27 +112,23 @@ namespace Game.Scripts.Gameplay.Robots
 
             ApplyServerInput(move, input.Shoot, input.Action, syncAnimation);
 
-            if (!input.HasAim || vehicleRoot == null)
+            if (!input.HasAim)
             {
                 return;
             }
 
-            if (vehicleRoot.weaponAimAtCamera != null)
-            {
-                vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(input.AimPoint, input.AimForward);
-                vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(input.TargetPitchDeg);
-            }
-
-            if (vehicleRoot.robotHullRotation != null)
-            {
-                vehicleRoot.robotHullRotation.SetTargetYawServer(input.TargetYawDeg);
-            }
+            ApplyServerAimTargets(
+                input.TargetYawDeg,
+                input.TargetPitchDeg,
+                input.AimPoint,
+                input.AimForward);
         }
 
         [Server]
         public void ServerClearExternalInput()
         {
             ApplyServerInput(Vector2.zero, false, false, true);
+            _replicatedAimActive.Value = false;
         }
 
         public bool IsControlsBlocked => _controlsBlocked;
@@ -134,7 +150,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private bool IsLocalInputBlocked => _controlsBlocked || IsGameplayInputBlockedByUi;
+        private bool IsLocalInputBlocked => _controlsBlocked || IsGameplayInputBlockedByUi || IsAutonomous;
         private bool HasLocalInput => IsOwner;
 
         public Vector2 Move
@@ -237,6 +253,16 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (!HasLocalInput)
             {
+                ApplyReplicatedAimPresentation();
+                return;
+            }
+
+            if (IsAutonomous)
+            {
+                ApplyReplicatedAimPresentation();
+                _moveLocal = Vector2.zero;
+                _shootLocal = false;
+                _actionLocal = false;
                 return;
             }
 
@@ -372,6 +398,58 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [ServerRpc(RequireOwnership = true, RunLocally = false)]
+        private void SetAutonomousControlServerRpc(bool enabled, NetworkConnection sender = null)
+        {
+            if (sender == null || sender != base.Owner || vehicleRoot == null)
+            {
+                return;
+            }
+
+            if (vehicleRoot.health != null && vehicleRoot.health.IsDead)
+            {
+                return;
+            }
+
+            ServerSetAutonomousControl(enabled);
+        }
+
+        [Server]
+        private void ServerSetAutonomousControl(bool enabled)
+        {
+            if (vehicleRoot == null || !IsServerInitialized)
+            {
+                return;
+            }
+
+            if (!enabled)
+            {
+                if (vehicleRoot.botBrain != null)
+                {
+                    vehicleRoot.botBrain.StopBrain();
+                }
+
+                ServerClearExternalInput();
+                _autonomousControl.Value = false;
+                return;
+            }
+
+            ServerRoom room = LobbyRooms.GetRoomByVehicle(vehicleRoot);
+            if (room == null || !room.IsActiveMatch || vehicleRoot.botBrain == null)
+            {
+                return;
+            }
+
+            vehicleRoot.botBrain.StartBrain(vehicleRoot, room);
+            if (!vehicleRoot.botBrain.IsRunning)
+            {
+                return;
+            }
+
+            ServerClearExternalInput();
+            _autonomousControl.Value = true;
+        }
+
+        [ServerRpc(RequireOwnership = true, RunLocally = false)]
         private void SendControlsServerRpc(
             int seq,
             float moveX,
@@ -394,6 +472,10 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     return;
                 }
+                if (_autonomousControl.Value)
+                {
+                    return;
+                }
                 if (seq <= _lastInputSeqServer)
                 {
                     return;
@@ -409,9 +491,7 @@ namespace Game.Scripts.Gameplay.Robots
                 float yawDeg = AngleQuantization.DequantizeAngle01(yawQ);
                 float pitchDeg = AngleQuantization.DequantizeAngle01(pitchQ);
 
-                vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(aimPoint, aimForward);
-                vehicleRoot.robotHullRotation.SetTargetYawServer(yawDeg);
-                vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(pitchDeg);
+                ApplyServerAimTargets(yawDeg, pitchDeg, aimPoint, aimForward);
             }
         }
 
@@ -747,6 +827,60 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 vehicleRoot.weaponAimAtCamera.SetTargetPitch(pitchDeg);
             }
+        }
+
+        [Server]
+        private void ApplyServerAimTargets(
+            float yawDeg,
+            float pitchDeg,
+            Vector3 aimPoint,
+            Vector3 aimForward)
+        {
+            if (vehicleRoot == null)
+            {
+                return;
+            }
+
+            _replicatedAimYaw.Value = yawDeg;
+            _replicatedAimPitch.Value = pitchDeg;
+            _replicatedAimPoint.Value = aimPoint;
+            _replicatedAimForward.Value = aimForward;
+            _replicatedAimActive.Value = true;
+
+            if (vehicleRoot.weaponAimAtCamera != null)
+            {
+                vehicleRoot.weaponAimAtCamera.SetDesiredAimPointServer(aimPoint, aimForward);
+                vehicleRoot.weaponAimAtCamera.SetTargetPitchServer(pitchDeg);
+            }
+
+            if (vehicleRoot.robotHullRotation != null)
+            {
+                vehicleRoot.robotHullRotation.SetTargetYawServer(yawDeg);
+            }
+        }
+
+        private void ApplyReplicatedAimPresentation()
+        {
+            if (!_replicatedAimActive.Value || vehicleRoot == null)
+            {
+                return;
+            }
+
+            float yawDeg = _replicatedAimYaw.Value;
+            float pitchDeg = _replicatedAimPitch.Value;
+            Vector3 aimPoint = _replicatedAimPoint.Value;
+            Vector3 aimForward = _replicatedAimForward.Value;
+            _turretYawLocal = yawDeg;
+            _gunPitchLocal = pitchDeg;
+            _lastAimPointLocal = aimPoint;
+            _lastAimForwardLocal = aimForward;
+
+            if (vehicleRoot.weaponAimAtCamera != null)
+            {
+                vehicleRoot.weaponAimAtCamera.SetDesiredAimPoint(aimPoint, aimForward);
+            }
+
+            ApplyLocalAimTargets(yawDeg, pitchDeg);
         }
 
     }

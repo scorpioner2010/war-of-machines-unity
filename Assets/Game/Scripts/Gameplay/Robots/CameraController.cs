@@ -16,6 +16,16 @@ namespace Game.Scripts.Gameplay.Robots
         private const int DefaultZoomStep = 0;
         private const float DeathSpectatorIntroSeconds = 3f;
 
+        private enum DeathSpectatorPhase
+        {
+            Inactive,
+            KillerIntro,
+            DeathWreck,
+            AllyFollow
+        }
+
+        private static CameraController _activeDeathSpectator;
+
         public VehicleRoot vehicleRoot;
         public Transform rig;
         public CameraCollisionController collisionController;
@@ -28,21 +38,28 @@ namespace Game.Scripts.Gameplay.Robots
         private int _lastNonSniperZoomStep = DefaultZoomStep;
         private bool _sniperUiApplied;
         private bool _initialized;
-        private bool _deathSpectatorActive;
-        private bool _deathSpectatorIntroFinished;
+        private DeathSpectatorPhase _deathSpectatorPhase;
         private float _deathSpectatorIntroEndTime;
         private int _pendingKillerObjectId = -1;
+        private MatchTeam _spectatorTeam = MatchTeam.None;
         private VehicleRoot _spectatorTarget;
         private VehicleRoot _spectatorCanvasTarget;
+        private VehicleRoot _spectatorVisibilityTarget;
+        private Transform _deathWreckRig;
+        private bool _deathFallbackPoseCaptured;
+        private Vector3 _deathFallbackPosition;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
 
         public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
         public CameraZoomProfile CurrentZoomProfile => GetZoomProfile(_currentZoomStep);
         public int CurrentZoomStep => _currentZoomStep;
-        public bool IsDeathSpectatorActive => _deathSpectatorActive;
+        public bool IsDeathSpectatorActive => _deathSpectatorPhase != DeathSpectatorPhase.Inactive;
+        public bool IsDeathSpectatorWreck => _deathSpectatorPhase == DeathSpectatorPhase.DeathWreck;
+        public static CameraController ActiveDeathSpectator => _activeDeathSpectator;
         public VehicleRoot SpectatorTarget => _spectatorTarget;
 
         public event Action<VehicleRoot> SpectatorTargetChanged;
+        public static event Action<CameraController> DeathSpectatorCameraChanged;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -52,6 +69,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             vehicleRoot = root;
+            CacheSpectatorTeam();
             if (vehicleRoot != null && vehicleRoot.health != null)
             {
                 vehicleRoot.health.OnClientDeath += HandleClientDeath;
@@ -61,6 +79,7 @@ namespace Game.Scripts.Gameplay.Robots
         public void OnVehicleInitialized(VehicleInitializationContext context)
         {
             vehicleRoot = context.Root;
+            CacheSpectatorTeam();
             if (context.IsOwner && !context.IsMenu)
             {
                 Init();
@@ -91,6 +110,23 @@ namespace Game.Scripts.Gameplay.Robots
             SyncGameplayCameraTransform();
         }
 
+        public void DetachFromVehicleForDeath()
+        {
+            _deathWreckRig = rig;
+            Transform fallbackSource = _deathWreckRig != null ? _deathWreckRig : transform;
+            _deathFallbackPosition = fallbackSource.position;
+            _deathFallbackPoseCaptured = true;
+            if (_deathWreckRig != null && _deathWreckRig != transform)
+            {
+                _deathWreckRig.SetParent(null, true);
+            }
+
+            if (transform.parent != null)
+            {
+                transform.SetParent(null, true);
+            }
+        }
+
         private void OnDestroy()
         {
             if (vehicleRoot != null && vehicleRoot.health != null)
@@ -98,9 +134,15 @@ namespace Game.Scripts.Gameplay.Robots
                 vehicleRoot.health.OnClientDeath -= HandleClientDeath;
             }
 
-            if (_spectatorCanvasTarget != null && _spectatorCanvasTarget.vehicleHUD != null)
+            if (_deathSpectatorPhase != DeathSpectatorPhase.Inactive)
             {
-                _spectatorCanvasTarget.vehicleHUD.SetWorldCanvasHidden(false);
+                EndDeathSpectator();
+            }
+
+            if (_activeDeathSpectator == this)
+            {
+                _activeDeathSpectator = null;
+                DeathSpectatorCameraChanged?.Invoke(null);
             }
         }
 
@@ -159,7 +201,7 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                if (_deathSpectatorActive)
+                if (IsDeathSpectatorActive)
                 {
                     UpdateDeathSpectator();
                     if (!VehicleInputController.IsGameplayInputBlockedByUi)
@@ -207,6 +249,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            bool useDeathFallbackPivot = IsDeathSpectatorActive
+                                         && _deathSpectatorPhase == DeathSpectatorPhase.DeathWreck
+                                         && cameraRig == transform
+                                         && _deathFallbackPoseCaptured;
+            Vector3 pivotPosition = useDeathFallbackPivot ? _deathFallbackPosition : cameraRig.position;
             _targetDistance = GetDistanceForZoomStep(_currentZoomStep);
             Quaternion rotation = Quaternion.Euler(_Y, _X, 0);
             if (IsSniperModeActive && TryGetSniperCameraPosition(rotation, out Vector3 sniperPosition))
@@ -214,7 +261,7 @@ namespace Game.Scripts.Gameplay.Robots
                 _currentDistance = _targetDistance;
                 transform.rotation = rotation;
                 transform.position = sniperPosition;
-                ResolveCameraCollision(cameraRig);
+                ResolveCameraCollision(pivotPosition);
                 return;
             }
 
@@ -229,21 +276,21 @@ namespace Game.Scripts.Gameplay.Robots
                 _currentDistance = Mathf.Lerp(_currentDistance, _targetDistance, cameraT);
             }
 
-            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -_currentDistance) + cameraRig.position;
+            Vector3 position = rotation * new Vector3(0.0f, 0.0f, -_currentDistance) + pivotPosition;
 
             transform.rotation = rotation;
             transform.position = position;
-            ResolveCameraCollision(cameraRig);
+            ResolveCameraCollision(pivotPosition);
         }
 
-        private void ResolveCameraCollision(Transform cameraRig)
+        private void ResolveCameraCollision(Vector3 pivotPosition)
         {
-            if (collisionController == null || cameraRig == null)
+            if (collisionController == null)
             {
                 return;
             }
 
-            collisionController.Resolve(cameraRig.position);
+            collisionController.Resolve(pivotPosition);
         }
 
         private void HandleClientDeath(int killerObjectId)
@@ -253,39 +300,46 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            _deathSpectatorActive = true;
-            _deathSpectatorIntroFinished = false;
+            DetachFromVehicleForDeath();
+            _deathSpectatorPhase = DeathSpectatorPhase.KillerIntro;
             _deathSpectatorIntroEndTime = Time.unscaledTime + DeathSpectatorIntroSeconds;
             _pendingKillerObjectId = killerObjectId;
+            CacheSpectatorTeam();
+            SpectatorTeamContext.Capture(_spectatorTeam);
+            RegisterActiveDeathSpectator();
+            ClearSpectatorTarget();
 
             if (IsSniperModeActive)
             {
                 ApplyZoomStep(DefaultZoomStep, true);
             }
 
-            SetSpectatorTarget(vehicleRoot);
             TryResolveKillerTarget();
         }
 
         private void UpdateDeathSpectator()
         {
-            if (!_deathSpectatorIntroFinished)
+            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerIntro)
             {
                 TryResolveKillerTarget();
-                if (Time.unscaledTime < _deathSpectatorIntroEndTime)
+                if (_pendingKillerObjectId < 0 && !IsLiveBattleVehicle(_spectatorTarget))
                 {
+                    EnterDeathWreck();
                     return;
                 }
 
-                _deathSpectatorIntroFinished = true;
-                _pendingKillerObjectId = -1;
-                SetSpectatorTarget(vehicleRoot);
+                if (Time.unscaledTime >= _deathSpectatorIntroEndTime)
+                {
+                    EnterDeathWreck();
+                }
+
                 return;
             }
 
-            if (!VehicleInputController.IsGameplayInputBlockedByUi && Input.GetMouseButtonDown(0))
+            if (_deathSpectatorPhase == DeathSpectatorPhase.AllyFollow
+                && !IsLiveBattleVehicle(_spectatorTarget))
             {
-                CycleSpectatorTarget();
+                EnterDeathWreck();
             }
         }
 
@@ -299,40 +353,76 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _pendingKillerObjectId = -1;
-            SetSpectatorTarget(killerRoot, true);
+            SetSpectatorTarget(killerRoot, DeathSpectatorPhase.KillerIntro, true);
         }
 
-        private void CycleSpectatorTarget()
+        private void CycleSpectatorTargets()
         {
-            int count = VehicleRoot.ActiveVehicleCount;
-            if (count <= 1)
+            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerIntro)
             {
                 return;
             }
 
-            VehicleRoot currentTarget = _spectatorTarget != null ? _spectatorTarget : vehicleRoot;
-            int currentIndex = -1;
-            for (int vehicleIndex = 0; vehicleIndex < count; vehicleIndex++)
+            if (Input.GetMouseButtonDown(0))
             {
-                if (VehicleRoot.GetActiveVehicle(vehicleIndex) == currentTarget)
-                {
-                    currentIndex = vehicleIndex;
-                    break;
-                }
+                CycleSpectatorTarget(1);
             }
 
+            if (Input.GetMouseButtonDown(1))
+            {
+                CycleSpectatorTarget(-1);
+            }
+        }
+
+        private void CycleSpectatorTarget(int direction)
+        {
+            int count = VehicleRoot.ActiveVehicleCount;
+            if (count <= 0)
+            {
+                return;
+            }
+
+            int currentIndex = FindActiveVehicleIndex(_spectatorTarget);
+            int startIndex = currentIndex >= 0
+                ? currentIndex
+                : direction > 0 ? -1 : count;
             for (int offset = 1; offset <= count; offset++)
             {
-                int candidateIndex = (currentIndex + offset + count) % count;
+                int candidateIndex = WrapIndex(startIndex + direction * offset, count);
                 VehicleRoot candidate = VehicleRoot.GetActiveVehicle(candidateIndex);
                 if (!IsSpectatorCandidate(candidate))
                 {
                     continue;
                 }
 
-                SetSpectatorTarget(candidate);
+                SetSpectatorTarget(candidate, DeathSpectatorPhase.AllyFollow, false);
                 return;
             }
+        }
+
+        private static int FindActiveVehicleIndex(VehicleRoot target)
+        {
+            if (target == null)
+            {
+                return -1;
+            }
+
+            int count = VehicleRoot.ActiveVehicleCount;
+            for (int vehicleIndex = 0; vehicleIndex < count; vehicleIndex++)
+            {
+                if (VehicleRoot.GetActiveVehicle(vehicleIndex) == target)
+                {
+                    return vehicleIndex;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int WrapIndex(int index, int count)
+        {
+            int wrapped = index % count;
+            return wrapped < 0 ? wrapped + count : wrapped;
         }
 
         private static bool IsLiveBattleVehicle(VehicleRoot candidate)
@@ -347,28 +437,38 @@ namespace Game.Scripts.Gameplay.Robots
 
         private bool IsSpectatorCandidate(VehicleRoot candidate)
         {
-            if (!IsLiveBattleVehicle(candidate) || vehicleRoot == null)
+            if (!IsLiveBattleVehicle(candidate))
             {
                 return false;
             }
 
-            if (vehicleRoot.characterInit == null || candidate.characterInit == null)
+            CacheSpectatorTeam();
+            if (!MatchTeamUtility.IsAssigned(_spectatorTeam) || candidate.characterInit == null)
             {
                 return false;
             }
 
             return MatchTeamUtility.AreSameAssignedTeam(
-                vehicleRoot.characterInit.Team.Value,
+                _spectatorTeam,
                 candidate.characterInit.Team.Value);
+        }
+
+        private void CacheSpectatorTeam()
+        {
+            if (vehicleRoot == null || vehicleRoot.characterInit == null)
+            {
+                return;
+            }
+
+            MatchTeam team = vehicleRoot.characterInit.Team.Value;
+            if (MatchTeamUtility.IsAssigned(team))
+            {
+                _spectatorTeam = team;
+            }
         }
 
         private bool IsAllowedSpectatorTarget(VehicleRoot target, bool allowAutomaticKillerTarget)
         {
-            if (target == vehicleRoot)
-            {
-                return IsValidBattleVehicle(target);
-            }
-
             if (allowAutomaticKillerTarget)
             {
                 return IsLiveBattleVehicle(target);
@@ -377,24 +477,14 @@ namespace Game.Scripts.Gameplay.Robots
             return IsSpectatorCandidate(target);
         }
 
-        private static bool IsValidBattleVehicle(VehicleRoot candidate)
+        private void SetSpectatorTarget(
+            VehicleRoot target,
+            DeathSpectatorPhase phase,
+            bool allowAutomaticKillerTarget)
         {
-            return candidate != null
-                   && !candidate.IsMenu
-                   && candidate.health != null
-                   && candidate.networkObject != null
-                   && candidate.networkObject.IsSpawned;
-        }
-
-        private void SetSpectatorTarget(VehicleRoot target, bool allowAutomaticKillerTarget = false)
-        {
-            if (!IsAllowedSpectatorTarget(target, allowAutomaticKillerTarget))
+            if (target == null || !IsAllowedSpectatorTarget(target, allowAutomaticKillerTarget))
             {
-                target = vehicleRoot;
-            }
-
-            if (target == null)
-            {
+                EnterDeathWreck();
                 return;
             }
 
@@ -404,8 +494,10 @@ namespace Game.Scripts.Gameplay.Robots
                 _spectatorCanvasTarget.vehicleHUD.SetWorldCanvasHidden(false);
             }
 
+            UpdateSpectatorVisibilityOverride(phase == DeathSpectatorPhase.KillerIntro ? target : null);
             _spectatorTarget = target;
             _spectatorCanvasTarget = target;
+            _deathSpectatorPhase = phase;
             if (target.vehicleHUD != null)
             {
                 target.vehicleHUD.SetWorldCanvasHidden(true);
@@ -427,11 +519,95 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
+        private void EnterDeathWreck()
+        {
+            _pendingKillerObjectId = -1;
+            ClearSpectatorTarget();
+            _deathSpectatorPhase = DeathSpectatorPhase.DeathWreck;
+        }
+
+        private void ClearSpectatorTarget()
+        {
+            if (_spectatorCanvasTarget != null && _spectatorCanvasTarget.vehicleHUD != null)
+            {
+                _spectatorCanvasTarget.vehicleHUD.SetWorldCanvasHidden(false);
+            }
+
+            UpdateSpectatorVisibilityOverride(null);
+            bool changed = _spectatorTarget != null || _spectatorCanvasTarget != null;
+            _spectatorTarget = null;
+            _spectatorCanvasTarget = null;
+            if (changed)
+            {
+                SpectatorTargetChanged?.Invoke(null);
+            }
+        }
+
+        private void UpdateSpectatorVisibilityOverride(VehicleRoot target)
+        {
+            if (_spectatorVisibilityTarget != null && _spectatorVisibilityTarget != target
+                && _spectatorVisibilityTarget.clientVisibility != null)
+            {
+                _spectatorVisibilityTarget.clientVisibility.SetSpectatorVisibility(false);
+            }
+
+            _spectatorVisibilityTarget = target;
+            if (target != null && target.clientVisibility != null)
+            {
+                target.clientVisibility.SetSpectatorVisibility(true);
+            }
+        }
+
+        private void RegisterActiveDeathSpectator()
+        {
+            if (_activeDeathSpectator == this)
+            {
+                return;
+            }
+
+            _activeDeathSpectator = this;
+            DeathSpectatorCameraChanged?.Invoke(this);
+        }
+
+        private void EndDeathSpectator()
+        {
+            ClearSpectatorTarget();
+            _pendingKillerObjectId = -1;
+            _deathSpectatorPhase = DeathSpectatorPhase.Inactive;
+            SpectatorTeamContext.Clear();
+            ReleaseDeathWreckRig();
+        }
+
+        private void ReleaseDeathWreckRig()
+        {
+            Transform deathWreckRig = _deathWreckRig;
+            _deathWreckRig = null;
+            _deathFallbackPoseCaptured = false;
+            _deathFallbackPosition = default;
+            if (deathWreckRig != null && deathWreckRig != transform)
+            {
+                Destroy(deathWreckRig.gameObject);
+            }
+        }
+
         private Transform GetCameraRig()
         {
-            if (_deathSpectatorActive)
+            if (IsDeathSpectatorActive)
             {
-                return GetTargetRig(_spectatorTarget);
+                if (_deathSpectatorPhase == DeathSpectatorPhase.KillerIntro
+                    || _deathSpectatorPhase == DeathSpectatorPhase.AllyFollow)
+                {
+                    if (IsLiveBattleVehicle(_spectatorTarget))
+                    {
+                        Transform spectatorRig = GetTargetRig(_spectatorTarget);
+                        if (spectatorRig != null)
+                        {
+                            return spectatorRig;
+                        }
+                    }
+                }
+
+                return _deathWreckRig != null ? _deathWreckRig : transform;
             }
 
             return rig;
@@ -564,6 +740,7 @@ namespace Game.Scripts.Gameplay.Robots
         private void UpdateDeathSpectatorInputs()
         {
             UpdateOrbitInputs();
+            CycleSpectatorTargets();
 
             int scrollDirection = GetScrollDirection();
             if (scrollDirection < 0)

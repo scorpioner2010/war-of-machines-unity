@@ -2,6 +2,7 @@ using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.UI.Loading;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -14,6 +15,8 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private Button resumeButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button disconnectButton;
+        [SerializeField] private Button autonomousControlButton;
+        [SerializeField] private TMP_Text autonomousControlButtonLabel;
 
         private bool _registered;
 
@@ -31,6 +34,12 @@ namespace Game.Scripts.UI.HUD
             {
                 disconnectButton.onClick.AddListener(DisconnectButtonPressed);
             }
+            if (autonomousControlButton != null)
+            {
+                autonomousControlButton.onClick.AddListener(AutonomousControlButtonPressed);
+            }
+
+            RefreshAutonomousControlButton();
         }
 
         private void Start()
@@ -51,6 +60,10 @@ namespace Game.Scripts.UI.HUD
             if (disconnectButton != null)
             {
                 disconnectButton.onClick.RemoveListener(DisconnectButtonPressed);
+            }
+            if (autonomousControlButton != null)
+            {
+                autonomousControlButton.onClick.RemoveListener(AutonomousControlButtonPressed);
             }
         }
         
@@ -100,6 +113,19 @@ namespace Game.Scripts.UI.HUD
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
+
+        private void AutonomousControlButtonPressed()
+        {
+            VehicleRoot localVehicle = VehicleRoot.LocalPlayerVehicle;
+            VehicleInputController inputController = localVehicle != null ? localVehicle.inputManager : null;
+            if (inputController == null)
+            {
+                return;
+            }
+
+            inputController.RequestAutonomousControl(!inputController.IsAutonomous);
+            ResumeButtonPressed();
+        }
         
         public void OpenPause()
         {
@@ -115,6 +141,8 @@ namespace Game.Scripts.UI.HUD
         
         private void Update()
         {
+            RefreshAutonomousControlButton();
+
             if (IsVehicleTestLoaded())
             {
                 return;
@@ -139,6 +167,27 @@ namespace Game.Scripts.UI.HUD
                 {
                     OpenPause();
                 }
+            }
+        }
+
+        private void RefreshAutonomousControlButton()
+        {
+            if (autonomousControlButton == null)
+            {
+                return;
+            }
+
+            VehicleRoot localVehicle = VehicleRoot.LocalPlayerVehicle;
+            VehicleInputController inputController = localVehicle != null ? localVehicle.inputManager : null;
+            bool hasAliveVehicle = inputController != null
+                                   && (localVehicle.health == null || !localVehicle.health.IsDead);
+            autonomousControlButton.interactable = hasAliveVehicle;
+
+            if (autonomousControlButtonLabel != null)
+            {
+                autonomousControlButtonLabel.text = inputController != null && inputController.IsAutonomous
+                    ? "ВИМКНУТИ АВТОУПРАВЛІННЯ"
+                    : "УВІМКНУТИ АВТОУПРАВЛІННЯ";
             }
         }
 

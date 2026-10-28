@@ -189,6 +189,15 @@ namespace Game.Scripts.Gameplay.Robots
             SetCollidersEnabled(false);
             OnServerDeath?.Invoke(this);
             DiedObserversRpc(killerObjectId);
+            if (ShouldDespawnAfterDeath(IsServerInitialized, IsSpawned))
+            {
+                Despawn();
+            }
+        }
+
+        internal static bool ShouldDespawnAfterDeath(bool isServerInitialized, bool isSpawned)
+        {
+            return isServerInitialized && isSpawned;
         }
         
         private void SetCollidersEnabled(bool v)

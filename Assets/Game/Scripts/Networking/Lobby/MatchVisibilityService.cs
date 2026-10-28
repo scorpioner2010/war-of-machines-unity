@@ -43,6 +43,8 @@ namespace Game.Scripts.Networking.Lobby
         private readonly List<long> _expiredLineOfSightKeys = new List<long>(64);
         private readonly TeamVisibilityState _teamA = new TeamVisibilityState(MatchTeam.TeamA);
         private readonly TeamVisibilityState _teamB = new TeamVisibilityState(MatchTeam.TeamB);
+        private readonly MatchVisibilitySnapshotRecipients _snapshotRecipients =
+            new MatchVisibilitySnapshotRecipients();
 
         private ServerRoom _room;
         private float _nextTickTime;
@@ -405,6 +407,9 @@ namespace Game.Scripts.Networking.Lobby
 
         private void UpdateTeamSpotting(float now, MatchVisibilityGlobalSettings settings)
         {
+            float memorySeconds = Mathf.Max(0f, settings.spottedMemorySeconds);
+            _teamA.PruneSpotterLinks(_participants, now, memorySeconds);
+            _teamB.PruneSpotterLinks(_participants, now, memorySeconds);
             _teamA.BeginFrame();
             _teamB.BeginFrame();
 
@@ -412,14 +417,23 @@ namespace Game.Scripts.Networking.Lobby
             int maintenanceBudget = Mathf.Max(1, lineOfSightChecksRemaining / 3);
             int maintenanceChecksRemaining = maintenanceBudget;
             int pairCursor = GetNormalizedPairCursor();
-            UpdateTeamSpottingPass(now, settings, true, ref maintenanceChecksRemaining, ref pairCursor);
+            UpdateTeamSpottingPass(
+                now,
+                settings,
+                memorySeconds,
+                true,
+                ref maintenanceChecksRemaining,
+                ref pairCursor);
             lineOfSightChecksRemaining -= maintenanceBudget - maintenanceChecksRemaining;
-            UpdateTeamSpottingPass(now, settings, false, ref lineOfSightChecksRemaining, ref pairCursor);
+            UpdateTeamSpottingPass(
+                now,
+                settings,
+                memorySeconds,
+                false,
+                ref lineOfSightChecksRemaining,
+                ref pairCursor);
             _spottingPairCursor = pairCursor;
 
-            float memorySeconds = Mathf.Max(0f, settings.spottedMemorySeconds);
-            _teamA.EndFrame(now, memorySeconds);
-            _teamB.EndFrame(now, memorySeconds);
             _teamA.RemoveExpired(now);
             _teamB.RemoveExpired(now);
             RemoveStaleLineOfSightCache(now, settings);
@@ -428,6 +442,7 @@ namespace Game.Scripts.Networking.Lobby
         private void UpdateTeamSpottingPass(
             float now,
             MatchVisibilityGlobalSettings settings,
+            float memorySeconds,
             bool previouslySpottedTargets,
             ref int lineOfSightChecksRemaining,
             ref int pairCursor)
@@ -468,16 +483,25 @@ namespace Game.Scripts.Networking.Lobby
                     continue;
                 }
 
-                if (spotterTeam.WasDirectlySpotted(target.ObjectId) != previouslySpottedTargets
-                    || spotterTeam.IsDirectlySpotted(target.ObjectId))
+                if (spotterTeam.WasDirectlySpotted(target.ObjectId) != previouslySpottedTargets)
                 {
                     continue;
                 }
 
-                if (CanSpot(spotter, target, settings, now, ref lineOfSightChecksRemaining))
+                if (!previouslySpottedTargets && spotterTeam.IsDirectlySpotted(target.ObjectId))
                 {
-                    spotterTeam.MarkSpotted(target.ObjectId, target.Position, target.Yaw);
+                    continue;
                 }
+
+                bool visible = CanSpot(spotter, target, settings, now, ref lineOfSightChecksRemaining);
+                spotterTeam.SetSpotterVisibility(
+                    target.ObjectId,
+                    spotter.ObjectId,
+                    visible,
+                    target.Position,
+                    target.Yaw,
+                    now,
+                    memorySeconds);
 
                 if (lineOfSightChecksRemaining <= 0)
                 {
@@ -748,67 +772,31 @@ namespace Game.Scripts.Networking.Lobby
 
         private void SendSnapshots(IMatchVisibilityUpdateSink updateSink)
         {
-            for (int i = 0; i < _participants.Count; i++)
-            {
-                VisibilityParticipant participant = _participants[i];
-                if (participant.Player == null
-                    || participant.Player.isBot
-                    || participant.Player.leftBattle
-                    || participant.Connection == null
-                    || !participant.Connection.IsActive)
-                {
-                    continue;
-                }
-
-                TeamVisibilityState teamState = GetTeamState(participant.Team);
-                if (teamState == null)
-                {
-                    continue;
-                }
-
-                updateSink.SendMapVisibility(
-                    participant.Connection,
-                    teamState.Version,
-                    teamState.Count,
-                    teamState.ObjectIds,
-                    teamState.Relations,
-                    teamState.Positions,
-                    teamState.Yaws,
-                    teamState.RemainingVisibilitySeconds);
-            }
+            _snapshotRecipients.SendSnapshots(
+                _room,
+                updateSink,
+                CreateSnapshot(_teamA),
+                CreateSnapshot(_teamB));
         }
 
         private void SendEmptySnapshots(IMatchVisibilityUpdateSink updateSink)
         {
-            if (_room == null)
-            {
-                return;
-            }
-
             _version++;
-            List<Player> players = _room.GetPlayers();
-            for (int i = 0; i < players.Count; i++)
-            {
-                Player player = players[i];
-                if (player == null
-                    || player.isBot
-                    || player.leftBattle
-                    || player.Connection == null
-                    || !player.Connection.IsActive)
-                {
-                    continue;
-                }
+            _snapshotRecipients.SendEmptySnapshots(_room, updateSink, _version);
+        }
 
-                updateSink.SendMapVisibility(
-                    player.Connection,
-                    _version,
-                    0,
-                    Array.Empty<int>(),
-                    Array.Empty<byte>(),
-                    Array.Empty<Vector3>(),
-                    Array.Empty<float>(),
-                    Array.Empty<float>());
-            }
+        private static MatchVisibilitySnapshot CreateSnapshot(TeamVisibilityState teamState)
+        {
+            return new MatchVisibilitySnapshot
+            {
+                Version = teamState.Version,
+                Count = teamState.Count,
+                ObjectIds = teamState.ObjectIds,
+                Relations = teamState.Relations,
+                Positions = teamState.Positions,
+                Yaws = teamState.Yaws,
+                RemainingVisibilitySeconds = teamState.RemainingVisibilitySeconds
+            };
         }
 
         private TeamVisibilityState GetTeamState(MatchTeam team)
@@ -891,8 +879,12 @@ namespace Game.Scripts.Networking.Lobby
         {
             private readonly HashSet<int> _directlySpottedObjectIds = new HashSet<int>();
             private readonly HashSet<int> _previouslyDirectlySpottedObjectIds = new HashSet<int>();
+            private readonly Dictionary<int, HashSet<int>> _directSpotterObjectIdsByTarget =
+                new Dictionary<int, HashSet<int>>(16);
             private readonly Dictionary<int, SpottedMemoryState> _spottedMemory = new Dictionary<int, SpottedMemoryState>(16);
             private readonly List<int> _expiredObjectIds = new List<int>(16);
+            private readonly List<int> _staleDirectTargetIds = new List<int>(16);
+            private readonly List<int> _staleSpotterObjectIds = new List<int>(16);
 
             public readonly MatchTeam Team;
             public int Version;
@@ -915,34 +907,173 @@ namespace Game.Scripts.Networking.Lobby
                 {
                     _previouslyDirectlySpottedObjectIds.Add(objectId);
                 }
-
-                _directlySpottedObjectIds.Clear();
             }
 
-            public void MarkSpotted(int objectId, Vector3 position, float yaw)
+            public void SetSpotterVisibility(
+                int targetObjectId,
+                int spotterObjectId,
+                bool visible,
+                Vector3 position,
+                float yaw,
+                float now,
+                float memorySeconds)
             {
-                _directlySpottedObjectIds.Add(objectId);
-                _spottedMemory[objectId] = new SpottedMemoryState
+                if (visible)
                 {
-                    VisibleUntil = float.PositiveInfinity,
-                    LastKnownPosition = position,
-                    LastKnownYaw = yaw
-                };
+                    if (!_directSpotterObjectIdsByTarget.TryGetValue(
+                            targetObjectId,
+                            out HashSet<int> spotterObjectIds))
+                    {
+                        spotterObjectIds = new HashSet<int>();
+                        _directSpotterObjectIdsByTarget.Add(targetObjectId, spotterObjectIds);
+                    }
+
+                    spotterObjectIds.Add(spotterObjectId);
+                    _directlySpottedObjectIds.Add(targetObjectId);
+                    _spottedMemory[targetObjectId] = new SpottedMemoryState
+                    {
+                        VisibleUntil = float.PositiveInfinity,
+                        LastKnownPosition = position,
+                        LastKnownYaw = yaw
+                    };
+                    return;
+                }
+
+                if (!_directSpotterObjectIdsByTarget.TryGetValue(
+                        targetObjectId,
+                        out HashSet<int> existingSpotterObjectIds)
+                    || !existingSpotterObjectIds.Remove(spotterObjectId)
+                    || existingSpotterObjectIds.Count > 0)
+                {
+                    return;
+                }
+
+                _directSpotterObjectIdsByTarget.Remove(targetObjectId);
+                if (!_directlySpottedObjectIds.Remove(targetObjectId))
+                {
+                    return;
+                }
+
+                SetSpottedMemory(targetObjectId, now, memorySeconds);
             }
 
-            public void EndFrame(float now, float memorySeconds)
+            public void PruneSpotterLinks(
+                List<VisibilityParticipant> participants,
+                float now,
+                float memorySeconds)
             {
-                foreach (int objectId in _previouslyDirectlySpottedObjectIds)
+                _staleDirectTargetIds.Clear();
+                foreach (KeyValuePair<int, HashSet<int>> targetPair in _directSpotterObjectIdsByTarget)
                 {
-                    if (_directlySpottedObjectIds.Contains(objectId)
-                        || !_spottedMemory.TryGetValue(objectId, out SpottedMemoryState state))
+                    if (!ContainsTarget(participants, targetPair.Key))
+                    {
+                        _staleDirectTargetIds.Add(targetPair.Key);
+                        continue;
+                    }
+
+                    HashSet<int> spotterObjectIds = targetPair.Value;
+                    _staleSpotterObjectIds.Clear();
+                    foreach (int spotterObjectId in spotterObjectIds)
+                    {
+                        if (!ContainsLiveSpotter(participants, spotterObjectId))
+                        {
+                            _staleSpotterObjectIds.Add(spotterObjectId);
+                        }
+                    }
+
+                    for (int i = 0; i < _staleSpotterObjectIds.Count; i++)
+                    {
+                        spotterObjectIds.Remove(_staleSpotterObjectIds[i]);
+                    }
+
+                    if (spotterObjectIds.Count == 0)
+                    {
+                        _staleDirectTargetIds.Add(targetPair.Key);
+                    }
+                }
+
+                for (int i = 0; i < _staleDirectTargetIds.Count; i++)
+                {
+                    int targetObjectId = _staleDirectTargetIds[i];
+                    _directSpotterObjectIdsByTarget.Remove(targetObjectId);
+                    if (_directlySpottedObjectIds.Remove(targetObjectId))
+                    {
+                        if (ContainsTarget(participants, targetObjectId))
+                        {
+                            SetSpottedMemory(targetObjectId, now, memorySeconds);
+                        }
+                        else
+                        {
+                            _spottedMemory.Remove(targetObjectId);
+                        }
+                    }
+                }
+
+                _expiredObjectIds.Clear();
+                foreach (KeyValuePair<int, SpottedMemoryState> memoryPair in _spottedMemory)
+                {
+                    if (!ContainsTarget(participants, memoryPair.Key))
+                    {
+                        _expiredObjectIds.Add(memoryPair.Key);
+                    }
+                }
+
+                for (int i = 0; i < _expiredObjectIds.Count; i++)
+                {
+                    _spottedMemory.Remove(_expiredObjectIds[i]);
+                }
+
+                _staleDirectTargetIds.Clear();
+                _staleSpotterObjectIds.Clear();
+                _expiredObjectIds.Clear();
+            }
+
+            private bool ContainsTarget(List<VisibilityParticipant> participants, int objectId)
+            {
+                for (int i = 0; i < participants.Count; i++)
+                {
+                    VisibilityParticipant participant = participants[i];
+                    if (participant.ObjectId == objectId
+                        && participant.Player != null
+                        && !participant.Player.leftBattle
+                        && MatchTeamUtility.AreOpposingAssignedTeams(Team, participant.Team))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private bool ContainsLiveSpotter(List<VisibilityParticipant> participants, int objectId)
+            {
+                for (int i = 0; i < participants.Count; i++)
+                {
+                    VisibilityParticipant participant = participants[i];
+                    if (participant.ObjectId != objectId
+                        || participant.Team != Team
+                        || participant.IsDead
+                        || participant.Player == null
+                        || participant.Player.leftBattle)
                     {
                         continue;
                     }
 
-                    state.VisibleUntil = now + memorySeconds;
-                    _spottedMemory[objectId] = state;
+                    return true;
                 }
+
+                return false;
+            }
+
+            private void SetSpottedMemory(int objectId, float now, float memorySeconds)
+            {
+                if (!_spottedMemory.TryGetValue(objectId, out SpottedMemoryState state))
+                {
+                    state = new SpottedMemoryState();
+                }
+
+                state.VisibleUntil = now + memorySeconds;
+                _spottedMemory[objectId] = state;
             }
 
             public bool WasDirectlySpotted(int objectId)
@@ -1055,8 +1186,11 @@ namespace Game.Scripts.Networking.Lobby
                 Count = 0;
                 _directlySpottedObjectIds.Clear();
                 _previouslyDirectlySpottedObjectIds.Clear();
+                _directSpotterObjectIdsByTarget.Clear();
                 _spottedMemory.Clear();
                 _expiredObjectIds.Clear();
+                _staleDirectTargetIds.Clear();
+                _staleSpotterObjectIds.Clear();
                 ObjectIds = Array.Empty<int>();
                 Relations = Array.Empty<byte>();
                 Positions = Array.Empty<Vector3>();

@@ -16,9 +16,11 @@ Current owner scripts:
   - Server/client additive scene load flow, scene slot reservation, spawn lifecycle, visibility ticking, disconnect handling.
   - Ticks `ServerRoom.Visibility` for active matches so player map HUDs and bots share the same logical map spotting state.
   - In the editor-only Client vehicle test path, `StartEditorTestMatch` registers the prepared test room as an active match, starts its visibility service, and spawns the normal network gameplay timer without changing the production match path.
-  - Sends unreliable visibility snapshots with a monotonic state version, FishNet server tick, and per-entry remaining lifetime. The client uses the tick to subtract packet age before applying a deadline.
-  - Receives `VehicleHealth.OnServerDeath` to evaluate battle end. Dead vehicle roots and their registered Chassis debris remain spawned for the active map so clients can spectate them and server bots can avoid them; map unload owns final cleanup.
-  - `DamageService` passes the authoritative attacker root into `VehicleHealth`, which forwards the killer network object id in the observer death event for the local death camera. Battle-end delivery remains connection/`leftBattle` driven and does not depend on destroying the vehicle object.
+  - Sends reliable ordered visibility snapshots with a monotonic state version, FishNet server tick, and per-entry remaining lifetime. The client uses the tick to subtract packet age before applying a deadline; this prevents a direct `Enemy` transition from being lost while an authoritative bot is already firing.
+- `Assets/Game/Scripts/Networking/Lobby/MatchVisibilitySnapshotRecipients.cs`
+  - Owns visibility snapshot recipient selection separately from spotting participant construction. It sends each team snapshot to active real-player connections using the persistent `Player.team`, including a dead player whose network `playerRoot` has already despawned; the dead root is never reintroduced as a server spotting participant.
+  - Receives `VehicleHealth.OnServerDeath` to evaluate battle end. `VehicleHealth` then despawns the dead vehicle `NetworkObject` immediately; only observer clients keep the detached Chassis debris as local map-scoped physics objects, while the server keeps no dead root or debris simulation alive.
+  - `DamageService` passes the authoritative attacker root into `VehicleHealth`, which forwards the killer network object id in the observer death event for the local death camera. Battle-end delivery remains connection/`leftBattle` driven and does not require the dead root to remain spawned.
   - When the last real player disconnects from a spawned/loading match, finishes the match as a draw, unloads that match scene on the server without affecting other room instances, and removes the room after result delivery. This prevents abandoned bot vehicles and their AI from accumulating across reconnects.
   - At battle end, receives the per-user result built by `MatchResultService` and delivers it directly or queues it in `PendingBattleResults` until that same `userId` reconnects.
 - `Assets/Game/Scripts/Networking/Lobby/MatchResultService.cs`
@@ -30,9 +32,10 @@ Current owner scripts:
   - Builds team visibility from room participants, view range, line of sight, and spotted memory.
   - Sends snapshots to real players only, but also exposes server-side `MatchVisibleEnemy` results for bot target acquisition and last-known-position navigation.
   - Marks whether a visible enemy is directly spotted or memory-only so bots do not shoot using hidden live transforms.
-  - Emits `MapVehicleVisibilityRelation.Enemy` for direct team spotting and `EnemyLastKnown` for spotted-memory entries. Both relations keep the client map marker and 3D vehicle visible; both disappear together when spotted memory expires.
-  - Starts `spottedMemorySeconds` once on the confirmed direct-spotted to hidden transition instead of refreshing an approximate expiry on every visible tick.
-  - Prioritizes rechecks for targets that were directly spotted on the previous visibility frame. An exhausted raycast budget may reuse the last positive cached result, but does not convert a known visible target into a false hidden result.
+  - Emits `MapVehicleVisibilityRelation.Enemy` for direct team spotting and `EnemyLastKnown` for spotted-memory entries. Both relations keep the client map marker, but only `Enemy` keeps the live 3D vehicle visible; `EnemyLastKnown` is map-only until direct spotting returns or memory expires.
+  - Tracks the direct spotting source object IDs for each target, so team visibility is the union of all valid allied spotters. Losing one ally's line of sight does not hide an enemy still seen by another ally.
+  - Starts `spottedMemorySeconds` only after every tracked direct spotting source is lost. A raycast-budget-limited pair keeps its last result until that pair is actually evaluated, preventing an unprocessed pair from becoming a false hidden transition.
+  - Prioritizes rechecks for targets that were directly spotted on the previous visibility frame, while the circular pair cursor and shared raycast budget still control new acquisition throughput.
   - `guaranteedDetectionRange` bypasses the vehicle view-range limit only. When line of sight is required, terrain and walls still block spotting at close range.
 - `Assets/Game/Scripts/Networking/Lobby/MatchVehicleSpawner.cs`
   - Spawns player and bot vehicles in loaded match scenes.
@@ -85,8 +88,13 @@ Rules when editing match/spawn:
 - Keep room state authoritative on server.
 - Do not use global scene searches for runtime player/bot lookup; use room/player references.
 - Preserve additive scene slot/offset behavior for multiple concurrent matches.
-- Keep direct spotting and spotted memory as separate relations for map-position semantics, but treat both as visible in the client vehicle presenter so the model and map marker disappear on the same snapshot update.
-- Keep visibility snapshot versions monotonic within a match. Client state rejects older unreliable packets and expires finite enemy entries locally from the server-provided lifetime.
+- Keep direct spotting and spotted memory as separate relations for map-position semantics. The client vehicle presenter renders only direct `Enemy`; `EnemyLastKnown` remains a map marker. Preserve direct spotter links across visibility refreshes when a pair was not evaluated because of the raycast budget, and cache the assigned local team before owner despawn so allied models remain visible while the death spectator camera is active.
+- Keep visibility snapshot versions monotonic within a match. Client state rejects older network packets and expires finite enemy entries locally from the server-provided lifetime.
 - In VehicleTest, do not spawn into an additive map scene until the local owner connection is authenticated, start scenes are loaded, the map has a `SpawnPoint`, and `ownerConnection.Scenes` contains the map scene because FishNet acknowledged that the client loaded it. Do not manually add the connection to the additive map to bypass that acknowledgement.
 - If bots are affected, update `ai-bots.md`.
 - If vehicle prefab contracts change, update `robot-control.md`.
+
+Player auto-control:
+- A real player's robot keeps its normal owner connection and `PlayerType.Player`; only the server-side input source changes when the owner requests autonomous control.
+- The request resolves the active `ServerRoom` from the existing player-to-vehicle mapping, then starts the prefab's configured `VehicleBotBrain`. Disabling stops that brain and clears its external input without despawning or respawning the robot.
+- Visibility snapshots use reliable ordered TargetRpc delivery. The client still rejects stale versions and expires spotted-memory entries locally, but a direct `Enemy` transition cannot be lost as an unreliable packet while bots are already firing from the authoritative state.

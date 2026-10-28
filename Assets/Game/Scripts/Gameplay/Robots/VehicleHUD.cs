@@ -432,27 +432,9 @@ namespace Game.Scripts.Gameplay.Robots
 
         private VehicleHudRelation GetRelationToLocalPlayer()
         {
-            VehicleRoot localPlayer = VehicleRoot.LocalPlayerVehicle;
-            if (vehicleRoot == null || localPlayer == null)
-            {
-                return VehicleHudRelation.Enemy;
-            }
-
-            if (vehicleRoot == localPlayer)
-            {
-                return VehicleHudRelation.Ally;
-            }
-
-            if (vehicleRoot.characterInit == null || localPlayer.characterInit == null)
-            {
-                return VehicleHudRelation.Enemy;
-            }
-
-            MatchTeam localTeam = localPlayer.characterInit.Team.Value;
-            MatchTeam targetTeam = vehicleRoot.characterInit.Team.Value;
-            return MatchTeamUtility.AreSameAssignedTeam(localTeam, targetTeam)
-                ? VehicleHudRelation.Ally
-                : VehicleHudRelation.Enemy;
+            return VehicleTeamRelationResolver.Resolve(vehicleRoot) == VehicleTeamRelation.Enemy
+                ? VehicleHudRelation.Enemy
+                : VehicleHudRelation.Ally;
         }
 
         private void SubscribeToLocalPlayerChange()

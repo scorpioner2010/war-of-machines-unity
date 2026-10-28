@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Game.Scripts.Client;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Networking.Lobby;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -624,25 +623,9 @@ namespace Game.Scripts.UI.HUD
 
         private PlayerListRelation GetRelation(VehicleRoot vehicleRoot)
         {
-            VehicleRoot localPlayer = VehicleRoot.LocalPlayerVehicle;
-            if (localPlayer != null && localPlayer.characterInit != null && vehicleRoot.characterInit != null)
-            {
-                MatchTeam localTeam = localPlayer.characterInit.Team.Value;
-                MatchTeam targetTeam = vehicleRoot.characterInit.Team.Value;
-                if (MatchTeamUtility.IsAssigned(localTeam) && MatchTeamUtility.IsAssigned(targetTeam))
-                {
-                    return MatchTeamUtility.AreSameAssignedTeam(localTeam, targetTeam)
-                        ? PlayerListRelation.Ally
-                        : PlayerListRelation.Enemy;
-                }
-            }
-
-            if (vehicleRoot.characterInit != null && vehicleRoot.characterInit.Team.Value == MatchTeam.TeamB)
-            {
-                return PlayerListRelation.Enemy;
-            }
-
-            return PlayerListRelation.Ally;
+            return VehicleTeamRelationResolver.Resolve(vehicleRoot) == VehicleTeamRelation.Enemy
+                ? PlayerListRelation.Enemy
+                : PlayerListRelation.Ally;
         }
 
         private static bool ShouldTrackVehicle(VehicleRoot vehicleRoot)

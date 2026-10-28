@@ -76,7 +76,8 @@ namespace Game.Scripts.UI.HUD
                 bool shouldShowFullMap = Input.GetKey(_runtimeSettings.mapFullMapKey);
                 SetFullMapVisible(shouldShowFullMap);
 
-                if (_localPlayer == null)
+                bool spectatorActive = CameraController.ActiveDeathSpectator != null;
+                if (_localPlayer == null && !spectatorActive)
                 {
                     SetIconVisible(localPlayerIconMini, false);
                     SetIconVisible(localPlayerIconFull, false);
@@ -86,13 +87,22 @@ namespace Game.Scripts.UI.HUD
 
                 RefreshTrackedVehiclesIfNeeded();
 
-                Transform trackedTransform = GetTrackedTransform(_localPlayer);
-                Vector3 worldPosition = trackedTransform.position;
-                float yaw = trackedTransform.eulerAngles.y;
+                if (_localPlayer != null)
+                {
+                    Transform trackedTransform = GetTrackedTransform(_localPlayer);
+                    Vector3 worldPosition = trackedTransform.position;
+                    float yaw = trackedTransform.eulerAngles.y;
 
-                UpdateIcon(_miniMapRect, localPlayerIconMini, worldPosition, yaw, true);
-                UpdateIcon(_fullMapRect, localPlayerIconFull, worldPosition, yaw, _fullMapVisible);
-                ApplyLocalPlayerIconColor();
+                    UpdateIcon(_miniMapRect, localPlayerIconMini, worldPosition, yaw, true);
+                    UpdateIcon(_fullMapRect, localPlayerIconFull, worldPosition, yaw, _fullMapVisible);
+                    ApplyLocalPlayerIconColor();
+                }
+                else
+                {
+                    SetIconVisible(localPlayerIconMini, false);
+                    SetIconVisible(localPlayerIconFull, false);
+                }
+
                 UpdateTrackedVehicleIcons();
                 BringLocalPlayerIconsToFront();
             }

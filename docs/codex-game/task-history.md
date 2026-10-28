@@ -1,7 +1,87 @@
 # Codex Task History
 
-### 2026-10-27 - Fix NameCanvas CanvasGroup wiring on robot prefabs
+### 2026-10-28 - Git implementation test run started
 - Status: `IN_PROGRESS`
+- Scope: validate HEAD `426c955f` bot-combat behavior plus the related current bot/spectator/death regression suites without changing gameplay source.
+- Planned checks: production and PlayMode C# builds, focused Unity PlayMode XML/log results, and working-tree side-effect audit.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Gameplay diff cleanup audit completed
+- Status: `COMPLETED`
+- Scope: audited HEAD `426c955f` plus the related uncommitted gameplay diff and removed only proven dead/duplicate code.
+- Cleanup: simplified the bot hold helper contract, removed duplicate spectator visibility cleanup, removed the unused spectator context flag, removed the transport-unused snapshot team field, and removed redundant regression assertions.
+- Verification: production and PlayMode C# builds passed; Unity PlayMode filters passed spectator `2/2`, bot AI `13/13`, and death-camera `7/7`; `git diff --check` passed. No live smoke was required because runtime behavior was intentionally unchanged.
+- Rollback: no commit/reset/revert was performed; the cleanup remains in the working-tree diff for review or selective rollback.
+
+### 2026-10-28 - Gameplay diff cleanup audit started
+- Status: `IN_PROGRESS`
+- Scope: audit the latest bot-combat commit and related uncommitted gameplay fixes for dead, duplicated, or misleading code without reverting intentional behavior or user changes.
+- Guardrails: identify commit/worktree boundaries first, preserve serialized/runtime dependencies, make only evidence-backed behavior-neutral cleanup, and validate with focused builds/tests.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Spectator team context and post-death visibility fix started
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: keep the dead spectator's team identity, team-scoped visibility snapshots, and ally HP colors correct after the local network vehicle despawns.
+- Confirmed causes: HP presenters infer `Enemy` when `LocalPlayerVehicle` is null; the server visibility participant list removes the dead player root, so its connection stops receiving team snapshots even though bots still use the server team state.
+- Architecture requirement: separate spectator team context, visibility recipients, and HUD team-relation resolution into focused owners instead of extending camera, visibility, and HUD classes with unrelated state.
+- Implementation: `SpectatorTeamContext` preserves the cached team for spectator UI, `VehicleTeamRelationResolver` centralizes ally/enemy presentation, and `MatchVisibilitySnapshotRecipients` sends team snapshots to active real-player connections even when the player's network root has despawned. The dead root remains excluded from spotting calculations.
+- Verification: production and PlayMode C# builds pass with `0` errors; new spectator/team tests pass `2/2`; bot/visibility tests pass `13/13`; death-camera tests pass `7/7`; `git diff --check` passes. A fresh live visual smoke test remains.
+- Next: run the live Client/Server reproduction and confirm ally HP colors and direct enemy rendering visually after death.
+- Detail: active implementation and verification record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Spectator camera loss and invisible enemy investigation started
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: investigate the live report that spectator camera leaves the map after a killer target disappears and allied bots appear to fire at enemies whose 3D models are hidden.
+- Live observation: Unity Client GameView showed an empty grey camera view with active battle HUD; a cycle attempt occurred as the battle ended. Code audit found the camera fallback could return a destroyed serialized rig instead of the detached `CameraPoint` pivot, while visibility intentionally hides `EnemyLastKnown` models and bot fire requires direct visibility plus clear line of fire.
+- Root cause/fix: the old death detach parented `CameraRig` under the moving camera, creating a feedback loop that accumulated orbit displacement into camera flight. The rig now detaches to scene root, the death pivot is captured, destroyed targets transition to `DeathWreck`, and fallback rendering uses the captured pivot. Reliable ordered visibility snapshots prevent a direct `Enemy` state from being dropped while authoritative bots fire; `EnemyLastKnown` remains map-only.
+- Verification: production and test C# builds pass with `0` errors; death-spectator PlayMode coverage passes `7/7`; bot/visibility regression coverage passes `13/13`; `git diff --check` passes. Full camera-class coverage is `16/17` because one unrelated pre-existing scene serialization assertion fails.
+- Next: perform one fresh live Client/Server visual smoke test after the final patch, covering killer disappearance, camera fallback, ally cycling, direct spotting, and occlusion.
+- Detail: active implementation and verification record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Autonomous bot visual aim versus damage investigation started
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: reproduce the report that autonomous control damages enemies while the turret and gun appear not to aim at them; identify whether server aim state, client presentation, fire validation, or projectile direction diverges.
+- Acceptance: reproduce with an automated or live scenario, identify the exact owner and data path, make visual turret/gun direction agree with authoritative shot direction without weakening server validation, add focused regression coverage and mechanic documentation, and rerun builds/tests.
+- Root cause: autonomous mode blocked the owner `VehicleInputController.Update`, so the server bot continued to resolve and fire with authoritative aim while yaw/pitch/aim point were not synchronized to the owner or remote observers. Damage was correct because projectile and hit validation remained server-side; the visible turret and gun stayed on the last manual target.
+- Implementation: `VehicleInputController` now replicates authoritative yaw, pitch, aim point, and forward and applies that state to owner/observer presentation. Remote turret/gun controllers accept the replicated target while preserving server authority, reload, dispersion, line-of-fire, and damage rules. The follow-up audit found that the server shot path still used the desired target pitch instead of the physical smoothed gun direction; the corrected path now uses the actual gun transform and bot readiness checks the same direction.
+- Verification: Unity batch PlayMode `Game.Tests.PlayMode.BotAiRegressionPlayModeTests` passed `13/13`, including the physical-direction regression; both C# builds passed with `0` errors; `git diff --check` passed; fresh Windows Server+Client builds completed successfully. The prior live smoke confirmed autonomous HUD, movement, turret rotation, and a normal `03:04` battle completion without freeze/camera failure. The 10v9 harness was retried with a dedicated server but stopped at its `VehicleTest` host/client readiness precondition before spawning bots, so it is an environment limitation rather than a failed aim assertion. A manual exposed-target visual run remains recommended.
+- Detail: active implementation and verification record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Visibility flicker fix verification handoff
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Summary: preserved direct visibility per allied spotting source in `MatchVisibilityService`; focused PlayMode coverage passes `11/11`, with a fresh live smoke test still recommended.
+- Detail: archived in `docs/codex-game/task-handoff.md`; the active task is now autonomous bot aim/fire debugging.
+
+### 2026-10-28 - Visibility flicker regression investigation started
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: remove enemy 3D visibility flicker caused by the raycast-budget spotting pass clearing direct visibility before every refresh; preserve team-shared spotting and map-only `EnemyLastKnown` memory.
+- Root cause recorded: commit `10c9ad2a4` introduced circular pair-budget scanning, but `_directlySpottedObjectIds` was still cleared each tick, so pairs not reached in that tick were serialized as `EnemyLastKnown` until reacquired.
+- Implementation: `MatchVisibilityService` now preserves per-target direct spotter links across budget-deferred refreshes and transitions to memory only after all valid sources are lost. Added multi-source regression coverage and updated visibility mechanics documentation.
+- Verification: production and PlayMode test projects build with `0` errors; `Game.Tests.PlayMode.BotAiRegressionPlayModeTests` passes `11/11`; `git diff --check` passes. A fresh live Client/Server visual smoke test remains recommended.
+- Detail: active implementation and verification record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Live autonomous-control and spectator smoke test
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: log into the local Client/Server Editors, enter three battles, enable autonomous control from the green pause-menu button, observe movement/aim/HUD state, disable it through Escape, and watch the death-spectator transition.
+- Results: login and battle entry succeeded; autonomous movement and the pulsing HUD label were visible; Escape reopening and disabling restored manual state; two battles completed normally and the local death in the first observed no camera freeze or flight into empty space; recent Unity Editor logs contained no runtime exceptions; the server UDP listener was shut down cleanly after the test.
+- Limitation: the live run did not conclusively prove that left/right mouse clicks changed the selected spectator target before the short bot battles ended, so the focused spectator-cycle tests remain the acceptance gate for that behavior.
+- Detail: detailed results are in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Server/client destruction split for robot debris
+- Status: `COMPLETED`
+- Summary: `VehicleHealth` now sends the death observer event and immediately despawns the authoritative spawned vehicle `NetworkObject`; `DeathLogic` no longer detaches debris on server death and keeps client-detached parts alive after root teardown. The owner-only `CameraPoint` is detached before teardown so death spectating retains a fallback rig.
+- Client behavior: configured parts become local dynamic `Chassis` physics objects and remain pushable until map unload through `MapScopedObjectRegistry`.
+- Verification: both C# builds passed with `0` errors; focused lifecycle policy tests passed `2/2`; the eight-prefab detached-debris physics test passed `1/1`; `git diff --check` passed. The broader `MatchBattleEndPlayModeTests` run still has two pre-existing `NetworkConnection` reflection-harness failures, while both new tests pass.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-27 - Handoff: bot firing hold and chassis jitter fix
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Summary: `BotCombatController` holds the chassis for directly spotted, clear-line, fire-permitted targets while the authoritative weapon is ready, then releases movement during reload; focused Unity regression coverage passes `10/10`.
+- Verification limitation: the API and user server were online, but the existing live `BotBattle10v9PlayModeTests` owner/scene bootstrap stopped before bot spawn, so hull/turret flip telemetry was not produced.
+- Detail: archived in `docs/codex-game/task-handoff.md`; the new active task is the server/client destruction split.
+
+### 2026-10-27 - Fix NameCanvas CanvasGroup wiring on robot prefabs
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Scope: repair the visible `CanvasGroup` reference for all eight IA/NV robot prefab `NameCanvas` instances after allied HP did not fade at close camera distance.
 - Finding: every robot prefab already contains an added root `CanvasGroup`, but its nested `VehicleHUD.nameCanvasGroup` field has no explicit instance override; the shared fade code is therefore not guaranteed to drive the visible component.
 - Acceptance: all eight robot prefabs explicitly bind `VehicleHUD.nameCanvasGroup` to their root CanvasGroup while the existing distance settings and camera-based fade remain unchanged.
@@ -14,7 +94,7 @@
 - Detail: active record remains in `docs/codex-game/task-handoff.md`.
 
 ### 2026-10-27 - Fade robot NameCanvas by gameplay-camera distance
-- Status: `IN_PROGRESS`
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
 - Scope: add configurable start/full transparency distances for every robot world `NameCanvas` and apply linear `CanvasGroup.alpha` fade from the main gameplay orbit camera.
 - Acceptance: defaults produce alpha `1` at `5+`, `0.5` at `4`, and `0` at `3-`; settings live in `ClientSettings.gameplayRuntime`; existing visibility/HP owner behavior remains intact; no runtime component lookup/creation is added.
 - Detail: active record is in `docs/codex-game/task-handoff.md`.
@@ -321,6 +401,52 @@ This is the canonical, append-only index of project tasks. It is separate from t
 - Status: `COMPLETED`
 - Scope: resize four IA and four NV robot PNG images from 1254x1254 to 1024x1024 while preserving transparency, filenames, and Unity metadata.
 - Verification: all eight PNGs are 1024x1024 RGBA with transparency retained; `.meta` sidecars are unchanged. Original PNGs were backed up under `work/robot-images-1024-originals`.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Death spectator target visibility regression
+
+- Status: `COMPLETED`
+- Scope: keep the automatically selected killer and manually selected allied spectator target visible while the death camera follows it.
+- Root cause: `CameraController` stopped calling the existing `VehicleClientVisibility.SetSpectatorVisibility` override and only hid the target world HUD, so an unspotted target could be rendered off while remaining the camera rig.
+- Implementation: `CameraController` now applies the client-only visibility override to the active target, releases the previous target on switch, and clears it on camera teardown. `VehicleHoverOutline` remains a hidden-target filter rather than a camera-visibility owner. Added focused renderer reveal/restore coverage.
+- Verification: both C# builds passed with `0` errors; Unity batch PlayMode fixture `Game.Tests.PlayMode.CameraRuntimeZoomOverridePlayModeTests` passed `3/3` in `Logs/codex-camera-spectator-fixture.xml`; `git diff --check` passed.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Death spectator fallback rig despawn freeze
+
+- Status: `IN_PROGRESS`
+- Scope: keep the detached local death camera updating after the dead network vehicle root is despawned.
+- Finding: production prefabs place `CameraPoint` and `CameraRig` as siblings under the vehicle root; `DetachFromVehicleForDeath` preserved only `CameraPoint`, so `CameraRig` was destroyed with the network object and `CameraController.Update` returned on `rig == null`.
+- Implementation: `DetachFromVehicleForDeath` reparents the serialized sibling `CameraRig` under the detached `CameraPoint` before network despawn. Added `DeathDetachPreservesSiblingCameraRigWithDetachedCameraPoint` coverage and documented the prefab hierarchy contract.
+- Verification: both C# builds passed with `0` errors and `git diff --check` passed. Unity PlayMode is pending because the user's current Client/Server Editor session remains open.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Death spectator cycling after local despawn
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: restore left-click spectator cycling after the local dead network root despawns and keep the automatically selected killer visible during the three-second intro.
+- Finding: `CameraController.IsSpectatorCandidate` required the destroyed local `vehicleRoot` to read the team, so every living allied candidate was rejected after despawn; the existing client visibility override also needed priority over the first target client-start refresh.
+- Implementation: `CameraController` caches the assigned local team before despawn, and `VehicleClientVisibility.RefreshVisibility` preserves an active spectator reveal across client startup. Added focused team-cache and client-start visibility coverage.
+- Acceptance: cache the local team before despawn, select living same-team candidates after death, keep the killer rendered throughout the intro, preserve fallback/cleanup behavior, and add focused coverage.
+- Verification: both C# builds passed with `0` errors and `git diff --check` passed. Unity PlayMode remains pending while the user's Client/Server Editor session remains open.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Preserve team visibility after local death
+
+- Status: `IN_PROGRESS`
+- Scope: keep all living allies visible after the local owner vehicle despawns and continue showing enemies present in the authoritative team spotting snapshot.
+- Finding: `VehicleRoot.OnDestroy` clears `VehicleRoot.LocalPlayerVehicle`; `VehicleClientVisibility.RefreshVisibility` then treated every remaining vehicle as invisible before it could evaluate same-team or map-snapshot visibility.
+- Implementation: `VehicleClientVisibility` caches the assigned local team before despawn and continues evaluating same-team visibility and `GameplayMapVisibilityState` enemy relations without a live local root. Added focused ally and spotted-enemy post-despawn tests.
+- Verification: `Assembly-CSharp.csproj` and `Game.PlayMode.Tests.csproj` both built with `0` errors; `git diff --check` passed. Unity PlayMode remains pending because the current Client/Server Editor session is open.
+- Acceptance: cache the local assigned team before despawn, keep living allies visible, preserve direct/spotted-memory enemy visibility from `GameplayMapVisibilityState`, and add focused coverage.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Rebuild death spectator and team-shared visibility
+
+- Status: `IN_PROGRESS`
+- Scope: replace the incremental death-spectator patches with a deterministic killer-intro, death-wreck fallback, two-direction ally cycling, and team-shared enemy visibility flow matching the requested game design.
+- Design reference: World of Tanks postmortem behavior—show the killer briefly, then return to the destroyed vehicle and allow ally-only spectator cycling; left/right mouse controls opposite cycle directions.
+- Acceptance: killer remains visible for the three-second intro, fallback never follows destroyed transforms, allies are always visible, spotted enemies visible to an ally are visible to the spectator, and both cycle directions skip unavailable targets.
 - Detail: active task record is in `docs/codex-game/task-handoff.md`.
 
 ### 2026-10-27 - Bot firing hold and chassis jitter fix
@@ -800,3 +926,19 @@ The repository can preserve task state and verification notes, but it cannot con
 - Implementation: `GunCrosshair` now suppresses both faction roots only for the local destroyed spectator target and restores the selected faction root for living targets; `VehicleHudInitializer` subscribes to target changes, samples the selected robot transform, and resets/smooths the shared speed label per target.
 - Verification: focused static assertions passed; production and editor `dotnet build` commands passed with `0` errors; `git diff --check` passed. Unity EditMode/Play Mode remain pending because the project Editor is open.
 - Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Rebuild death spectator and team-shared visibility verification
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Implementation: replaced the fragile spectator flow with explicit killer-intro, death-wreck, and ally-follow phases; preserved the detached death rig; added killer-only intro visibility override; made left/right mouse cycle living allies in opposite directions; kept team allies visible after local despawn; and made `EnemyLastKnown` map-only while direct `Enemy` renders in 3D.
+- Verification: production C# build passed with `0` errors and only the existing `System.Net.Http` conflict warnings; PlayMode test build passed with `0` warnings/errors; `git diff --check` passed. Unity `CameraRuntimeZoomOverridePlayModeTests` passed `11/11`; `BotAiRegressionPlayModeTests` passed `10/10`, including movement/occlusion/line-of-fire coverage. The full `Game.Tests.PlayMode` run passed `37/43`; its six unrelated failures were the unavailable live integration server and existing dispersion/battle-end fixtures.
+- Limitation: final live Client/Server death-and-spectator reproduction remains recommended before marking the task `COMPLETED`.
+- Detail: active task record is in `docs/codex-game/task-handoff.md`.
+
+### 2026-10-28 - Player robot autonomous control
+
+- Status: `IMPLEMENTED_NEEDS_VERIFICATION`
+- Scope: add a green pause-menu toggle that enables/disables server-authoritative autonomous control for the local robot, closes pause on enable, and shows a pulsing `АВТОУПРАВЛІННЯ` HUD label above the crosshair while active.
+- Acceptance: reuse the existing bot/input path without runtime component creation; keep manual input blocked while active; restore manual control only through the reopened Escape pause menu; preserve multiplayer authority and existing spectator behavior; add focused verification and update mechanic documentation.
+- Verification: production C# build passed with `0` errors and only the existing warnings; PlayMode test build passed with `0` warnings/errors; Unity batch PlayMode `CameraRuntimeZoomOverridePlayModeTests` passed `14/14`, including autonomous-control code and Client scene binding checks; `git diff --check` passed. Live Client/Server visual verification remains pending.
+- Detail: active record is in `docs/codex-game/task-handoff.md`.

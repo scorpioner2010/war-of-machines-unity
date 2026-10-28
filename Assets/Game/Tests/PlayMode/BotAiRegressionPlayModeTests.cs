@@ -146,6 +146,107 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator MatchVisibilityKeepsDirectSpottingUntilAllSourcesAreLost()
+        {
+            Type serviceType = Type.GetType(
+                "Game.Scripts.Networking.Lobby.MatchVisibilityService, Assembly-CSharp");
+            Type teamStateType = serviceType?.GetNestedType(
+                "TeamVisibilityState",
+                BindingFlags.NonPublic);
+            Type teamType = Type.GetType("Game.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
+            Assert.IsNotNull(serviceType);
+            Assert.IsNotNull(teamStateType);
+            Assert.IsNotNull(teamType);
+
+            object teamA = Enum.Parse(teamType, "TeamA");
+            object teamState = Activator.CreateInstance(
+                teamStateType,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                null,
+                new[] { teamA },
+                null);
+            MethodInfo beginFrame = teamStateType.GetMethod("BeginFrame");
+            MethodInfo setSpotterVisibility = teamStateType.GetMethod("SetSpotterVisibility");
+            MethodInfo isDirectlySpotted = teamStateType.GetMethod("IsDirectlySpotted");
+            MethodInfo tryGetEnemyVisibility = teamStateType.GetMethod("TryGetEnemyVisibility");
+            MethodInfo removeExpired = teamStateType.GetMethod("RemoveExpired");
+            Assert.IsNotNull(beginFrame);
+            Assert.IsNotNull(setSpotterVisibility);
+            Assert.IsNotNull(isDirectlySpotted);
+            Assert.IsNotNull(tryGetEnemyVisibility);
+            Assert.IsNotNull(removeExpired);
+
+            Vector3 lastKnownPosition = new Vector3(12f, 0f, 4f);
+            object[] firstSpotterVisibleArguments =
+            {
+                42,
+                101,
+                true,
+                lastKnownPosition,
+                90f,
+                1f,
+                3f
+            };
+            setSpotterVisibility.Invoke(teamState, firstSpotterVisibleArguments);
+            beginFrame.Invoke(teamState, null);
+
+            Assert.IsTrue((bool)isDirectlySpotted.Invoke(teamState, new object[] { 42 }));
+
+            object[] secondSpotterVisibleArguments =
+            {
+                42,
+                202,
+                true,
+                lastKnownPosition,
+                90f,
+                1f,
+                3f
+            };
+            setSpotterVisibility.Invoke(teamState, secondSpotterVisibleArguments);
+
+            object[] firstSpotterLostArguments =
+            {
+                42,
+                101,
+                false,
+                lastKnownPosition,
+                90f,
+                2f,
+                3f
+            };
+            setSpotterVisibility.Invoke(teamState, firstSpotterLostArguments);
+            Assert.IsTrue((bool)isDirectlySpotted.Invoke(teamState, new object[] { 42 }));
+
+            object[] secondSpotterLostArguments =
+            {
+                42,
+                202,
+                false,
+                lastKnownPosition,
+                90f,
+                2f,
+                3f
+            };
+            setSpotterVisibility.Invoke(teamState, secondSpotterLostArguments);
+            Assert.IsFalse((bool)isDirectlySpotted.Invoke(teamState, new object[] { 42 }));
+
+            object[] memoryVisibilityArguments =
+            {
+                42,
+                3f,
+                Vector3.zero,
+                0f,
+                null,
+                null
+            };
+            Assert.IsTrue((bool)tryGetEnemyVisibility.Invoke(teamState, memoryVisibilityArguments));
+
+            removeExpired.Invoke(teamState, new object[] { 6f });
+            Assert.IsFalse((bool)tryGetEnemyVisibility.Invoke(teamState, memoryVisibilityArguments));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator BotGunPitchUsesSmoothFrameRateIndependentConvergence()
         {
             Type aimType = Type.GetType("Game.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
@@ -233,21 +334,88 @@ namespace Game.Tests.PlayMode
 
             bool holdsBeforeShot = (bool)shouldHold.Invoke(
                 null,
-                new object[] { true, false, true, true, true, true, true });
+                new object[] { true, false, true, true, true, true });
             bool releasesDuringReload = (bool)shouldHold.Invoke(
                 null,
-                new object[] { true, true, true, true, true, false, true });
+                new object[] { true, true, true, true, false, true });
             bool movesTowardBlockedTarget = (bool)shouldHold.Invoke(
                 null,
-                new object[] { true, false, true, false, true, true, true });
+                new object[] { true, false, true, false, true, true });
             bool movesTowardMemoryTarget = (bool)shouldHold.Invoke(
                 null,
-                new object[] { true, false, false, true, true, true, true });
+                new object[] { true, false, false, true, true, true });
 
             Assert.IsTrue(holdsBeforeShot);
             Assert.IsFalse(releasesDuringReload);
             Assert.IsFalse(movesTowardBlockedTarget);
             Assert.IsFalse(movesTowardMemoryTarget);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AutonomousAimReplicatesServerTargetsToVehiclePresentation()
+        {
+            Type inputType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
+            Type turretType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.VehicleTurretRotationController, Assembly-CSharp");
+            Type weaponAimType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
+            Assert.IsNotNull(inputType);
+            Assert.IsNotNull(turretType);
+            Assert.IsNotNull(weaponAimType);
+
+            Assert.IsNotNull(inputType.GetProperty(
+                "HasReplicatedAim",
+                BindingFlags.Public | BindingFlags.Instance));
+            Assert.IsNotNull(inputType.GetMethod(
+                "ApplyServerAimTargets",
+                BindingFlags.NonPublic | BindingFlags.Instance));
+            Assert.IsNotNull(inputType.GetMethod(
+                "ApplyReplicatedAimPresentation",
+                BindingFlags.NonPublic | BindingFlags.Instance));
+            Assert.IsNotNull(turretType.GetMethod(
+                "ShouldDriveRotation",
+                BindingFlags.NonPublic | BindingFlags.Instance));
+            Assert.IsNotNull(weaponAimType.GetMethod(
+                "ShouldDriveGunPitch",
+                BindingFlags.NonPublic | BindingFlags.Instance));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BotShotUsesPhysicalGunDirectionWhileGunIsStillRotating()
+        {
+            GameObject vehicleObject = new GameObject("BotPhysicalAimRegressionVehicle");
+            GameObject gunObject = new GameObject("BotPhysicalAimRegressionGun");
+            gunObject.transform.SetParent(vehicleObject.transform, false);
+
+            Type weaponAimType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
+            Assert.IsNotNull(weaponAimType);
+            Component weaponAim = vehicleObject.AddComponent(weaponAimType);
+            weaponAimType.GetField("gun").SetValue(weaponAim, gunObject.transform);
+            weaponAimType.GetField("localForwardAxis").SetValue(
+                weaponAim,
+                Enum.Parse(weaponAimType.GetNestedType("Axis"), "Z"));
+            weaponAimType.GetField("localPitchAxis").SetValue(
+                weaponAim,
+                Enum.Parse(weaponAimType.GetNestedType("Axis"), "X"));
+            weaponAimType.GetMethod("Init").Invoke(weaponAim, new object[] { null });
+            weaponAimType.GetMethod("SetTargetPitch").Invoke(weaponAim, new object[] { 30f });
+
+            Vector3 physicalForward = ((Vector3)weaponAimType.GetMethod("GetCurrentAimForwardWorld").Invoke(weaponAim, null)).normalized;
+            Vector3 logicalForward = ((Vector3)weaponAimType.GetMethod("GetLogicalAimForwardWorld").Invoke(weaponAim, null)).normalized;
+            Vector3 shotAimPoint = (Vector3)weaponAimType.GetMethod("GetCurrentAimPointForOrigin").Invoke(
+                weaponAim,
+                new object[] { gunObject.transform.position });
+            Vector3 shotForward = (shotAimPoint - gunObject.transform.position).normalized;
+
+            Assert.That(Vector3.Angle(physicalForward, logicalForward), Is.GreaterThan(20f));
+            Assert.That(Vector3.Angle(shotForward, physicalForward), Is.LessThan(0.01f));
+            Assert.That(Vector3.Angle(shotForward, logicalForward), Is.GreaterThan(20f));
+
+            UnityEngine.Object.Destroy(vehicleObject);
             yield return null;
         }
 

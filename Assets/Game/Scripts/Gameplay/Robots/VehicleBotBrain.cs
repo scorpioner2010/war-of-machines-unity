@@ -22,6 +22,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void StartBrain(VehicleRoot root, ServerRoom room)
         {
+            if (_isRunning)
+            {
+                return;
+            }
+
             SetVehicleRoot(root);
 
             WaypointGraphRuntime graph = root != null
@@ -39,6 +44,22 @@ namespace Game.Scripts.Gameplay.Robots
             _isRunning = true;
         }
 
+        public void StopBrain()
+        {
+            if (!_isRunning)
+            {
+                return;
+            }
+
+            _combatController.Stop();
+            _isRunning = false;
+
+            if (navigator != null)
+            {
+                navigator.Stop();
+            }
+        }
+
         private void FixedUpdate()
         {
             if (!_isRunning)
@@ -51,13 +72,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void OnDisable()
         {
-            _combatController.Stop();
-            _isRunning = false;
-
-            if (navigator != null)
-            {
-                navigator.Stop();
-            }
+            StopBrain();
         }
     }
 }

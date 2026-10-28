@@ -246,7 +246,6 @@ namespace Game.Scripts.AI.WaypointGraph
                 tacticDecision.HoldPosition,
                 _state.TargetIsDirectlySpotted,
                 hasLineOfFire,
-                aimResult.HasState,
                 weaponCanFire,
                 tacticDecision.AllowFire);
             _navigationController.UpdateForTarget(
@@ -269,7 +268,6 @@ namespace Game.Scripts.AI.WaypointGraph
             bool tacticWantsToHold,
             bool targetIsDirectlySpotted,
             bool hasLineOfFire,
-            bool hasAimSolution,
             bool weaponCanFire,
             bool tacticAllowsFire)
         {
@@ -281,8 +279,7 @@ namespace Game.Scripts.AI.WaypointGraph
             return tacticWantsToHold
                    || (holdPositionWithLineOfFire
                        && targetIsDirectlySpotted
-                       && hasLineOfFire
-                       && hasAimSolution);
+                       && hasLineOfFire);
         }
 
         private void ClearTarget()

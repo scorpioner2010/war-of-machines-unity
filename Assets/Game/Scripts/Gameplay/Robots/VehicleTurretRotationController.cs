@@ -126,7 +126,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return true;
             }
 
-            return IsOwner && vehicleRoot != null && !vehicleRoot.IsMenu;
+            return vehicleRoot != null
+                   && !vehicleRoot.IsMenu
+                   && (IsOwner
+                       || (vehicleRoot.inputManager != null
+                           && vehicleRoot.inputManager.HasReplicatedAim));
         }
     }
 }

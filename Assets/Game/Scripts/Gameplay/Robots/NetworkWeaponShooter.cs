@@ -378,7 +378,7 @@ namespace Game.Scripts.Gameplay.Robots
                     return currentGunAimPoint;
                 }
 
-                Vector3 gunForward = weaponAim.GetLogicalAimForwardWorld();
+                Vector3 gunForward = weaponAim.GetCurrentAimForwardWorld();
                 if (IsFinite(gunForward) && gunForward.sqrMagnitude > 0.000001f)
                 {
                     gunForward.Normalize();

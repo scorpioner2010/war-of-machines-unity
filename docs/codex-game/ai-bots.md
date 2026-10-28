@@ -43,7 +43,7 @@ Current owner scripts:
   - `BotLeadPrediction` is a pure intercept helper used by runtime code and regression tests.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotAimController.cs`
   - Solves aim through `VehicleAimInputSolver` and estimates/validates yaw, pitch, and muzzle alignment.
-- Remote bot gun pitch is presented by `WeaponAimController` with frame-rate-independent exponential smoothing (`smoothSpeed` `10` on registered IA/NV prefabs). The server target pitch and logical projectile aim remain authoritative; fire gates wait for the visual pitch to converge instead of exposing per-tick snapping.
+- Remote and autonomous bot turret/gun presentation consumes the replicated server aim target through `VehicleInputController`; `VehicleTurretRotationController` and `WeaponAimController` apply the same yaw/pitch target that the server uses for fire validation. Frame-rate-independent smoothing (`smoothSpeed` `10` on registered IA/NV prefabs) remains presentation-only. Bot fire readiness and projectile direction use the physical smoothed turret/gun transforms, so the server cannot damage a target using a desired pitch that the visible gun has not reached yet.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotFireDecision.cs`
   - Gates firing by target hold time, reaction delay, reload state, shooter availability, aim alignment, and the current dispersion threshold configured by `maxFireDispersionMultiplier`/`maxFireDispersionAddDeg`.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatNavigationController.cs`
@@ -85,12 +85,12 @@ Bot movement behavior:
 - Movement can be suppressed by combat via `SetMovementSuppressed(true)`. While suppressed, navigator still refreshes proximity sensing on its configured cadence and applies a local escape maneuver if another live robot is too close; otherwise it sends zero movement input.
 - Exploration is per-bot state: `BotNavigator` increments a visit count when the nearest graph node changes. With `exploreUnvisitedNodes` enabled, destination selection first searches unvisited nodes at least `minDestinationDistance` away, then least-visited nodes.
 - Steering uses a 4-degree `turnDeadZoneAngle` by default, so tiny waypoint or avoidance errors do not flip the body between left and right. `turnInputSmoothing` defaults to 7 and exponentially smooths steering at the decision cadence, while large-angle pivot turns still stop forward movement normally.
-- Proximity avoidance is server-side and does not use scene-wide searches or runtime component creation. It casts eight horizontal directions at three vertical offsets, ignores the bot's own hierarchy, recognizes registered live/dead `VehicleRoot` colliders and unparented dynamic `Chassis` debris, and adds a side-step based on the bot's stable turn bias so a robot does not simply reverse into a queue.
+- Proximity avoidance is server-side and does not use scene-wide searches or runtime component creation. It casts eight horizontal directions at three vertical offsets, ignores the bot's own hierarchy, and recognizes registered live `VehicleRoot` colliders plus any server-side `Chassis` obstacles. Death debris is client-only, so server bots do not scan or simulate detached visual parts.
 - Combat navigation uses `BotNavigator.SetTargetPosition` for tactical/map positions. The navigator treats those position targets separately from transform targets, keeps them active after reaching the last waypoint node, and drives the final segment directly to the requested tactical position until combat clears or changes it.
 - `SetTarget` and `SetTargetPosition` clear the current path and allow an immediate repath so bots do not wait on `repathCooldown` before reacting to a new combat navigation command.
 - `UpdateTargetPosition` refreshes a moving target's path without resetting steering smoothing or pivot state, preventing target-motion updates from producing artificial left/right body oscillation.
 - Progress tracking resets whenever a target or movement suppression state changes. Stuck recovery compares both traveled distance and real chassis yaw progress; a pivot that is not actually rotating can now trigger the reverse/turn escape maneuver instead of spinning indefinitely.
-- Dead `VehicleRoot` entries remain excluded from combat targets, while detached Chassis parts are recognized after they leave the registered root, so bots steer around wreckage instead of driving through invisible dead-root colliders.
+- Dead `VehicleRoot` entries are removed from combat and visibility participants when the server despawns the network root. Client-only detached Chassis parts remain pushable for local physics but are intentionally outside server bot navigation.
 
 Current waypoint arrival behavior:
 - `waypointReachDistance` accepts a waypoint if the bot enters the reach radius.
@@ -104,7 +104,7 @@ Current waypoint arrival behavior:
 
 Bot combat behavior:
 - Target scan reads map-visible enemies from `ServerRoom.Visibility`, not raw `ServerRoom.GetPlayers()` and not the waypoint graph.
-- A bot can target only enemies currently visible in its team's logical map visibility state, including spotted-memory entries while the map still exposes their last-known position.
+- A bot can target only enemies currently visible in its team's logical map visibility state, including spotted-memory entries while the map still exposes their last-known position. Direct visibility remains stable when the server's raycast budget defers a pair check, and the team union remains visible while any allied spotting source is still valid.
 - Memory-only targets are navigation targets only: the bot may aim at and move toward the last-known map position, but it does not line-of-fire check, lead, or shoot using the hidden vehicle's live transform until the target is directly spotted again.
 - Candidate filters: not null, not self, not dead, enemy team when team data is available.
 - If several map-visible enemies exist, candidates with clean line of fire and an aim solution are preferred, then candidates requiring less turret/gun correction, then closer candidates. The current target receives a small sticky bonus to avoid excessive target flipping.
@@ -112,6 +112,7 @@ Bot combat behavior:
 - `requireLineOfSightToAcquire` now controls line-of-fire priority during target scoring; it no longer prevents the bot from moving toward an obstructed map-visible enemy when no better firing target exists.
 - Aim points prefer turret bounds, then health colliders/armor maps, then turret transform, then root fallback height.
 - Bot aim is solved with `VehicleAimInputSolver.SolveForAimPoint` so turret/gun constraints are respected.
+- The resolved yaw, pitch, aim point, and aim forward are written through `VehicleInputController.ServerSetExternalInput`. The server stores those targets in synchronized aim state so the owning autonomous client and remote observers render the same turret/gun direction instead of retaining the last manual owner aim.
 - Line-of-fire is evaluated against the motion-led aim point before firing. If the center is behind a corner, `BotLineOfFireChecker` selects a clear exposed candidate around the target and the same point is used for aim readiness and the shot request.
 - Moving-target aim uses an iterative travel-time estimate (`leadPredictionIterations`, `maxLeadSeconds`) and the smoothed target velocity. Defaults now use full lead, a shorter velocity sample interval, and a smaller reaction window for more aggressive tracking.
 - Bot firing goes through reload and shooter systems, not direct damage calls.
@@ -187,3 +188,9 @@ Rules when editing bots:
 - Prefer server-side logic and player-like input over directly moving transforms or forcing weapon state.
 - Keep movement and combat ownership separate: navigator owns driving, combat owns target/aim/fire decisions.
 - If bot behavior changes, update this file and `server-settings.md` if settings changed.
+
+Player autonomous control:
+- `VehicleInputController.RequestAutonomousControl` is the owner-only request path. The server validates the owning connection, active room, live vehicle, and configured `VehicleBotBrain` before enabling the mode.
+- `VehicleInputController` reuses the same `VehicleBotBrain`/`BotNavigator`/`BotCombatController` used by match bots. It does not add components or move the player transform directly.
+- While `_autonomousControl` is synchronized as active, owner control RPCs are ignored and local input is blocked. Disabling stops the brain and clears server input, restoring manual input after the synchronized state changes.
+- `VehicleBotBrain.StopBrain` is the explicit lifecycle counterpart to `StartBrain`; normal bot spawn still starts it from `MatchVehicleSpawner`.

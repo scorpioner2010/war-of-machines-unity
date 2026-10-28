@@ -35,6 +35,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
     private readonly List<MeshCollider> _impactMeshColliders = new List<MeshCollider>(32);
     private bool _deathHandled;
     private bool _debrisDestroyed;
+    private bool _preserveDetachedDebrisOnDestroy;
 
     private void Awake()
     {
@@ -66,7 +67,6 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
 
         vehicleRoot.health.onDeath.AddListener(Death);
-        vehicleRoot.health.OnServerDeath += HandleServerDeath;
     }
 
     private void OnDestroy()
@@ -74,16 +74,14 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         if (vehicleRoot != null && vehicleRoot.health != null)
         {
             vehicleRoot.health.onDeath.RemoveListener(Death);
-            vehicleRoot.health.OnServerDeath -= HandleServerDeath;
         }
 
-        DestroyDetachedDebris();
-        VehicleColliderRegistry.UnregisterImpactMeshColliders(vehicleRoot);
-    }
+        if (!_preserveDetachedDebrisOnDestroy)
+        {
+            DestroyDetachedDebris();
+        }
 
-    private void HandleServerDeath(VehicleHealth health)
-    {
-        Death();
+        VehicleColliderRegistry.UnregisterImpactMeshColliders(vehicleRoot);
     }
 
     private void RegisterImpactMeshColliders()
@@ -150,9 +148,25 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
 
         _deathHandled = true;
 
+        bool hasSpawnedNetworkObject = HasSpawnedNetworkObject();
+        bool isClientDeath = ShouldReleaseClientDebris(
+            hasSpawnedNetworkObject,
+            vehicleRoot != null && vehicleRoot.IsClientInitialized);
+        if (!isClientDeath)
+        {
+            return;
+        }
+
+        _preserveDetachedDebrisOnDestroy = hasSpawnedNetworkObject;
+
         if (vehicleRoot != null && vehicleRoot.inputManager != null)
         {
             vehicleRoot.inputManager.SetControlsBlocked(true);
+        }
+
+        if (vehicleRoot != null && vehicleRoot.IsOwner && vehicleRoot.cameraController != null)
+        {
+            vehicleRoot.cameraController.DetachFromVehicleForDeath();
         }
 
         DisableVehicleAnimationControllers();
@@ -194,6 +208,18 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             }
         }
 
+    }
+
+    private bool HasSpawnedNetworkObject()
+    {
+        return vehicleRoot != null
+               && vehicleRoot.networkObject != null
+               && vehicleRoot.networkObject.IsSpawned;
+    }
+
+    internal static bool ShouldReleaseClientDebris(bool hasSpawnedNetworkObject, bool isClientInitialized)
+    {
+        return !hasSpawnedNetworkObject || isClientInitialized;
     }
 
     private void DetachConfiguredVisuals(Scene mapScene, int debrisLayer, bool renderDebris)

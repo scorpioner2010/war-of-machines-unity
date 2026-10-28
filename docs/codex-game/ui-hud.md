@@ -15,12 +15,15 @@ Current owner scripts:
   - Never displays the world vehicle name, HP bar, or floating damage text for the locally owned gameplay vehicle; the owner uses the screen-space HUD health display instead.
   - Never displays the world vehicle name or HP bar for a main-menu robot preview. `VehicleRoot.Init(true)` refreshes this gate after assigning the menu context.
   - `SetWorldCanvasHidden(true)` suppresses the selected robot's world-space name/HP canvas during death spectating, so its HP is presented only by the screen-space gameplay HUD; `CameraController` clears it when the target changes or is destroyed.
+  - HP team color is resolved through `VehicleTeamRelationResolver`, which uses `SpectatorTeamContext` after the local vehicle despawns. A missing `LocalPlayerVehicle` no longer defaults every world HP bar to enemy red.
 - `Assets/Game/Content/UI/Prefabs/World/NameCanvas.prefab` assigns overlay materials to its TMP text and HP images and wires the root `CanvasGroup` to `VehicleHUD.nameCanvasGroup`. Production IA/NV robot prefabs inherit this shared nested-prefab binding; their instances are covered by `Assets/Editor/VehicleHudCanvasFadeEditModeTests.cs` so no per-robot duplicate CanvasGroup override is required. Those materials use the Overlay render queue with `ZTest Always`, and the Canvas overrides sorting at order `32767`, so map geometry and walls do not occlude the presentation.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleClientVisibility.cs`
   - Client-only presenter for the spawned vehicle's 3D visibility.
   - Reads the local team's authoritative snapshot from `GameplayMapVisibilityState` by FishNet object ID.
-  - Keeps the owner and assigned allies visible and keeps an enemy visible for every relation that still produces its map marker: direct `Enemy`, spotted-memory `EnemyLastKnown`, and `Destroyed`.
-  - Hides the enemy model and `NameCanvas` when that enemy no longer exists in the map visibility snapshot.
+  - Caches the assigned local team before owner despawn, so living allies remain visible while death spectator mode has no `VehicleRoot.LocalPlayerVehicle`.
+  - Keeps the owner and assigned allies visible. A directly spotted enemy (`Enemy`) is rendered in 3D; `EnemyLastKnown` keeps only its map marker and does not reveal the live model. Destroyed entries use their own map/death presentation.
+  - The server-side team snapshot preserves direct visibility for every confirmed allied spotting source until that source is rechecked; the client therefore does not hide a live enemy merely because the current raycast budget did not reach its pair. The enemy model and `NameCanvas` hide only after all direct sources are lost, while the map may retain an `EnemyLastKnown` marker until its memory expires.
+  - `CameraController` temporarily overrides this presentation rule for the active death-spectator target, keeping the camera's selected live robot rendered even when it is not in the local enemy visibility snapshot; the override has priority over the first client-start refresh, and target changes and camera teardown restore the previous snapshot result.
   - Uses the prefab-configured renderer list and `Renderer.forceRenderingOff`; it does not disable the network object, gameplay components, colliders, or simulation.
   - Clears hover outline while hidden. `VehicleAutoAimController` and `VehicleHoverOutline` also reject targets whose presenter is hidden.
   - Refreshes on visibility snapshots, local-player changes, and `VehicleNetworkInitializer.ClientTeamChanged`, covering teams assigned by the server after FishNet spawn.
@@ -84,16 +87,18 @@ Current owner scripts:
   - When the test controller spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`
   - Gameplay map HUD for `MiniMapRoot` and `FullMapRoot`.
+  - Continues refreshing tracked ally/enemy markers during death spectator mode after the local network vehicle is despawned; only the dead local-player icon is hidden.
   - Cloned tracked-vehicle markers receive the serialized `friendly_marker.png` or `enemy_marker.png` sprite while visibility, relation color, and destroyed-state behavior continue to come from `GameplayMapVisibilityState`.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapVisibilityState.cs`
   - Shared client visibility snapshot state used by both the map and vehicle visibility presenters.
   - Stores `Enemy` for direct team spotting and `EnemyLastKnown` for spotted-memory map markers.
   - Provides relation lookup by FishNet object ID without scene/component discovery.
-  - Rejects duplicate or older unreliable snapshot versions so an out-of-order packet cannot restore an already hidden enemy.
+  - Rejects duplicate or older network snapshot versions so an out-of-order packet cannot restore an already hidden enemy.
   - Stores a local deadline for finite enemy entries. Remaining server lifetime is reduced by FishNet snapshot age, and expired entries are removed even if the final empty snapshot is dropped.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListHud.cs`
   - Player list HUD for ally/enemy rows under the scene-owned `GameplayHUD` containers.
   - Auto-tracks active non-menu `VehicleRoot` instances, binds each row to `VehicleHealth`, and refreshes names, vehicle type, synchronized kill count, HP, death state, and team relation.
+  - Uses `VehicleTeamRelationResolver` for row relation and HP color, so TeamA and TeamB spectators retain the correct ally/enemy colors after local owner despawn.
   - A row that has received a dead state remains in its ally/enemy list after the server despawns that robot; it keeps the final name, vehicle type, kill count, and zero-HP/dead presentation for the rest of the active HUD session. The row releases its destroyed vehicle/health binding, while a missing row that was not dead is removed.
   - Clears instantiated row items when the HUD is disabled or the local player vehicle becomes null, so rows from a completed battle do not persist into the next battle.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListItem.cs`
@@ -119,7 +124,7 @@ Rules when editing HUD/UI:
 - Keep gameplay input blocking behavior in sync with `VehicleInputController.IsGameplayInputBlockedByUi`.
 - Do not let client-only UI state drive authoritative gameplay.
 - Prefer inspector-wired references for UI components.
-- Keep map markers, enemy model visibility, and `NameCanvas` activation on the same authoritative snapshot. Rendering through walls applies only while that snapshot still contains the robot.
+- Keep map markers and `NameCanvas` activation on the authoritative snapshot, but do not equate a memory marker with a visible 3D enemy: `Enemy` renders the model, while `EnemyLastKnown` is map-only. Rendering through walls applies only while direct spotting still contains the robot.
 - Keep `NameCanvas` fade visual-only: alpha `0` must not disable the root `VehicleHUD`, because it still owns HP/name binding and may be the selected spectating target. The fade distance is measured against the shared gameplay orbit camera, not a per-robot camera.
 - For local hit feedback, use `DamageScreen` and `VehicleHealth.OnDamaged`; do not poll health or search for the local vehicle from the scene.
 - Keep Client menus and HUD in their owning scene. Client test mode must use its serialized `sceneGameplayHud` and `sceneGameplayCanvas` references; do not split one menu between scene objects and prefabs.
@@ -127,3 +132,8 @@ Rules when editing HUD/UI:
 - Keep `Client.unity/Canvas/GameplayPausePopup` outside `GameplayHUD`; its `GameplayPauseController` owns the pause menu registration and `GameplayHUD` remains the gameplay presentation layer.
 - If weapon HUD changes, update `weapons-damage.md` too.
 - If menu input blocking changes, update `robot-control.md` too.
+
+Autonomous control UI:
+- `Assets/Game/Scripts/UI/HUD/PauseMenu.cs` owns the inspector-wired green `Client.unity/Canvas/GameplayPausePopup/ButtonAutonomousControl` button. It mirrors the synchronized local vehicle state, changes its label between enable/disable, and closes the pause menu after a request.
+- `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs` owns the inspector-wired `GameplayHUD/Crosshair/AutonomousControlIndicator` TMP label. It is hidden unless the local `VehicleInputController.IsAutonomous` state is active and pulses alpha with unscaled time, so the indicator remains smooth while pause/time presentation changes.
+- The static button and indicator are authored in `Assets/Game/Scenes/Client.unity`; neither is created or discovered at runtime.

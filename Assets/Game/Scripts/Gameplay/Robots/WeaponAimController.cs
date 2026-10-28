@@ -161,7 +161,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             EnsureDesiredAimPoint();
 
-            Vector3 gunFwdWorld = GetLogicalAimForwardWorld();
+            Vector3 gunFwdWorld = GetCurrentAimForwardWorld();
             if (gunFwdWorld.sqrMagnitude <= 0.000001f)
             {
                 gunFwdWorld = transform.forward;
@@ -179,6 +179,22 @@ namespace Game.Scripts.Gameplay.Robots
 
             float fallbackDistance = GetLogicalFallbackAimDistance(origin, castDistance);
             return origin + gunFwdWorld * fallbackDistance;
+        }
+
+        public Vector3 GetCurrentAimForwardWorld()
+        {
+            if (gun == null)
+            {
+                return transform.forward;
+            }
+
+            Vector3 forward = ToWorldAxis(gun, localForwardAxis);
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                return transform.forward;
+            }
+
+            return forward;
         }
 
         public Vector3 GetLogicalAimForwardWorld()
@@ -353,7 +369,11 @@ namespace Game.Scripts.Gameplay.Robots
                 return true;
             }
 
-            return IsOwner && vehicleRoot != null && !vehicleRoot.IsMenu;
+            return vehicleRoot != null
+                   && !vehicleRoot.IsMenu
+                   && (IsOwner
+                       || (vehicleRoot.inputManager != null
+                           && vehicleRoot.inputManager.HasReplicatedAim));
         }
 
         private static float SmoothAngle(float currentAngle, float targetAngle, float smoothingSpeed, float deltaTime)

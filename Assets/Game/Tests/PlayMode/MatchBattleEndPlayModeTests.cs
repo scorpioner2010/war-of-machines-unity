@@ -24,6 +24,39 @@ namespace Game.Tests.PlayMode
             Assert.IsFalse(ShouldReceiveEndGame(abandonedPlayer));
         }
 
+        [Test]
+        public void NetworkedDeathReleasesDebrisOnlyForClientObservers()
+        {
+            Type deathLogicType = Type.GetType("DeathLogic, Assembly-CSharp");
+            Assert.IsNotNull(deathLogicType);
+
+            MethodInfo method = deathLogicType.GetMethod(
+                "ShouldReleaseClientDebris",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(method);
+
+            Assert.IsTrue(ShouldReleaseClientDebris(method, hasSpawnedNetworkObject: false, isClientInitialized: false));
+            Assert.IsFalse(ShouldReleaseClientDebris(method, hasSpawnedNetworkObject: true, isClientInitialized: false));
+            Assert.IsTrue(ShouldReleaseClientDebris(method, hasSpawnedNetworkObject: true, isClientInitialized: true));
+        }
+
+        [Test]
+        public void AuthoritativeDeathDespawnsOnlySpawnedServerVehicles()
+        {
+            Type vehicleHealthType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.VehicleHealth, Assembly-CSharp");
+            Assert.IsNotNull(vehicleHealthType);
+
+            MethodInfo method = vehicleHealthType.GetMethod(
+                "ShouldDespawnAfterDeath",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(method);
+
+            Assert.IsFalse(ShouldDespawnAfterDeath(method, isServerInitialized: false, isSpawned: true));
+            Assert.IsFalse(ShouldDespawnAfterDeath(method, isServerInitialized: true, isSpawned: false));
+            Assert.IsTrue(ShouldDespawnAfterDeath(method, isServerInitialized: true, isSpawned: true));
+        }
+
         private static object CreatePlayer(bool isBot, bool leftBattle, bool hasConnection)
         {
             Type playerType = Type.GetType("Game.Scripts.Networking.Lobby.Player, Assembly-CSharp");
@@ -55,6 +88,22 @@ namespace Game.Tests.PlayMode
                 BindingFlags.Public | BindingFlags.Static);
             Assert.IsNotNull(method);
             return (bool)method.Invoke(null, new[] { player });
+        }
+
+        private static bool ShouldReleaseClientDebris(
+            MethodInfo method,
+            bool hasSpawnedNetworkObject,
+            bool isClientInitialized)
+        {
+            return (bool)method.Invoke(null, new object[] { hasSpawnedNetworkObject, isClientInitialized });
+        }
+
+        private static bool ShouldDespawnAfterDeath(
+            MethodInfo method,
+            bool isServerInitialized,
+            bool isSpawned)
+        {
+            return (bool)method.Invoke(null, new object[] { isServerInitialized, isSpawned });
         }
     }
 }
