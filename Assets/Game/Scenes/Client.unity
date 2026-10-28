@@ -2952,7 +2952,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -54, y: 0}
-  m_SizeDelta: {x: 50, y: 50}
+  m_SizeDelta: {x: 53, y: 53}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &122477414
 MonoBehaviour:
@@ -2974,7 +2974,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5eecc1da70636f84f9d301d2c584113a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 38f59886a0dbda04b8e9d43fbf77c32f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3713,7 +3713,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b8507c79b321f3142a77a7f0ac2d97d3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3927,8 +3927,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -54, y: 0}
-  m_SizeDelta: {x: 50, y: 50}
+  m_AnchoredPosition: {x: -52.546265, y: -0.2092}
+  m_SizeDelta: {x: 42.4072, y: 56.4185}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &154451436
 MonoBehaviour:
@@ -3950,7 +3950,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5eecc1da70636f84f9d301d2c584113a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 94874b1182dd47b4c9188ba221259556, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -5991,7 +5991,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: wins
+  m_text: kills
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: cd0bf33debf46ed4798364c9a60440d0, type: 2}
   m_sharedMaterial: {fileID: -3587004003571586328, guid: cd0bf33debf46ed4798364c9a60440d0,
@@ -6403,8 +6403,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -108.5, y: 0}
-  m_SizeDelta: {x: 50, y: 50}
+  m_AnchoredPosition: {x: -107.1, y: 0.3227}
+  m_SizeDelta: {x: 65.3546, y: 65.3546}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &242068919
 MonoBehaviour:
@@ -6426,7 +6426,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5eecc1da70636f84f9d301d2c584113a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 13a060f89526cb54cac16c616d857ef0, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -14384,8 +14384,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -54, y: 0}
-  m_SizeDelta: {x: 50, y: 50}
+  m_AnchoredPosition: {x: -51.3, y: -0.000015497}
+  m_SizeDelta: {x: 46.6079, y: 57.7533}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &535505906
 MonoBehaviour:
@@ -14407,7 +14407,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5eecc1da70636f84f9d301d2c584113a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c6f2cf71ff7b283458f9109e55d83461, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -24440,7 +24440,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b8507c79b321f3142a77a7f0ac2d97d3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -29863,7 +29863,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b8507c79b321f3142a77a7f0ac2d97d3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -29929,8 +29929,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -108.5, y: 0}
-  m_SizeDelta: {x: 50, y: 50}
+  m_AnchoredPosition: {x: -106.8, y: 1.815}
+  m_SizeDelta: {x: 62.369, y: 62.37}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1187837302
 MonoBehaviour:
@@ -29952,7 +29952,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5eecc1da70636f84f9d301d2c584113a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 0ccccebd5c72abb488e74710c29ea225, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -30386,7 +30386,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b8507c79b321f3142a77a7f0ac2d97d3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -32786,7 +32786,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b8507c79b321f3142a77a7f0ac2d97d3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -33931,7 +33931,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b8507c79b321f3142a77a7f0ac2d97d3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -43215,8 +43215,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -108.5, y: 0}
-  m_SizeDelta: {x: 50, y: 50}
+  m_AnchoredPosition: {x: -107.7, y: -0.000013828}
+  m_SizeDelta: {x: 62.8437, y: 62.8437}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1615764613
 MonoBehaviour:
@@ -43238,7 +43238,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5eecc1da70636f84f9d301d2c584113a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 24ce0fb763f6f2d40847de0850987737, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -55313,7 +55313,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5eecc1da70636f84f9d301d2c584113a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: da2eec7e705b469488613d5c997650ba, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -59232,7 +59232,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1e1f72a4f3d4e67a9d2b8c6f0e5a431, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableVehicleTestMode: 1
+  enableVehicleTestMode: 0
   controller: {fileID: 2000100000012}
   networkManager: {fileID: 1509948893}
   registry: {fileID: 11400000, guid: e789c05f8eea53d409cd152d7bda366e, type: 2}

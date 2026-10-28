@@ -127,7 +127,7 @@ namespace Game.Scripts.Editor
             TMP_Text vehicleTier = CreateText("VehicleTier", detailsPanel, new Vector2(0f, -50f), new Vector2(300f, 28f), "", font, 16f, new Color(0.68f, 0.87f, 0.35f, 1f), TextAlignmentOptions.Center);
 
             List<TMP_Text> vehicleValues = new List<TMP_Text>();
-            string[] vehicleLabels = { "BATTLES", "WINS", "WIN RATE", "AVG DAMAGE" };
+            string[] vehicleLabels = { "BATTLES", "KILLS", "WIN RATE", "AVG DAMAGE" };
             for (int index = 0; index < vehicleLabels.Length; index++)
             {
                 float x = -300f + index * 200f;

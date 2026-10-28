@@ -198,7 +198,7 @@ namespace Game.Scripts.UI.MainMenu
                 ? "TIER " + vehicle.tier.ToString(CultureInfo.InvariantCulture)
                 : string.Empty);
             SetVehicleValue(0, vehicle.battles.ToString(CultureInfo.InvariantCulture));
-            SetVehicleValue(1, vehicle.wins.ToString(CultureInfo.InvariantCulture));
+            SetVehicleValue(1, vehicle.kills.ToString(CultureInfo.InvariantCulture));
             SetVehicleValue(2, FormatPercent(vehicle.winRate));
             SetVehicleValue(3, FormatNumber(vehicle.averageDamage));
             SetPreview(GameResourceManager.GetIcon(vehicle.code));

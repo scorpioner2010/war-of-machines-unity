@@ -18,6 +18,7 @@ Current owner scripts:
   - `HideProfileStatisticsPopup` delegates to `ProfileStatisticsPopup.Close` when the view is wired, so closing clears dynamic rows and deactivates the popup root.
 - `Assets/Game/Scripts/UI/MainMenu/ProfileStatisticsPopup.cs`
   - Requests authenticated live statistics through `ProfileServer`, fills the general statistics, played-vehicle rows, selected-vehicle panel, selected-vehicle record bar, and catalog icon, and exposes explicit loading, empty, offline, error, and close states.
+  - The selected-vehicle cards display `battles`, that robot's `kills`, `winRate`, and `averageDamage`; the separate `RecordPanel` continues to display win/loss percentages.
   - `RecordPanel` is driven by the selected `VehicleStatisticsDto`: `WinsBar.fillAmount` is `wins / (wins + losses)` clamped to `0..1`, `WinsLabel` and `LossesLabel` display whole percentages whose sum is `100%`, and the serialized `Background` image stays at `1`. Loading, unavailable, error, and no-selection states reset the bar safely.
 - `Assets/Game/Scripts/UI/MainMenu/ProfileVehicleRow.cs`
   - Owns the selected-row background color for the profile vehicle list. `ProfileStatisticsPopup` resets every row and then marks only the clicked/default row selected, so the first row returns to its normal color when another robot is chosen.
