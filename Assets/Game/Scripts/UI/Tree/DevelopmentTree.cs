@@ -47,7 +47,7 @@ namespace Game.Scripts.UI.Tree
         private TreeItem _selectedTreeItem;
 
         private readonly List<FactionView> _views = new List<FactionView>();
-        private readonly List<Button> _factionButtons = new List<Button>();
+        private readonly List<FactionButtonView> _factionButtons = new List<FactionButtonView>();
         private readonly Dictionary<string, string> _factionNameByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public bool isInitialized;
@@ -58,6 +58,8 @@ namespace Game.Scripts.UI.Tree
             public FactionTreeView Root;
             public VehicleEdge[] Edges;
             public Dictionary<int, RectTransform> NodeMap;
+            public TreeItem DefaultTreeItem;
+            public VehicleResearchProgress DefaultProgress;
         }
 
         private void Awake()
@@ -229,7 +231,14 @@ namespace Game.Scripts.UI.Tree
                 _views[i].Root.gameObject.SetActive(i == index);
             }
 
+            for (int i = 0; i < _factionButtons.Count; i++)
+            {
+                _factionButtons[i].SetSelected(i == index);
+            }
+
             detailsPanel.Clear();
+            FactionView activeView = _views[index];
+            SelectVehicle(activeView.DefaultTreeItem, activeView.DefaultProgress);
             RedrawActive(index).Forget();
         }
 
@@ -248,7 +257,7 @@ namespace Game.Scripts.UI.Tree
 
                 FactionButtonView factionButton = Instantiate(factionButtonPrefab, buttonsContainer);
                 Button button = factionButton.Button;
-                _factionButtons.Add(button);
+                _factionButtons.Add(factionButton);
                 factionButton.Configure(code, title);
 
                 button.onClick.AddListener(() => SetActiveContainer(factionIndex));
@@ -273,6 +282,8 @@ namespace Game.Scripts.UI.Tree
             Dictionary<int, RectTransform> nodeMap = new Dictionary<int, RectTransform>();
             Dictionary<int, List<VehicleNode>> nodesByLevel = GroupNodesByLevel(graph.nodes);
             List<int> levels = GetSortedLevels(nodesByLevel);
+            TreeItem defaultTreeItem = null;
+            VehicleResearchProgress defaultProgress = null;
 
             for (int i = 0; i < levels.Count; i++)
             {
@@ -286,7 +297,13 @@ namespace Game.Scripts.UI.Tree
 
                 for (int nodeIndex = 0; nodeIndex < nodes.Count; nodeIndex++)
                 {
-                    CreateTreeItem(row, nodes[nodeIndex], nodeMap, progressResolver);
+                    VehicleResearchProgress itemProgress;
+                    TreeItem item = CreateTreeItem(row, nodes[nodeIndex], nodeMap, progressResolver, out itemProgress);
+                    if (i == 0 && defaultTreeItem == null && item != null && itemProgress != null)
+                    {
+                        defaultTreeItem = item;
+                        defaultProgress = itemProgress;
+                    }
                 }
             }
 
@@ -295,19 +312,23 @@ namespace Game.Scripts.UI.Tree
                 Code = factionCode,
                 Root = root,
                 Edges = graph.edges ?? Array.Empty<VehicleEdge>(),
-                NodeMap = nodeMap
+                NodeMap = nodeMap,
+                DefaultTreeItem = defaultTreeItem,
+                DefaultProgress = defaultProgress
             });
         }
 
-        private void CreateTreeItem(
+        private TreeItem CreateTreeItem(
             Transform parent,
             VehicleNode node,
             Dictionary<int, RectTransform> nodeMap,
-            VehicleResearchProgressResolver progressResolver)
+            VehicleResearchProgressResolver progressResolver,
+            out VehicleResearchProgress progress)
         {
+            progress = null;
             if (node == null)
             {
-                return;
+                return null;
             }
 
             TreeItem item = Instantiate(treeItemPrefab, parent);
@@ -329,18 +350,21 @@ namespace Game.Scripts.UI.Tree
                 item.image.sprite = GameResourceManager.GetIcon(node.code);
             }
 
-            VehicleResearchProgress progress = progressResolver.Resolve(node);
-            ApplyTreeItemState(item, progress);
+            VehicleResearchProgress resolvedProgress = progressResolver.Resolve(node);
+            progress = resolvedProgress;
+            ApplyTreeItemState(item, resolvedProgress);
 
             if (item.button != null)
             {
-                item.button.onClick.AddListener(() => SelectVehicle(item, progress));
+                item.button.onClick.AddListener(() => SelectVehicle(item, resolvedProgress));
             }
 
             if (item.rectTransform != null)
             {
                 nodeMap[node.id] = item.rectTransform;
             }
+
+            return item;
         }
 
         private static void ApplyTreeItemState(TreeItem item, VehicleResearchProgress progress)

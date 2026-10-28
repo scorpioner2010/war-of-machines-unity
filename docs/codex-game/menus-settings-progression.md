@@ -53,20 +53,24 @@ Current owner scripts:
   - Loads `VehicleGraph` data per faction, builds the selected faction tree at runtime, and keeps purchase/research RPC validation authoritative on the server.
   - Groups every graph node by `level`: level 1 is the lowest row, later levels are stacked above it, and nodes in every row are centered.
   - A `TreeItem` click only selects a vehicle; it never starts purchase or research directly. `DevelopmentTree` keeps one `_selectedTreeItem`, disables its previous `IsSelect` child before enabling the newly clicked item's child, and clears the selection when changing faction or rebuilding the runtime tree.
+  - When the tree opens or the active faction changes, it selects the first valid robot from the lowest level using stable `code` ordering and shows its details through the same selection path as a manual click.
 - `Assets/Game/Scripts/UI/Tree/TreeItem.cs`
   - Exposes the serialized `isSelect` and `canvasGroup` references, and `SetSelected(bool)` enables the selected marker while setting the root CanvasGroup alpha to `1` for the selected item or `0.35` otherwise; the component does not discover or create UI objects at runtime.
 - `Assets/Game/Scripts/UI/Tree/TreeItemBlink.cs`
   - Runs on the root of `TreeItem.prefab` and animates the serialized `Image (0)` through `Image (3)` references together.
   - Uses unscaled time and a smooth repeating ping-pong cycle to interpolate alpha between `alphaA`/`alphaB` and local Y scale between `scaleYA`/`scaleYB`; `blinkSpeed` controls complete A-B-A cycles per second.
   - The prefab keeps neutral defaults so existing tree visuals do not change until the Inspector values are configured.
-- `Assets/Game/Scripts/UI/Tree/FactionTreeView.cs`, `FactionButtonView.cs`, `DevelopmentTreeDetailsPanel.cs`, `ArrowDrawer.cs`
+- `Assets/Game/Scripts/UI/Tree/FactionTreeView.cs`, `FactionButtonView.cs`, `DevelopmentTreeDetailsPanel.cs`, `ArrowDrawer.cs`, `TreeArrowRouteBuilder.cs`
   - `FactionTreeView` owns the serialized rows and arrows layers of a generated faction tree.
-  - `FactionButtonView` provides serialized faction button visuals and selects the correct background and emblem from the faction code, without runtime component lookups.
+  - `FactionButtonView` provides serialized faction button visuals, selects the correct background and emblem from the faction code, and toggles its serialized `IsSelect` marker for the active faction without runtime component lookups.
   - `DevelopmentTreeDetailsPanel` displays the selected vehicle, assigns its `GameResourceManager.GetIcon(node.code)` sprite to the serialized `DevelopmentTree/RightInfoPanel/Image`, activates that Image GameObject only while a node with an icon is selected, and exclusively enables its Buy or Research button when the progression state permits it.
-  - `ArrowDrawer` draws one non-interactive arrow for each server-provided `VehicleEdge` after the row layout is resolved.
-- `Assets/Game/Content/UI/Prefabs/Tree/FactionTree.prefab`, `DevelopmentTreeLevelRow.prefab`, `TreeItem.prefab`
+  - `TreeArrowRouteBuilder` owns the independently testable orthogonal route geometry: it starts at the source card edge, uses the gap between rows as a horizontal channel, and ends at the target card edge.
+  - `ArrowDrawer` owns only runtime cleanup, prefab instantiation, sizing, rotation, and presentation of the non-interactive shaft and generated head for each server-provided `VehicleEdge` after the row layout is resolved. It reads the local `ClientSettings.gameplayRuntime` shaft thickness, shaft color, head Image color, head height, head scale, head route offset, and item gap and redraws all registered tree layers when those values change in Play Mode.
+- `Assets/Game/Content/UI/Prefabs/Tree/FactionTree.prefab`, `DevelopmentTreeLevelRow.prefab`, `TreeItem.prefab`, `TreeArrowSegment.prefab`, `TreeArrowHead.prefab`
   - The first prefab provides a faction root with empty arrow and vertical-row containers; the second provides a centered, one-row horizontal grid for every level.
+  - `FactionButton.prefab` includes an inactive `IsSelect` marker with eight non-raycastable frame `Image` segments and a `TreeItemBlink` component with the same configurable alpha, vertical-scale, and speed controls as the selected tree-item frame.
   - `TreeItem.prefab` remains the node visual and selection button; its root owns the `TreeItemBlink` presentation component and `CanvasGroup` (default alpha `0.35`), and its `Name`/`lvl` TMP labels are wired to `TreeItem.vehicleName`/`TreeItem.level`. Its inactive `IsSelect` child and root alpha are enabled/raised only by the selected runtime node.
+  - `TreeArrowSegment.prefab` is the bronze-gold non-interactive shaft, while `TreeArrowHead.prefab` uses the generated military-industrial arrowhead texture and is rotated so its tip touches the target card border.
 - `Assets/Game/Content/UI/Prefabs/MainMenu/Vehicle.prefab`
   - The root `Vehicle` owns `VehicleBlink`, and `VehicleItemView.vehicleBlink` is wired to it. Its serialized `blackScreen` reference targets the existing inactive-by-default `BlackScreen` child `CanvasGroup`; only selected generated vehicle items activate and pulse it.
 - `Assets/Game/Scripts/UI/Tree/VehicleResearchProgressResolver.cs`
@@ -80,7 +84,7 @@ Current owner scripts:
   - `Client.unity/Settings` uses Video as the visual reference for all tab controls. General toggles are centered at X `77.64`, are `322 x 32`, and retain the same checkbox/label setup as Vertical sync. Controls and Sounds sliders are centered at X `77.64`, are `322 x 40`, and have rows at Y `297`, `237`, and, for SFX, `177`; their labels are at X `-195` and use `160 x 60` bounds.
   - Every settings slider uses the same serialized frame, fill, and handle sprites as Video Gamma: `Unused/Backgrounds/Bar/loading_cell_ai_attempt_rejected.png`, `loading_cell_ai_attempt_rejected 1.png`, and `Unused/Backgrounds/icons/profile_icon_losses_skull.png`. These are presentation-only scene values; the existing tab views and serialized Slider/Toggle references remain the owners of interaction and settings values.
 - `Assets/Game/Scripts/Client/ClientSettings.cs`
-  - Local client runtime settings for frame pacing, projectile visuals, HUD, map, camera, reticle, auto-aim, and hover outline behavior.
+  - Local client runtime settings for frame pacing, projectile visuals, HUD, map, camera, reticle, auto-aim, hover outline, and development-tree arrow behavior.
 - `Assets/Game/Scripts/Testing/ClientMenuTestMode.cs`
   - Scene-local offline menu test switch. In `Assets/Game/Scenes/Client.unity`, select `ClientMenuTestMode`, enable `enableOfflineMenuTest`, and edit its `testVehicles` array. The saved demo contains 15 distinct robot profile variants across Iron Alliance and Nova Syndicate, with valid registry codes, roles, ownership XP, battle history, rewards, and ISO-8601 last-played timestamps. `vehicleId` values must be unique and `code` must exist in `RobotRegistry` to show its icon/preview. `TryCreateProfileStatistics` aggregates the per-robot history into consistent overall battles, wins, losses, draws, averages, and rewards. This is for UI testing only; Free XP conversion remains disabled and the Battle/Cancel controls only open and close the matchmaking menu.
 - `Assets/Game/Scripts/UI/Helpers/StartServerButtons.cs`

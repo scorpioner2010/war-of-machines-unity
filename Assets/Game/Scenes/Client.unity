@@ -29335,7 +29335,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30c442a19768c8c45a7a15f87cff8540, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  arrowPrefab: {fileID: 4877072647523442535, guid: 3659b8a4f8f3a6b49ac1ecc575fb564b,
+  segmentPrefab: {fileID: 780000000000000004, guid: 4bde192e250b492185f7253c79505320,
+    type: 3}
+  arrowHeadPrefab: {fileID: 790000000000000004, guid: 4123666f85c64da1b615bcffa9ba616f,
     type: 3}
 --- !u!114 &1171468201
 MonoBehaviour:
@@ -58800,6 +58802,13 @@ MonoBehaviour:
     floatingDamageTextMoveUp: 2
     floatingDamageTextEndScale: 1.5
     sniperScopeOverlayFadeDuration: 0.5
+    treeArrowShaftThickness: 5
+    treeArrowColor: {r: 0.23454946, g: 0.7509433, b: 0.20828049, a: 1}
+    treeArrowHeadColor: {r: 0.23529412, g: 0.7529412, b: 0.21176471, a: 1}
+    treeArrowHeadHeight: 21
+    treeArrowHeadScale: 1
+    treeArrowHeadOffset: 5.25
+    treeArrowItemOffset: 0
   buttonColors:
     normalColor: {r: 0.78867924, g: 0.78867924, b: 0.78867924, a: 1}
     highlightedColor: {r: 1, g: 1, b: 1, a: 1}

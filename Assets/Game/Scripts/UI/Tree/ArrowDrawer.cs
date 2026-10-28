@@ -1,36 +1,87 @@
 using System.Collections.Generic;
 using Game.Scripts.API;
+using Game.Scripts.Client;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Game.Scripts.UI.Tree
 {
-    public class ArrowDrawer : MonoBehaviour
+    public sealed class ArrowDrawer : MonoBehaviour
     {
-        public Image arrowPrefab;
+        [SerializeField] private Image segmentPrefab;
+        [SerializeField] private Image arrowHeadPrefab;
 
-        public void Draw(IEnumerable<VehicleEdge> edges, Dictionary<int, RectTransform> nodeById, RectTransform layer)
+        private readonly TreeArrowRouteBuilder _routeBuilder = new TreeArrowRouteBuilder();
+        private readonly List<DrawRequest> _drawRequests = new List<DrawRequest>();
+        private bool _hasRuntimeAppearance;
+        private float _lastShaftThickness;
+        private Color _lastArrowColor;
+        private Color _lastArrowHeadColor;
+        private float _lastArrowHeadHeight;
+        private float _lastArrowHeadScale;
+        private float _lastArrowHeadOffset;
+        private float _lastItemOffset;
+
+        private sealed class DrawRequest
         {
-            if (arrowPrefab == null || layer == null)
+            public readonly List<VehicleEdge> Edges = new List<VehicleEdge>();
+            public Dictionary<int, RectTransform> NodeById;
+            public RectTransform Layer;
+        }
+
+        private void LateUpdate()
+        {
+            if (!Application.isPlaying || _drawRequests.Count == 0)
             {
                 return;
             }
 
-            foreach (Transform child in layer)
+            GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
+            if (!HasRuntimeAppearanceChanged(settings))
             {
-                child.gameObject.SetActive(false);
-
-                if (Application.isPlaying)
-                {
-                    Destroy(child.gameObject);
-                }
-                else
-                {
-                    DestroyImmediate(child.gameObject);
-                }
+                return;
             }
 
-            if (edges == null || nodeById == null)
+            for (int requestIndex = _drawRequests.Count - 1; requestIndex >= 0; requestIndex--)
+            {
+                DrawRequest request = _drawRequests[requestIndex];
+                if (request.Layer == null)
+                {
+                    _drawRequests.RemoveAt(requestIndex);
+                    continue;
+                }
+
+                DrawInternal(request.Edges, request.NodeById, request.Layer, settings);
+            }
+        }
+
+        public void Draw(IEnumerable<VehicleEdge> edges, Dictionary<int, RectTransform> nodeById, RectTransform layer)
+        {
+            if (layer == null)
+            {
+                return;
+            }
+
+            DrawRequest request = GetOrCreateRequest(layer);
+            request.Edges.Clear();
+            if (edges != null)
+            {
+                request.Edges.AddRange(edges);
+            }
+
+            request.NodeById = nodeById;
+            DrawInternal(request.Edges, request.NodeById, request.Layer, GameplayRuntimeSettingsProvider.Get());
+        }
+
+        private void DrawInternal(
+            IEnumerable<VehicleEdge> edges,
+            Dictionary<int, RectTransform> nodeById,
+            RectTransform layer,
+            GameplayRuntimeSettings settings)
+        {
+            ClearLayer(layer);
+
+            if (segmentPrefab == null || arrowHeadPrefab == null || edges == null || nodeById == null)
             {
                 return;
             }
@@ -44,50 +95,182 @@ namespace Game.Scripts.UI.Tree
                     continue;
                 }
 
-                Vector3 wa = GetWorldCenter(from);
-                Vector3 wb = GetWorldCenter(to);
+                DrawRoute(
+                    _routeBuilder.Build(from, to, layer, settings.treeArrowItemOffset),
+                    layer,
+                    settings.treeArrowShaftThickness,
+                    settings.treeArrowColor,
+                    settings.treeArrowHeadColor,
+                    settings.treeArrowHeadHeight,
+                    settings.treeArrowHeadScale,
+                    settings.treeArrowHeadOffset);
+            }
 
-                Vector3 worldDirection = (wb - wa).normalized;
-                wa += worldDirection * GetEdgeOffset(from, worldDirection);
-                wb -= worldDirection * GetEdgeOffset(to, worldDirection);
+            StoreRuntimeAppearance(settings);
+        }
 
-                Vector2 a = layer.InverseTransformPoint(wa);
-                Vector2 b = layer.InverseTransformPoint(wb);
+        private void DrawRoute(
+            IReadOnlyList<Vector2> points,
+            RectTransform layer,
+            float currentShaftThickness,
+            Color currentArrowColor,
+            Color currentArrowHeadColor,
+            float currentArrowHeadHeight,
+            float currentArrowHeadScale,
+            float currentArrowHeadOffset)
+        {
+            if (points == null || points.Count < 2)
+            {
+                return;
+            }
 
-                Vector2 mid = (a + b) * 0.5f;
-                Vector2 dir = b - a;
-                float len = dir.magnitude;
-                if (len <= Mathf.Epsilon)
-                {
-                    continue;
-                }
+            for (int segmentIndex = 0; segmentIndex < points.Count - 1; segmentIndex++)
+            {
+                CreateSegment(
+                    points[segmentIndex],
+                    points[segmentIndex + 1],
+                    layer,
+                    segmentIndex,
+                    currentShaftThickness,
+                    currentArrowColor);
+            }
 
-                float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-
-                Image img = Instantiate(arrowPrefab, layer);
-                img.raycastTarget = false;
-                RectTransform rt = img.rectTransform;
-
-                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = mid;
-                rt.sizeDelta = new Vector2(len, rt.sizeDelta.y);
-                rt.localRotation = Quaternion.Euler(0f, 0f, angle);
+            Vector2 direction = points[points.Count - 1] - points[points.Count - 2];
+            if (direction.sqrMagnitude > Mathf.Epsilon)
+            {
+                CreateArrowHead(
+                    points[points.Count - 1],
+                    direction.normalized,
+                    layer,
+                    currentArrowHeadColor,
+                    currentArrowHeadHeight,
+                    currentArrowHeadScale,
+                    currentArrowHeadOffset);
             }
         }
 
-        private static Vector3 GetWorldCenter(RectTransform rt)
+        private void CreateSegment(
+            Vector2 start,
+            Vector2 end,
+            RectTransform layer,
+            int segmentIndex,
+            float currentShaftThickness,
+            Color currentArrowColor)
         {
-            return rt.TransformPoint(rt.rect.center);
+            Vector2 direction = end - start;
+            float length = direction.magnitude;
+            if (length <= Mathf.Epsilon)
+            {
+                return;
+            }
+
+            Image image = Instantiate(segmentPrefab, layer);
+            image.name = $"TreeArrowSegment_{segmentIndex}";
+            image.raycastTarget = false;
+            image.color = currentArrowColor;
+
+            RectTransform rectTransform = image.rectTransform;
+            rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.localScale = Vector3.one;
+            rectTransform.anchoredPosition = (start + end) * 0.5f;
+            rectTransform.sizeDelta = new Vector2(length, currentShaftThickness);
+            rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
         }
 
-        private static float GetEdgeOffset(RectTransform rectTransform, Vector3 worldDirection)
+        private void CreateArrowHead(
+            Vector2 endpoint,
+            Vector2 direction,
+            RectTransform layer,
+            Color currentArrowColor,
+            float currentArrowHeadHeight,
+            float currentArrowHeadScale,
+            float currentArrowHeadOffset)
         {
-            float halfWidth = rectTransform.rect.width * rectTransform.lossyScale.x * 0.5f;
-            float halfHeight = rectTransform.rect.height * rectTransform.lossyScale.y * 0.5f;
-            float horizontalDirection = Mathf.Abs(worldDirection.x);
-            float verticalDirection = Mathf.Abs(worldDirection.y);
+            Image image = Instantiate(arrowHeadPrefab, layer);
+            image.name = "TreeArrowHead";
+            image.raycastTarget = false;
+            image.color = currentArrowColor;
 
-            return horizontalDirection > verticalDirection ? halfWidth : halfHeight;
+            RectTransform rectTransform = image.rectTransform;
+            rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.pivot = new Vector2(0.5f, 1f);
+            rectTransform.localScale = Vector3.one * currentArrowHeadScale;
+            rectTransform.anchoredPosition = endpoint + direction * currentArrowHeadOffset;
+
+            float aspect = image.sprite == null || image.sprite.rect.height <= Mathf.Epsilon
+                ? 1f
+                : image.sprite.rect.width / image.sprite.rect.height;
+            rectTransform.sizeDelta = new Vector2(currentArrowHeadHeight * aspect, currentArrowHeadHeight);
+            rectTransform.localRotation = Quaternion.Euler(
+                0f,
+                0f,
+                Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
+            rectTransform.SetAsLastSibling();
+        }
+
+        private DrawRequest GetOrCreateRequest(RectTransform layer)
+        {
+            for (int requestIndex = 0; requestIndex < _drawRequests.Count; requestIndex++)
+            {
+                if (_drawRequests[requestIndex].Layer == layer)
+                {
+                    return _drawRequests[requestIndex];
+                }
+            }
+
+            DrawRequest request = new DrawRequest { Layer = layer };
+            _drawRequests.Add(request);
+            return request;
+        }
+
+        private bool HasRuntimeAppearanceChanged(GameplayRuntimeSettings settings)
+        {
+            return !_hasRuntimeAppearance
+                || !Mathf.Approximately(_lastShaftThickness, settings.treeArrowShaftThickness)
+                || !ColorsApproximatelyEqual(_lastArrowColor, settings.treeArrowColor)
+                || !ColorsApproximatelyEqual(_lastArrowHeadColor, settings.treeArrowHeadColor)
+                || !Mathf.Approximately(_lastArrowHeadHeight, settings.treeArrowHeadHeight)
+                || !Mathf.Approximately(_lastArrowHeadScale, settings.treeArrowHeadScale)
+                || !Mathf.Approximately(_lastArrowHeadOffset, settings.treeArrowHeadOffset)
+                || !Mathf.Approximately(_lastItemOffset, settings.treeArrowItemOffset);
+        }
+
+        private void StoreRuntimeAppearance(GameplayRuntimeSettings settings)
+        {
+            _hasRuntimeAppearance = true;
+            _lastShaftThickness = settings.treeArrowShaftThickness;
+            _lastArrowColor = settings.treeArrowColor;
+            _lastArrowHeadColor = settings.treeArrowHeadColor;
+            _lastArrowHeadHeight = settings.treeArrowHeadHeight;
+            _lastArrowHeadScale = settings.treeArrowHeadScale;
+            _lastArrowHeadOffset = settings.treeArrowHeadOffset;
+            _lastItemOffset = settings.treeArrowItemOffset;
+        }
+
+        private static bool ColorsApproximatelyEqual(Color left, Color right)
+        {
+            return Mathf.Approximately(left.r, right.r)
+                && Mathf.Approximately(left.g, right.g)
+                && Mathf.Approximately(left.b, right.b)
+                && Mathf.Approximately(left.a, right.a);
+        }
+
+        private static void ClearLayer(RectTransform layer)
+        {
+            for (int childIndex = layer.childCount - 1; childIndex >= 0; childIndex--)
+            {
+                Transform child = layer.GetChild(childIndex);
+                child.gameObject.SetActive(false);
+
+                if (Application.isPlaying)
+                {
+                    Destroy(child.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+            }
         }
     }
 }

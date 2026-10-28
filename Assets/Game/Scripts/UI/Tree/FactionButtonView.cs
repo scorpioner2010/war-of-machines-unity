@@ -37,12 +37,23 @@ namespace Game.Scripts.UI.Tree
         [SerializeField] private TMP_Text title;
         [SerializeField] private Image background;
         [SerializeField] private Image icon;
+        [SerializeField] private GameObject isSelect;
         [SerializeField] private FactionVisualStyle[] styles;
 
         public Button Button => button;
 
+        public void SetSelected(bool selected)
+        {
+            if (isSelect != null)
+            {
+                isSelect.SetActive(selected);
+            }
+        }
+
         public void Configure(string factionCode, string factionName)
         {
+            SetSelected(false);
+
             if (title != null)
             {
                 title.text = factionName;

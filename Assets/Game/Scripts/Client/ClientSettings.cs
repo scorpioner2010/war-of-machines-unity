@@ -269,6 +269,22 @@ namespace Game.Scripts.Client
         [Tooltip("Тривалість fade-анімації снайперського overlay.")]
         public float sniperScopeOverlayFadeDuration = 0.18f;
 
+        [Header("Development tree arrows")]
+        [Tooltip("Thickness of development-tree arrow shafts in UI pixels.")]
+        public float treeArrowShaftThickness = 5f;
+        [Tooltip("Color applied to development-tree arrow shafts.")]
+        public Color treeArrowColor = new Color(0.77254903f, 0.5568628f, 0.2f, 1f);
+        [Tooltip("Color applied to the development-tree arrowhead Image.")]
+        public Color treeArrowHeadColor = new Color(0.77254903f, 0.5568628f, 0.2f, 1f);
+        [Tooltip("Height of the arrowhead in UI pixels.")]
+        public float treeArrowHeadHeight = 28f;
+        [Tooltip("Additional scale multiplier for the development-tree arrowhead Image.")]
+        public float treeArrowHeadScale = 1f;
+        [Tooltip("Offset of the arrowhead along its final route direction. Positive values move it toward the target item.")]
+        public float treeArrowHeadOffset = 0f;
+        [Tooltip("Distance in UI pixels between each arrow endpoint and its connected item.")]
+        public float treeArrowItemOffset = 0f;
+
         public static GameplayRuntimeSettings Default
         {
             get
@@ -377,6 +393,13 @@ namespace Game.Scripts.Client
             floatingDamageTextMoveUp = ClampFinite(floatingDamageTextMoveUp, Default.floatingDamageTextMoveUp);
             floatingDamageTextEndScale = ClampFinite(floatingDamageTextEndScale, 0f, Default.floatingDamageTextEndScale);
             sniperScopeOverlayFadeDuration = ClampFinite(sniperScopeOverlayFadeDuration, 0f, Default.sniperScopeOverlayFadeDuration);
+            treeArrowShaftThickness = ClampFinite(treeArrowShaftThickness, 0.1f, Default.treeArrowShaftThickness);
+            treeArrowColor = ClampColor(treeArrowColor, Default.treeArrowColor);
+            treeArrowHeadColor = ClampColor(treeArrowHeadColor, Default.treeArrowHeadColor);
+            treeArrowHeadHeight = ClampFinite(treeArrowHeadHeight, 0.1f, Default.treeArrowHeadHeight);
+            treeArrowHeadScale = ClampFinite(treeArrowHeadScale, 0.01f, Default.treeArrowHeadScale);
+            treeArrowHeadOffset = ClampFinite(treeArrowHeadOffset, Default.treeArrowHeadOffset);
+            treeArrowItemOffset = ClampFinite(treeArrowItemOffset, 0f, Default.treeArrowItemOffset);
         }
 
         public void CopyFrom(GameplayRuntimeSettings source)
@@ -460,6 +483,13 @@ namespace Game.Scripts.Client
             floatingDamageTextMoveUp = source.floatingDamageTextMoveUp;
             floatingDamageTextEndScale = source.floatingDamageTextEndScale;
             sniperScopeOverlayFadeDuration = source.sniperScopeOverlayFadeDuration;
+            treeArrowShaftThickness = source.treeArrowShaftThickness;
+            treeArrowColor = source.treeArrowColor;
+            treeArrowHeadColor = source.treeArrowHeadColor;
+            treeArrowHeadHeight = source.treeArrowHeadHeight;
+            treeArrowHeadScale = source.treeArrowHeadScale;
+            treeArrowHeadOffset = source.treeArrowHeadOffset;
+            treeArrowItemOffset = source.treeArrowItemOffset;
         }
 
         private void ValidateCameraZoomProfiles()
