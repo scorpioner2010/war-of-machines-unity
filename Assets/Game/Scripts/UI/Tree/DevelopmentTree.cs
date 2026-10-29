@@ -45,6 +45,7 @@ namespace Game.Scripts.UI.Tree
         private string[] _factionCodes;
         private bool _isInitializing;
         private TreeItem _selectedTreeItem;
+        private int _selectedVehicleId;
 
         private readonly List<FactionView> _views = new List<FactionView>();
         private readonly List<FactionButtonView> _factionButtons = new List<FactionButtonView>();
@@ -56,8 +57,11 @@ namespace Game.Scripts.UI.Tree
         {
             public string Code;
             public FactionTreeView Root;
+            public VehicleGraph Graph;
             public VehicleEdge[] Edges;
             public Dictionary<int, RectTransform> NodeMap;
+            public Dictionary<int, TreeItem> ItemMap;
+            public VehicleResearchProgressResolver ProgressResolver;
             public TreeItem DefaultTreeItem;
             public VehicleResearchProgress DefaultProgress;
         }
@@ -280,6 +284,7 @@ namespace Game.Scripts.UI.Tree
                 _vehicleLites);
 
             Dictionary<int, RectTransform> nodeMap = new Dictionary<int, RectTransform>();
+            Dictionary<int, TreeItem> itemMap = new Dictionary<int, TreeItem>();
             Dictionary<int, List<VehicleNode>> nodesByLevel = GroupNodesByLevel(graph.nodes);
             List<int> levels = GetSortedLevels(nodesByLevel);
             TreeItem defaultTreeItem = null;
@@ -298,7 +303,7 @@ namespace Game.Scripts.UI.Tree
                 for (int nodeIndex = 0; nodeIndex < nodes.Count; nodeIndex++)
                 {
                     VehicleResearchProgress itemProgress;
-                    TreeItem item = CreateTreeItem(row, nodes[nodeIndex], nodeMap, progressResolver, out itemProgress);
+                    TreeItem item = CreateTreeItem(row, nodes[nodeIndex], nodeMap, itemMap, progressResolver, out itemProgress);
                     if (i == 0 && defaultTreeItem == null && item != null && itemProgress != null)
                     {
                         defaultTreeItem = item;
@@ -311,8 +316,11 @@ namespace Game.Scripts.UI.Tree
             {
                 Code = factionCode,
                 Root = root,
+                Graph = graph,
                 Edges = graph.edges ?? Array.Empty<VehicleEdge>(),
                 NodeMap = nodeMap,
+                ItemMap = itemMap,
+                ProgressResolver = progressResolver,
                 DefaultTreeItem = defaultTreeItem,
                 DefaultProgress = defaultProgress
             });
@@ -322,6 +330,7 @@ namespace Game.Scripts.UI.Tree
             Transform parent,
             VehicleNode node,
             Dictionary<int, RectTransform> nodeMap,
+            Dictionary<int, TreeItem> itemMap,
             VehicleResearchProgressResolver progressResolver,
             out VehicleResearchProgress progress)
         {
@@ -356,13 +365,15 @@ namespace Game.Scripts.UI.Tree
 
             if (item.button != null)
             {
-                item.button.onClick.AddListener(() => SelectVehicle(item, resolvedProgress));
+                item.button.onClick.AddListener(() => SelectVehicle(item, node));
             }
 
             if (item.rectTransform != null)
             {
                 nodeMap[node.id] = item.rectTransform;
             }
+
+            itemMap[node.id] = item;
 
             return item;
         }
@@ -377,20 +388,13 @@ namespace Game.Scripts.UI.Tree
             bool isLocked = progress.Status == VehicleResearchStatus.Hidden
                 || progress.Status == VehicleResearchStatus.LockedByResearch;
 
-            if (item.isClose != null)
-            {
-                item.isClose.SetActive(isLocked);
-            }
-
-            if (item.isHave != null)
-            {
-                item.isHave.SetActive(progress.IsOwned);
-            }
-
-            if (item.price != null)
-            {
-                item.price.text = string.Empty;
-            }
+            item.ApplyVisualState(
+                progress.PurchaseCost,
+                progress.RequiredXp,
+                progress.IsOwned,
+                progress.IsResearched,
+                isLocked,
+                progress.Status == VehicleResearchStatus.Hidden);
         }
 
         private void SelectVehicle(TreeItem item, VehicleResearchProgress progress)
@@ -400,8 +404,86 @@ namespace Game.Scripts.UI.Tree
                 return;
             }
 
+            _selectedVehicleId = progress.Node.id;
             SetSelectedTreeItem(item);
             detailsPanel.Show(progress, TryBuy, TryResearch);
+        }
+
+        private void SelectVehicle(TreeItem item, VehicleNode node)
+        {
+            SelectVehicle(item, ResolveProgress(node));
+        }
+
+        public void RefreshProgressionStates()
+        {
+            if (!isInitialized || _views.Count == 0)
+            {
+                return;
+            }
+
+            VehicleResearchProgress selectedProgress = null;
+
+            for (int viewIndex = 0; viewIndex < _views.Count; viewIndex++)
+            {
+                FactionView view = _views[viewIndex];
+                if (view == null || view.Graph == null || view.Graph.nodes == null)
+                {
+                    continue;
+                }
+
+                view.ProgressResolver = new VehicleResearchProgressResolver(
+                    GetCurrentProfile(),
+                    view.Graph,
+                    _vehicleLites);
+
+                for (int nodeIndex = 0; nodeIndex < view.Graph.nodes.Length; nodeIndex++)
+                {
+                    VehicleNode node = view.Graph.nodes[nodeIndex];
+                    if (node == null || !view.ItemMap.TryGetValue(node.id, out TreeItem item))
+                    {
+                        continue;
+                    }
+
+                    VehicleResearchProgress progress = view.ProgressResolver.Resolve(node);
+                    ApplyTreeItemState(item, progress);
+
+                    if (view.DefaultTreeItem == item)
+                    {
+                        view.DefaultProgress = progress;
+                    }
+
+                    if (node.id == _selectedVehicleId)
+                    {
+                        selectedProgress = progress;
+                    }
+                }
+            }
+
+            if (selectedProgress != null && _selectedTreeItem != null)
+            {
+                detailsPanel.Show(selectedProgress, TryBuy, TryResearch);
+            }
+        }
+
+        private VehicleResearchProgress ResolveProgress(VehicleNode node)
+        {
+            if (node == null)
+            {
+                return null;
+            }
+
+            for (int viewIndex = 0; viewIndex < _views.Count; viewIndex++)
+            {
+                FactionView view = _views[viewIndex];
+                if (view != null
+                    && view.ProgressResolver != null
+                    && string.Equals(view.Code, node.factionCode, StringComparison.OrdinalIgnoreCase))
+                {
+                    return view.ProgressResolver.Resolve(node);
+                }
+            }
+
+            return null;
         }
 
         private async UniTask RebuildLayoutsAndDrawArrows()
@@ -555,6 +637,10 @@ namespace Game.Scripts.UI.Tree
             }
 
             _selectedTreeItem = item;
+            if (_selectedTreeItem == null)
+            {
+                _selectedVehicleId = 0;
+            }
 
             if (_selectedTreeItem != null)
             {
@@ -744,8 +830,6 @@ namespace Game.Scripts.UI.Tree
                 Popup.ShowText(errorMessage, Color.red);
             }
 
-            MenuManager.OpenMenu(MenuType.MainMenu);
-            RobotView.UpdateUI();
             Helpers.StandardLoadingOverlay.Hide();
         }
 

@@ -215,15 +215,20 @@ namespace Game.Scripts.Editor
                         continue;
                     }
 
-                    if (item.prefab == null)
-                    {
-                        report.AddError($"Robot '{item.code}' has no VehicleRoot prefab.");
-                        continue;
-                    }
-
                     if (item.icon == null)
                     {
                         report.AddError($"Robot '{item.code}' has no menu icon.");
+                    }
+
+                    if (item.prefab == null)
+                    {
+                        if (item.isDevelopmentOnly)
+                        {
+                            continue;
+                        }
+
+                        report.AddError($"Robot '{item.code}' has no VehicleRoot prefab.");
+                        continue;
                     }
 
                     string prefabPath = AssetDatabase.GetAssetPath(item.prefab);

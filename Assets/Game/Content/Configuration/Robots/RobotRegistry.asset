@@ -28,6 +28,30 @@ MonoBehaviour:
     prefab: {fileID: 2321927772602250882, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
       type: 3}
     icon: {fileID: 21300000, guid: 1dcbd2e116d710741ae9c50f1873e447, type: 3}
+  - code: ia_l3_scout_wraith
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 976dfaa4f964cdf469ac78f9f3a1eb3e, type: 3}
+  - code: ia_l3_guardian_warder
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 976dfaa4f964cdf469ac78f9f3a1eb3e, type: 3}
+  - code: ia_l3_guardian_rampart
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 976dfaa4f964cdf469ac78f9f3a1eb3e, type: 3}
+  - code: ia_l3_colossus_mastodon
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 976dfaa4f964cdf469ac78f9f3a1eb3e, type: 3}
+  - code: ia_l4_guardian_citadel
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 976dfaa4f964cdf469ac78f9f3a1eb3e, type: 3}
+  - code: ia_l4_colossus_dreadnought
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 976dfaa4f964cdf469ac78f9f3a1eb3e, type: 3}
   - code: nv_l1_starter
     prefab: {fileID: 5798367828239414435, guid: e0b271687de69cb43bc5e977485e1e6e,
       type: 3}
@@ -44,3 +68,31 @@ MonoBehaviour:
     prefab: {fileID: 5798367828239414435, guid: 01db652032c3cb641b90c7d2b0327e58,
       type: 3}
     icon: {fileID: 21300000, guid: 792c6d42bd46e2d4b8892bb09c759e9c, type: 3}
+  - code: nv_l3_scout_rift
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 23474690d2e76ed439c61b755c6bca4b, type: 3}
+  - code: nv_l3_scout_specter
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 23474690d2e76ed439c61b755c6bca4b, type: 3}
+  - code: nv_l4_scout_horizon
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 23474690d2e76ed439c61b755c6bca4b, type: 3}
+  - code: nv_l3_guardian_prism
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 23474690d2e76ed439c61b755c6bca4b, type: 3}
+  - code: nv_l3_colossus_harrow
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 23474690d2e76ed439c61b755c6bca4b, type: 3}
+  - code: nv_l3_colossus_oblivion
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 23474690d2e76ed439c61b755c6bca4b, type: 3}
+  - code: nv_l4_colossus_eclipse
+    isDevelopmentOnly: 1
+    prefab: {fileID: 0}
+    icon: {fileID: 21300000, guid: 23474690d2e76ed439c61b755c6bca4b, type: 3}

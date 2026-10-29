@@ -11,6 +11,7 @@ public class RobotRegistry : ScriptableObject
     public class Item
     {
         public string code;
+        public bool isDevelopmentOnly;
         public VehicleRoot prefab;
         [ShowAssetPreview(64, 64)]
         public Sprite icon;

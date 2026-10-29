@@ -82,7 +82,7 @@ namespace Game.Scripts.UI.Tree
             SetText(faction, vehicle != null && !string.IsNullOrWhiteSpace(vehicle.factionName)
                 ? vehicle.factionName
                 : node.factionCode);
-            SetVehicleImage(node.code);
+            SetVehicleImage(node.code, !progress.IsVisible);
             SetLevelIcon(node.level);
             SetText(progression, BuildProgressionText(progress));
 
@@ -116,7 +116,7 @@ namespace Game.Scripts.UI.Tree
 
             SetText(vehicleName, string.Empty);
             SetText(faction, string.Empty);
-            SetVehicleImage(null);
+            SetVehicleImage(null, false);
             SetLevelIcon(0);
             SetText(progression, string.Empty);
             SetText(hitPoints, string.Empty);
@@ -218,7 +218,7 @@ namespace Game.Scripts.UI.Tree
             levelIcon.sprite = hasIcon ? levelSprites[spriteIndex] : null;
         }
 
-        private void SetVehicleImage(string vehicleCode)
+        private void SetVehicleImage(string vehicleCode, bool unavailable)
         {
             if (vehicleImage == null)
             {
@@ -233,6 +233,7 @@ namespace Game.Scripts.UI.Tree
             vehicleImage.enabled = hasIcon;
             vehicleImage.gameObject.SetActive(hasIcon);
             vehicleImage.sprite = icon;
+            vehicleImage.color = unavailable ? Color.black : Color.white;
         }
 
         private static string BuildDamageText(VehicleLite vehicle, VehicleNode node)

@@ -32,11 +32,14 @@ Current owner scripts:
   - Uses a scene/prefab assigned `RobotRegistry` instance.
 - `Assets/Game/Scripts/ScriptableObjects/RobotRegistry.cs`
   - ScriptableObject list of vehicle codes, prefabs, and icons.
+  - The 13 hidden level 3–4 development-tree robots are registered with their faction `Images/Default.png` icon and `isDevelopmentOnly: true`; they intentionally have no gameplay prefab because they cannot be owned or spawned. `VehiclePrefabIntegrityEditor` excludes only these explicitly marked entries from the VehicleRoot requirement.
 - `Assets/Game/Scripts/Testing/ClientMenuTestMode.cs`
   - Owns the scene-local 15-entry profile demo. Each entry reuses a validated `RobotRegistry` code for its icon/preview while keeping distinct test identity, role, tier, history, reward totals, and last-played timestamp.
   - `TryCreateProfileStatistics` derives overall totals and averages from the same per-robot records, so the offline popup remains internally consistent when test data is edited.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleStatsProvider.cs`
   - Loads runtime vehicle stats for spawned vehicles.
+
+The API catalog includes hidden development-tree robots with `isVisible: false`. The client keeps those graph nodes in the tree, resolves them as `VehicleResearchStatus.Hidden`, renders their registry icon black, and never sends research or purchase actions for them. The server independently rejects research, purchase, and debug-add requests for hidden catalog entries.
 
 Vehicle resource flow:
 1. `GameResourceManager` is present in the scene and has a `RobotRegistry` reference.

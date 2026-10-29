@@ -28,6 +28,7 @@ namespace Game.Scripts.API.ServerManagers
             if (ClientMenuTestMode.TryCreateProfile(out PlayerProfile localTestProfile))
             {
                 ApplyLocalTestProfile(localTestProfile);
+                _in?.developmentTree?.RefreshProgressionStates();
                 return;
             }
 
@@ -217,7 +218,7 @@ namespace Game.Scripts.API.ServerManagers
                 await RobotView.GenerateIconsAsync();
 
                 MainMenu.In.UpdatePlayerInfo(clientInfo.Profile);
-                developmentTree.Init();
+                developmentTree?.RefreshProgressionStates();
 
                 if (GameplaySpawner.In != null)
                 {
