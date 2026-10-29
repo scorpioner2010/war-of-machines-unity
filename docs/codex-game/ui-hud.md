@@ -52,7 +52,7 @@ Current owner scripts:
   - When the selected spectator target is the local destroyed robot, both faction `CrosshairType` roots are hidden. Selecting a living allied target restores only its faction root; normal owner crosshair behavior remains unchanged.
   - `CameraController` treats every forward zoom profile with `showReticle = true` as sniper presentation: the regular HUD is replaced by the black `SniperScopeOverlay` and central sniper reticle, while the profile's camera/FOV values remain authoritative. The wheel can move between multiple flagged profiles without hiding the overlay. This flag controls the scope overlay, not the ordinary projectile-dispersion ring.
   - `WeaponReloadController` receives a binding-change result and forces the current ammo/reload values into the newly selected target, preventing cached IA values from leaving the NV UI stale. Aim-status caches are also invalidated when the target text changes.
-  - Initializes the active penetration-status label to `PENETRATION STATUS` and preserves the last `Miss` or `〰〰〰` result when the faction reticle changes; both penetrated and non-penetrated hits use the requested `〰〰〰` glyph.
+  - Initializes the active penetration-status label to `PENETRATION STATUS` and preserves the last shot result when the faction reticle changes. Manual control presents `Penetrated` or `No penetration`; autonomous control presents `〰〰〰` for those two results, while `Miss` remains explicit.
   - Owns the serialized `CrosshairType2` `lightElement` image list and changes only those images' alpha from the local weapon charge progress. It preserves each element's authored RGB color. The active faction reload circle uses the same progress, resets immediately when progress decreases, and smoothly fills toward higher progress.
   - The bindings are serialized on the scene `GunCrosshair` presenter and target `Client.unity/Canvas/GameplayHUD/GameplayHudContent/CrosshairType1` and `CrosshairType2`; the scene assigns all 12 Nova `lightElement` `Image` components explicitly.
 - `Assets/Game/Scenes/Client.unity/SniperScopeOverlay/SniperScopeMask`
@@ -74,7 +74,7 @@ Current owner scripts:
   - Reads a normalized zoom scalar from `CameraController.GetAimUiZoom01`; default zoom maps to the legacy distance endpoint and the first flagged forward profile maps to the legacy max-zoom endpoint, with the last forward profile as fallback when none is flagged.
 - `Assets/Game/Scripts/UI/HUD/GameplayGUI.cs`
   - Gameplay GUI root.
-  - Keeps the legacy shot-result entry point compatible, but forwards results to the active `GunCrosshair`; penetration results remain `Miss` or `〰〰〰` and are not cleared by a timeout.
+  - Keeps the legacy shot-result entry point compatible, but forwards results to the active `GunCrosshair`; penetration results use explicit manual text or the autonomous-only `〰〰〰` glyph and are not cleared by a timeout.
   - Owns the inspector-wired `zoomLevelTexts` references for both HUD crosshair variants and displays the signed camera zoom step: `0` is default, negative values are backward wheel steps, positive values are forward wheel steps, and the sniper profile uses the next positive step.
 - `Assets/Game/Scripts/UI/HUD/GameplayHudRuntimeBinder.cs`
   - Runtime HUD binding support. `Client.unity/Canvas/GameplayHUD` has the serialized root Canvas reference, so its crosshair uses the same Canvas as the other client menus.

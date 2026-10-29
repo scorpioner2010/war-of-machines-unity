@@ -139,16 +139,20 @@ public class ProjectileVisualSettings
 public class Projectile : MonoBehaviour
 {
     private const int CollisionBufferSize = 128;
+    private const int EmbeddedCollisionBufferSize = 128;
     private const int TravelDistanceSamples = 12;
     private const float CollisionCastPadding = 0.01f;
     private const float MinLifetime = 0.01f;
     private const float PredictedWorldImpactDedupDistance = 2f;
     private const int NoNetworkObjectId = -1;
+    private const string DefaultLayerName = "Default";
     private const string ArmorLayerName = "Armor";
     private const string GroundLayerName = "Ground";
     private const string ObstacleLayerName = "Obstacle";
 
     private static readonly RaycastHit[] CollisionBuffer = new RaycastHit[CollisionBufferSize];
+    private static readonly Collider[] EmbeddedCollisionBuffer = new Collider[EmbeddedCollisionBufferSize];
+    private static int _defaultLayer = -1;
     private static int _armorLayer = -1;
     private static int _groundLayer = -1;
     private static int _obstacleLayer = -1;
@@ -215,6 +219,7 @@ public class Projectile : MonoBehaviour
     private bool _authoritative;
     private bool _visualsEnabled = true;
     private bool _liveCollisionEnabled;
+    private bool _initialEmbeddedCollisionChecked;
     private bool _resolvedTargetHandled;
     private bool _hasLastHitPoint;
     private bool _hasDebugAimPoint;
@@ -656,6 +661,7 @@ public class Projectile : MonoBehaviour
 
         _authoritative = authoritative;
         _liveCollisionEnabled = false;
+        _initialEmbeddedCollisionChecked = false;
         _resolvedTargetHandled = false;
         _hasLastHitPoint = false;
         _predictedImpactPlayed = false;
@@ -901,6 +907,17 @@ public class Projectile : MonoBehaviour
                 ? travel / segmentDistance
                 : GetSafeVelocityDirection();
 
+            if (_liveCollisionEnabled
+                && !_initialEmbeddedCollisionChecked)
+            {
+                _initialEmbeddedCollisionChecked = true;
+                if (TryCastEmbeddedCollision(previousPosition, travelDirection, out RaycastHit embeddedHit))
+                {
+                    HandleLiveHit(embeddedHit, travelDirection);
+                    return;
+                }
+            }
+
             if (segmentDistance > 0f)
             {
                 _travelledDistance += segmentDistance;
@@ -1073,6 +1090,54 @@ public class Projectile : MonoBehaviour
         return Mathf.Max(CollisionCastPadding, _collisionRadius * 0.5f);
     }
 
+    private bool TryCastEmbeddedCollision(Vector3 origin, Vector3 direction, out RaycastHit bestHit)
+    {
+        EnsureCollisionLayers();
+
+        float overlapRadius = Mathf.Max(_collisionRadius, CollisionCastPadding);
+        int count = Physics.OverlapSphereNonAlloc(
+            origin,
+            overlapRadius,
+            EmbeddedCollisionBuffer,
+            hitMask,
+            QueryTriggerInteraction.Ignore);
+
+        float backtrackDistance = 0f;
+        for (int i = 0; i < count; i++)
+        {
+            Collider collider = EmbeddedCollisionBuffer[i];
+            if (collider == null
+                || IsUnderRoot(collider.transform, _ignoredRoot)
+                || !IsCollidableLayer(collider.gameObject.layer))
+            {
+                continue;
+            }
+
+            float boundsRadius = collider.bounds.extents.magnitude;
+            if (float.IsNaN(boundsRadius) || float.IsInfinity(boundsRadius))
+            {
+                continue;
+            }
+
+            backtrackDistance = Mathf.Max(backtrackDistance, boundsRadius * 2f + GetCollisionCastPadding());
+        }
+
+        if (backtrackDistance <= 0f)
+        {
+            bestHit = default;
+            return false;
+        }
+
+        Vector3 safeDirection = direction.sqrMagnitude > 0.000001f
+            ? direction.normalized
+            : Vector3.forward;
+        return TryCastCollision(
+            origin - safeDirection * backtrackDistance,
+            safeDirection,
+            backtrackDistance + GetCollisionCastPadding(),
+            out bestHit);
+    }
+
     private Vector3 GetSafeVelocityDirection()
     {
         if (_currentVelocity.sqrMagnitude > 0.000001f)
@@ -1154,8 +1219,14 @@ public class Projectile : MonoBehaviour
 
     private static bool IsBlockingLayer(int layer)
     {
-        return (_groundLayer >= 0 && layer == _groundLayer)
+        return (_defaultLayer >= 0 && layer == _defaultLayer)
+               || (_groundLayer >= 0 && layer == _groundLayer)
                || (_obstacleLayer >= 0 && layer == _obstacleLayer);
+    }
+
+    private static bool IsCollidableLayer(int layer)
+    {
+        return IsArmorLayer(layer) || IsBlockingLayer(layer);
     }
 
     private static void EnsureCollisionLayers()
@@ -1165,6 +1236,7 @@ public class Projectile : MonoBehaviour
             return;
         }
 
+        _defaultLayer = LayerMask.NameToLayer(DefaultLayerName);
         _armorLayer = LayerMask.NameToLayer(ArmorLayerName);
         _groundLayer = LayerMask.NameToLayer(GroundLayerName);
         _obstacleLayer = LayerMask.NameToLayer(ObstacleLayerName);

@@ -371,11 +371,18 @@ namespace Game.Scripts.Gameplay.Robots
             if (weaponAim != null)
             {
                 Vector3 currentGunAimPoint = weaponAim.gun != null
-                    ? weaponAim.GetCurrentAimPointForOrigin(weaponAim.gun.position)
+                    ? weaponAim.GetCurrentAimPointForOrigin(startPos)
                     : weaponAim.CurrentAimPoint;
                 if (IsFinite(currentGunAimPoint) && (currentGunAimPoint - startPos).sqrMagnitude > 0.01f)
                 {
-                    return currentGunAimPoint;
+                    Vector3 aimDirection = currentGunAimPoint - startPos;
+                    Vector3 muzzleForward = GetMuzzleForward();
+                    if (Vector3.Dot(aimDirection, muzzleForward) >= 0f)
+                    {
+                        return currentGunAimPoint;
+                    }
+
+                    return startPos + muzzleForward * GetMaxShotDistance();
                 }
 
                 Vector3 gunForward = weaponAim.GetCurrentAimForwardWorld();
@@ -386,14 +393,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
             }
 
-            Vector3 forward = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
-            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
-            {
-                forward = Vector3.forward;
-            }
-
-            forward.Normalize();
-            return startPos + forward * GetMaxShotDistance();
+            return startPos + GetMuzzleForward() * GetMaxShotDistance();
         }
 
         private Projectile SpawnLocal(
@@ -898,14 +898,19 @@ namespace Game.Scripts.Gameplay.Robots
             float maxDistance = GetMaxShotDistance();
             Vector3 baseDirection = aimPoint - startPos;
             float distance = baseDirection.magnitude;
+            Vector3 muzzleForward = GetMuzzleForward();
             if (!IsFinite(baseDirection) || float.IsNaN(distance) || float.IsInfinity(distance) || distance <= 0.001f)
             {
-                baseDirection = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
+                baseDirection = muzzleForward;
                 distance = maxDistance;
             }
             else
             {
                 baseDirection /= distance;
+                if (Vector3.Dot(baseDirection, muzzleForward) < 0f)
+                {
+                    baseDirection = muzzleForward;
+                }
             }
 
             float targetDistance = Mathf.Clamp(distance, 0.001f, maxDistance);
@@ -936,6 +941,17 @@ namespace Game.Scripts.Gameplay.Robots
         private float GetMaxShotDistance()
         {
             return Mathf.Max(1f, maxShotDistance);
+        }
+
+        private Vector3 GetMuzzleForward()
+        {
+            Vector3 forward = muzzleTransform != null ? muzzleTransform.forward : transform.forward;
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                return Vector3.forward;
+            }
+
+            return forward.normalized;
         }
 
         private Vector3 GetProjectileGravity()
@@ -1502,18 +1518,32 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            bool autonomousControl = vehicleRoot != null
+                && vehicleRoot.inputManager != null
+                && vehicleRoot.inputManager.IsAutonomous;
+            activeCrosshair.SetPenetrationStatus(GetShotHudStatusText(status, autonomousControl));
+        }
+
+        private static string GetShotHudStatusText(byte status, bool autonomousControl)
+        {
+            if (autonomousControl
+                && (status == (byte)ShotHudStatus.Penetrated
+                    || status == (byte)ShotHudStatus.NotPenetrated))
+            {
+                return GunCrosshair.PenetrationStatusGlyph;
+            }
+
             if (status == (byte)ShotHudStatus.Penetrated)
             {
-                activeCrosshair.SetPenetrationStatus(GunCrosshair.PenetrationStatusGlyph);
+                return "Penetrated";
             }
-            else if (status == (byte)ShotHudStatus.NotPenetrated)
+
+            if (status == (byte)ShotHudStatus.NotPenetrated)
             {
-                activeCrosshair.SetPenetrationStatus(GunCrosshair.PenetrationStatusGlyph);
+                return "No penetration";
             }
-            else
-            {
-                activeCrosshair.SetPenetrationStatus("Miss");
-            }
+
+            return "Miss";
         }
     }
 }
