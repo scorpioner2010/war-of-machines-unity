@@ -273,9 +273,9 @@ namespace Game.Scripts.Networking.Lobby
 
             if (ServerSettings.AreBotsEnabled())
             {
-                _botPopulationService.AddBots(
+                _botPopulationService.FillToTarget(
                     room,
-                    ServerSettings.GetBotsPerMatch(),
+                    room.maxPlayers,
                     ServerSettings.GetDefaultBotVehicleCode());
             }
 

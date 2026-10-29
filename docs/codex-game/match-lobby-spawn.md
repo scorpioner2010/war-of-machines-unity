@@ -45,7 +45,7 @@ Current owner scripts:
   - Every vehicle prefab referenced by `RobotRegistry` and spawned in a match must also be present here.
   - Add new prefabs at the end so existing network prefab IDs remain stable.
 - `Assets/Game/Scripts/Networking/Lobby/MatchBotPopulationService.cs`
-  - Adds bot players to matches according to settings.
+  - Fills a match to `ServerSettings.maxPlayersForFindRoom` after matchmaking by adding only the missing bot count; it does not use a fixed bot-per-match value.
 - `Assets/Game/Scripts/Networking/Lobby/MatchTeam.cs`
   - Team identity and same-team checks.
 - `Assets/Game/Scripts/Networking/Lobby/BattleStatisticsService.cs`
@@ -63,7 +63,7 @@ Current owner scripts:
   - The VehicleTest `Bots` tab adds random ally/enemy bot `Player` records and uses `MatchVehicleSpawner.SpawnBotAsync` instead of custom bot instantiation.
 
 Spawn flow:
-1. Room is created and players/bots are assigned.
+1. Room is created for real players. It starts immediately when `maxPlayersForFindRoom` real players arrive or after `findRoomSeconds`; if bots are enabled, the server then adds `maxPlayersForFindRoom - realPlayerCount` bots.
 2. `GameplaySpawner` loads the selected map scene additively for the room.
 3. The room receives a scene slot and scene offset so multiple matches can exist at once.
 4. `MatchVehicleSpawner` chooses a free `SpawnPoint` for each player/bot team.
@@ -76,6 +76,9 @@ Spawn flow:
 11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team. VehicleTest forces its spawned vehicles' client presentation visible because its test room does not receive the normal match visibility snapshots.
 12. In Client editor test mode, the prepared `VehicleTest` room is added to `LobbyRooms`, marked active, and passed to `GameplaySpawner.StartEditorTestMatch`; this keeps the normal timer and visibility tick path active for the test session.
 13. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
+
+Team population:
+- `ServerRoom.AssignTeams` balances real players first, then assigns generated bots to the remaining TeamA/TeamB slots so the final teams differ by at most one participant. For a target of 20 with six real players, each team receives three real players and seven bots.
 
 Post-battle result flow:
 1. `GameplaySpawner` finishes the room and `MatchResultService` posts the real-player inputs to `/matches/{matchId}/end`.

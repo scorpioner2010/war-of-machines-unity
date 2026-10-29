@@ -205,15 +205,14 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                if (IsServerInitialized)
-                {
-                    return _moveServer;
-                }
-                if (HasLocalInput)
-                {
-                    return IsLocalInputBlocked ? Vector2.zero : _moveLocal;
-                }
-                return _animMove.Value;
+                return ResolveAnimationMove(
+                    IsServerInitialized,
+                    HasLocalInput,
+                    IsAutonomous,
+                    IsLocalInputBlocked,
+                    _moveServer,
+                    _moveLocal,
+                    _animMove.Value);
             }
         }
 
@@ -224,6 +223,10 @@ namespace Game.Scripts.Gameplay.Robots
                 if (IsServerInitialized)
                 {
                     return _shootServer;
+                }
+                if (IsAutonomous || !HasLocalInput)
+                {
+                    return _animShoot.Value;
                 }
                 if (HasLocalInput)
                 {
@@ -240,6 +243,10 @@ namespace Game.Scripts.Gameplay.Robots
                 if (IsServerInitialized)
                 {
                     return _actionServer;
+                }
+                if (IsAutonomous || !HasLocalInput)
+                {
+                    return _animAction.Value;
                 }
                 if (HasLocalInput)
                 {
@@ -596,6 +603,28 @@ namespace Game.Scripts.Gameplay.Robots
         private void ResetCruiseControl()
         {
             _cruiseSpeedLevel = 0;
+        }
+
+        private static Vector2 ResolveAnimationMove(
+            bool isServerInitialized,
+            bool hasLocalInput,
+            bool isAutonomous,
+            bool localInputBlocked,
+            Vector2 serverMove,
+            Vector2 localMove,
+            Vector2 replicatedMove)
+        {
+            if (isServerInitialized)
+            {
+                return serverMove;
+            }
+
+            if (isAutonomous || !hasLocalInput)
+            {
+                return replicatedMove;
+            }
+
+            return localInputBlocked ? Vector2.zero : localMove;
         }
 
         private bool HandleRightMouseAimLock(bool blocked, out bool changed)

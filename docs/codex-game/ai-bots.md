@@ -51,6 +51,7 @@ Current owner scripts:
   - When the same moving target updates its tactical position, it uses `BotNavigator.UpdateTargetPosition` so the path is refreshed without resetting the current steering input or pivot state; a real target switch still uses `SetTargetPosition` and resets those states.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatInputWriter.cs`
   - Sends combat and movement-only server input through `VehicleInputController.ServerSetExternalInput`.
+  - The server remains authoritative for bot decisions and movement; the owning client consumes the replicated command only for local presentation, so client-side AI cannot diverge from server collision, visibility, or fire validation.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotIdleAimController.cs`
   - Aims the turret along travel direction or forward when no map-visible target is selected.
 - `Assets/Game/Scripts/AI/WaypointGraph/BotCombatState.cs`
@@ -70,6 +71,7 @@ Current owner scripts:
   - During a Client Play Mode run, `F1` reopens the expanded test panel after the player vehicle has captured gameplay input.
 - `Assets/Game/Scripts/Server/ServerSettings.cs`
   - Contains `BotWanderSettings` and `BotCombatSettings`.
+  - Match bots are not a fixed count: `maxPlayersForFindRoom` is the total match target, and the server creates only the missing bots after the real-player matchmaking window expires.
 - `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`
   - Serialized runtime settings. If a field is added to settings, check this prefab and add serialized values if Unity has not done it yet.
 

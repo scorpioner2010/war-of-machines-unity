@@ -136,7 +136,7 @@ namespace Game.Scripts.Networking.Lobby
                 SyncedTimeOnChange(currentTime);
             }
 
-            if (!isInGame && players.Count > 0)
+            if (!isInGame && RealPlayersCount() > 0)
             {
                 OnTimeIsUp?.Invoke(this);
             }
@@ -164,6 +164,21 @@ namespace Game.Scripts.Networking.Lobby
         public int PlayersCount()
         {
             return players.Count;
+        }
+
+        public int RealPlayersCount()
+        {
+            int count = 0;
+            for (int i = 0; i < players.Count; i++)
+            {
+                Player player = players[i];
+                if (player != null && !player.isBot)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         public bool HasPlayer(NetworkConnection connection)
@@ -330,7 +345,53 @@ namespace Game.Scripts.Networking.Lobby
             AssignPlayersToBalancedTeams(realPlayers, ref teamACount, ref teamBCount, ref teamAMmr, ref teamBMmr, ref preferTeamA);
 
             botPlayers.Sort(CompareForTeamBalance);
-            AssignPlayersToBalancedTeams(botPlayers, ref teamACount, ref teamBCount, ref teamAMmr, ref teamBMmr, ref preferTeamA);
+            int teamATargetCount = (realPlayers.Count + botPlayers.Count + 1) / 2;
+            int teamBTargetCount = realPlayers.Count + botPlayers.Count - teamATargetCount;
+            int teamASlotsForBots = Mathf.Max(0, teamATargetCount - teamACount);
+            int teamBSlotsForBots = Mathf.Max(0, teamBTargetCount - teamBCount);
+            AssignBotsToTeamSlots(botPlayers, ref teamASlotsForBots, ref teamBSlotsForBots, ref preferTeamA);
+        }
+
+        private static void AssignBotsToTeamSlots(
+            List<Player> botPlayers,
+            ref int teamASlots,
+            ref int teamBSlots,
+            ref bool preferTeamA)
+        {
+            for (int i = 0; i < botPlayers.Count; i++)
+            {
+                Player bot = botPlayers[i];
+                if (bot == null)
+                {
+                    continue;
+                }
+
+                MatchTeam team;
+                if (teamASlots > teamBSlots)
+                {
+                    team = MatchTeam.TeamA;
+                }
+                else if (teamBSlots > teamASlots)
+                {
+                    team = MatchTeam.TeamB;
+                }
+                else
+                {
+                    team = preferTeamA ? MatchTeam.TeamA : MatchTeam.TeamB;
+                }
+
+                bot.team = team;
+                if (team == MatchTeam.TeamA)
+                {
+                    teamASlots--;
+                }
+                else
+                {
+                    teamBSlots--;
+                }
+
+                preferTeamA = !preferTeamA;
+            }
         }
 
         private static void AssignPlayersToBalancedTeams(
@@ -436,7 +497,7 @@ namespace Game.Scripts.Networking.Lobby
 
         public bool IsFull()
         {
-            return players.Count >= maxPlayers;
+            return RealPlayersCount() >= maxPlayers;
         }
 
         public string GetApiToken()

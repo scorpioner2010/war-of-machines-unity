@@ -7,7 +7,6 @@ namespace Game.Scripts.UI.Settings
     public static class ClientGameplaySettings
     {
         private const string ServerCrosshairKey = "Gameplay.ServerCrosshairEnabled";
-        private const string CameraShakeKey = "Gameplay.CameraShakeEnabled";
         private const string GameplayMouseSensitivityKey = "Gameplay.MouseSensitivity";
         private const string SniperMouseSensitivityKey = "Gameplay.SniperMouseSensitivity";
 
@@ -19,6 +18,7 @@ namespace Game.Scripts.UI.Settings
         public static event Action<bool> ServerCrosshairChanged;
         public static event Action<bool> CameraShakeChanged;
 
+        private static bool _cameraShakeEnabled = true;
         private static bool? _cameraShakeOverride;
 
         public static bool ServerCrosshairEnabled
@@ -38,7 +38,7 @@ namespace Game.Scripts.UI.Settings
                     return _cameraShakeOverride.Value;
                 }
 
-                return PlayerPrefs.GetInt(CameraShakeKey, 1) == 1;
+                return _cameraShakeEnabled;
             }
         }
 
@@ -65,7 +65,7 @@ namespace Game.Scripts.UI.Settings
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void ApplyStoredCameraShakePreference()
         {
-            ApplyCameraShakePreference(CameraShakeEnabled);
+            SetCameraShakeEnabled(SettingsModel.LoadStoredCameraShakeEnabled(), false);
         }
 
         public static void SetServerCrosshairEnabled(bool enabled)
@@ -97,13 +97,8 @@ namespace Game.Scripts.UI.Settings
 
         public static void SetCameraShakeEnabled(bool enabled, bool notify)
         {
-            int value = enabled ? 1 : 0;
-            bool changed = PlayerPrefs.GetInt(CameraShakeKey, 1) != value;
-            if (changed)
-            {
-                PlayerPrefs.SetInt(CameraShakeKey, value);
-                PlayerPrefs.Save();
-            }
+            bool changed = _cameraShakeEnabled != enabled;
+            _cameraShakeEnabled = enabled;
 
             ApplyCameraShakePreference(CameraShakeEnabled);
 

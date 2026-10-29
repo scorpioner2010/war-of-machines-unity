@@ -123,6 +123,7 @@ namespace Game.Scripts.UI.Settings
         {
             _model.CameraShakeEnabled = isOn;
             ClientGameplaySettings.SetCameraShakeEnabled(isOn);
+            _model.Save();
         }
 
         public void HandleWalkKeyChanged(string newKey)

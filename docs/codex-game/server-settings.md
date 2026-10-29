@@ -72,6 +72,7 @@ Rules when editing settings:
 - Keep runtime settings lightweight and avoid per-frame allocations.
 
 Current bot settings added recently:
+- `ServerSettings.maxPlayersForFindRoom` is both the real-player threshold for an immediate start and the target total match population. The server waits up to `findRoomSeconds` for real players; when the timer expires, `botsEnabled` fills the difference between the real-player count and this target. The old fixed `botsPerMatch` setting was removed.
 - `BotWanderSettings.turnInPlaceEnterAngle`
 - `BotWanderSettings.turnInPlaceExitAngle`
 - `BotWanderSettings.turnDeadZoneAngle` (default `4` degrees)

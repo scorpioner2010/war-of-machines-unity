@@ -384,6 +384,65 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AutonomousOwnerUsesReplicatedMovementForPresentation()
+        {
+            Type inputType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
+            Assert.IsNotNull(inputType);
+
+            MethodInfo resolveAnimationMove = inputType.GetMethod(
+                "ResolveAnimationMove",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(resolveAnimationMove);
+
+            Vector2 serverMove = new Vector2(-0.2f, 0.4f);
+            Vector2 localMove = Vector2.zero;
+            Vector2 replicatedMove = new Vector2(0.35f, 0.9f);
+
+            Vector2 autonomousOwnerMove = (Vector2)resolveAnimationMove.Invoke(
+                null,
+                new object[]
+                {
+                    false,
+                    true,
+                    true,
+                    true,
+                    serverMove,
+                    localMove,
+                    replicatedMove
+                });
+            Vector2 remoteObserverMove = (Vector2)resolveAnimationMove.Invoke(
+                null,
+                new object[]
+                {
+                    false,
+                    false,
+                    false,
+                    false,
+                    serverMove,
+                    localMove,
+                    replicatedMove
+                });
+            Vector2 serverMoveResult = (Vector2)resolveAnimationMove.Invoke(
+                null,
+                new object[]
+                {
+                    true,
+                    false,
+                    true,
+                    true,
+                    serverMove,
+                    localMove,
+                    replicatedMove
+                });
+
+            Assert.That(autonomousOwnerMove, Is.EqualTo(replicatedMove));
+            Assert.That(remoteObserverMove, Is.EqualTo(replicatedMove));
+            Assert.That(serverMoveResult, Is.EqualTo(serverMove));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator BotShotUsesPhysicalGunDirectionWhileGunIsStillRotating()
         {
             GameObject vehicleObject = new GameObject("BotPhysicalAimRegressionVehicle");

@@ -851,15 +851,13 @@ namespace Game.Scripts.Server
     {
         public static ServerSettings In;
         
-        [Tooltip("Максимальна кількість гравців у кімнаті пошуку матчу.")]
+        [Tooltip("Кількість реальних гравців для негайного старту та цільова кількість усіх учасників матчу. Після завершення пошуку сервер добирає ботів до цього значення.")]
         public int maxPlayersForFindRoom = 1;
         [Tooltip("Скільки секунд кімната чекає перед стартом матчу, якщо вона не заповнилася.")]
         public int findRoomSeconds = 60;
         [Header("Боти")]
-        [Tooltip("Додавати ботів у матч.")]
+        [Tooltip("Додавати ботів, щоб заповнити матч до maxPlayersForFindRoom.")]
         public bool botsEnabled = true;
-        [Tooltip("Кількість ботів, які додаються в матч.")]
-        [Min(0)] public int botsPerMatch = 6;
         [Tooltip("Код машини, яку отримують боти за замовчуванням.")]
         public string defaultBotVehicleCode = "ia_l1_starter";
         [Tooltip("MMR, який отримують серверні боти під час створення матчу.")]
@@ -917,16 +915,6 @@ namespace Game.Scripts.Server
         public static bool AreBotsEnabled()
         {
             return In != null && In.botsEnabled;
-        }
-
-        public static int GetBotsPerMatch()
-        {
-            if (In == null || In.botsPerMatch <= 0)
-            {
-                return 0;
-            }
-
-            return In.botsPerMatch;
         }
 
         public static string GetDefaultBotVehicleCode()
@@ -1057,11 +1045,6 @@ namespace Game.Scripts.Server
             if (findRoomSeconds < 1)
             {
                 findRoomSeconds = 1;
-            }
-
-            if (botsPerMatch < 0)
-            {
-                botsPerMatch = 0;
             }
 
             if (botMmr < 0)

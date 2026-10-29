@@ -41,6 +41,19 @@ namespace Game.Scripts.UI.Settings
                 return Path.Combine(exeFolder, configFileName);
             }
         }
+
+        public static bool LoadStoredCameraShakeEnabled()
+        {
+            SettingsModel storedSettings = new SettingsModel();
+            if (!File.Exists(ConfigFilePath))
+            {
+                return storedSettings.CameraShakeEnabled;
+            }
+
+            string json = File.ReadAllText(ConfigFilePath);
+            JsonUtility.FromJsonOverwrite(json, storedSettings);
+            return storedSettings.CameraShakeEnabled;
+        }
         
         public void Load()
         {

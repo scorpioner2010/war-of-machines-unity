@@ -51,6 +51,7 @@ Current owner scripts:
   - Manual `W`/`S`, `Space`, or blocked UI/gameplay input clears cruise control before movement is sent to the server.
   - Implements `IBotInputReceiver` for bot movement.
   - Applies server input to movement, shoot/action state, turret yaw, gun pitch, and desired aim point.
+  - In autonomous mode, the owner client uses the replicated server movement/shoot/action state for presentation instead of the intentionally blocked local input. This keeps tracked wheels, track textures, walker feet, and local movement sway aligned with the authoritative bot command.
   - Replicates the authoritative server aim target (`yaw`, `pitch`, point, and forward) to the owning autonomous client and remote observers. Autonomous local input is blocked, but the client still applies this synchronized aim to its presentation controllers; observers use the same state instead of relying on a missing turret transform sync.
 - `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`
   - Owns local gameplay camera orbit, zoom steps, and sniper camera placement.

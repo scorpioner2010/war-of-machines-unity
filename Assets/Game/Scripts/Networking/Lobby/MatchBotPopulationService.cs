@@ -7,25 +7,26 @@ namespace Game.Scripts.Networking.Lobby
 {
     public sealed class MatchBotPopulationService
     {
-        public void AddBots(ServerRoom room, int requestedBotCount, string defaultVehicleCode)
+        public int FillToTarget(ServerRoom room, int targetPlayerCount, string defaultVehicleCode)
         {
-            if (room == null || requestedBotCount <= 0)
+            if (room == null || targetPlayerCount <= 0)
             {
-                return;
+                return 0;
             }
 
+            int desiredBotCount = Mathf.Max(0, targetPlayerCount - room.RealPlayersCount());
             int existingBots = CountBots(room);
-            int botsToAdd = Mathf.Max(0, requestedBotCount - existingBots);
+            int botsToAdd = Mathf.Max(0, desiredBotCount - existingBots);
             if (botsToAdd <= 0)
             {
-                return;
+                return 0;
             }
 
             List<string> vehicleCodes = BuildVehicleCodePool(defaultVehicleCode);
             if (vehicleCodes.Count == 0)
             {
                 Debug.LogWarning("Cannot add match bots: no bot vehicle codes were found in registry or default settings.");
-                return;
+                return 0;
             }
 
             Shuffle(vehicleCodes);
@@ -56,11 +57,7 @@ namespace Game.Scripts.Networking.Lobby
                 room.AddPlayer(bot);
             }
 
-            int playerCount = room.PlayersCount();
-            if (room.maxPlayers < playerCount)
-            {
-                room.maxPlayers = playerCount;
-            }
+            return botsToAdd;
         }
 
         private static int CountBots(ServerRoom room)
