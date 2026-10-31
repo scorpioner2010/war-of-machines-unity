@@ -119,6 +119,11 @@ namespace Game.Scripts.UI.Settings
             ClientGameplaySettings.SetServerCrosshairEnabled(isOn);
         }
 
+        public void HandleReticleOpacityChanged(float value)
+        {
+            ClientGameplaySettings.SetReticleOpacity(value);
+        }
+
         public void HandleCameraShakeChanged(bool isOn)
         {
             _model.CameraShakeEnabled = isOn;

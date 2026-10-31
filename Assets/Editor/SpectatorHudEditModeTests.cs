@@ -1,6 +1,7 @@
 using System.Reflection;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.UI.HUD;
+using Game.Scripts.UI.Settings;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -25,6 +26,26 @@ namespace Game.Editor.Tests
             return (bool)method.Invoke(
                 null,
                 new object[] { deathSpectatorActive, isLocalTarget, targetIsDead });
+        }
+
+        [TestCase(true, ExpectedResult = true)]
+        [TestCase(false, ExpectedResult = false)]
+        public bool AimingCircleVisibilityMatchesSpectatorState(bool deathSpectatorActive)
+        {
+            MethodInfo method = typeof(GunCrosshair).GetMethod(
+                "ShouldHideSpectatorAimingCircle",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+
+            return (bool)method.Invoke(null, new object[] { deathSpectatorActive });
+        }
+
+        [TestCase(-0.2f, ExpectedResult = 0f)]
+        [TestCase(0.35f, ExpectedResult = 0.35f)]
+        [TestCase(1.2f, ExpectedResult = 1f)]
+        public float ReticleOpacityClampsToValidRange(float value)
+        {
+            return ClientGameplaySettings.ClampReticleOpacity(value);
         }
 
         [Test]

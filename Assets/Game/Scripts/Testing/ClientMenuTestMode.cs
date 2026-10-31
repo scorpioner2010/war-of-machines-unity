@@ -12,10 +12,10 @@ namespace Game.Scripts.Testing
     public class ClientMenuTestVehicle
     {
         [Min(1)] public int vehicleId = 1;
-        [Tooltip("Код машини з RobotRegistry, наприклад ia_l1_starter або nv_l1_starter.")]
+        [Tooltip("Vehicle code from RobotRegistry, for example ia_l1_starter or nv_l1_starter.")]
         public string code = "nv_l1_starter";
         public string vehicleName = "NV Starter";
-        [Tooltip("Для готових візуалів дерева використовуйте iron_alliance або nova_syndicate.")]
+        [Tooltip("Use iron_alliance or nova_syndicate for the ready-made tech-tree visuals.")]
         public string factionCode = "nova_syndicate";
         public string factionName = "Nova Syndicate";
         public string vehicleClass = "Assault";
@@ -44,11 +44,11 @@ namespace Game.Scripts.Testing
     {
         private static ClientMenuTestMode _instance;
 
-        [Header("Офлайн-тестування меню")]
-        [Tooltip("Увімкніть, щоб Client.unity відкривала головне меню з локальними демо-даними та не запускала підключення до сервера.")]
+        [Header("Offline Menu Testing")]
+        [Tooltip("Enable this to open Client.unity in the main menu with local demo data without connecting to the server.")]
         public bool enableOfflineMenuTest;
 
-        [Header("Демо-профіль")]
+        [Header("Demo Profile")]
         [SerializeField] private string testPlayerName = "Menu Tester";
         [SerializeField] private int testMmr = 1475;
         [SerializeField] private int testBolts = 48620;
@@ -57,8 +57,8 @@ namespace Game.Scripts.Testing
         [SerializeField] private int testMmrDelta = 86;
         [SerializeField] private string testLastBattleAt = "2026-10-26T19:42:00Z";
 
-        [Header("Тестові машини")]
-        [Tooltip("Усі машини масиву належать тестовому профілю: вони з'являються у виборі роботів і в дереві своєї фракції.")]
+        [Header("Test Vehicles")]
+        [Tooltip("All vehicles in this array belong to the test profile and appear in the vehicle selector and their faction tech tree.")]
         [SerializeField] private ClientMenuTestVehicle[] testVehicles =
         {
             new ClientMenuTestVehicle

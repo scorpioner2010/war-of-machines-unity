@@ -186,8 +186,8 @@ namespace Game.Scripts.UI.HUD
             if (autonomousControlButtonLabel != null)
             {
                 autonomousControlButtonLabel.text = inputController != null && inputController.IsAutonomous
-                    ? "ВИМКНУТИ АВТОУПРАВЛІННЯ"
-                    : "УВІМКНУТИ АВТОУПРАВЛІННЯ";
+                    ? "DISABLE AUTOPILOT"
+                    : "ENABLE AUTOPILOT";
             }
         }
 

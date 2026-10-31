@@ -8,52 +8,52 @@ namespace Game.Scripts.Server
     {
         private static readonly RobotMovementGlobalSettings DefaultSettings = new RobotMovementGlobalSettings();
 
-        [Header("Запасні характеристики")]
-        [Tooltip("Запасна максимальна швидкість машини, якщо runtime-статистика не передала коректне значення.")]
+        [Header("Fallback Statistics")]
+        [Tooltip("Fallback maximum vehicle speed when runtime statistics do not provide a valid value.")]
         public float fallbackMaxSpeed = 10f;
-        [Tooltip("Запасне прискорення машини, якщо runtime-статистика не передала коректне значення.")]
+        [Tooltip("Fallback vehicle acceleration when runtime statistics do not provide a valid value.")]
         public float fallbackAcceleration = 30f;
-        [Tooltip("Запасна швидкість повороту корпусу в градусах за секунду. 0 означає використовувати локальне значення компонента.")]
+        [Tooltip("Fallback hull turn speed in degrees per second. 0 uses the component's local value.")]
         public float fallbackTraverseSpeedDegPerSecond = 0f;
 
-        [Header("Зупинка після відпускання руху")]
-        [Tooltip("Множник гальмування NV після відпускання руху.")]
+        [Header("Stopping After Releasing Movement")]
+        [Tooltip("NV braking multiplier after movement input is released.")]
         public float nvStoppingAccelerationMultiplier = 3f;
-        [Tooltip("Множник гальмування IA після відпускання руху.")]
+        [Tooltip("IA braking multiplier after movement input is released.")]
         public float iaStoppingAccelerationMultiplier = 2.75f;
-        [Tooltip("Множник прискорення для звичайних/гусеничних машин.")]
+        [Tooltip("Acceleration multiplier for standard and tracked vehicles.")]
         public float standardAccelerationMultiplier = 1f;
-        [Tooltip("Множник гальмування для звичайних/гусеничних машин.")]
+        [Tooltip("Braking multiplier for standard and tracked vehicles.")]
         public float standardBrakingMultiplier = 1f;
-        [Tooltip("Множник прискорення для крокуючих машин.")]
+        [Tooltip("Acceleration multiplier for walking vehicles.")]
         public float leggedAccelerationMultiplier = 2.25f;
-        [Tooltip("Множник гальмування для крокуючих машин.")]
+        [Tooltip("Braking multiplier for walking vehicles.")]
         public float leggedBrakingMultiplier = 2.75f;
         [Tooltip("Multiplier for braking when switching to the opposite direction.")]
         public float directionReversalBrakingMultiplier = 2f;
 
-        [Header("Анімація ніг")]
-        [Tooltip("Швидкість руху, відносно якої рахується базова швидкість анімації ніг.")]
+        [Header("Leg Animation")]
+        [Tooltip("Movement speed used as the reference for the base leg animation speed.")]
         public float leggedAnimationReferenceSpeed = 10f;
-        [Tooltip("Мінімальний множник швидкості анімації ніг.")]
+        [Tooltip("Minimum leg animation speed multiplier.")]
         public float leggedAnimationMinSpeedMultiplier = 0.45f;
-        [Tooltip("Максимальний множник швидкості анімації ніг.")]
+        [Tooltip("Maximum leg animation speed multiplier.")]
         public float leggedAnimationMaxSpeedMultiplier = 2.2f;
-        [Tooltip("Крива реакції швидкості анімації ніг на швидкість руху. Більше значення робить зміну різкішою.")]
+        [Tooltip("Response curve from movement speed to leg animation speed. Higher values make the change sharper.")]
         public float leggedAnimationSpeedExponent = 0.8f;
-        [Tooltip("Множник довжини кроку для крокуючих машин.")]
+        [Tooltip("Step-length multiplier for walking vehicles.")]
         public float leggedStepDistanceMultiplier = 1f;
-        [Tooltip("Множник висоти кроку для крокуючих машин.")]
+        [Tooltip("Step-height multiplier for walking vehicles.")]
         public float leggedStepHeightMultiplier = 1f;
-        [Tooltip("Множник тривалості кроку під час повороту.")]
+        [Tooltip("Step-duration multiplier while turning.")]
         public float leggedTurnStepDurationMultiplier = 1f;
-        [Tooltip("Множник швидкості переходів між фазами кроку.")]
+        [Tooltip("Transition-speed multiplier between step phases.")]
         public float leggedTransitionSpeedMultiplier = 1f;
 
-        [Header("Притискання до землі")]
-        [Tooltip("Сила гравітації для руху машин.")]
+        [Header("Ground Adhesion")]
+        [Tooltip("Gravity strength for vehicle movement.")]
         public float gravity = 25f;
-        [Tooltip("Дистанція притискання до землі, щоб машина стабільно трималася поверхні.")]
+        [Tooltip("Ground-adhesion distance that keeps the vehicle stable on the surface.")]
         public float groundedSnap = 2f;
 
         public static RobotMovementGlobalSettings Default
@@ -160,72 +160,72 @@ namespace Game.Scripts.Server
     {
         private static readonly BotWanderSettings DefaultSettings = new BotWanderSettings();
 
-        [Header("Рух")]
-        [Tooltip("Як часто бот переоцінює свій рух і ціль.")]
+        [Header("Movement")]
+        [Tooltip("How often the bot reevaluates its movement and target.")]
         public float thinkInterval = 0.25f;
-        [Tooltip("Мінімальна тривалість одного рішення руху бота.")]
+        [Tooltip("Minimum duration of one bot movement decision.")]
         public float minMoveDuration = 1.2f;
-        [Tooltip("Максимальна тривалість одного рішення руху бота.")]
+        [Tooltip("Maximum duration of one bot movement decision.")]
         public float maxMoveDuration = 3.2f;
-        [Tooltip("Базовий ввід руху вперед для бота від -1 до 1.")]
+        [Tooltip("Base forward movement input for the bot from -1 to 1.")]
         public float forwardInput = 1f;
-        [Tooltip("Максимальна сила м'якого повороту бота від 0 до 1.")]
+        [Tooltip("Maximum soft-turn strength for the bot from 0 to 1.")]
         public float maxGentleTurnInput = 0.35f;
-        [Tooltip("Шанс, що бот вибере різкий поворот замість м'якого.")]
+        [Tooltip("Chance that the bot chooses a sharp turn instead of a soft turn.")]
         public float strongTurnChance = 0.18f;
-        [Tooltip("Сила різкого повороту бота від 0 до 1.")]
+        [Tooltip("Sharp-turn strength for the bot from 0 to 1.")]
         public float strongTurnInput = 0.85f;
-        [Tooltip("Шанс, що бот тимчасово стоятиме без руху.")]
+        [Tooltip("Chance that the bot temporarily remains stationary.")]
         public float idleChance = 0f;
 
-        [Header("Маршрут по точках")]
-        [Tooltip("Дистанція, на якій waypoint вважається досягнутим.")]
+        [Header("Waypoint Routing")]
+        [Tooltip("Distance at which a waypoint is considered reached.")]
         public float waypointReachDistance = 2.4f;
-        [Tooltip("Мінімальна дистанція до нової випадкової цілі маршруту.")]
+        [Tooltip("Minimum distance to a new random route target.")]
         public float minDestinationDistance = 12f;
-        [Tooltip("Кількість спроб знайти підходящу ціль маршруту.")]
+        [Tooltip("Number of attempts to find a suitable route target.")]
         public int destinationPickAttempts = 8;
-        [Tooltip("Мінімальний час між перерахунками маршруту.")]
+        [Tooltip("Minimum time between route recalculations.")]
         public float repathCooldown = 0.75f;
-        [Tooltip("Як далеко ціль має зміститися, щоб бот перерахував маршрут.")]
+        [Tooltip("How far the target must move before the bot recalculates its route.")]
         public float targetRepathDistance = 5f;
-        [Tooltip("Кут до цілі, при якому бот дає повний ввід повороту.")]
+        [Tooltip("Angle to the target at which the bot applies full turn input.")]
         public float turnFullInputAngle = 90f;
-        [Tooltip("Кут, після якого бот зупиняє рух вперед і розвертається на місці до waypoint.")]
+        [Tooltip("Angle after which the bot stops moving forward and turns in place toward the waypoint.")]
         public float turnInPlaceEnterAngle = 48f;
-        [Tooltip("Кут, нижче якого бот завершує розворот на місці та знову рухається вперед.")]
+        [Tooltip("Angle below which the bot finishes turning in place and moves forward again.")]
         public float turnInPlaceExitAngle = 18f;
-        [Tooltip("Кут до цілі, після якого бот починає зменшувати рух вперед під час повороту.")]
+        [Tooltip("Angle to the target after which the bot starts reducing forward movement while turning.")]
         public float slowTurnAngle = 55f;
-        [Tooltip("Кут до цілі, після якого бот майже зупиняється для розвороту.")]
+        [Tooltip("Angle to the target after which the bot nearly stops to turn around.")]
         public float stopTurnAngle = 115f;
         public float turnDeadZoneAngle = 4f;
         public float turnInputSmoothing = 7f;
-        [Tooltip("Ввід руху вперед під час повільного повороту.")]
+        [Tooltip("Forward movement input during a slow turn.")]
         public float slowForwardInput = 0.35f;
-        [Tooltip("Дистанція до waypoint, з якої бот починає сповільнюватися для точнішого прибуття.")]
+        [Tooltip("Distance from a waypoint at which the bot starts slowing for a more accurate arrival.")]
         public float waypointApproachSlowDistance = 8f;
-        [Tooltip("Waypoint приймається, якщо бот пройшов повз нього в межах цієї дистанції, навіть не потрапивши в точний радіус досягнення.")]
+        [Tooltip("A waypoint is accepted when the bot passes it within this distance, even without entering the exact arrival radius.")]
         public float waypointPassDistance = 5f;
-        [Tooltip("Waypoint у межах дистанції проходу приймається, якщо він залишився позаду корпусу на такий кут.")]
+        [Tooltip("A waypoint within the pass distance is accepted when it is behind the hull by this angle.")]
         public float waypointPassedAngle = 125f;
 
-        [Header("Вихід із застрягання")]
-        [Tooltip("Як часто бот перевіряє, чи застряг.")]
+        [Header("Stuck Recovery")]
+        [Tooltip("How often the bot checks whether it is stuck.")]
         public float stuckCheckInterval = 1.25f;
-        [Tooltip("Мінімальна пройдена дистанція за інтервал перевірки. Якщо менше, бот вважається застряглим.")]
+        [Tooltip("Minimum distance traveled during the check interval. Below this value, the bot is considered stuck.")]
         public float stuckDistance = 0.45f;
-        [Tooltip("Скільки часу бот виконує маневр вибирання із застрягання.")]
+        [Tooltip("How long the bot performs a stuck-recovery maneuver.")]
         public float unstickDuration = 0.8f;
-        [Tooltip("Ввід назад під час вибирання із застрягання.")]
+        [Tooltip("Reverse input during stuck recovery.")]
         public float unstickReverseInput = -0.55f;
-        [Tooltip("Сила повороту під час вибирання із застрягання.")]
+        [Tooltip("Turn strength during stuck recovery.")]
         public float unstickTurnInput = 1f;
 
-        [Header("Динамічний обхід")]
-        [Tooltip("Радіус, у якому бот враховує динамічні перешкоди й інших юнітів.")]
+        [Header("Dynamic Avoidance")]
+        [Tooltip("Radius in which the bot considers dynamic obstacles and other units.")]
         public float dynamicAvoidanceRadius = 4f;
-        [Tooltip("Сила впливу динамічного обходу перешкод на напрямок руху бота.")]
+        [Tooltip("Influence strength of dynamic obstacle avoidance on the bot's movement direction.")]
         public float dynamicAvoidanceWeight = 0.65f;
 
         [Header("Exploration")]
@@ -379,74 +379,74 @@ namespace Game.Scripts.Server
     {
         private static readonly BotCombatSettings DefaultSettings = new BotCombatSettings();
 
-        [Header("Пошук цілей")]
-        [Tooltip("Увімкнути серверний пошук цілей, наведення і стрільбу ботів.")]
+        [Header("Target Acquisition")]
+        [Tooltip("Enable server-side bot target search, aiming, and firing.")]
         public bool enabled = true;
-        [Tooltip("Як часто бот оновлює бойові рішення.")]
+        [Tooltip("How often the bot updates combat decisions.")]
         public float thinkInterval = 0.12f;
-        [Tooltip("Як часто бот перевіряє кімнату в пошуку кращої ворожої цілі.")]
+        [Tooltip("How often the bot scans the room for a better enemy target.")]
         public float targetScanInterval = 0.35f;
-        [Tooltip("Жорстка верхня межа дистанції захоплення цілі.")]
+        [Tooltip("Hard upper limit for target acquisition distance.")]
         public float maxAcquireDistance = 800f;
-        [Tooltip("Множник runtime-дальності огляду перед застосуванням maxAcquireDistance.")]
+        [Tooltip("Runtime view-distance multiplier before applying maxAcquireDistance.")]
         public float viewRangeMultiplier = 6f;
-        [Tooltip("Поточна ціль забувається після перевищення дистанції захоплення, помноженої на це значення.")]
+        [Tooltip("The current target is forgotten after exceeding the acquisition distance multiplied by this value.")]
         public float forgetTargetDistanceMultiplier = 1.5f;
-        [Tooltip("Скільки секунд бот пам'ятає ціль після втрати прямої видимості.")]
+        [Tooltip("How many seconds the bot remembers a target after losing direct line of sight.")]
         public float lostSightForgetSeconds = 2.5f;
-        [Tooltip("Вимагати чисту лінію вогню для захоплення нової цілі.")]
+        [Tooltip("Require a clear line of fire to acquire a new target.")]
         public bool requireLineOfSightToAcquire = true;
-        [Tooltip("Шари, які перевіряють raycast-промені видимості та лінії вогню бота.")]
+        [Tooltip("Layers checked by bot visibility and line-of-fire raycasts.")]
         public LayerMask lineOfSightMask = ~0;
-        [Tooltip("Перенаправляти навігатор до вибраного ворога замість звичайного wander-руху.")]
+        [Tooltip("Redirect the navigator toward the selected enemy instead of normal wandering.")]
         public bool moveTowardTarget = true;
-        [Tooltip("Зупиняти рух і стріляти з поточної позиції, коли вибрана ціль видима, доступна для пострілу і не далі за тактичну дальню дистанцію бота.")]
+        [Tooltip("Stop and fire from the current position when the selected target is visible, shootable, and within the bot's tactical long range.")]
         public bool holdPositionWithLineOfFire = true;
 
-        [Header("Наведення")]
-        [Tooltip("За можливості використовувати bounds башти як точку наведення.")]
+        [Header("Aiming")]
+        [Tooltip("Use the turret bounds as the aiming point when available.")]
         public bool preferTurretAimPoint = true;
-        [Tooltip("Запасне вертикальне зміщення цілі, якщо bounds колайдерів недоступні.")]
+        [Tooltip("Fallback vertical target offset when collider bounds are unavailable.")]
         public float fallbackTargetHeight = 1.2f;
-        [Tooltip("Невелике випадкове зміщення наведення, щоб боти не били щоразу точно в центр.")]
+        [Tooltip("Small random aiming offset so bots do not hit the exact center every time.")]
         public float randomAimRadius = 0.25f;
-        [Tooltip("Прогнозувати позицію рухомої цілі з урахуванням швидкості снаряда.")]
+        [Tooltip("Predict a moving target's position using projectile speed.")]
         public bool leadMovingTargets = true;
-        [Tooltip("Множник випередження рухомої цілі. 1 означає повне фізичне випередження.")]
+        [Tooltip("Moving-target lead multiplier. 1 means full physical leading.")]
         public float leadPredictionMultiplier = 1f;
-        [Tooltip("Максимальний час прогнозування руху цілі в секундах.")]
+        [Tooltip("Maximum target movement prediction time in seconds.")]
         public float maxLeadSeconds = 1.5f;
-        [Tooltip("Як часто вимірюється швидкість цілі.")]
+        [Tooltip("How often target velocity is measured.")]
         public float targetVelocitySampleInterval = 0.08f;
         [Tooltip("How strongly new target velocity samples replace the previous estimate.")]
         public float targetVelocitySmoothing = 0.75f;
         [Tooltip("Number of short intercept iterations used to solve target lead time.")]
         public int leadPredictionIterations = 3;
-        [Tooltip("Наводити башту вздовж напрямку руху бота, поки ворога не видно.")]
+        [Tooltip("Aim the turret along the bot's movement direction while no enemy is visible.")]
         public bool aimAlongTravelDirectionWhenNoTarget = true;
-        [Tooltip("Запасна дистанція точки наведення, коли бот дивиться в напрямку руху.")]
+        [Tooltip("Fallback aiming-point distance when the bot looks along its movement direction.")]
         public float noTargetTravelAimDistance = 220f;
-        [Tooltip("Максимальний вік напрямку навігації для наведення башти без цілі.")]
+        [Tooltip("Maximum navigation-direction age for turret aiming without a target.")]
         public float noTargetTravelDirectionMaxAgeSeconds = 0.8f;
-        [Tooltip("Наводити башту вперед, якщо ворога не видно і свіжий напрямок руху відсутній.")]
+        [Tooltip("Aim the turret forward when no enemy is visible and no recent movement direction exists.")]
         public bool aimForwardWhenNoTargetIdle = true;
 
-        [Header("Дозвіл пострілу")]
-        [Tooltip("Максимальна помилка yaw між поточним і бажаним поворотом башти перед пострілом.")]
+        [Header("Fire Permission")]
+        [Tooltip("Maximum yaw error between the current and desired turret rotation before firing.")]
         public float maxAimYawErrorDeg = 6f;
-        [Tooltip("Максимальна помилка pitch між поточним і бажаним нахилом гармати перед пострілом.")]
+        [Tooltip("Maximum pitch error between the current and desired gun elevation before firing.")]
         public float maxAimPitchErrorDeg = 6f;
-        [Tooltip("Максимальний кут між напрямком дула і вибраною точкою наведення перед пострілом.")]
+        [Tooltip("Maximum angle between the barrel direction and selected aiming point before firing.")]
         public float maxMuzzleAimErrorDeg = 7f;
-        [Tooltip("Бот може стріляти, якщо поточний розкид не перевищує мінімальний розкид, помножений на це значення.")]
+        [Tooltip("The bot may fire when current dispersion does not exceed minimum dispersion multiplied by this value.")]
         public float maxFireDispersionMultiplier = 8f;
-        [Tooltip("Додатковий абсолютний запас допустимого розкиду в градусах.")]
+        [Tooltip("Additional absolute allowed-dispersion margin in degrees.")]
         public float maxFireDispersionAddDeg = 2.5f;
-        [Tooltip("Мінімальний час утримання тієї самої цілі перед дозволом пострілу.")]
+        [Tooltip("Minimum time to keep the same target before firing is allowed.")]
         public float minTargetHoldBeforeFire = 0.08f;
-        [Tooltip("Мінімальна людоподібна затримка реакції після захоплення цілі.")]
+        [Tooltip("Minimum human-like reaction delay after acquiring a target.")]
         public float reactionDelayMin = 0.08f;
-        [Tooltip("Максимальна людоподібна затримка реакції після захоплення цілі.")]
+        [Tooltip("Maximum human-like reaction delay after acquiring a target.")]
         public float reactionDelayMax = 0.18f;
 
         public static BotCombatSettings Default
@@ -546,16 +546,16 @@ namespace Game.Scripts.Server
     {
         private static readonly ProjectileBallisticsGlobalSettings DefaultSettings = new ProjectileBallisticsGlobalSettings();
 
-        [Header("Траєкторія")]
-        [Tooltip("Гравітація снаряда. 0 = снаряд летить по прямій без падіння.")]
+        [Header("Trajectory")]
+        [Tooltip("Projectile gravity. 0 = the projectile travels in a straight line without dropping.")]
         [Min(0f)] public float projectileGravity = 6f;
-        [Tooltip("Компенсувати падіння снаряда так, щоб траєкторія намагалася влучити в точку прицілу.")]
+        [Tooltip("Compensate for projectile drop so the trajectory attempts to hit the aiming point.")]
         public bool useBallisticCompensation = true;
-        [Tooltip("Якщо можливо, використовувати вищу дугу балістичної траєкторії.")]
+        [Tooltip("Use a higher ballistic trajectory arc when possible.")]
         public bool preferHighArc;
 
-        [Header("Дебаг")]
-        [Tooltip("Показувати debug-візуалізацію балістичної траєкторії снаряда.")]
+        [Header("Debug")]
+        [Tooltip("Show debug visualization of the projectile ballistic trajectory.")]
         public bool debugBallisticTrajectory;
 
         public static ProjectileBallisticsGlobalSettings Default
@@ -605,12 +605,12 @@ namespace Game.Scripts.Server
     {
         private static readonly VehicleInputSyncSettings DefaultSettings = new VehicleInputSyncSettings();
 
-        [Header("Відправка інпуту")]
-        [Tooltip("Максимальна пауза між пакетами керування від власника машини до сервера, якщо інпут не змінюється.")]
+        [Header("Input Sending")]
+        [Tooltip("Maximum pause between owner-to-server control packets when input does not change.")]
         public float sendInterval = 0.05f;
-        [Tooltip("Мінімальна зміна yaw/pitch у градусах, після якої клієнт відправляє новий напрямок прицілювання.")]
+        [Tooltip("Minimum yaw/pitch change in degrees before the client sends a new aiming direction.")]
         public float yawPitchSendDeadzoneDeg = 0.03f;
-        [Tooltip("Мінімальна зміна точки прицілювання в метрах, після якої клієнт відправляє нову точку.")]
+        [Tooltip("Minimum aiming-point change in meters before the client sends a new point.")]
         public float aimPointSendDeadzoneMeters = 0.02f;
 
         public static VehicleInputSyncSettings Default
@@ -685,32 +685,32 @@ namespace Game.Scripts.Server
 
         private static readonly MatchVisibilityGlobalSettings DefaultSettings = new MatchVisibilityGlobalSettings();
 
-        [Header("Видимість матчу")]
-        [Tooltip("Увімкнути серверний командний spotting і знімки видимості карти.")]
+        [Header("Match Visibility")]
+        [Tooltip("Enable server-side team spotting and map-visibility snapshots.")]
         public bool enabled = true;
-        [Tooltip("Як часто сервер перераховує spotting і надсилає знімки карти.")]
+        [Tooltip("How often the server recalculates spotting and sends map snapshots.")]
         public float tickInterval = 0.5f;
-        [Tooltip("Запасна дальність огляду для машин без runtime-статистики.")]
+        [Tooltip("Fallback view range for vehicles without runtime statistics.")]
         public float fallbackViewRange = 120f;
-        [Tooltip("Максимальна ефективна дальність огляду. Встановіть 0, щоб вимкнути обмеження.")]
+        [Tooltip("Maximum effective view range. Set to 0 to disable the limit.")]
         public float maxViewRange = 450f;
-        [Tooltip("Вороги в межах цієї дистанції не обмежуються характеристикою огляду, але стіни все одно блокують виявлення, якщо requireLineOfSight увімкнено.")]
+        [Tooltip("Enemies within this distance ignore the view-range stat, but walls still block detection when requireLineOfSight is enabled.")]
         public float guaranteedDetectionRange = 35f;
-        [Tooltip("Скільки секунд ворог залишається видимим на командній карті після втрати прямого spotting усією командою.")]
+        [Tooltip("How many seconds an enemy remains visible on the team map after the entire team loses direct spotting.")]
         public float spottedMemorySeconds = 3f;
-        [Tooltip("Якщо увімкнено, рельєф і статичні перешкоди можуть блокувати spotting-промені.")]
+        [Tooltip("When enabled, terrain and static obstacles can block spotting rays.")]
         public bool requireLineOfSight = true;
-        [Tooltip("Шари, які можуть блокувати spotting-промені. Не додавайте до цієї маски шари машин.")]
+        [Tooltip("Layers that can block spotting rays. Do not add vehicle layers to this mask.")]
         public LayerMask lineOfSightMask = DefaultLineOfSightMaskBits;
-        [Tooltip("Максимальна кількість raycast-перевірок видимості за один tick однієї кімнати матчу.")]
+        [Tooltip("Maximum number of visibility raycast checks per tick for one match room.")]
         public int maxLineOfSightChecksPerTick = 24;
-        [Tooltip("Скільки секунд можна повторно використовувати результат видимості пари спостерігач-ціль перед новим raycast.")]
+        [Tooltip("How many seconds a watcher-target visibility result can be reused before another raycast.")]
         public float lineOfSightRecheckSeconds = 0.5f;
-        [Tooltip("Вертикальне зміщення початку променя від наземної позиції спостерігача.")]
+        [Tooltip("Vertical offset of the ray origin from the observer's ground position.")]
         public float spotterEyeHeight = 2f;
-        [Tooltip("Вертикальне зміщення кінця променя від наземної позиції цілі.")]
+        [Tooltip("Vertical offset of the ray endpoint from the target's ground position.")]
         public float targetProbeHeight = 1.4f;
-        [Tooltip("Горизонтальний радіус додаткових точок spotting навколо цілі для часткового peek з-за укриття.")]
+        [Tooltip("Horizontal radius of extra spotting points around the target for partial peeks from cover.")]
         public float targetProbeRadius = 0.75f;
 
         public static MatchVisibilityGlobalSettings Default
@@ -792,14 +792,14 @@ namespace Game.Scripts.Server
     {
         private static readonly MatchSceneGlobalSettings DefaultSettings = new MatchSceneGlobalSettings();
 
-        [Header("Сцени матчів")]
-        [Tooltip("Відстань по X між одночасно завантаженими інстансами бойових сцен на сервері.")]
+        [Header("Match Scenes")]
+        [Tooltip("X-axis distance between simultaneously loaded battle-scene instances on the server.")]
         public int sceneSlotSpacingX = 500;
-        [Tooltip("Скільки секунд сервер чекає валідну бойову сцену перед скасуванням спавну машини.")]
+        [Tooltip("How many seconds the server waits for a valid battle scene before canceling vehicle spawn.")]
         public float sceneValidationTimeout = 10f;
-        [Tooltip("Затримка перед показом екрана результату після завершення бою, у мілісекундах.")]
+        [Tooltip("Delay before showing the result screen after battle completion, in milliseconds.")]
         public int endGameDelayMilliseconds = 2000;
-        [Tooltip("Тривалість матчу в секундах до автоматичного завершення нічиєю.")]
+        [Tooltip("Match duration in seconds before automatic draw completion.")]
         public float matchDurationSeconds = 300f;
 
         public static MatchSceneGlobalSettings Default
@@ -851,34 +851,34 @@ namespace Game.Scripts.Server
     {
         public static ServerSettings In;
         
-        [Tooltip("Кількість реальних гравців для негайного старту та цільова кількість усіх учасників матчу. Після завершення пошуку сервер добирає ботів до цього значення.")]
+        [Tooltip("Number of real players for an immediate start and target total participants. After matchmaking, the server fills the remaining slots with bots.")]
         public int maxPlayersForFindRoom = 1;
-        [Tooltip("Скільки секунд кімната чекає перед стартом матчу, якщо вона не заповнилася.")]
+        [Tooltip("How many seconds the room waits before starting if it is not full.")]
         public int findRoomSeconds = 60;
-        [Header("Боти")]
-        [Tooltip("Додавати ботів, щоб заповнити матч до maxPlayersForFindRoom.")]
+        [Header("Bots")]
+        [Tooltip("Add bots to fill the match to maxPlayersForFindRoom.")]
         public bool botsEnabled = true;
-        [Tooltip("Код машини, яку отримують боти за замовчуванням.")]
+        [Tooltip("Vehicle code assigned to bots by default.")]
         public string defaultBotVehicleCode = "ia_l1_starter";
-        [Tooltip("MMR, який отримують серверні боти під час створення матчу.")]
+        [Tooltip("MMR assigned to server bots when creating a match.")]
         public int botMmr = 1000;
-        [Tooltip("Префікс імені для серверних ботів у матчі.")]
+        [Tooltip("Name prefix for server bots in a match.")]
         public string botNamePrefix = "Bot ";
-        [Tooltip("Налаштування поведінки ботів під час руху по карті.")]
+        [Tooltip("Bot behavior settings while moving around the map.")]
         public BotWanderSettings botWander = new BotWanderSettings();
-        [Tooltip("Серверні налаштування пошуку цілей, наведення і стрільби ботів.")]
+        [Tooltip("Server settings for bot target acquisition, aiming, and firing.")]
         public BotCombatSettings botCombat = new BotCombatSettings();
-        [Tooltip("Глобальні серверні налаштування руху машин.")]
+        [Tooltip("Global server settings for vehicle movement.")]
         public RobotMovementGlobalSettings robotMovement = new RobotMovementGlobalSettings();
-        [Tooltip("Глобальні серверні налаштування розкиду, зведення і UI-кола прицілу.")]
+        [Tooltip("Global server settings for dispersion, aiming, and the UI aiming circle.")]
         public GunDispersionGlobalSettings gunDispersion = new GunDispersionGlobalSettings();
-        [Tooltip("Глобальні серверні налаштування балістики снарядів.")]
+        [Tooltip("Global server settings for projectile ballistics.")]
         public ProjectileBallisticsGlobalSettings projectileBallistics = new ProjectileBallisticsGlobalSettings();
-        [Tooltip("Глобальні налаштування частоти й порогів синхронізації інпуту техніки.")]
+        [Tooltip("Global settings for vehicle-input synchronization frequency and thresholds.")]
         public VehicleInputSyncSettings vehicleInputSync = new VehicleInputSyncSettings();
-        [Tooltip("Серверний spotting і спільні знімки командної карти.")]
+        [Tooltip("Server-side spotting and shared team-map snapshots.")]
         public MatchVisibilityGlobalSettings matchVisibility = new MatchVisibilityGlobalSettings();
-        [Tooltip("Глобальні налаштування завантаження бойових сцен і показу результатів матчу.")]
+        [Tooltip("Global settings for battle-scene loading and match-result display.")]
         public MatchSceneGlobalSettings matchScene = new MatchSceneGlobalSettings();
         
         private void Awake()

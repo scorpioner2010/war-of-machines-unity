@@ -1,8 +1,8 @@
+using System.Collections.Generic;
 using TMPro;
 using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Server;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
 using UnityEngine;
@@ -32,6 +32,7 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private RectTransform novaSyndicateReticle;
         [SerializeField] private RectTransform ironAllianceServerReticle;
         [SerializeField] private RectTransform novaSyndicateServerReticle;
+        [SerializeField] private CanvasGroup[] reticleOpacityGroups = System.Array.Empty<CanvasGroup>();
 
         [Header("Faction Weapon Parameters")]
         [SerializeField] private Image ironAllianceFillImage;
@@ -97,6 +98,8 @@ namespace Game.Scripts.UI.HUD
             _ironAllianceAimStatusFallback = aimStatusText;
             _ironAlliancePenetrationStatusFallback = penetrationStatusText;
             ResolveCanvasReference();
+            ResolveReticleOpacityGroups();
+            ApplyReticleOpacity(ClientGameplaySettings.ReticleOpacity);
             ApplyPenetrationStatusToActiveTarget();
         }
 
@@ -107,6 +110,8 @@ namespace Game.Scripts.UI.HUD
             ApplyPenetrationStatusToActiveTarget();
             ClientGameplaySettings.ServerCrosshairChanged += OnServerCrosshairSettingChanged;
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
+            ClientGameplaySettings.ReticleOpacityChanged += OnReticleOpacityChanged;
+            ApplyReticleOpacity(ClientGameplaySettings.ReticleOpacity);
             ApplySniperPresentation(false);
             VehicleRoot.LocalPlayerVehicleChanged += OnLocalPlayerVehicleChanged;
             CameraController.DeathSpectatorCameraChanged += OnDeathSpectatorCameraChanged;
@@ -121,6 +126,7 @@ namespace Game.Scripts.UI.HUD
             }
 
             ClientGameplaySettings.ServerCrosshairChanged -= OnServerCrosshairSettingChanged;
+            ClientGameplaySettings.ReticleOpacityChanged -= OnReticleOpacityChanged;
             VehicleRoot.LocalPlayerVehicleChanged -= OnLocalPlayerVehicleChanged;
             CameraController.DeathSpectatorCameraChanged -= OnDeathSpectatorCameraChanged;
             UnbindSpectatorCamera();
@@ -132,6 +138,7 @@ namespace Game.Scripts.UI.HUD
             EnsureSpectatorCameraBinding();
             if (_spectatorCameraController == null || !_spectatorCameraController.IsDeathSpectatorActive)
             {
+                ApplyAimingCircleVisibility();
                 return;
             }
 
@@ -249,16 +256,6 @@ namespace Game.Scripts.UI.HUD
             float currentDispersion = shooter.ClientCurrentDispersionDeg;
             SetAimStatus(currentDispersion, minDispersion, maxDispersion);
 
-            GunDispersionGlobalSettings globalDispersion = RemoteServerSettings.GunDispersion;
-            float uiZoom01 = _spectatorCameraController.GetAimUiZoom01();
-            CameraZoomProfile zoomProfile = _spectatorCameraController.CurrentZoomProfile;
-            float aimingCircleDiameter = zoomProfile != null ? zoomProfile.aimingCircleDiameter : float.NaN;
-            float diameter = globalDispersion.GetUiDiameter(
-                currentDispersion,
-                minDispersion,
-                uiZoom01,
-                aimingCircleDiameter);
-            SetAimingDiameters(diameter, diameter, globalDispersion.uiDiameterLerpSpeed);
         }
 
         private float GetSpectatorReloadRemain(WeaponReloadController reloadController, bool isReloading)
@@ -573,13 +570,15 @@ namespace Game.Scripts.UI.HUD
             ApplyServerCrosshairSetting(enabled);
         }
 
+        private void OnReticleOpacityChanged(float value)
+        {
+            ApplyReticleOpacity(value);
+        }
+
         private void ApplyServerCrosshairSetting(bool enabled)
         {
             _serverCrosshairEnabled = enabled;
-            if (serverCrosshair != null)
-            {
-                serverCrosshair.gameObject.SetActive(enabled);
-            }
+            ApplyAimingCircleVisibility();
         }
 
         public void SetAimStatus(float currentDispersionDeg, float minDispersionDeg, float maxDispersionDeg)
@@ -722,16 +721,14 @@ namespace Game.Scripts.UI.HUD
                 sniperReticleOnlyRoot.SetActive(sniperMode);
             }
 
-            if (crosshair != null)
-            {
-                crosshair.gameObject.SetActive(true);
-            }
+            ApplyAimingCircleVisibility();
 
             ApplyFactionCrosshairVisibility();
         }
 
         private void ApplyFactionCrosshairVisibility()
         {
+            ApplyAimingCircleVisibility();
             bool hideCrosshair = ShouldHideSpectatorCrosshair();
             if (hideCrosshair)
             {
@@ -763,6 +760,82 @@ namespace Game.Scripts.UI.HUD
                 if (novaSyndicateCrosshairRoot.activeSelf != shouldEnableNovaSyndicate)
                 {
                     novaSyndicateCrosshairRoot.SetActive(shouldEnableNovaSyndicate);
+                }
+            }
+        }
+
+        private void ApplyAimingCircleVisibility()
+        {
+            bool hideAimingCircle = ShouldHideSpectatorAimingCircle(
+                _spectatorCameraController != null && _spectatorCameraController.IsDeathSpectatorActive);
+
+            if (crosshair != null)
+            {
+                crosshair.gameObject.SetActive(!hideAimingCircle);
+            }
+
+            if (serverCrosshair != null)
+            {
+                serverCrosshair.gameObject.SetActive(!hideAimingCircle && _serverCrosshairEnabled);
+            }
+        }
+
+        private static bool ShouldHideSpectatorAimingCircle(bool deathSpectatorActive)
+        {
+            return deathSpectatorActive;
+        }
+
+        private void ResolveReticleOpacityGroups()
+        {
+            if (reticleOpacityGroups != null && reticleOpacityGroups.Length > 0)
+            {
+                return;
+            }
+
+            List<CanvasGroup> groups = new List<CanvasGroup>();
+            AddReticleOpacityGroups(ironAllianceCrosshairRoot, groups);
+            AddReticleOpacityGroups(novaSyndicateCrosshairRoot, groups);
+            reticleOpacityGroups = groups.ToArray();
+        }
+
+        private static void AddReticleOpacityGroups(GameObject root, List<CanvasGroup> groups)
+        {
+            if (root == null || groups == null)
+            {
+                return;
+            }
+
+            CanvasGroup[] candidates = root.GetComponentsInChildren<CanvasGroup>(true);
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                CanvasGroup candidate = candidates[i];
+                if (candidate == null || (candidate.name != "Back" && candidate.name != "Back2"))
+                {
+                    continue;
+                }
+
+                if (!groups.Contains(candidate))
+                {
+                    groups.Add(candidate);
+                }
+            }
+        }
+
+        private void ApplyReticleOpacity(float value)
+        {
+            ResolveReticleOpacityGroups();
+            float opacity = ClientGameplaySettings.ClampReticleOpacity(value);
+            if (reticleOpacityGroups == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < reticleOpacityGroups.Length; i++)
+            {
+                CanvasGroup group = reticleOpacityGroups[i];
+                if (group != null)
+                {
+                    group.alpha = opacity;
                 }
             }
         }

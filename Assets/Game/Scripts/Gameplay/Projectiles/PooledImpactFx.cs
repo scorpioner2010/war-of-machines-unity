@@ -50,7 +50,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     private const string ImpactGlowHaloEmissionColorPropertyName = "_EmissionColor";
     private const uint WorldImpactRenderingLayerMask = 2u;
     private const int FirstImpactRenderingLayerBit = 2;
-    private const int LastImpactRenderingLayerBit = 31;
+    private const int LastImpactRenderingLayerBit = 7;
     private const float CameraShakeFullStrengthDistance = 10f;
     private const float CameraShakeMaxDistance = 90f;
     private const float CameraShakeStrengthScale = 0.3f;

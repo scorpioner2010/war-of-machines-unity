@@ -15870,6 +15870,7 @@ GameObject:
   m_Component:
   - component: {fileID: 573084462}
   - component: {fileID: 573084463}
+  - component: {fileID: 573084464}
   m_Layer: 0
   m_Name: Back
   m_TagString: Untagged
@@ -15907,6 +15908,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 573084461}
   m_CullTransparentMesh: 1
+--- !u!225 &573084464
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 573084461}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &573521295
 GameObject:
   m_ObjectHideFlags: 0
@@ -20335,6 +20348,7 @@ GameObject:
   m_Component:
   - component: {fileID: 771219201}
   - component: {fileID: 771219203}
+  - component: {fileID: 771219204}
   m_Layer: 0
   m_Name: Back2
   m_TagString: Untagged
@@ -20374,6 +20388,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 771219200}
   m_CullTransparentMesh: 1
+--- !u!225 &771219204
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771219200}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &774983766
 GameObject:
   m_ObjectHideFlags: 0
@@ -22269,6 +22295,7 @@ GameObject:
   m_Component:
   - component: {fileID: 882167920}
   - component: {fileID: 882167922}
+  - component: {fileID: 882167923}
   m_Layer: 0
   m_Name: Back
   m_TagString: Untagged
@@ -22306,6 +22333,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 882167919}
   m_CullTransparentMesh: 1
+--- !u!225 &882167923
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 882167919}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &895202672
 GameObject:
   m_ObjectHideFlags: 0
@@ -46877,6 +46916,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1780783922}
   - component: {fileID: 1780783923}
+  - component: {fileID: 1780783924}
   m_Layer: 0
   m_Name: Back2
   m_TagString: Untagged
@@ -46916,6 +46956,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1780783921}
   m_CullTransparentMesh: 1
+--- !u!225 &1780783924
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1780783921}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1784415761
 GameObject:
   m_ObjectHideFlags: 0

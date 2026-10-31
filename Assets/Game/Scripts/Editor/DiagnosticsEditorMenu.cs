@@ -7,7 +7,7 @@ namespace Game.Scripts.Editor
 {
     public sealed class DiagnosticsEditorMenu : EditorWindow
     {
-        private const string MenuRoot = "Діагностика";
+        private const string MenuRoot = "Diagnostics";
         private DiagnosticsConfig _config;
         private DiagnosticsConfig.EditorMode _mode;
         private Vector2 _scroll;
@@ -17,58 +17,58 @@ namespace Game.Scripts.Editor
         private bool _showSampling = true;
         private bool _showThresholds = true;
 
-        [MenuItem(MenuRoot + "/Налаштування...", false, 0)]
+        [MenuItem(MenuRoot + "/Settings...", false, 0)]
         private static void OpenWindow()
         {
-            DiagnosticsEditorMenu window = GetWindow<DiagnosticsEditorMenu>("Діагностика");
+            DiagnosticsEditorMenu window = GetWindow<DiagnosticsEditorMenu>("Diagnostics");
             window.minSize = new Vector2(440f, 560f);
             window.LoadFromPrefs();
             window.Show();
         }
 
-        [MenuItem(MenuRoot + "/Увімкнути", false, 20)]
+        [MenuItem(MenuRoot + "/Enable", false, 20)]
         private static void EnableDiagnostics()
         {
             DiagnosticsConfig.SetEditorMode(DiagnosticsConfig.EditorMode.ForceEnabled);
             ApplyRuntimeState();
         }
 
-        [MenuItem(MenuRoot + "/Увімкнути", true)]
+        [MenuItem(MenuRoot + "/Enable", true)]
         private static bool ValidateEnableDiagnostics()
         {
-            Menu.SetChecked(MenuRoot + "/Увімкнути", DiagnosticsConfig.GetEditorMode() == DiagnosticsConfig.EditorMode.ForceEnabled);
+            Menu.SetChecked(MenuRoot + "/Enable", DiagnosticsConfig.GetEditorMode() == DiagnosticsConfig.EditorMode.ForceEnabled);
             return true;
         }
 
-        [MenuItem(MenuRoot + "/Вимкнути", false, 21)]
+        [MenuItem(MenuRoot + "/Disable", false, 21)]
         private static void DisableDiagnostics()
         {
             DiagnosticsConfig.SetEditorMode(DiagnosticsConfig.EditorMode.ForceDisabled);
             ApplyRuntimeState();
         }
 
-        [MenuItem(MenuRoot + "/Вимкнути", true)]
+        [MenuItem(MenuRoot + "/Disable", true)]
         private static bool ValidateDisableDiagnostics()
         {
-            Menu.SetChecked(MenuRoot + "/Вимкнути", DiagnosticsConfig.GetEditorMode() == DiagnosticsConfig.EditorMode.ForceDisabled);
+            Menu.SetChecked(MenuRoot + "/Disable", DiagnosticsConfig.GetEditorMode() == DiagnosticsConfig.EditorMode.ForceDisabled);
             return true;
         }
 
-        [MenuItem(MenuRoot + "/За замовчуванням", false, 22)]
+        [MenuItem(MenuRoot + "/Use Default", false, 22)]
         private static void UseDefaultDiagnosticsMode()
         {
             DiagnosticsConfig.SetEditorMode(DiagnosticsConfig.EditorMode.Default);
             ApplyRuntimeState();
         }
 
-        [MenuItem(MenuRoot + "/За замовчуванням", true)]
+        [MenuItem(MenuRoot + "/Use Default", true)]
         private static bool ValidateUseDefaultDiagnosticsMode()
         {
-            Menu.SetChecked(MenuRoot + "/За замовчуванням", DiagnosticsConfig.GetEditorMode() == DiagnosticsConfig.EditorMode.Default);
+            Menu.SetChecked(MenuRoot + "/Use Default", DiagnosticsConfig.GetEditorMode() == DiagnosticsConfig.EditorMode.Default);
             return true;
         }
 
-        [MenuItem(MenuRoot + "/Вимкнути FPS Guard", false, 40)]
+        [MenuItem(MenuRoot + "/Disable FPS Guard", false, 40)]
         private static void DisableFramePacingGuard()
         {
             DiagnosticsConfig config = DiagnosticsConfig.LoadEditorPrefsPreview();
@@ -77,22 +77,22 @@ namespace Game.Scripts.Editor
             ApplyRuntimeState();
         }
 
-        [MenuItem(MenuRoot + "/Вимкнути FPS Guard", true)]
+        [MenuItem(MenuRoot + "/Disable FPS Guard", true)]
         private static bool ValidateDisableFramePacingGuard()
         {
             DiagnosticsConfig config = DiagnosticsConfig.LoadEditorPrefsPreview();
-            Menu.SetChecked(MenuRoot + "/Вимкнути FPS Guard", !config.ApplyEditorClientFramePacingGuard);
+            Menu.SetChecked(MenuRoot + "/Disable FPS Guard", !config.ApplyEditorClientFramePacingGuard);
             return true;
         }
 
-        [MenuItem(MenuRoot + "/Скинути всі налаштування", false, 100)]
+        [MenuItem(MenuRoot + "/Reset All Settings", false, 100)]
         private static void ResetAllSettings()
         {
             if (!EditorUtility.DisplayDialog(
-                    "Діагностика",
-                    "Скинути всі editor-налаштування діагностики до значень за замовчуванням?",
-                    "Скинути",
-                    "Скасувати"))
+                    "Diagnostics",
+                    "Reset all editor diagnostics settings to their defaults?",
+                    "Reset",
+                    "Cancel"))
             {
                 return;
             }
@@ -134,9 +134,9 @@ namespace Game.Scripts.Editor
         private void DrawHeader()
         {
             EditorGUILayout.Space(6f);
-            EditorGUILayout.LabelField("Діагностика", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Поточний режим", GetModeLabel(_mode));
-            EditorGUILayout.LabelField("Runtime стан", _config != null && _config.IsEnabled ? "Enabled: " + _config.StateReason : "Disabled: " + (_config != null ? _config.StateReason : string.Empty));
+            EditorGUILayout.LabelField("Diagnostics", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Current Mode", GetModeLabel(_mode));
+            EditorGUILayout.LabelField("Runtime State", _config != null && _config.IsEnabled ? "Enabled: " + _config.StateReason : "Disabled: " + (_config != null ? _config.StateReason : string.Empty));
 
             DiagnosticsManager manager = DiagnosticsManager.Instance;
             string active = manager != null && manager.IsRunning ? "active" : "not running";
@@ -147,9 +147,9 @@ namespace Game.Scripts.Editor
         private void DrawMode()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Увімкнення", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Activation", EditorStyles.boldLabel);
             _mode = (DiagnosticsConfig.EditorMode)EditorGUILayout.EnumPopup("Mode", _mode);
-            EditorGUILayout.HelpBox("Default у редакторі вмикає діагностику fallback-ом. Force Disabled повністю блокує автозапуск у Play Mode.", MessageType.Info);
+            EditorGUILayout.HelpBox("Default enables diagnostics in the editor as a fallback. Force Disabled blocks automatic startup in Play Mode.", MessageType.Info);
             EditorGUILayout.EndVertical();
         }
 
@@ -265,18 +265,18 @@ namespace Game.Scripts.Editor
         {
             EditorGUILayout.Space(6f);
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Зберегти і застосувати", GUILayout.Height(28f)))
+            if (GUILayout.Button("Save and Apply", GUILayout.Height(28f)))
             {
                 SaveAndApply();
             }
 
-            if (GUILayout.Button("Вимкнути", GUILayout.Height(28f)))
+            if (GUILayout.Button("Disable", GUILayout.Height(28f)))
             {
                 _mode = DiagnosticsConfig.EditorMode.ForceDisabled;
                 SaveAndApply();
             }
 
-            if (GUILayout.Button("Скинути", GUILayout.Height(28f)))
+            if (GUILayout.Button("Reset", GUILayout.Height(28f)))
             {
                 DiagnosticsConfig.ResetEditorPrefs();
                 LoadFromPrefs();

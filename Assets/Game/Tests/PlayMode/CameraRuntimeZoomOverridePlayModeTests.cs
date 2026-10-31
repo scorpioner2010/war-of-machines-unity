@@ -614,7 +614,7 @@ namespace Game.Tests.PlayMode
             StringAssert.Contains(
                 "m_NormalColor: {r: 0.12, g: 0.68, b: 0.2, a: 1}",
                 sceneText);
-            StringAssert.Contains("m_text: АВТОУПРАВЛІННЯ", sceneText);
+            StringAssert.Contains("m_text: Autonomous Control", sceneText);
         }
 
         private static object CreateRuntimeSettings(Type runtimeSettingsType, Type profileType)

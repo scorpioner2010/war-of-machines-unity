@@ -28,6 +28,26 @@ namespace Game.Tests.PlayMode
 
         private readonly List<GameObject> _createdObjects = new List<GameObject>(4);
 
+        [Test]
+        public void ImpactLayerAllocatorStaysWithinConfiguredUrpRenderingLayers()
+        {
+            Type pooledImpactFxType = FindGameType("PooledImpactFx");
+            FieldInfo firstBitField = pooledImpactFxType.GetField(
+                "FirstImpactRenderingLayerBit",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            FieldInfo lastBitField = pooledImpactFxType.GetField(
+                "LastImpactRenderingLayerBit",
+                BindingFlags.Static | BindingFlags.NonPublic);
+
+            Assert.IsNotNull(firstBitField, "PooledImpactFx lost its first impact layer boundary.");
+            Assert.IsNotNull(lastBitField, "PooledImpactFx lost its last impact layer boundary.");
+
+            int firstBit = (int)firstBitField.GetValue(null);
+            int lastBit = (int)lastBitField.GetValue(null);
+            Assert.GreaterOrEqual(firstBit, 2, "Impact layers must not reuse the world decal layer.");
+            Assert.LessOrEqual(lastBit, 7, "Impact layers must stay within the project's eight configured URP layers.");
+        }
+
         [UnityTest]
         public IEnumerator SpawnRobotAndShootFromSide_DisablesImpactGlowHaloForRobotProfile()
         {

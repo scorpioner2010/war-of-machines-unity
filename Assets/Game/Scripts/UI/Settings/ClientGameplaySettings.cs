@@ -7,15 +7,18 @@ namespace Game.Scripts.UI.Settings
     public static class ClientGameplaySettings
     {
         private const string ServerCrosshairKey = "Gameplay.ServerCrosshairEnabled";
+        private const string ReticleOpacityKey = "Gameplay.ReticleOpacity";
         private const string GameplayMouseSensitivityKey = "Gameplay.MouseSensitivity";
         private const string SniperMouseSensitivityKey = "Gameplay.SniperMouseSensitivity";
 
         public const float DefaultGameplayMouseSensitivity = 0.7f;
         public const float DefaultSniperMouseSensitivity = 0.3f;
+        public const float DefaultReticleOpacity = 1f;
         public const float MinMouseSensitivity = 0.05f;
         public const float MaxMouseSensitivity = 2f;
 
         public static event Action<bool> ServerCrosshairChanged;
+        public static event Action<float> ReticleOpacityChanged;
         public static event Action<bool> CameraShakeChanged;
 
         private static bool _cameraShakeEnabled = true;
@@ -26,6 +29,14 @@ namespace Game.Scripts.UI.Settings
             get
             {
                 return PlayerPrefs.GetInt(ServerCrosshairKey, 0) == 1;
+            }
+        }
+
+        public static float ReticleOpacity
+        {
+            get
+            {
+                return ClampReticleOpacity(PlayerPrefs.GetFloat(ReticleOpacityKey, DefaultReticleOpacity));
             }
         }
 
@@ -87,6 +98,29 @@ namespace Game.Scripts.UI.Settings
             if (notify)
             {
                 ServerCrosshairChanged?.Invoke(enabled);
+            }
+        }
+
+        public static void SetReticleOpacity(float value)
+        {
+            SetReticleOpacity(value, true);
+        }
+
+        public static void SetReticleOpacity(float value, bool notify)
+        {
+            float clampedValue = ClampReticleOpacity(value);
+            float previousValue = ReticleOpacity;
+            if (Mathf.Approximately(previousValue, clampedValue))
+            {
+                return;
+            }
+
+            PlayerPrefs.SetFloat(ReticleOpacityKey, clampedValue);
+            PlayerPrefs.Save();
+
+            if (notify)
+            {
+                ReticleOpacityChanged?.Invoke(clampedValue);
             }
         }
 
@@ -158,6 +192,16 @@ namespace Game.Scripts.UI.Settings
             }
 
             return Mathf.Clamp(value, MinMouseSensitivity, MaxMouseSensitivity);
+        }
+
+        public static float ClampReticleOpacity(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                return DefaultReticleOpacity;
+            }
+
+            return Mathf.Clamp01(value);
         }
 
         private static void ApplyCameraShakePreference(bool enabled)

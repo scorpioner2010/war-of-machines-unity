@@ -7,21 +7,21 @@ namespace Game.Scripts.Testing
 {
     public class VehicleTestRuntimeSettings : MonoBehaviour
     {
-        [Header("Тестові бойові параметри")]
+        [Header("Test Combat Parameters")]
         public bool activateTestParameters;
         [Min(0.01f)] public float reloadTime = 0.25f;
         [Min(1)] public int shellsCount = 999;
 
-        [Header("Debug точності")]
-        [Tooltip("Тримає гармату повністю зведеною у VehicleTest. Точність машини все ще визначає розмір кола і розкид пострілу.")]
+        [Header("Accuracy Debug")]
+        [Tooltip("Keeps the gun fully aimed during VehicleTest. Vehicle accuracy still determines circle size and shot dispersion.")]
         [FormerlySerializedAs("disableDispersionAndForceFullyAimedReticle")]
         public bool forceFullyAimedAccuracyOnly;
 
-        [Header("Debug камери")]
-        [Tooltip("Вимикає тряску камери від impact FX тільки під час VehicleTest і не змінює збережене ігрове налаштування.")]
+        [Header("Camera Debug")]
+        [Tooltip("Disables camera shake from impact FX only during VehicleTest without changing the saved gameplay setting.")]
         public bool disableCameraShake;
 
-        [Header("Маркери влучань")]
+        [Header("Hit Markers")]
         public bool createHitMarkerSphere;
         [Min(0.01f)] public float hitMarkerRadius = 0.18f;
         public Color hitMarkerColor = new Color(1f, 0.85f, 0.05f, 1f);

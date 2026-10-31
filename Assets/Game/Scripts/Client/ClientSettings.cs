@@ -6,19 +6,19 @@ namespace Game.Scripts.Client
     [System.Serializable]
     public class ClientButtonColorSettings
     {
-        [Tooltip("Базовий колір UI-кнопки у звичайному стані.")]
+        [Tooltip("Base UI button color in the normal state.")]
         public Color normalColor = Color.white;
-        [Tooltip("Колір UI-кнопки, коли курсор наведений на неї.")]
+        [Tooltip("UI button color when the pointer hovers over it.")]
         public Color highlightedColor = new Color(0.88235295f, 0.88235295f, 0.88235295f, 1f);
-        [Tooltip("Колір UI-кнопки, поки вона натиснута.")]
+        [Tooltip("UI button color while it is pressed.")]
         public Color pressedColor = new Color(0.69803923f, 0.69803923f, 0.69803923f, 1f);
-        [Tooltip("Колір UI-кнопки, коли її вибрано клавіатурою або геймпадом.")]
+        [Tooltip("UI button color when selected by keyboard or gamepad.")]
         public Color selectedColor = new Color(0.88235295f, 0.88235295f, 0.88235295f, 1f);
-        [Tooltip("Колір UI-кнопки, коли вона недоступна для натискання.")]
+        [Tooltip("UI button color when it cannot be pressed.")]
         public Color disabledColor = new Color(0.52156866f, 0.52156866f, 0.52156866f, 0.5019608f);
-        [Min(0f), Tooltip("Множник яскравості кольорів усіх станів UI-кнопок.")]
+        [Min(0f), Tooltip("Brightness multiplier for all UI button states.")]
         public float colorMultiplier = 1f;
-        [Min(0f), Tooltip("Тривалість плавної зміни кольору між станами UI-кнопки.")]
+        [Min(0f), Tooltip("Duration of the smooth color transition between UI button states.")]
         public float fadeDuration = 0.1f;
 
         public void ApplyTo(ref ColorBlock colors)
@@ -56,9 +56,9 @@ namespace Game.Scripts.Client
         [Range(1f, 179f)]
         public float fieldOfView = 60f;
         [Min(0f)]
-        [Tooltip("Базовий діаметр круга у повністю зведеному стані для цього zoom-профілю в UI-пікселях. Значення 0 або менше 1 відображаються як мінімальні 1x1 UI-піксель; при розкиді вище повністю зведеного діаметра bloom додається поверх бази.")]
+        [Tooltip("Base fully aimed circle diameter for this zoom profile in UI pixels. Values from 0 to 1 render as a minimum 1x1 UI pixel; dispersion above the fully aimed diameter adds bloom on top of the base.")]
         public float aimingCircleDiameter = 55f;
-        [Tooltip("Показувати чорний круг снайперського прицілу з центральним прицілом. Для forward-профілю true позначає цей крок як снайперський.")]
+        [Tooltip("Show the black sniper-scope circle with a central reticle. For a forward profile, true marks this step as sniper mode.")]
         public bool showReticle = false;
 
         public CameraZoomProfile Clone()
@@ -97,96 +97,96 @@ namespace Game.Scripts.Client
     {
         private static readonly GameplayRuntimeSettings DefaultSettings = new GameplayRuntimeSettings();
 
-        [Header("UI здоров'я")]
-        [Tooltip("Колір смуги HP для свого робота та союзників у world-space UI техніки.")]
+        [Header("UI Health")]
+        [Tooltip("HP bar color for the local vehicle and allies in the vehicle world-space UI.")]
         public Color alliedHpColor = new Color(0.1f, 0.35f, 1f, 1f);
-        [Tooltip("Колір смуги HP для противників у world-space UI техніки.")]
+        [Tooltip("HP bar color for enemies in the vehicle world-space UI.")]
         public Color enemyHpColor = new Color(1f, 0.08f, 0.04f, 1f);
-        [Tooltip("Як часто world-space UI техніки переоцінює команду цілі та оновлює колір HP.")]
+        [Tooltip("How often the vehicle world-space UI reevaluates the target team and updates the HP color.")]
         public float hpTeamColorRefreshInterval = 0.25f;
-        [Tooltip("Швидкість згладження основної смуги HP локального гравця на GameplayHUD.")]
+        [Tooltip("Smoothing speed for the local player's main HP bar on GameplayHUD.")]
         public float ownerHealthBarSmoothSpeed = 10f;
-        [Header("Масштаб world-space HP")]
-        [Tooltip("Увімкнути масштабування world-space смуг HP роботів залежно від дистанції.")]
+        [Header("World-Space HP Scale")]
+        [Tooltip("Enable distance-based scaling for robot world-space HP bars.")]
         public bool worldHpBarDistanceScaleEnabled = true;
-        [Tooltip("Дистанція, на якій смуги HP роботів використовують ближній масштаб.")]
+        [Tooltip("Distance at which robot HP bars use the near scale.")]
         public float worldHpBarScaleMinDistance = 5f;
-        [Tooltip("Дистанція, на якій смуги HP роботів досягають дальнього масштабу.")]
+        [Tooltip("Distance at which robot HP bars reach the far scale.")]
         public float worldHpBarScaleMaxDistance = 90f;
-        [Tooltip("Множник масштабу смуги HP біля камери.")]
+        [Tooltip("HP bar scale multiplier near the camera.")]
         public float worldHpBarMinDistanceScale = 1f;
-        [Tooltip("Множник масштабу смуги HP далеко від камери.")]
+        [Tooltip("HP bar scale multiplier far from the camera.")]
         public float worldHpBarMaxDistanceScale = 5f;
-        [Header("Прозорість world-space NameCanvas")]
-        [Tooltip("Відстань до gameplay-камери, з якої NameCanvas починає плавно ставати прозорим.")]
+        [Header("World-Space NameCanvas Opacity")]
+        [Tooltip("Distance from the gameplay camera at which NameCanvas starts fading out.")]
         public float worldHpBarCanvasFadeStartDistance = 5f;
-        [Tooltip("Відстань до gameplay-камери, на якій NameCanvas стає повністю прозорим.")]
+        [Tooltip("Distance from the gameplay camera at which NameCanvas becomes fully transparent.")]
         public float worldHpBarCanvasFullyTransparentDistance = 3f;
 
-        [Header("Карта")]
-        [Tooltip("Колір іконок союзників на мінікарті та повній карті.")]
+        [Header("Map")]
+        [Tooltip("Ally icon color on the minimap and full map.")]
         public Color mapAllyIconColor = new Color(0.1f, 0.35f, 1f, 1f);
-        [Tooltip("Колір іконок противників на мінікарті та повній карті.")]
+        [Tooltip("Enemy icon color on the minimap and full map.")]
         public Color mapEnemyIconColor = new Color(1f, 0.08f, 0.04f, 1f);
-        [Tooltip("Колір іконок знищених роботів на мінікарті та повній карті.")]
+        [Tooltip("Destroyed-robot icon color on the minimap and full map.")]
         public Color mapDestroyedIconColor = Color.black;
-        [Tooltip("Масштаб лише фонового зображення мінікарти. 1 залишає базовий розмір сцени.")]
+        [Tooltip("Scale of the minimap background image only. 1 preserves the base scene size.")]
         public float mapMiniMapImageScale = 1f;
-        [Tooltip("Додатковий горизонтальний множник масштабу фону мінікарти. Застосовується поверх mapMiniMapImageScale.")]
+        [Tooltip("Additional horizontal scale multiplier for the minimap background. Applied on top of mapMiniMapImageScale.")]
         public float mapMiniMapImageScaleX = 1f;
-        [Tooltip("Додатковий вертикальний множник масштабу фону мінікарти. Застосовується поверх mapMiniMapImageScale.")]
+        [Tooltip("Additional vertical scale multiplier for the minimap background. Applied on top of mapMiniMapImageScale.")]
         public float mapMiniMapImageScaleY = 1f;
-        [Tooltip("Піксельний X/Y-офсет лише фонового зображення мінікарти відносно центру MiniMapRoot.")]
+        [Tooltip("Pixel X/Y offset of the minimap background image relative to the MiniMapRoot center.")]
         public Vector2 mapMiniMapImageOffset = Vector2.zero;
-        [Tooltip("Масштаб лише фонового зображення великої карти.")]
+        [Tooltip("Scale of the full-map background image only.")]
         public float mapFullMapImageScale = 1f;
-        [Tooltip("Додатковий горизонтальний множник масштабу фону великої карти.")]
+        [Tooltip("Additional horizontal scale multiplier for the full-map background.")]
         public float mapFullMapImageScaleX = 1f;
-        [Tooltip("Додатковий вертикальний множник масштабу фону великої карти.")]
+        [Tooltip("Additional vertical scale multiplier for the full-map background.")]
         public float mapFullMapImageScaleY = 1f;
-        [Tooltip("Піксельний X/Y-офсет лише фонового зображення великої карти.")]
+        [Tooltip("Pixel X/Y offset of the full-map background image only.")]
         public Vector2 mapFullMapImageOffset = Vector2.zero;
-        [Tooltip("Горизонтальний масштаб незалежного canvas-маркера роботів на великій карті.")]
+        [Tooltip("Horizontal scale of the independent canvas robot marker on the full map.")]
         public float mapFullMapRobotCanvasScaleX = 1f;
-        [Tooltip("Вертикальний масштаб незалежного canvas-маркера роботів на великій карті.")]
+        [Tooltip("Vertical scale of the independent canvas robot marker on the full map.")]
         public float mapFullMapRobotCanvasScaleY = 1f;
-        [Tooltip("Піксельний X/Y-офсет canvas-маркера роботів на великій карті.")]
+        [Tooltip("Pixel X/Y offset of the canvas robot marker on the full map.")]
         public Vector2 mapFullMapRobotCanvasOffset = Vector2.zero;
-        [Tooltip("Горизонтальний масштаб незалежного canvas-маркера роботів на мінікарті.")]
+        [Tooltip("Horizontal scale of the independent canvas robot marker on the minimap.")]
         public float mapMiniMapRobotCanvasScaleX = 1f;
-        [Tooltip("Вертикальний масштаб незалежного canvas-маркера роботів на мінікарті.")]
+        [Tooltip("Vertical scale of the independent canvas robot marker on the minimap.")]
         public float mapMiniMapRobotCanvasScaleY = 1f;
-        [Tooltip("Піксельний X/Y-офсет незалежного canvas-маркера роботів відносно рамки мінікарти.")]
+        [Tooltip("Pixel X/Y offset of the independent canvas robot marker relative to the minimap frame.")]
         public Vector2 mapMiniMapRobotCanvasOffset = Vector2.zero;
-        [Tooltip("Глобальний масштаб усіх маркерів роботів на мінікарті, включно з іконкою локального гравця.")]
+        [Tooltip("Global scale of all robot markers on the minimap, including the local-player icon.")]
         public float mapMiniMapIconScale = 1f;
-        [Tooltip("Додатковий горизонтальний множник масштабу маркерів роботів на мінікарті.")]
+        [Tooltip("Additional horizontal scale multiplier for robot markers on the minimap.")]
         public float mapMiniMapIconScaleX = 1f;
-        [Tooltip("Додатковий вертикальний множник масштабу маркерів роботів на мінікарті.")]
+        [Tooltip("Additional vertical scale multiplier for robot markers on the minimap.")]
         public float mapMiniMapIconScaleY = 1f;
-        [Tooltip("Піксельний X/Y-офсет усіх маркерів роботів на мінікарті відносно їхньої розрахованої позиції.")]
+        [Tooltip("Pixel X/Y offset of all robot markers on the minimap relative to their calculated positions.")]
         public Vector2 mapMiniMapIconOffset = Vector2.zero;
-        [Tooltip("Чи повертати іконки роботів на карті за напрямком їхнього корпусу.")]
+        [Tooltip("Whether to rotate map robot icons with their hull direction.")]
         public bool mapRotateIcons = true;
-        [Tooltip("Масштаб іконок союзників і противників відносно іконки локального гравця.")]
+        [Tooltip("Scale of ally and enemy icons relative to the local-player icon.")]
         public float mapTrackedVehicleIconScale = 0.8f;
-        [Tooltip("Як часто карта перебудовує список видимих роботів. Позиції вже знайдених іконок оновлюються щокадру.")]
+        [Tooltip("How often the map rebuilds the visible-robot list. Positions of existing icons update every frame.")]
         public float mapTrackedVehicleRefreshInterval = 0.5f;
-        [Tooltip("Клавіша, яка показує повну карту під час бою.")]
+        [Tooltip("Key that shows the full map during battle.")]
         public KeyCode mapFullMapKey = KeyCode.M;
 
-        [Header("Автоприціл")]
-        [Tooltip("Максимальна дистанція променя для захоплення цілі автоприцілом.")]
+        [Header("Autolock")]
+        [Tooltip("Maximum ray distance for autolock target acquisition.")]
         public float autoAimMaxAcquireDistance = 2000f;
-        [Tooltip("Запасна висота точки прицілювання, якщо в цілі не знайдено колайдерів або башні.")]
+        [Tooltip("Fallback aiming-point height when the target has no colliders or turret.")]
         public float autoAimFallbackTargetHeight = 1.2f;
-        [Tooltip("Не дозволяти автоприцілу захоплювати союзників.")]
+        [Tooltip("Prevent autolock from acquiring allies.")]
         public bool autoAimRejectSameTeam = true;
-        [Tooltip("Після захоплення противника вести автоприціл у башню, а не в центр усього корпусу.")]
+        [Tooltip("After acquiring an enemy, aim autolock at the turret instead of the center of the entire hull.")]
         public bool autoAimPreferTurretTarget = true;
 
-        [Header("Камера")]
-        [Tooltip("Єдиний масив zoom-профілів. Вкажіть zoomIndex: 0 — базовий, додатні значення — наближення, від'ємні — віддалення.")]
+        [Header("Camera")]
+        [Tooltip("Single array of zoom profiles. Set zoomIndex: 0 = base, positive values = zoom in, negative values = zoom out.")]
         public CameraZoomProfile[] cameraZoomProfiles =
         {
             new CameraZoomProfile { zoomIndex = 0, cameraDistance = 10f, fieldOfView = 60f },
@@ -197,76 +197,76 @@ namespace Game.Scripts.Client
             new CameraZoomProfile { zoomIndex = -1, cameraDistance = 12f, fieldOfView = 68f },
             new CameraZoomProfile { zoomIndex = -2, cameraDistance = 15f, fieldOfView = 76f }
         };
-        [Tooltip("Увімкнути примусове перемикання локального зуму з параметра runtimeZoomIndex під час Play Mode. Працює як колесо миші, але значення з інспектора має пріоритет.")]
+        [Tooltip("Enable forced local zoom switching from runtimeZoomIndex during Play Mode. Works like the mouse wheel, but the Inspector value has priority.")]
         public bool runtimeZoomOverrideEnabled = false;
-        [Tooltip("Поточний signed zoomIndex із cameraZoomProfiles, який примусово застосовується в реальному часі, коли runtimeZoomOverrideEnabled увімкнено. Наприклад: 0 — default, 1 — один крок наближення, -1 — один крок віддалення.")]
+        [Tooltip("Current signed zoomIndex from cameraZoomProfiles, forcibly applied at runtime when runtimeZoomOverrideEnabled is enabled. Example: 0 = default, 1 = one zoom-in step, -1 = one zoom-out step.")]
         public int runtimeZoomIndex = 0;
-        [Tooltip("У снайперському режимі брати точку камери від дула, якщо воно доступне.")]
+        [Tooltip("Use the barrel as the camera point in sniper mode when available.")]
         public bool cameraSniperFromMuzzle = true;
-        [Tooltip("Зміщення снайперської камери вперед від точки прив'язки.")]
+        [Tooltip("Forward offset of the sniper camera from its anchor point.")]
         public float cameraSniperForwardOffset = 0.15f;
-        [Tooltip("Вертикальне зміщення снайперської камери від точки прив'язки.")]
+        [Tooltip("Vertical offset of the sniper camera from its anchor point.")]
         public float cameraSniperVerticalOffset = 0f;
-        [Tooltip("Горизонтальна швидкість обертання камери до застосування чутливості миші.")]
+        [Tooltip("Horizontal camera rotation speed before mouse sensitivity is applied.")]
         public float cameraHorizontalSpeed = 120f;
-        [Tooltip("Вертикальна швидкість обертання камери до застосування чутливості миші.")]
+        [Tooltip("Vertical camera rotation speed before mouse sensitivity is applied.")]
         public float cameraVerticalSpeed = 120f;
-        [Tooltip("Мінімальний кут нахилу камери.")]
+        [Tooltip("Minimum camera pitch angle.")]
         public float cameraMinPitch = -20f;
-        [Tooltip("Максимальний кут нахилу камери.")]
+        [Tooltip("Maximum camera pitch angle.")]
         public float cameraMaxPitch = 80f;
-        [Tooltip("Швидкість згладження зміни FOV.")]
+        [Tooltip("FOV change smoothing speed.")]
         public float cameraFovLerpSpeed = 10f;
-        [Tooltip("Швидкість згладження дистанції камери.")]
+        [Tooltip("Camera-distance smoothing speed.")]
         public float cameraDistanceLerpSpeed = 12f;
-        [Tooltip("Мертва зона колеса миші для перемикання наближення.")]
+        [Tooltip("Mouse-wheel dead zone for zoom switching.")]
         public float cameraScrollDeadZone = 0.001f;
-        [Header("Приціл")]
-        [Tooltip("Колір тексту, коли розкид повністю зведений.")]
+        [Header("Reticle")]
+        [Tooltip("Text color when dispersion is fully aimed.")]
         public Color aimReadyColor = new Color(0.5f, 1f, 0.5f, 1f);
-        [Tooltip("Колір тексту, коли розкид ще зводиться.")]
+        [Tooltip("Text color while dispersion is still aiming.")]
         public Color aimProgressColor = new Color(1f, 0.86f, 0.2f, 1f);
-        [Tooltip("Текст стану прицілу, коли зброя повністю зведена.")]
+        [Tooltip("Reticle status text when the weapon is fully aimed.")]
         public string aimReadyText = "AIM READY";
-        [Tooltip("Префікс тексту стану прицілу під час зведення.")]
+        [Tooltip("Reticle status text prefix while aiming.")]
         public string aimProgressTextPrefix = "AIM ";
-        [Tooltip("Запасна швидкість згладження прицілу, якщо глобальні налаштування розкиду недоступні.")]
+        [Tooltip("Fallback reticle smoothing speed when global dispersion settings are unavailable.")]
         public float reticleFallbackSmoothSpeed = 20f;
-        [Tooltip("Ховати приціл, коли точка прицілювання знаходиться позаду камери.")]
+        [Tooltip("Hide the reticle when the aiming point is behind the camera.")]
         public bool reticleHideWhenBehindCamera = true;
-        [Tooltip("Обмежувати позицію прицілу межами canvas.")]
+        [Tooltip("Constrain the reticle position to the canvas bounds.")]
         public bool reticleClampToCanvas = true;
-        [Tooltip("Кут між напрямком гармати і камерою, після якого приціл ховається.")]
+        [Tooltip("Angle between the gun direction and camera after which the reticle is hidden.")]
         public float reticleHideWhenAngleGreaterThan = 90f;
-        [Tooltip("Показувати серверний приціл, якщо гравець увімкнув його в налаштуваннях.")]
+        [Tooltip("Show the server reticle when enabled by the player in settings.")]
         public bool reticleShowServerReticle = true;
 
-        [Header("Outline під прицілом")]
-        [Tooltip("Максимальна дистанція пошуку цілі для підсвічування під прицілом.")]
+        [Header("Reticle Target Outline")]
+        [Tooltip("Maximum target-search distance for the reticle outline.")]
         public float hoverOutlineMaxDistance = 2000f;
-        [Tooltip("Товщина outline підсвічування техніки під прицілом.")]
+        [Tooltip("Vehicle reticle-outline thickness.")]
         public float hoverOutlineWidth = 3f;
-        [Tooltip("Колір outline підсвічування техніки під прицілом.")]
+        [Tooltip("Vehicle reticle-outline color.")]
         public Color hoverOutlineColor = Color.red;
-        [Tooltip("Не підсвічувати союзників під прицілом.")]
+        [Tooltip("Do not outline allies under the reticle.")]
         public bool hoverOutlineRejectSameTeam = true;
 
-        [Header("HUD швидкості")]
-        [Tooltip("Множник переведення фактичної швидкості машини в число на спідометрі HUD.")]
+        [Header("Speed HUD")]
+        [Tooltip("Multiplier that converts actual vehicle speed to the HUD speedometer value.")]
         public float speedHudDisplaySpeedMultiplier = 10f;
-        [Tooltip("Інтервал семплування позиції для обчислення швидкості HUD.")]
+        [Tooltip("Position-sampling interval used to calculate HUD speed.")]
         public float speedHudSampleInterval = 0.12f;
-        [Tooltip("Швидкість згладження числа швидкості на HUD.")]
+        [Tooltip("Smoothing speed for the HUD speed value.")]
         public float speedHudSmoothRate = 8f;
-        [Tooltip("Поріг, нижче якого швидкість на HUD одразу стає нулем.")]
+        [Tooltip("Threshold below which HUD speed immediately becomes zero.")]
         public float speedHudStopSnapThreshold = 0.05f;
-        [Tooltip("Тривалість анімації плаваючого тексту шкоди.")]
+        [Tooltip("Duration of the floating damage-text animation.")]
         public float floatingDamageTextDuration = 0.8f;
-        [Tooltip("На скільки метрів плаваючий текст шкоди піднімається вгору.")]
+        [Tooltip("Distance in meters that floating damage text rises.")]
         public float floatingDamageTextMoveUp = 1.5f;
-        [Tooltip("Фінальний масштаб плаваючого тексту шкоди.")]
+        [Tooltip("Final scale of floating damage text.")]
         public float floatingDamageTextEndScale = 1.3f;
-        [Tooltip("Тривалість fade-анімації снайперського overlay.")]
+        [Tooltip("Duration of the sniper overlay fade animation.")]
         public float sniperScopeOverlayFadeDuration = 0.18f;
 
         [Header("Development tree arrows")]
@@ -615,59 +615,59 @@ namespace Game.Scripts.Client
     {
         private static readonly ClientProjectileVisualSettings DefaultSettings = new ClientProjectileVisualSettings();
 
-        [Header("Посилання візуального снаряда")]
-        [Tooltip("Клієнтська заміна prefab снаряда. Залиште порожнім, щоб використовувати prefab зброї.")]
+        [Header("Projectile Visual References")]
+        [Tooltip("Client-side projectile prefab override. Leave empty to use the weapon prefab.")]
         public Projectile projectilePrefab;
-        [Tooltip("Матеріал, який застосовується до mesh снаряда на клієнті.")]
+        [Tooltip("Material applied to the projectile mesh on the client.")]
         public Material projectileMaterial;
-        [Tooltip("Матеріал хвоста-трасера снаряда.")]
+        [Tooltip("Projectile tracer-tail material.")]
         public Material tracerMaterial;
-        [Tooltip("Одноразовий ефект спалаху пострілу біля дула.")]
+        [Tooltip("One-shot muzzle flash effect.")]
         public PooledImpactFx muzzleFlashPrefab;
-        [Tooltip("Одноразовий ефект диму біля дула.")]
+        [Tooltip("One-shot muzzle smoke effect.")]
         public PooledImpactFx muzzleSmokePrefab;
 
-        [Header("Світіння снаряда")]
+        [Header("Projectile Glow")]
         public bool overrideProjectileMaterial = true;
         [ColorUsage(false, true)] public Color projectileBaseColor = new Color(1f, 0.58f, 0.16f, 1f);
         [ColorUsage(false, true)] public Color projectileEmissionColor = new Color(1f, 0.38f, 0.06f, 1f);
         [Min(0f)] public float projectileEmissionIntensity = 4f;
 
-        [Header("Трасер")]
+        [Header("Tracer")]
         public bool tracerEnabled = true;
-        [Tooltip("Скільки секунд трасер залишається видимим. Менше значення робить трасер коротшим.")]
-        [InspectorName("Тривалість трасера, с")]
+        [Tooltip("How many seconds the tracer remains visible. Lower values make the tracer shorter.")]
+        [InspectorName("Tracer Duration, s")]
         [Min(0.01f)] public float tracerLifetime = 0.06f;
-        [Tooltip("Товщина трасера біля голови снаряда.")]
+        [Tooltip("Tracer thickness near the projectile head.")]
         [Min(0.001f)] public float tracerStartWidth = 0.07f;
-        [Tooltip("Товщина трасера на згасаючому кінці хвоста.")]
+        [Tooltip("Tracer thickness at the fading tail end.")]
         [Min(0f)] public float tracerEndWidth = 0.012f;
-        [Tooltip("Дистанція між точками хвоста. Більше значення дешевше, але дає менше деталей.")]
+        [Tooltip("Distance between tail points. Higher values are cheaper but less detailed.")]
         [Min(0.001f)] public float tracerMinVertexDistance = 0.08f;
         [Range(0, 8)] public int tracerCornerVertices;
         [Range(0, 8)] public int tracerCapVertices;
-        [Tooltip("Глобальний множник прозорості градієнта трасера.")]
+        [Tooltip("Global opacity multiplier for the tracer gradient.")]
         [Range(0f, 1f)] public float tracerOpacity = 1f;
-        [Tooltip("Alpha матеріалу трасера. Залишайте високим, якщо основне налаштування прозорості виконує tracerOpacity.")]
+        [Tooltip("Tracer material alpha. Keep it high when tracerOpacity provides the main opacity control.")]
         [Range(0f, 1f)] public float tracerMaterialAlpha = 0.75f;
-        [Tooltip("Позиція середньої точки згасання трасера. 0 біля голови снаряда, 1 біля хвоста.")]
+        [Tooltip("Position of the tracer fade midpoint. 0 is near the projectile head; 1 is near the tail.")]
         [Range(0.01f, 0.99f)] public float tracerFadeMidpoint = 0.55f;
-        [Tooltip("Множник прозорості в tracerFadeMidpoint відносно alpha tracerHeadColor.")]
+        [Tooltip("Opacity multiplier at tracerFadeMidpoint relative to tracerHeadColor alpha.")]
         [Range(0f, 1f)] public float tracerMidOpacityMultiplier = 0.45f;
         [ColorUsage(false, true)] public Color tracerHeadColor = new Color(1f, 0.82f, 0.35f, 0.42f);
         [ColorUsage(false, true)] public Color tracerTailColor = new Color(1f, 0.45f, 0.1f, 0f);
         [ColorUsage(false, true)] public Color tracerEmissionColor = new Color(1f, 0.55f, 0.16f, 1f);
         [Min(0f)] public float tracerEmissionIntensity = 1.35f;
 
-        [Header("Ефекти дула")]
+        [Header("Muzzle Effects")]
         public bool muzzleFxEnabled = true;
-        [Tooltip("Не створювати локальні спалах і дим біля дула, поки власник перебуває в повному снайперському режимі.")]
+        [Tooltip("Do not create local muzzle flash and smoke while the owner is in full sniper mode.")]
         public bool hideMuzzleFxInSniperMode = true;
         [Min(0f)] public float muzzleForwardOffset = 0.25f;
         [Min(0.01f)] public float muzzleFlashScale = 0.55f;
         [Min(0.01f)] public float muzzleSmokeScale = 0.65f;
 
-        [Header("Пули візуальних ефектів")]
+        [Header("Visual Effect Pools")]
         [Min(0)] public int clientProjectilePoolPrewarmCount = 16;
         [Min(1)] public int clientProjectilePoolMaxInactive = 64;
         [Min(0)] public int clientImpactFxPoolPrewarmCount = 16;
@@ -811,10 +811,10 @@ namespace Game.Scripts.Client
             240
         };
 
-        [Tooltip("Увімкнути вертикальну синхронізацію. Коли вона активна, Unity визначає темп кадрів за частотою оновлення дисплея.")]
+        [Tooltip("Enable vertical synchronization. When active, Unity matches the display refresh rate.")]
         public bool verticalSyncEnabled = DefaultVerticalSyncEnabled;
 
-        [Tooltip("Цільова частота кадрів клієнта, яка використовується коли вертикальну синхронізацію вимкнено.")]
+        [Tooltip("Target client frame rate used when vertical synchronization is disabled.")]
         [Range(MinTargetFrameRate, MaxTargetFrameRate)]
         public int targetFrameRate = DefaultTargetFrameRate;
 
@@ -900,16 +900,16 @@ namespace Game.Scripts.Client
     {
         public static ClientSettings In;
 
-        [Tooltip("Клієнтські налаштування темпу кадрів для production-збірок.")]
+        [Tooltip("Client frame-pacing settings for production builds.")]
         public ClientFramePacingSettings framePacing = new ClientFramePacingSettings();
 
-        [Tooltip("Клієнтські візуальні налаштування снаряда, трасера та ефектів дула. Сервер їх не читає і не синхронізує.")]
+        [Tooltip("Client visual settings for projectiles, tracers, and muzzle effects. The server does not read or synchronize them.")]
         public ClientProjectileVisualSettings projectileVisuals = new ClientProjectileVisualSettings();
 
-        [Tooltip("Локальні клієнтські runtime-налаштування HUD, карти та автоприцілу. Сервер їх не читає і не синхронізує.")]
+        [Tooltip("Local client runtime settings for the HUD, map, and autolock. The server does not read or synchronize them.")]
         public GameplayRuntimeSettings gameplayRuntime = new GameplayRuntimeSettings();
 
-        [Tooltip("Єдина палітра станів UI-кнопок. Застосуйте її до Client і UI-префабів кнопкою в інспекторі ClientSettings.")]
+        [Tooltip("Unified UI button-state palette. Apply it to Client and UI prefabs with the ClientSettings Inspector button.")]
         public ClientButtonColorSettings buttonColors = new ClientButtonColorSettings();
 
         private void Awake()

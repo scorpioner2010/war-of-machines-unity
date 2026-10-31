@@ -7,7 +7,7 @@ namespace Game.Scripts.Gameplay.Robots
     [Serializable]
     public class GunDispersionSettings
     {
-        [Header("Зведення")]
+        [Header("Aiming")]
         public float minDispersionDeg = 0.35f;
         public float maxDispersionDeg = 6f;
         public float aimTime = 2f;
@@ -34,46 +34,46 @@ namespace Game.Scripts.Gameplay.Robots
     {
         private static readonly GunDispersionGlobalSettings DefaultSettings = new GunDispersionGlobalSettings();
 
-        [Tooltip("Вмикає серверну систему розкиду за швидкістю руху танка, фактичним рухом башти і пострілами.")]
+        [Tooltip("Enables the server-side dispersion system based on vehicle speed, actual turret movement, and shots.")]
         public bool enabled = true;
-        [Tooltip("Час, за який коло зведення швидко розширюється після початку руху танка, повороту башти або пострілу. Менше значення = різкіше розширення.")]
+        [Tooltip("Time for the aiming circle to expand after vehicle movement, turret rotation, or a shot. Lower values make expansion sharper.")]
         public float expandTime = 0.12f;
 
-        [Header("Точність із бази даних")]
-        [Tooltip("Дистанція, на якій інтерпретується точність з бази даних. Стиль World of Tanks: метри максимального радіального розкиду на 100 метрах.")]
+        [Header("Database Accuracy")]
+        [Tooltip("Distance at which database accuracy is interpreted. World of Tanks style: meters of maximum radial dispersion at 100 meters.")]
         public float accuracyReferenceDistanceMeters = 100f;
 
-        [Header("Інтерфейс")]
-        [Tooltip("Мінімальний діаметр UI-кола зведення в пікселях навіть при ідеально точній гарматі.")]
+        [Header("Interface")]
+        [Tooltip("Minimum UI aiming-circle diameter in pixels, even for a perfectly accurate gun.")]
         public float uiMinDiameter = 55f;
-        [Tooltip("Максимальний діаметр UI-кола зведення в пікселях.")]
+        [Tooltip("Maximum UI aiming-circle diameter in pixels.")]
         public float uiMaxDiameter = 340f;
-        [Tooltip("Скільки пікселів на градус точності додається до повністю зведеного кола в максимальному зумі/снайперському режимі.")]
+        [Tooltip("Pixels per degree of accuracy added to the fully aimed circle at maximum zoom or in sniper mode.")]
         [FormerlySerializedAs("uiFullyAimedPixelsPerDegree")]
         public float uiFullyAimedPixelsPerDegreeAtMaxZoom = 85f;
-        [Tooltip("Скільки пікселів на градус точності додається до повністю зведеного кола на максимальній дистанції камери від третьої особи.")]
+        [Tooltip("Pixels per degree of accuracy added to the fully aimed circle at the maximum third-person camera distance.")]
         public float uiFullyAimedPixelsPerDegreeAtMaxDistance = 34f;
-        [Tooltip("Скільки пікселів на градус поточного розкиду понад мінімальний додається в максимальному зумі/снайперському режимі.")]
+        [Tooltip("Pixels per degree of current dispersion above the minimum added at maximum zoom or in sniper mode.")]
         [FormerlySerializedAs("uiPixelsPerDegree")]
         public float uiBloomPixelsPerDegreeAtMaxZoom = 42f;
-        [Tooltip("Скільки пікселів на градус поточного розкиду понад мінімальний додається на максимальній дистанції камери від третьої особи.")]
+        [Tooltip("Pixels per degree of current dispersion above the minimum added at the maximum third-person camera distance.")]
         public float uiBloomPixelsPerDegreeAtMaxDistance = 17f;
-        [Tooltip("Швидкість згладжування діаметра UI-кола зведення. 0 = діаметр змінюється миттєво.")]
+        [Tooltip("Smoothing speed for the UI aiming-circle diameter. 0 = the diameter changes instantly.")]
         public float uiDiameterLerpSpeed = 18f;
-        [Tooltip("Швидкість, з якою UI-коло доганяє логічну точку прицілу по горизонталі. 0 = горизонталь миттєва.")]
+        [Tooltip("Speed at which the UI circle follows the logical aim point horizontally. 0 = instant horizontal movement.")]
         public float uiReticleHorizontalLerpSpeed = 20f;
-        [Tooltip("Швидкість, з якою UI-коло доганяє логічну точку прицілу по вертикалі. 0 = вертикаль миттєва.")]
+        [Tooltip("Speed at which the UI circle follows the logical aim point vertically. 0 = instant vertical movement.")]
         [FormerlySerializedAs("uiReticlePositionLerpSpeed")]
         public float uiReticleVerticalLerpSpeed = 20f;
-        [Tooltip("Швидкість, з якою UI-коло в снайперському режимі доганяє логічну точку прицілу по горизонталі. Менше значення сильніше згладжує дрібне смикання, 0 = миттєво.")]
+        [Tooltip("Speed at which the sniper-mode UI circle follows the logical aim point horizontally. Lower values smooth small jitter more strongly; 0 = instant.")]
         public float uiSniperReticleHorizontalLerpSpeed = 18f;
-        [Tooltip("Швидкість, з якою UI-коло в снайперському режимі доганяє логічну точку прицілу по вертикалі. Менше значення сильніше згладжує дрібне смикання, 0 = миттєво.")]
+        [Tooltip("Speed at which the sniper-mode UI circle follows the logical aim point vertically. Lower values smooth small jitter more strongly; 0 = instant.")]
         public float uiSniperReticleVerticalLerpSpeed = 18f;
 
-        [Header("Мережа")]
-        [Tooltip("Як часто сервер синхронізує значення розкиду з клієнтами. Менше значення = частіше оновлення, але більше мережевого трафіку.")]
+        [Header("Network")]
+        [Tooltip("How often the server synchronizes dispersion values with clients. Lower values update more often but use more network traffic.")]
         public float serverSyncInterval = 0.05f;
-        [Tooltip("Мінімальна зміна розкиду в градусах, після якої сервер відправляє оновлення клієнтам.")]
+        [Tooltip("Minimum dispersion change in degrees before the server sends an update to clients.")]
         public float serverSyncDeadZoneDeg = 0.03f;
 
         public static GunDispersionGlobalSettings Default
