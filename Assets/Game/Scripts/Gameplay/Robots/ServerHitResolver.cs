@@ -16,6 +16,7 @@ namespace Game.Scripts.Gameplay.Robots
             public Vector3 normal;
             public Collider collider;
             public VehicleArmorController armor;
+            public VehicleArmorController.ArmorZone armorZone;
             public float baseMm;
             public float losMm;
             public bool penetrated;
@@ -158,6 +159,7 @@ namespace Game.Scripts.Gameplay.Robots
                 && armor.TryGetArmorLoS(hit, zone, dir, normDeg, out float baseMm, out float losMm))
             {
                 hr.armor = armor;
+                hr.armorZone = zone;
                 hr.baseMm = baseMm;
                 hr.losMm = losMm;
                 hr.penetrated = shellPenMm >= losMm;

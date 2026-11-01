@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Game.Scripts.Audio;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Lobby;
@@ -238,6 +239,11 @@ namespace Game.Scripts.UI.Lobby
             if (closed.HasValue && GameplaySpawner.In != null)
             {
                 GameplaySpawner.In.ConfirmGameResultReceivedServerRpc(closed.Value.RoomId);
+            }
+
+            if (closed.HasValue && closed.Value.RewardsAvailable)
+            {
+                SoundCaller.PlayUi(AudioEventNames.UiRewardsReceived);
             }
 
             ProfileServer.UpdateProfile();

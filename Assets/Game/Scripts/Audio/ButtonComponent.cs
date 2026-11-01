@@ -18,6 +18,7 @@ namespace Game.Scripts.Audio
 
         [SerializeField] private Button button;
         [SerializeField] private Graphic[] childGraphics = Array.Empty<Graphic>();
+        [SerializeField] private bool playAudio = true;
 
         private Color[] childGraphicColors;
         private bool initialized;
@@ -111,6 +112,7 @@ namespace Game.Scripts.Audio
         public void OnPointerEnter(PointerEventData eventData)
         {
             isPointerInside = true;
+            SoundCaller.PlayUi(AudioEventNames.UiButtonHover);
             ApplyChildGraphicColors(false, GetChildGraphicState());
         }
 
@@ -215,7 +217,15 @@ namespace Game.Scripts.Audio
 
         private void PlayClickSound()
         {
-            SoundCaller.PlayOneShot("SFX_UI_Button_Mouse_Thick_Generic_1");
+            if (playAudio)
+            {
+                SoundCaller.PlayUi(AudioEventNames.UiButtonClick);
+            }
+        }
+
+        public void SetClickSoundEnabled(bool enabled)
+        {
+            playAudio = enabled;
         }
 
 #if UNITY_EDITOR

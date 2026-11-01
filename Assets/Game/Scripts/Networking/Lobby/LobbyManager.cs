@@ -6,6 +6,7 @@ using FishNet.Managing.Scened;
 using FishNet.Object;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
+using Game.Scripts.Audio;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
@@ -345,6 +346,8 @@ namespace Game.Scripts.Networking.Lobby
         [TargetRpc]
         private void TargetStartGameResponseRpc(NetworkConnection target)
         {
+            SoundCaller.PlayUi(AudioEventNames.UiMatchFound);
+            SoundCaller.StartBattleAudio();
             MenuManager.CloseMenu(MenuType.Matchmaking);
         }
 

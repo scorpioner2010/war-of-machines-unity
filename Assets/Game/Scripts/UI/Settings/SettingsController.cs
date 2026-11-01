@@ -17,6 +17,7 @@ namespace Game.Scripts.UI.Settings
         {
             _model = model;
             _model.Load();
+            SyncAudioVolumePreferences();
             ClientGameplaySettings.SetServerCrosshairEnabled(_model.ServerCrosshairEnabled, false);
             ClientGameplaySettings.SetCameraShakeEnabled(_model.CameraShakeEnabled, false);
             ClientGameplaySettings.SetMouseSensitivities(
@@ -171,7 +172,8 @@ namespace Game.Scripts.UI.Settings
                     break;
                 case SettingsView.TabType.Sounds:
                     _model.SaveAudio();
-                    SoundCaller.GetAudioManager().UpdateVolume();
+                    SoundCaller.GetAudioManager()?.UpdateVolume();
+                    PlayerPrefs.Save();
                     break;
                 case SettingsView.TabType.Controls:
                     _model.SaveControls();
@@ -182,6 +184,15 @@ namespace Game.Scripts.UI.Settings
             
             _model.Save();
 
+        }
+
+        private void SyncAudioVolumePreferences()
+        {
+            PlayerPrefs.SetFloat(AudioManager.UIVol, Mathf.Clamp01(_model.UiVolume));
+            PlayerPrefs.SetFloat(AudioManager.MusicVol, Mathf.Clamp01(_model.MusicVolume));
+            PlayerPrefs.SetFloat(AudioManager.SfxVol, Mathf.Clamp01(_model.SfxVolume));
+            SoundCaller.GetAudioManager()?.UpdateVolume();
+            PlayerPrefs.Save();
         }
 
         private string GetLanguageByIndex(int index)

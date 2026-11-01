@@ -1,6 +1,5 @@
-using System.Collections;
 using FishNet;
-using Game.Scripts.Core.Helpers;
+using Game.Scripts.MenuController;
 using UnityEngine;
 
 namespace Game.Scripts.Audio
@@ -13,12 +12,48 @@ namespace Game.Scripts.Audio
         public AudioPreset prefab;
         public AudioManager Manager;
 
+        private static bool _battleAudioActive;
+
         private bool StopPlay => InstanceFinder.IsServerStarted && InstanceFinder.IsClientStarted == false;
         
         private void Awake()
         {
+            if (_in != null && _in != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             _in = this;
-            Manager = new AudioManager();
+            _battleAudioActive = false;
+            Manager = new AudioManager(prefab, transform, volumeDefaultParameter);
+        }
+
+        private void OnEnable()
+        {
+            MenuManager.OnEnable += HandleMenuOpened;
+            if (MenuManager.IsReady)
+            {
+                HandleMenuOpened(MenuManager.CurrentType);
+            }
+        }
+
+        private void Update()
+        {
+            if (!StopPlay)
+            {
+                Manager?.UpdateVolume();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            MenuManager.OnEnable -= HandleMenuOpened;
+            if (_in == this)
+            {
+                _battleAudioActive = false;
+                _in = null;
+            }
         }
         
         public static AudioManager GetAudioManager() => _in?.Manager;
@@ -29,27 +64,89 @@ namespace Game.Scripts.Audio
             {
                 return null;
             }
-            
+
+            if (_in.prefab == null)
+            {
+                return null;
+            }
+
             return Instantiate(_in.prefab);
         }
 
-        public static Transform GetTransform() => _in.transform;
-        private void Start() => StartCoroutine(SetParametersVolume());
+        public static Transform GetTransform() => _in != null ? _in.transform : null;
 
         private static bool CanPlay()
         {
-            return _in != null && !_in.StopPlay;
+            return _in != null
+                && _in.Manager != null
+                && _in.resources != null
+                && !_in.StopPlay;
         }
-        
+
         public static AudioPreset PlayOneShot(string eventName, Transform parent)
+        {
+            return PlaySfx(eventName, parent);
+        }
+
+        public static AudioPreset PlaySfx(string eventName, Transform parent, Vector3 localPosition = default)
         {
             if (!CanPlay())
             {
                 return null;
             }
             
-            AudionElement element = _in.resources.GetResource(eventName);
-            return _in.Manager.Play(element, SoundType.Sfx, Vector3.zero, parent);
+            AudionElement element = _in.resources.GetResource(eventName, SoundType.Sfx);
+            return _in.Manager.PlaySfx(element, localPosition, parent);
+        }
+
+        public static AudioPreset PlaySfxForRobot(
+            string eventName,
+            Transform parent,
+            Vector3 localPosition,
+            string robotCode)
+        {
+            if (!CanPlay())
+            {
+                return null;
+            }
+
+            AudionElement element = _in.resources.GetResource(
+                eventName,
+                SoundType.Sfx,
+                robotCode);
+            return _in.Manager.PlaySfx(element, localPosition, parent);
+        }
+
+        public static AudioPreset PlayLoopedSfx(
+            string eventName,
+            Transform parent,
+            Vector3 localPosition = default)
+        {
+            if (!CanPlay())
+            {
+                return null;
+            }
+
+            AudionElement element = _in.resources.GetResource(eventName, SoundType.Sfx);
+            return _in.Manager.PlaySfx(element, localPosition, parent, true);
+        }
+
+        public static AudioPreset PlayLoopedSfxForRobot(
+            string eventName,
+            Transform parent,
+            Vector3 localPosition,
+            string robotCode)
+        {
+            if (!CanPlay())
+            {
+                return null;
+            }
+
+            AudionElement element = _in.resources.GetResource(
+                eventName,
+                SoundType.Sfx,
+                robotCode);
+            return _in.Manager.PlaySfx(element, localPosition, parent, true);
         }
 
         public static void StopMusic()
@@ -64,24 +161,51 @@ namespace Game.Scripts.Audio
         
         public static AudioPreset PlayOneShot(string eventName, Vector3 position)
         {
-            if (!CanPlay())
-            {
-                return null;
-            }
-            
-            AudionElement element = _in.resources.GetResource(eventName);
-            return _in.Manager.Play(element, SoundType.Sfx, position);
+            return PlaySfx(eventName, position);
         }
 
-        public static AudioPreset PlayOneShot(string eventName)
+        public static AudioPreset PlaySfx(string eventName, Vector3 position)
         {
             if (!CanPlay())
             {
                 return null;
             }
             
-            AudionElement element = _in.resources.GetResource(eventName);
-            return _in.Manager.Play(element, SoundType.Ui);
+            AudionElement element = _in.resources.GetResource(eventName, SoundType.Sfx);
+            return _in.Manager.PlaySfx(element, position);
+        }
+
+        public static AudioPreset PlaySfxForRobot(
+            string eventName,
+            Vector3 position,
+            string robotCode)
+        {
+            if (!CanPlay())
+            {
+                return null;
+            }
+
+            AudionElement element = _in.resources.GetResource(
+                eventName,
+                SoundType.Sfx,
+                robotCode);
+            return _in.Manager.PlaySfx(element, position);
+        }
+
+        public static AudioPreset PlayOneShot(string eventName)
+        {
+            return PlayUi(eventName);
+        }
+
+        public static AudioPreset PlayUi(string eventName)
+        {
+            if (!CanPlay())
+            {
+                return null;
+            }
+            
+            AudionElement element = _in.resources.GetResource(eventName, SoundType.Ui);
+            return _in.Manager.PlayUi(element);
         }
         
         public static void PlayMusic(string eventName)
@@ -91,57 +215,84 @@ namespace Game.Scripts.Audio
                 return;
             }
             
-            StopMusic();
-            
-            AudionElement element = _in.resources.GetResource(eventName);
-            AudioPreset info = _in.Manager.Play(element, SoundType.Music);
-            
-            if (info == null)
+            AudionElement element = _in.resources.GetResource(eventName, SoundType.Music);
+            _in.Manager.PlayMusic(element);
+        }
+
+        public static void StartBattleAudio()
+        {
+            if (!CanPlay())
             {
                 return;
             }
-            
-            info.SetLoop(true);
+
+            if (_battleAudioActive)
+            {
+                return;
+            }
+
+            _battleAudioActive = true;
+            PlayMusic(AudioEventNames.BattleMusic);
+            PlayUi(AudioEventNames.UiBattleCountdown);
         }
-        
-        private IEnumerator SetParametersVolume()
+
+        public static void StopBattleAudio()
         {
-            yield return new WaitForSeconds(0.3f);
+            bool wasActive = _battleAudioActive;
+            _battleAudioActive = false;
 
-            float music = PlayerPrefs.GetFloat(AudioManager.MusicVol, volumeDefaultParameter);
-            float ui = PlayerPrefs.GetFloat(AudioManager.UIVol, volumeDefaultParameter);
-            float sfx = PlayerPrefs.GetFloat(AudioManager.SfxVol, volumeDefaultParameter);
+            if (!CanPlay())
+            {
+                return;
+            }
 
-            ChangeVolume(sfx, SoundType.Sfx);
-            ChangeVolume(music, SoundType.Music);
-            ChangeVolume(ui, SoundType.Ui);
+            if (!wasActive)
+            {
+                return;
+            }
+
+            StopMusic();
+            PlayUi(AudioEventNames.UiBattleFinished);
         }
 
         public void ChangeVolume(float volume, SoundType type)
         {
-            if (type == SoundType.Music)
+            Manager?.SetVolume(volume, type);
+        }
+
+        private static void HandleMenuOpened(MenuType type)
+        {
+            if (!CanPlay())
             {
-                PlayerPrefs.SetFloat(AudioManager.MusicVol, volume);
+                return;
             }
-            
-            if (type == SoundType.Ui)
+
+            if (type == MenuType.MainMenu)
             {
-                PlayerPrefs.SetFloat(AudioManager.UIVol, volume);
-            }
-            
-            if (type == SoundType.Sfx)
-            {
-                PlayerPrefs.SetFloat(AudioManager.SfxVol, volume);
-            }
-            
-            Manager.Library.RemoveAllNull();
-            
-            foreach (AudioPreset preset in Manager.Library)
-            {
-                if (preset.Type == type)
+                if (_battleAudioActive)
                 {
-                    preset.SetVolume(volume);
+                    StopBattleAudio();
                 }
+
+                PlayMusic(AudioEventNames.GarageMain);
+            }
+            else if (type == MenuType.DevelopmentTree)
+            {
+                PlayMusic(AudioEventNames.GarageDevelopmentTree);
+                PlayUi(AudioEventNames.UiDevelopmentTreeOpen);
+            }
+            else if (type == MenuType.EndGame)
+            {
+                StopBattleAudio();
+                PlayMusic(AudioEventNames.BattleResultMusic);
+            }
+            else if (type == MenuType.GameplayHUD)
+            {
+                StartBattleAudio();
+            }
+            else if (type == MenuType.GameResult)
+            {
+                PlayMusic(AudioEventNames.BattleResultMusic);
             }
         }
     }

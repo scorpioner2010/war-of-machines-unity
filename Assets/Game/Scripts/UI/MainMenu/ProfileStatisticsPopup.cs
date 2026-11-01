@@ -3,6 +3,7 @@ using System.Globalization;
 using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Resources;
+using Game.Scripts.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -55,12 +56,14 @@ namespace Game.Scripts.UI.MainMenu
         {
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
+            SoundCaller.PlayMusic(AudioEventNames.ProfileMusic);
             ShowLoading();
             ProfileServer.RequestProfileStatistics();
         }
 
         public void Close()
         {
+            SoundCaller.PlayMusic(AudioEventNames.GarageMain);
             ClearVehicleRows();
             gameObject.SetActive(false);
         }

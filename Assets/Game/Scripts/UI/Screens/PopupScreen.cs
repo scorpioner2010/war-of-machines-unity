@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,13 +21,25 @@ namespace Game.Scripts.UI.Screens
         protected virtual void Awake()
         {
             _in = (T)this;
-            ok.onClick.AddListener(Hide);
-            cancel.onClick.AddListener(Hide);
+            ok.onClick.AddListener(HideInfo);
+            cancel.onClick.AddListener(HideDenied);
         }
 
         private void Hide()
         {
             _in.popup.SetActive(false);
+        }
+
+        private void HideInfo()
+        {
+            SoundCaller.PlayUi(AudioEventNames.UiActionConfirm);
+            Hide();
+        }
+
+        private void HideDenied()
+        {
+            SoundCaller.PlayUi(AudioEventNames.UiActionDenied);
+            Hide();
         }
 
         public static void ShowText(string message, Color color, Action act = null, PopupType typePopup = PopupType.Info)
@@ -46,6 +59,7 @@ namespace Game.Scripts.UI.Screens
                 _in.confirm.onClick.RemoveAllListeners();
                 _in.confirm.onClick.AddListener(() =>
                 {
+                    SoundCaller.PlayUi(AudioEventNames.UiActionConfirm);
                     act?.Invoke();
                     _in.confirm.onClick.RemoveAllListeners();
                     _in.Hide();

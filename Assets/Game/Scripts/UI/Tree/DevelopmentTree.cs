@@ -7,6 +7,7 @@ using Game.Scripts.API;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
+using Game.Scripts.Audio;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Resources;
 using Game.Scripts.Core.Services;
@@ -264,7 +265,11 @@ namespace Game.Scripts.UI.Tree
                 _factionButtons.Add(factionButton);
                 factionButton.Configure(code, title);
 
-                button.onClick.AddListener(() => SetActiveContainer(factionIndex));
+                button.onClick.AddListener(() =>
+                {
+                    SoundCaller.PlayUi(AudioEventNames.UiFactionTabs);
+                    SetActiveContainer(factionIndex);
+                });
             }
         }
 
@@ -690,8 +695,18 @@ namespace Game.Scripts.UI.Tree
 
         private void TryResearch(VehicleResearchProgress progress)
         {
-            if (progress == null || progress.Node == null || progress.Status != VehicleResearchStatus.AvailableToResearch)
+            if (progress == null || progress.Node == null)
             {
+                return;
+            }
+
+            if (progress.Status != VehicleResearchStatus.AvailableToResearch)
+            {
+                if (progress.Status == VehicleResearchStatus.LockedByResearch)
+                {
+                    SoundCaller.PlayUi(AudioEventNames.UiInsufficientXp);
+                }
+
                 return;
             }
 
@@ -739,6 +754,7 @@ namespace Game.Scripts.UI.Tree
 
             if (info.Profile.bolts < vehicle.purchaseCost)
             {
+                SoundCaller.PlayUi(AudioEventNames.UiInsufficientBolts);
                 Popup.ShowText("Not enough bolts.\nprice: " + vehicle.purchaseCost, Color.red);
                 return;
             }
@@ -810,6 +826,7 @@ namespace Game.Scripts.UI.Tree
         {
             if (success)
             {
+                SoundCaller.PlayUi(AudioEventNames.UiRobotResearched);
                 ProfileServer.UpdateProfile();
                 return;
             }
@@ -823,6 +840,7 @@ namespace Game.Scripts.UI.Tree
         {
             if (success)
             {
+                SoundCaller.PlayUi(AudioEventNames.UiRobotPurchased);
                 ProfileServer.UpdateProfile();
             }
             else

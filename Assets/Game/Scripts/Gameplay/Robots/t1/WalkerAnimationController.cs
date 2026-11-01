@@ -1,4 +1,5 @@
 using Game.Scripts.Server;
+using Game.Scripts.Audio;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots.t1
@@ -61,6 +62,9 @@ namespace Game.Scripts.Gameplay.Robots.t1
         private bool _hasLastWorldPosition;
         private float _smoothedHorizontalSpeed;
         private Vector3 _initialBodyLocalPosition;
+        private AudioPreset _movementAudio;
+        private AudioPreset _hydraulicsAudio;
+        private float _movementVolume;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
@@ -83,6 +87,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
                 || vehicleRoot.inputManager == null
                 || (vehicleRoot.health != null && vehicleRoot.health.IsDead))
             {
+                StopMovementAudio();
                 return;
             }
 
@@ -91,6 +96,8 @@ namespace Game.Scripts.Gameplay.Robots.t1
             Vector2 movementInput = vehicleRoot.inputManager.AnimMove;
             bool isWalking = Mathf.Abs(movementInput.y) > inputThreshold;
             bool isTurning = !isWalking && Mathf.Abs(movementInput.x) > inputThreshold;
+            float previousWalkPhase = _walkPhase;
+            float previousTurnTimer = _turnTimer;
             UpdateAnimationWeights(settings, movementInput, actualSpeed, isWalking, isTurning);
             if (isWalking || isTurning)
             {
@@ -103,6 +110,94 @@ namespace Game.Scripts.Gameplay.Robots.t1
             }
 
             ApplyBodyBobbing(isWalking, isTurning);
+            UpdateMovementAudio(isWalking || isTurning);
+            PlayMovementStepAudio(isWalking, isTurning, previousWalkPhase, previousTurnTimer);
+        }
+
+        private void UpdateMovementAudio(bool isMoving)
+        {
+            if (vehicleRoot == null || !vehicleRoot.IsClientInitialized)
+            {
+                StopMovementAudio();
+                return;
+            }
+
+            float targetVolume = isMoving ? 1f : 0f;
+            _movementVolume = Mathf.MoveTowards(_movementVolume, targetVolume, Time.deltaTime / 0.5f);
+
+            if (_movementAudio == null && _movementVolume > 0.001f)
+            {
+                _movementAudio = SoundCaller.PlayLoopedSfxForRobot(
+                    AudioEventNames.WalkerMovement,
+                    transform,
+                    default,
+                    vehicleRoot?.RuntimeStats?.Code);
+            }
+
+            if (_hydraulicsAudio == null && _movementVolume > 0.001f)
+            {
+                _hydraulicsAudio = SoundCaller.PlayLoopedSfxForRobot(
+                    AudioEventNames.WalkerHydraulics,
+                    transform,
+                    default,
+                    vehicleRoot?.RuntimeStats?.Code);
+            }
+
+            _movementAudio?.SetPlaybackVolume(_movementVolume);
+            _hydraulicsAudio?.SetPlaybackVolume(_movementVolume);
+
+            if (_movementVolume <= 0.001f && !isMoving)
+            {
+                StopMovementAudio();
+            }
+        }
+
+        private void PlayMovementStepAudio(
+            bool isWalking,
+            bool isTurning,
+            float previousWalkPhase,
+            float previousTurnTimer)
+        {
+            if (vehicleRoot == null || !vehicleRoot.IsClientInitialized)
+            {
+                return;
+            }
+
+            if (isWalking && HasCycleWrapped(previousWalkPhase, _walkPhase))
+            {
+                SoundCaller.PlaySfxForRobot(
+                    AudioEventSelector.GetWalkerStepEvent(vehicleRoot),
+                    transform.position,
+                    vehicleRoot?.RuntimeStats?.Code);
+            }
+
+            if (isTurning && _turnTimer < previousTurnTimer)
+            {
+                SoundCaller.PlaySfxForRobot(
+                    AudioEventSelector.GetWalkerTurnEvent(vehicleRoot),
+                    transform.position,
+                    vehicleRoot?.RuntimeStats?.Code);
+            }
+        }
+
+        private static bool HasCycleWrapped(float previous, float current)
+        {
+            return previous > 0.5f && current < 0.5f
+                   || previous < 0.5f && current > 0.5f;
+        }
+
+        private void StopMovementAudio()
+        {
+            _movementAudio?.Stop();
+            _hydraulicsAudio?.Stop();
+            _movementAudio = null;
+            _hydraulicsAudio = null;
+            _movementVolume = 0f;
+        }
+
+        private void OnDisable()
+        {
+            StopMovementAudio();
         }
 
         private void UpdateAnimationWeights(

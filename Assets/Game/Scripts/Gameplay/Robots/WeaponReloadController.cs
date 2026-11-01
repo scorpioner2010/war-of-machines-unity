@@ -1,6 +1,7 @@
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using FishNet.Connection;
+using Game.Scripts.Audio;
 using Game.Scripts.Core.Services;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
@@ -31,6 +32,8 @@ namespace Game.Scripts.Gameplay.Robots
         private ReloadHudState _lastHudState = ReloadHudState.Unknown;
         private int _lastReloadTenths = int.MinValue;
         private RobotFaction _faction = RobotFaction.Unknown;
+        private bool _wasReloadingForAudio;
+        private bool _emptyAmmoAudioPlayed;
 
         private enum ReloadHudState : byte
         {
@@ -157,6 +160,24 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 ServerTryFireAuthoritative();
             }
+
+            if (IsOwner)
+            {
+                bool isReloadingForAudio = _clientReloadRemain > 0f || _isReloading.Value;
+                if (_wasReloadingForAudio && !isReloadingForAudio && _ammoLeft.Value > 0)
+                {
+                    SoundCaller.PlaySfxForRobot(
+                        AudioEventSelector.GetReloadReadyEvent(vehicleRoot),
+                        vehicleRoot != null ? vehicleRoot.transform.position : transform.position,
+                        vehicleRoot?.RuntimeStats?.Code);
+                }
+
+                _wasReloadingForAudio = isReloadingForAudio;
+                if (_ammoLeft.Value > 0)
+                {
+                    _emptyAmmoAudioPlayed = false;
+                }
+            }
         }
 
         public void Init()
@@ -182,6 +203,16 @@ namespace Game.Scripts.Gameplay.Robots
             if (IsOwner)
             {
                 ApplyHud();
+
+                if (_ammoLeft.Value <= 0
+                    && vehicleRoot != null
+                    && vehicleRoot.inputManager != null
+                    && vehicleRoot.inputManager.Shoot
+                    && !_emptyAmmoAudioPlayed)
+                {
+                    SoundCaller.PlayUi(AudioEventNames.UiAmmoEmpty);
+                    _emptyAmmoAudioPlayed = true;
+                }
 
                 bool localGate = (_clientReloadRemain > 0f);
 

@@ -1,4 +1,5 @@
 using FishNet.Object;
+using Game.Scripts.Audio;
 using Game.Scripts.Diagnostics;
 using UnityEngine;
 
@@ -18,6 +19,8 @@ namespace Game.Scripts.Gameplay.Robots
         private float _localYaw;
         private float _targetYawServer;
         private Transform _chassisTransform;
+        private AudioPreset _rotationAudio;
+        private bool _wasRotatingForAudio;
 
         public float CurrentLocalYaw => _localYaw;
 
@@ -101,9 +104,11 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 if (!ShouldDriveRotation() || _chassisTransform == null)
                 {
+                    StopRotationAudio();
                     return;
                 }
 
+                bool wasRotating = _wasRotatingForAudio;
                 if (!ShouldHoldTargetYaw(_localYaw, _targetYawServer, AimHoldDeadZoneDegrees))
                 {
                     float step = rotationSpeed * Time.deltaTime;
@@ -111,7 +116,49 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 transform.rotation = _chassisTransform.rotation * Quaternion.Euler(0f, _localYaw, 0f);
+                bool isRotating = !ShouldHoldTargetYaw(_localYaw, _targetYawServer, AimHoldDeadZoneDegrees);
+                UpdateRotationAudio(isRotating, wasRotating);
             }
+        }
+
+        private void UpdateRotationAudio(bool isRotating, bool wasRotating)
+        {
+            if (!IsClientInitialized)
+            {
+                return;
+            }
+
+            if (isRotating)
+            {
+                if (_rotationAudio == null)
+                {
+                    _rotationAudio = SoundCaller.PlayLoopedSfx(AudioEventNames.TurretRotation, transform);
+                }
+
+                _rotationAudio?.SetPlaybackVolume(1f);
+            }
+            else
+            {
+                StopRotationAudio();
+                if (wasRotating)
+                {
+                    SoundCaller.PlaySfx(AudioEventNames.TurretRotationFinished, transform.position);
+                }
+            }
+
+            _wasRotatingForAudio = isRotating;
+        }
+
+        private void StopRotationAudio()
+        {
+            _rotationAudio?.Stop();
+            _rotationAudio = null;
+            _wasRotatingForAudio = false;
+        }
+
+        private void OnDisable()
+        {
+            StopRotationAudio();
         }
 
         private static bool ShouldHoldTargetYaw(float currentYaw, float targetYaw, float deadZoneDegrees)

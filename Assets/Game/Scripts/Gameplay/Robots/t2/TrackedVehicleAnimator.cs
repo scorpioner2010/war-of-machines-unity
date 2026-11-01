@@ -1,4 +1,5 @@
 using UnityEngine;
+using Game.Scripts.Audio;
 
 namespace Game.Scripts.Gameplay.Robots.t2
 {
@@ -25,6 +26,9 @@ namespace Game.Scripts.Gameplay.Robots.t2
         public Wheel[] leftWheels = System.Array.Empty<Wheel>();
         public Wheel[] rightWheels = System.Array.Empty<Wheel>();
 
+        private AudioPreset _movementAudio;
+        private float _movementVolume;
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;
@@ -36,6 +40,7 @@ namespace Game.Scripts.Gameplay.Robots.t2
                 || vehicleRoot.inputManager == null
                 || (vehicleRoot.health != null && vehicleRoot.health.IsDead))
             {
+                StopMovementAudio();
                 return;
             }
 
@@ -50,6 +55,40 @@ namespace Game.Scripts.Gameplay.Robots.t2
             AnimateTrackTextures(leftTrackSpeed, rightTrackSpeed);
             RotateWheels(leftWheels, leftWheelSpeed);
             RotateWheels(rightWheels, rightWheelSpeed);
+            UpdateMovementAudio(movement);
+        }
+
+        private void UpdateMovementAudio(Vector2 movement)
+        {
+            float targetVolume = Mathf.Clamp01(movement.magnitude);
+            _movementVolume = Mathf.MoveTowards(_movementVolume, targetVolume, Time.deltaTime / 0.5f);
+
+            if (_movementAudio == null && _movementVolume > 0.001f)
+            {
+                _movementAudio = SoundCaller.PlayLoopedSfx(AudioEventNames.TrackedMovement, transform);
+            }
+
+            if (_movementAudio != null)
+            {
+                _movementAudio.SetPlaybackVolume(_movementVolume);
+            }
+
+            if (_movementAudio != null && _movementVolume <= 0.001f && targetVolume <= 0.001f)
+            {
+                StopMovementAudio();
+            }
+        }
+
+        private void StopMovementAudio()
+        {
+            _movementAudio?.Stop();
+            _movementAudio = null;
+            _movementVolume = 0f;
+        }
+
+        private void OnDisable()
+        {
+            StopMovementAudio();
         }
 
         private void ResolveTrackSpeeds(

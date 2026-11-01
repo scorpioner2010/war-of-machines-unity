@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
+using Game.Scripts.Audio;
 using Game.Scripts.MenuController;
 using Game.Scripts.Testing;
 using Game.Scripts.UI.Lobby;
@@ -60,6 +61,7 @@ namespace Game.Scripts.Networking.Lobby
         {
             if (ClientMenuTestMode.IsEnabled)
             {
+                SoundCaller.PlayUi(AudioEventNames.UiSearchStarted);
                 MatchmakingStatusView.UpdateInfo(0f, 1);
                 MenuManager.OpenMenu(MenuType.Matchmaking);
                 return;
@@ -71,6 +73,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             lobbyManager.FindMatchServerRpc(currentMap.ToString());
+            SoundCaller.PlayUi(AudioEventNames.UiSearchStarted);
             MenuManager.OpenMenu(MenuType.Matchmaking);
         }
 
@@ -78,6 +81,7 @@ namespace Game.Scripts.Networking.Lobby
         {
             if (ClientMenuTestMode.IsEnabled)
             {
+                SoundCaller.PlayUi(AudioEventNames.UiSearchCancelled);
                 MenuManager.OpenMenu(MenuType.MainMenu);
                 return;
             }
@@ -88,6 +92,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             lobbyManager.CancelFindRoomServerRpc();
+            SoundCaller.PlayUi(AudioEventNames.UiSearchCancelled);
         }
     }
 }

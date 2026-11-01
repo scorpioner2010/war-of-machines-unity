@@ -1,3 +1,4 @@
+using Game.Scripts.Audio;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Lobby;
 using TMPro;
@@ -90,6 +91,15 @@ namespace Game.Scripts.UI.Lobby
 
         private void SetResult(EndGameResult result, EndGameSnapshot snapshot)
         {
+            if (result == EndGameResult.Win)
+            {
+                SoundCaller.PlayUi(AudioEventNames.UiVictory);
+            }
+            else if (result == EndGameResult.Lose)
+            {
+                SoundCaller.PlayUi(AudioEventNames.UiDefeat);
+            }
+
             if (status != null)
             {
                 status.text = BuildSummary(result, snapshot);

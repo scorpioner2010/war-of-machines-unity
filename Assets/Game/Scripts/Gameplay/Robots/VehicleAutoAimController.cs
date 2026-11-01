@@ -1,5 +1,6 @@
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Client;
+using Game.Scripts.Audio;
 using UnityEngine;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -48,7 +49,13 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            return TryAcquireFromCurrentView();
+            bool acquired = TryAcquireFromCurrentView();
+            if (acquired)
+            {
+                SoundCaller.PlayUi(AudioEventNames.UiTargetAcquired);
+            }
+
+            return acquired;
         }
 
         public void ClearTarget()

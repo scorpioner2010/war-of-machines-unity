@@ -5,6 +5,7 @@ using FishNet.Object.Synchronizing;
 using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Diagnostics;
+using Game.Scripts.Audio;
 using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
@@ -269,6 +270,17 @@ namespace Game.Scripts.Gameplay.Robots
             NotPenetrated = 2
         }
 
+        private enum ImpactAudioCode : byte
+        {
+            None = 0,
+            PenetrationTurret = 1,
+            PenetrationHull = 2,
+            PenetrationRear = 3,
+            NoPenetrationTurret = 4,
+            NoPenetrationHull = 5,
+            NoPenetrationRear = 6
+        }
+
         private struct ResolvedShot
         {
             public bool Hit;
@@ -280,6 +292,7 @@ namespace Game.Scripts.Gameplay.Robots
             public VehicleRoot TargetRoot;
             public int TargetObjectId;
             public ShotHudStatus HudStatus;
+            public ImpactAudioCode ImpactAudio;
         }
 
         private struct DispersedShotRay
@@ -326,6 +339,10 @@ namespace Game.Scripts.Gameplay.Robots
                     _predictedProjectiles[shotId] = predicted;
                 }
                 SpawnMuzzleFx(startPos, predictedRay.TargetPoint);
+                SoundCaller.PlaySfxForRobot(
+                    AudioEventSelector.GetShotEvent(vehicleRoot),
+                    startPos,
+                    vehicleRoot?.RuntimeStats?.Code);
                 vehicleRoot.gunRecoilController?.PlayRecoil();
                 AddOwnerShotDispersion();
 
@@ -1056,13 +1073,14 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
                     DiagnosticsManager.RecordOutgoing("RPC.ResolveOwnerProjectileTarget", 44, shooterConnection.ClientId);
-                    ResolveOwnerProjectileTargetRpc(
+            ResolveOwnerProjectileTargetRpc(
                         shooterConnection,
                         shotId,
                         shot.Point,
                         shot.Normal,
                         shot.TargetObjectId,
-                        shot.Hit);
+                        shot.Hit,
+                        shot.ImpactAudio);
                 }
 
                 ProfileScope.RecordEvent("RPC.ResolveObserversProjectileTarget", DiagnosticsCategories.Rpc);
@@ -1072,7 +1090,8 @@ namespace Game.Scripts.Gameplay.Robots
                     shot.Point,
                     shot.Normal,
                     shot.TargetObjectId,
-                    shot.Hit);
+                    shot.Hit,
+                    shot.ImpactAudio);
                 ApplyResolvedShotDamage(shooterConnection, shot);
             }
         }
@@ -1096,7 +1115,8 @@ namespace Game.Scripts.Gameplay.Robots
                         missPoint,
                         Vector3.up,
                         NO_NETWORK_OBJECT_ID,
-                        false);
+                        false,
+                        ImpactAudioCode.None);
                     ProfileScope.RecordEvent("RPC.ShowShotResult", DiagnosticsCategories.Rpc);
                     DiagnosticsManager.RecordOutgoing("RPC.ShowShotResult", 8, shooterConnection.ClientId);
                     ShowShotResultTargetRpc(shooterConnection, (byte)ShotHudStatus.Miss);
@@ -1109,7 +1129,8 @@ namespace Game.Scripts.Gameplay.Robots
                     missPoint,
                     Vector3.up,
                     NO_NETWORK_OBJECT_ID,
-                    false);
+                    false,
+                    ImpactAudioCode.None);
             }
         }
 
@@ -1175,8 +1196,48 @@ namespace Game.Scripts.Gameplay.Robots
                 TargetObjectId = targetRoot != null && targetRoot.networkObject != null
                     ? targetRoot.networkObject.ObjectId
                     : NO_NETWORK_OBJECT_ID,
-                HudStatus = status
+                HudStatus = status,
+                ImpactAudio = GetImpactAudioCode(targetRoot, hr, hr.penetrated)
             };
+        }
+
+        private static ImpactAudioCode GetImpactAudioCode(
+            VehicleRoot targetRoot,
+            ServerHitResolver.HitResult hit,
+            bool penetrated)
+        {
+            if (targetRoot == null || hit.armor == null)
+            {
+                return ImpactAudioCode.None;
+            }
+
+            string eventName = penetrated
+                ? AudioEventSelector.GetArmorImpactEvent(targetRoot, hit.armorZone, hit.normal)
+                : AudioEventSelector.GetNoPenetrationEvent(targetRoot, hit.armorZone, hit.normal);
+
+            if (eventName == AudioEventNames.PenetrationTurret)
+            {
+                return ImpactAudioCode.PenetrationTurret;
+            }
+
+            if (eventName == AudioEventNames.PenetrationRear)
+            {
+                return ImpactAudioCode.PenetrationRear;
+            }
+
+            if (eventName == AudioEventNames.NoPenetrationTurret)
+            {
+                return ImpactAudioCode.NoPenetrationTurret;
+            }
+
+            if (eventName == AudioEventNames.NoPenetrationRear)
+            {
+                return ImpactAudioCode.NoPenetrationRear;
+            }
+
+            return penetrated
+                ? ImpactAudioCode.PenetrationHull
+                : ImpactAudioCode.NoPenetrationHull;
         }
 
         private ShotHudStatus GetHudStatus(bool targetIsRobot, bool penetrated, float damage)
@@ -1226,6 +1287,10 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             SpawnMuzzleFx(startPos, targetPoint);
+            SoundCaller.PlaySfxForRobot(
+                AudioEventSelector.GetShotEvent(vehicleRoot),
+                startPos,
+                vehicleRoot?.RuntimeStats?.Code);
             vehicleRoot.gunRecoilController?.PlayRecoil();
 
             if (_observedResolvedHitShots.Remove(shotId))
@@ -1333,13 +1398,15 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 impactPoint,
             Vector3 impactNormal,
             int targetObjectId,
-            bool hit)
+            bool hit,
+            ImpactAudioCode impactAudio)
         {
             if (!_predictedProjectiles.TryGetValue(shotId, out Projectile projectile))
             {
                 if (hit)
                 {
                     SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
+                    PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
                 }
                 return;
             }
@@ -1350,6 +1417,7 @@ namespace Game.Scripts.Gameplay.Robots
                 if (hit)
                 {
                     SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
+                    PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
                 }
                 return;
             }
@@ -1362,6 +1430,7 @@ namespace Game.Scripts.Gameplay.Robots
                     targetObjectId,
                     GetImpactAttachmentTransform(targetObjectId),
                     GetImpactTargetRoot(targetObjectId));
+                PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
             }
             else
             {
@@ -1377,7 +1446,8 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 impactPoint,
             Vector3 impactNormal,
             int targetObjectId,
-            bool hit)
+            bool hit,
+            ImpactAudioCode impactAudio)
         {
             if (!_observedProjectiles.TryGetValue(shotId, out Projectile projectile))
             {
@@ -1385,6 +1455,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     _observedResolvedHitShots.Add(shotId);
                     SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
+                    PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
                 }
                 return;
             }
@@ -1396,6 +1467,7 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     _observedResolvedHitShots.Add(shotId);
                     SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
+                    PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
                 }
                 return;
             }
@@ -1408,6 +1480,7 @@ namespace Game.Scripts.Gameplay.Robots
                     targetObjectId,
                     GetImpactAttachmentTransform(targetObjectId),
                     GetImpactTargetRoot(targetObjectId));
+                PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
             }
             else
             {
@@ -1415,6 +1488,38 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _observedProjectiles.Remove(shotId);
+        }
+
+        private static void PlayImpactAudio(
+            ImpactAudioCode impactAudio,
+            Vector3 impactPoint,
+            int targetObjectId)
+        {
+            string eventName = impactAudio switch
+            {
+                ImpactAudioCode.PenetrationTurret => AudioEventNames.PenetrationTurret,
+                ImpactAudioCode.PenetrationHull => AudioEventNames.PenetrationHull,
+                ImpactAudioCode.PenetrationRear => AudioEventNames.PenetrationRear,
+                ImpactAudioCode.NoPenetrationTurret => AudioEventNames.NoPenetrationTurret,
+                ImpactAudioCode.NoPenetrationHull => AudioEventNames.NoPenetrationHull,
+                ImpactAudioCode.NoPenetrationRear => AudioEventNames.NoPenetrationRear,
+                _ => null
+            };
+
+            if (string.IsNullOrEmpty(eventName))
+            {
+                return;
+            }
+
+            VehicleRoot targetRoot = GetImpactTargetRoot(targetObjectId);
+            if (targetRoot != null)
+            {
+                Transform parent = targetRoot.transform;
+                SoundCaller.PlaySfx(eventName, parent, parent.InverseTransformPoint(impactPoint));
+                return;
+            }
+
+            SoundCaller.PlaySfx(eventName, impactPoint);
         }
 
         private void SpawnImpactFx(Vector3 impactPoint, Vector3 impactNormal, int targetObjectId)

@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Audio;
 using UnityEngine;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Client;
@@ -300,6 +301,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            SoundCaller.PlaySfx(AudioEventNames.OwnRobotDestroyed, vehicleRoot.transform.position);
             DetachFromVehicleForDeath();
             _deathSpectatorPhase = DeathSpectatorPhase.KillerIntro;
             _deathSpectatorIntroEndTime = Time.unscaledTime + DeathSpectatorIntroSeconds;
@@ -1177,7 +1179,15 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            bool changed = _sniperUiApplied != enabled;
             _sniperUiApplied = enabled;
+
+            if (changed)
+            {
+                SoundCaller.PlayUi(enabled
+                    ? AudioEventNames.SniperEnter
+                    : AudioEventNames.SniperExit);
+            }
 
             GunCrosshair crosshair = Singleton<GunCrosshair>.CurrentOrNull;
             if (crosshair != null)

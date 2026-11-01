@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
+using Game.Scripts.Audio;
 using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
@@ -596,8 +597,14 @@ namespace Game.Scripts.UI.HUD
 
             if (percent >= 99)
             {
+                bool wasReady = _hasAimStatus && _lastAimStatusReady;
                 if (!_hasAimStatus || !_lastAimStatusReady || _lastAimReadyText != settings.aimReadyText)
                 {
+                    if (!wasReady)
+                    {
+                        SoundCaller.PlayUi(AudioEventNames.UiAimReady);
+                    }
+
                     aimStatusText.text = settings.aimReadyText;
                     _hasAimStatus = true;
                     _lastAimStatusReady = true;

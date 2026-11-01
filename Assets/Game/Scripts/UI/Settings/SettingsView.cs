@@ -1,3 +1,4 @@
+using Game.Scripts.Audio;
 using Game.Scripts.MenuController;
 using UnityEngine;
 using UnityEngine.UI;
@@ -31,6 +32,7 @@ namespace Game.Scripts.UI.Settings
         }
         
         private TabType _currentTab;
+        private bool _hasDisplayedTab;
 
         private void Start()
         {
@@ -86,6 +88,11 @@ namespace Game.Scripts.UI.Settings
         
         private void ShowTab(TabType tab)
         {
+            if (_hasDisplayedTab)
+            {
+                SoundCaller.PlayUi(AudioEventNames.UiSettingsTabs);
+            }
+
             _currentTab = tab;
 
             GeneralTab.gameObject.SetActive(tab == TabType.General);
@@ -94,6 +101,7 @@ namespace Game.Scripts.UI.Settings
             ControlsTab.gameObject.SetActive(tab == TabType.Controls);
 
             UpdateApplyButtonState();
+            _hasDisplayedTab = true;
         }
 
         private void OnVideoPendingChangesChanged(bool hasPendingChanges)

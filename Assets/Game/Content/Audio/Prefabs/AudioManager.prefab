@@ -60,10 +60,377 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c57e0d625f6af044a896c59867efdc49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  soundClips:
-  - name: SFX_UI_Button_Mouse_Thick_Generic_1
-    volume: 1
+  uiClips:
+  - name: UI_Action_Confirm
+    volume: 0.3
     delay: 0
     clips:
-    - {fileID: 8300000, guid: b021f8fc792a6b54ba5c2d2be44d819b, type: 3}
-  musicClips: []
+    - clip: {fileID: 8300000, guid: 88d4ad13462bc7849b7aa5dc4c1a31f4, type: 3}
+      volume: 1
+  - name: UI_Action_Denied
+    volume: 0.4
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: e835d8c6b5afbc441a665dfb36f641ba, type: 3}
+      volume: 1
+  - name: UI_Aim_Ready
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 509039bbd1415bd43854c8e38a89cb1e, type: 3}
+      volume: 1
+  - name: UI_Ammo_Empty
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: c06d2d708814aae428e943ebc5981a65, type: 3}
+      volume: 1
+  - name: UI_Battle_Countdown
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 86a807ce7062d9743893cd1c1bd9d2b6, type: 3}
+      volume: 1
+  - name: UI_Battle_Finished
+    volume: 0.35
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 197f8967d90d9584eaa67b5180431257, type: 3}
+      volume: 1
+  - name: UI_Button_Click
+    volume: 0.8
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: c243f86b67d55bd4bbddd24987e3c045, type: 3}
+      volume: 1
+  - name: UI_Button_Hover
+    volume: 0.25
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 41e1643e05f7e664b863a224cab43719, type: 3}
+      volume: 0.8
+  - name: UI_Defeat
+    volume: 0.25
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: b6a26d72a2b7b7d43bbea2dbaa9316f2, type: 3}
+      volume: 1
+  - name: UI_DevelopmentTree_Open
+    volume: 0.3
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: e9086dac6d5a18a468886effc1c12c3a, type: 3}
+      volume: 1
+  - name: UI_Enemy_Destroyed
+    volume: 0.1
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: b80f730968f92ae4299ac514158f0bee, type: 3}
+      volume: 1
+    - clip: {fileID: 8300000, guid: d30a0c1b65172764fa2b2ce05b83d83f, type: 3}
+      volume: 1
+  - name: UI_Faction_Tabs
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: eb15a6e70d3a0f9408939e63956b339e, type: 3}
+      volume: 1
+  - name: UI_Insufficient_Bolts
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: bdb0957c7da95a740ab4aea55f15c7e8, type: 3}
+      volume: 1
+  - name: UI_Insufficient_XP
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 02674b612bb2ee5499be252bddce1dc1, type: 3}
+      volume: 1
+  - name: UI_Match_Found
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 30ac9fc78a3e82c4f975ee132333359d, type: 3}
+      volume: 1
+  - name: UI_Rewards_Received
+    volume: 0.1
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 726073f106a5b394dab4ee975da0cb8b, type: 3}
+      volume: 1
+  - name: UI_Robot_Purchased
+    volume: 0.3
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 0564f74dfcb110e4aae1b10475a35912, type: 3}
+      volume: 1
+  - name: UI_Robot_Researched
+    volume: 0.3
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 7995c748f6fdb674a8d261c0c12484b3, type: 3}
+      volume: 1
+  - name: UI_Search_Cancelled
+    volume: 0.1
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 602af3fcdfc3d6e498e1279b9a1b593d, type: 3}
+      volume: 1
+  - name: UI_Search_Started
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 81247473033f30d4abd04631e9388db9, type: 3}
+      volume: 1
+  - name: UI_Settings_Tabs
+    volume: 0.3
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 5bcb98fd8aab5b342b16beb22f695d83, type: 3}
+      volume: 1
+  - name: UI_Target_Acquired
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 81539c0c7936b064fb162ef6bbac1f5e, type: 3}
+      volume: 1
+  - name: UI_Victory
+    volume: 0.2
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 2a61695ede8795344905c2db5bfb9c2f, type: 3}
+      volume: 1
+  - name: Combat_Sniper_Enter
+    volume: 0.08
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: a43ccf023df1fa2409c7928b7dd3e1cf, type: 3}
+      volume: 1
+  - name: Combat_Sniper_Exit
+    volume: 0.1
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 4131b1de5c4b6f5479ddd82e757aa4b4, type: 3}
+      volume: 1
+  soundCategories:
+  - name: Common Robot Sounds
+    factionTarget: common
+    robotGroups:
+    - robotTarget: common
+      clips:
+      - name: Combat_NoPenetration_Hull
+        volume: 0.3
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 0cd7f46e55d9cb84da77ba01cda6d068, type: 3}
+          volume: 1
+      - name: Combat_NoPenetration_Rear
+        volume: 0.4
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: c365778c3a24d234fa0c41ef25786384, type: 3}
+          volume: 1
+      - name: Combat_NoPenetration_Turret
+        volume: 0.8
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: dd4d7e221c9539048bbda8cd42088f3d, type: 3}
+          volume: 1
+      - name: Combat_Own_Robot_Destroyed
+        volume: 0.7
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 5c465329bea25e542beaad0667769aa1, type: 3}
+          volume: 1
+      - name: Combat_Penetration_Hull
+        volume: 0.7
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 5db556773da2fc3409889d4e93b4f0d2, type: 3}
+          volume: 1
+      - name: Combat_Penetration_Rear
+        volume: 0.7
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: a49d9e8cb0aed854e99e7d5d3d345230, type: 3}
+          volume: 1
+      - name: Combat_Penetration_Turret
+        volume: 0.3
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 09bb94ae076883949b170a5cadc7979b, type: 3}
+          volume: 1
+  - name: IRON ALLIANCE
+    factionTarget: faction:iron_alliance
+    robotGroups:
+    - robotTarget: faction:iron_alliance
+      clips:
+      - name: Tracked_Movement
+        volume: 0.15
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 6ac2ab1db5ae76f45a3266129cff5dde, type: 3}
+          volume: 1
+      - name: Tracked_Reload_Ready
+        volume: 0.3
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 54f1707cfff6e51458d2989a14c15058, type: 3}
+          volume: 1
+    - robotTarget: ia_l1_starter
+      clips:
+      - name: Cannon_Medium_Shot
+        volume: 0.45
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: e37abbcbb60c7734e98a89ae1c8387c4, type: 3}
+          volume: 1
+    - robotTarget: ia_l2_scout
+      clips:
+      - name: Cannon_Medium_Shot
+        volume: 0.5
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: aa619800d37519c4cbb067f2ea754a96, type: 3}
+          volume: 1
+    - robotTarget: ia_l2_guardian
+      clips:
+      - name: Cannon_Medium_Shot
+        volume: 0.4
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: cc6de310c11207f4a811da1df9906042, type: 3}
+          volume: 1
+    - robotTarget: ia_l2_colossus
+      clips:
+      - name: Cannon_Heavy_Shot
+        volume: 0.4
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: b9808ac4ed97ab54885e177c4289d857, type: 3}
+          volume: 1
+  - name: NOVA SYNDICATE
+    factionTarget: faction:nova_syndicate
+    robotGroups:
+    - robotTarget: faction:nova_syndicate
+      clips:
+      - name: Walker_Hydraulics
+        volume: 0.6
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: b5431fcdcb8df3c4fbe1e0eab63a4df1, type: 3}
+          volume: 1
+      - name: Walker_Movement
+        volume: 0.1
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 743971ce9c9a32e4a9d11fd358bd1984, type: 3}
+          volume: 1
+      - name: Walker_Reload_Ready
+        volume: 0.6
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: cf0a8659f7c0f30418d56f3544172974, type: 3}
+          volume: 1
+      - name: Walker_Step
+        volume: 0.3
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 8db61e5a604644646b7a26e968e181fe, type: 3}
+          volume: 1
+      - name: Walker_Turn
+        volume: 0.4
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: d20159b673a0acb4092f8451a4a3432d, type: 3}
+          volume: 1
+    - robotTarget: nv_l1_starter
+      clips:
+      - name: Cannon_Medium_Shot
+        volume: 0.4
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: 33a70171929a7304bbaa63c762cb41ea, type: 3}
+          volume: 1
+    - robotTarget: nv_l2_scout
+      clips:
+      - name: Cannon_Medium_Shot
+        volume: 0.6
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: aa80d531d1777cc4d92d5ad0ae3dd86a, type: 3}
+          volume: 1
+    - robotTarget: nv_l2_guardian
+      clips:
+      - name: Cannon_Medium_Shot
+        volume: 0.3
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: d8e4a34da0a19c048ac659718adcd75e, type: 3}
+          volume: 1
+    - robotTarget: nv_l2_colossus
+      clips:
+      - name: Cannon_Heavy_Shot
+        volume: 0.5
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: cf8ab8876997c24469e9e76d724b986b, type: 3}
+          volume: 1
+      - name: Heavy_Walker_Step
+        volume: 0.4
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: f5c875cbb8912574eb10fcd048dcdcdc, type: 3}
+          volume: 1
+      - name: Heavy_Walker_Turn
+        volume: 0.3
+        delay: 0
+        clips:
+        - clip: {fileID: 8300000, guid: a9618e6535475a64aa9f44670ff83055, type: 3}
+          volume: 1
+  musicClips:
+  - name: Battle_Music
+    volume: 0.1
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: adabcefa1d720a04f9bb49b7341f2cab, type: 3}
+      volume: 1
+    - clip: {fileID: 8300000, guid: 90ee97ebf63514642b8359a1d3fa181f, type: 3}
+      volume: 0.7
+  - name: Battle_Result_Music
+    volume: 0.5
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: b38195a27d150384d9ec6ca2c493788b, type: 3}
+      volume: 1
+  - name: Profile_Music
+    volume: 0.25
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: d067f195a5c18a146bf8721664cbd944, type: 3}
+      volume: 1
+  - name: Garage_DevelopmentTree
+    volume: 0.4
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 26e3f39fe81ea474e93bc3afccd758b7, type: 3}
+      volume: 1
+  - name: Garage_Main
+    volume: 0.25
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: ca7298fa2ccbcf148a5b1f08eaf386d7, type: 3}
+      volume: 1
+  - name: Map_Industry
+    volume: 0
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: bd2460ddf4586b043b88e46b229d1ac5, type: 3}
+      volume: 1
+  - name: Map_Wind
+    volume: 0
+    delay: 0
+    clips:
+    - clip: {fileID: 8300000, guid: 50dc5ef308429124bb0ebbd73bf7db61, type: 3}
+      volume: 1
