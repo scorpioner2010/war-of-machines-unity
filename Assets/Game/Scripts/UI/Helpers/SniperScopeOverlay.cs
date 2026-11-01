@@ -1,5 +1,6 @@
 using UnityEngine;
 using Game.Scripts.Client;
+using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.UI.Screens;
 
 namespace Game.Scripts.UI.Helpers
@@ -11,12 +12,28 @@ namespace Game.Scripts.UI.Helpers
         private static SniperScopeOverlay _instance;
         private Coroutine _fadeRoutine;
         private bool _isShown;
+        private bool _battleCountdownHidden;
+        private const float BattleCountdownRevealDuration = 2f;
 
         protected override void Awake()
         {
             _instance = this;
             EnsureCanvasGroup();
             SetAlpha(0f);
+        }
+
+        private void OnEnable()
+        {
+            BattleCountdownGate.ClientCountdownStateChanged += OnBattleCountdownStateChanged;
+            if (BattleCountdownGate.IsClientCountdownActive)
+            {
+                ApplyBattleCountdownState(true);
+            }
+            else
+            {
+                _battleCountdownHidden = false;
+                SetAlpha(_isShown ? 1f : 0f);
+            }
         }
 
         private void OnDestroy()
@@ -44,10 +61,42 @@ namespace Game.Scripts.UI.Helpers
 
         private void OnDisable()
         {
+            BattleCountdownGate.ClientCountdownStateChanged -= OnBattleCountdownStateChanged;
             if (_fadeRoutine != null)
             {
                 StopCoroutine(_fadeRoutine);
                 _fadeRoutine = null;
+            }
+        }
+
+        private void OnBattleCountdownStateChanged(bool isActive)
+        {
+            ApplyBattleCountdownState(isActive);
+        }
+
+        private void ApplyBattleCountdownState(bool isActive)
+        {
+            _battleCountdownHidden = isActive;
+            if (isActive)
+            {
+                if (_fadeRoutine != null)
+                {
+                    StopCoroutine(_fadeRoutine);
+                    _fadeRoutine = null;
+                }
+
+                SetAlpha(0f);
+                return;
+            }
+
+            if (_isShown && isActiveAndEnabled && gameObject.activeInHierarchy)
+            {
+                if (_fadeRoutine != null)
+                {
+                    StopCoroutine(_fadeRoutine);
+                }
+
+                _fadeRoutine = StartCoroutine(FadeTo(1f, BattleCountdownRevealDuration));
             }
         }
 
@@ -71,9 +120,11 @@ namespace Game.Scripts.UI.Helpers
                 _fadeRoutine = null;
             }
 
-            float targetAlpha = shown ? 1f : 0f;
+            float targetAlpha = shown && !_battleCountdownHidden ? 1f : 0f;
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
-            float fadeDuration = settings.sniperScopeOverlayFadeDuration;
+            float fadeDuration = _battleCountdownHidden
+                ? 0f
+                : settings.sniperScopeOverlayFadeDuration;
             if (fadeDuration <= 0f)
             {
                 SetAlpha(targetAlpha);
@@ -86,12 +137,11 @@ namespace Game.Scripts.UI.Helpers
                 return;
             }
 
-            _fadeRoutine = StartCoroutine(FadeTo(targetAlpha));
+            _fadeRoutine = StartCoroutine(FadeTo(targetAlpha, fadeDuration));
         }
 
-        private System.Collections.IEnumerator FadeTo(float targetAlpha)
+        private System.Collections.IEnumerator FadeTo(float targetAlpha, float fadeDuration)
         {
-            float fadeDuration = GameplayRuntimeSettingsProvider.Get().sniperScopeOverlayFadeDuration;
             float startAlpha = canvasGroup.alpha;
             float elapsed = 0f;
             while (elapsed < fadeDuration)

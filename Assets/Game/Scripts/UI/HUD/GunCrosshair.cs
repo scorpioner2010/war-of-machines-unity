@@ -1,8 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Game.Scripts.Audio;
 using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.Settings;
@@ -90,6 +92,13 @@ namespace Game.Scripts.UI.HUD
         public const string PenetrationStatusGlyph = "〰〰〰";
         private string _lastPenetrationStatus = DefaultPenetrationStatusText;
         private const float ChargeFillSmoothingSpeed = 14f;
+        private const float BattleCountdownReticleRevealDuration = 2f;
+        private readonly List<CanvasGroup> _battleCountdownReticleGroups = new List<CanvasGroup>(4);
+        private readonly List<CanvasGroup> _battleCountdownReticleOpacityGroups = new List<CanvasGroup>(4);
+        private Coroutine _battleCountdownReticleRevealRoutine;
+        private bool _battleCountdownReticleHidden;
+        private float _battleCountdownReticleAlpha = 1f;
+        private float _reticleOpacity = 1f;
 
         private void Awake()
         {
@@ -100,6 +109,7 @@ namespace Game.Scripts.UI.HUD
             _ironAlliancePenetrationStatusFallback = penetrationStatusText;
             ResolveCanvasReference();
             ResolveReticleOpacityGroups();
+            ResolveBattleCountdownReticleGroups();
             ApplyReticleOpacity(ClientGameplaySettings.ReticleOpacity);
             ApplyPenetrationStatusToActiveTarget();
         }
@@ -113,6 +123,17 @@ namespace Game.Scripts.UI.HUD
             ApplyServerCrosshairSetting(ClientGameplaySettings.ServerCrosshairEnabled);
             ClientGameplaySettings.ReticleOpacityChanged += OnReticleOpacityChanged;
             ApplyReticleOpacity(ClientGameplaySettings.ReticleOpacity);
+            BattleCountdownGate.ClientCountdownStateChanged += OnBattleCountdownStateChanged;
+            if (BattleCountdownGate.IsClientCountdownActive)
+            {
+                ApplyBattleCountdownState(true);
+            }
+            else
+            {
+                _battleCountdownReticleHidden = false;
+                _battleCountdownReticleAlpha = 1f;
+                ApplyBattleCountdownReticleAlpha();
+            }
             ApplySniperPresentation(false);
             VehicleRoot.LocalPlayerVehicleChanged += OnLocalPlayerVehicleChanged;
             CameraController.DeathSpectatorCameraChanged += OnDeathSpectatorCameraChanged;
@@ -128,6 +149,12 @@ namespace Game.Scripts.UI.HUD
 
             ClientGameplaySettings.ServerCrosshairChanged -= OnServerCrosshairSettingChanged;
             ClientGameplaySettings.ReticleOpacityChanged -= OnReticleOpacityChanged;
+            BattleCountdownGate.ClientCountdownStateChanged -= OnBattleCountdownStateChanged;
+            StopBattleCountdownReticleReveal();
+            bool countdownActive = BattleCountdownGate.IsClientCountdownActive;
+            _battleCountdownReticleHidden = countdownActive;
+            _battleCountdownReticleAlpha = countdownActive ? 0f : 1f;
+            ApplyBattleCountdownReticleAlpha();
             VehicleRoot.LocalPlayerVehicleChanged -= OnLocalPlayerVehicleChanged;
             CameraController.DeathSpectatorCameraChanged -= OnDeathSpectatorCameraChanged;
             UnbindSpectatorCamera();
@@ -785,6 +812,150 @@ namespace Game.Scripts.UI.HUD
             {
                 serverCrosshair.gameObject.SetActive(!hideAimingCircle && _serverCrosshairEnabled);
             }
+
+            ApplyBattleCountdownReticleAlpha();
+        }
+
+        private void OnBattleCountdownStateChanged(bool isActive)
+        {
+            ApplyBattleCountdownState(isActive);
+        }
+
+        private void ApplyBattleCountdownState(bool isActive)
+        {
+            StopBattleCountdownReticleReveal();
+            _battleCountdownReticleHidden = isActive;
+            if (isActive)
+            {
+                _battleCountdownReticleAlpha = 0f;
+                ApplyBattleCountdownReticleAlpha();
+                return;
+            }
+
+            if (!isActiveAndEnabled)
+            {
+                _battleCountdownReticleAlpha = 1f;
+                ApplyBattleCountdownReticleAlpha();
+                return;
+            }
+
+            _battleCountdownReticleAlpha = 0f;
+            ApplyBattleCountdownReticleAlpha();
+            _battleCountdownReticleRevealRoutine = StartCoroutine(RevealBattleCountdownReticle());
+        }
+
+        private IEnumerator RevealBattleCountdownReticle()
+        {
+            float elapsed = 0f;
+            while (elapsed < BattleCountdownReticleRevealDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                _battleCountdownReticleAlpha = Mathf.Clamp01(elapsed / BattleCountdownReticleRevealDuration);
+                ApplyBattleCountdownReticleAlpha();
+                yield return null;
+            }
+
+            _battleCountdownReticleAlpha = 1f;
+            ApplyBattleCountdownReticleAlpha();
+            _battleCountdownReticleRevealRoutine = null;
+        }
+
+        private void StopBattleCountdownReticleReveal()
+        {
+            if (_battleCountdownReticleRevealRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(_battleCountdownReticleRevealRoutine);
+            _battleCountdownReticleRevealRoutine = null;
+        }
+
+        private void ResolveBattleCountdownReticleGroups()
+        {
+            _battleCountdownReticleGroups.Clear();
+            _battleCountdownReticleOpacityGroups.Clear();
+            ResolveReticleOpacityGroups();
+            AddBattleCountdownReticleGroup(ironAllianceReticle);
+            AddBattleCountdownReticleGroup(novaSyndicateReticle);
+            AddBattleCountdownReticleGroup(ironAllianceServerReticle);
+            AddBattleCountdownReticleGroup(novaSyndicateServerReticle);
+            AddBattleCountdownReticleGroup(sniperReticleOnlyRoot != null ? sniperReticleOnlyRoot.transform : null);
+
+            if (reticleOpacityGroups == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < reticleOpacityGroups.Length; i++)
+            {
+                AddBattleCountdownReticleOpacityGroup(reticleOpacityGroups[i]);
+            }
+        }
+
+        private void AddBattleCountdownReticleGroup(Transform reticle)
+        {
+            if (reticle == null)
+            {
+                return;
+            }
+
+            Transform groupTransform = reticle.parent != null ? reticle.parent : reticle;
+            CanvasGroup group = groupTransform.GetComponent<CanvasGroup>();
+            if (group == null)
+            {
+                group = groupTransform.gameObject.AddComponent<CanvasGroup>();
+            }
+
+            if (!_battleCountdownReticleGroups.Contains(group))
+            {
+                _battleCountdownReticleGroups.Add(group);
+            }
+        }
+
+        private void AddBattleCountdownReticleOpacityGroup(CanvasGroup group)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            if (!_battleCountdownReticleOpacityGroups.Contains(group))
+            {
+                _battleCountdownReticleOpacityGroups.Add(group);
+            }
+
+            if (!_battleCountdownReticleGroups.Contains(group))
+            {
+                _battleCountdownReticleGroups.Add(group);
+            }
+        }
+
+        private void ApplyBattleCountdownReticleAlpha()
+        {
+            if (_battleCountdownReticleGroups.Count == 0)
+            {
+                ResolveBattleCountdownReticleGroups();
+            }
+
+            float alpha = _battleCountdownReticleHidden ? 0f : _battleCountdownReticleAlpha;
+            for (int i = 0; i < _battleCountdownReticleGroups.Count; i++)
+            {
+                CanvasGroup group = _battleCountdownReticleGroups[i];
+                if (group != null && !_battleCountdownReticleOpacityGroups.Contains(group))
+                {
+                    group.alpha = alpha;
+                }
+            }
+
+            for (int i = 0; i < _battleCountdownReticleOpacityGroups.Count; i++)
+            {
+                CanvasGroup group = _battleCountdownReticleOpacityGroups[i];
+                if (group != null)
+                {
+                    group.alpha = _reticleOpacity * alpha;
+                }
+            }
         }
 
         private static bool ShouldHideSpectatorAimingCircle(bool deathSpectatorActive)
@@ -831,20 +1002,8 @@ namespace Game.Scripts.UI.HUD
         private void ApplyReticleOpacity(float value)
         {
             ResolveReticleOpacityGroups();
-            float opacity = ClientGameplaySettings.ClampReticleOpacity(value);
-            if (reticleOpacityGroups == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < reticleOpacityGroups.Length; i++)
-            {
-                CanvasGroup group = reticleOpacityGroups[i];
-                if (group != null)
-                {
-                    group.alpha = opacity;
-                }
-            }
+            _reticleOpacity = ClientGameplaySettings.ClampReticleOpacity(value);
+            ApplyBattleCountdownReticleAlpha();
         }
 
         private bool ShouldHideSpectatorCrosshair()

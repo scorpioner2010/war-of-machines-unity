@@ -220,43 +220,43 @@ MonoBehaviour:
     - robotTarget: common
       clips:
       - name: Combat_NoPenetration_Hull
-        volume: 0.3
+        volume: 0.2
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 0cd7f46e55d9cb84da77ba01cda6d068, type: 3}
           volume: 1
       - name: Combat_NoPenetration_Rear
-        volume: 0.4
+        volume: 0.2
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: c365778c3a24d234fa0c41ef25786384, type: 3}
           volume: 1
       - name: Combat_NoPenetration_Turret
-        volume: 0.8
+        volume: 0.3
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: dd4d7e221c9539048bbda8cd42088f3d, type: 3}
           volume: 1
       - name: Combat_Own_Robot_Destroyed
-        volume: 0.7
+        volume: 0.4
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 5c465329bea25e542beaad0667769aa1, type: 3}
           volume: 1
       - name: Combat_Penetration_Hull
-        volume: 0.7
+        volume: 0.3
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 5db556773da2fc3409889d4e93b4f0d2, type: 3}
           volume: 1
       - name: Combat_Penetration_Rear
-        volume: 0.7
+        volume: 0.3
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: a49d9e8cb0aed854e99e7d5d3d345230, type: 3}
           volume: 1
       - name: Combat_Penetration_Turret
-        volume: 0.3
+        volume: 0.2
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 09bb94ae076883949b170a5cadc7979b, type: 3}
@@ -267,13 +267,13 @@ MonoBehaviour:
     - robotTarget: faction:iron_alliance
       clips:
       - name: Tracked_Movement
-        volume: 0.15
+        volume: 0.1
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 6ac2ab1db5ae76f45a3266129cff5dde, type: 3}
           volume: 1
       - name: Tracked_Reload_Ready
-        volume: 0.3
+        volume: 0.15
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 54f1707cfff6e51458d2989a14c15058, type: 3}
@@ -281,7 +281,7 @@ MonoBehaviour:
     - robotTarget: ia_l1_starter
       clips:
       - name: Cannon_Medium_Shot
-        volume: 0.45
+        volume: 0.3
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: e37abbcbb60c7734e98a89ae1c8387c4, type: 3}
@@ -297,7 +297,7 @@ MonoBehaviour:
     - robotTarget: ia_l2_guardian
       clips:
       - name: Cannon_Medium_Shot
-        volume: 0.4
+        volume: 0.3
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: cc6de310c11207f4a811da1df9906042, type: 3}
@@ -328,19 +328,19 @@ MonoBehaviour:
         - clip: {fileID: 8300000, guid: 743971ce9c9a32e4a9d11fd358bd1984, type: 3}
           volume: 1
       - name: Walker_Reload_Ready
-        volume: 0.6
+        volume: 0.2
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: cf0a8659f7c0f30418d56f3544172974, type: 3}
           volume: 1
       - name: Walker_Step
-        volume: 0.3
+        volume: 0.15
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 8db61e5a604644646b7a26e968e181fe, type: 3}
           volume: 1
       - name: Walker_Turn
-        volume: 0.4
+        volume: 0.15
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: d20159b673a0acb4092f8451a4a3432d, type: 3}
@@ -348,7 +348,7 @@ MonoBehaviour:
     - robotTarget: nv_l1_starter
       clips:
       - name: Cannon_Medium_Shot
-        volume: 0.4
+        volume: 0.3
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: 33a70171929a7304bbaa63c762cb41ea, type: 3}
@@ -364,7 +364,7 @@ MonoBehaviour:
     - robotTarget: nv_l2_guardian
       clips:
       - name: Cannon_Medium_Shot
-        volume: 0.3
+        volume: 0.2
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: d8e4a34da0a19c048ac659718adcd75e, type: 3}
@@ -372,19 +372,19 @@ MonoBehaviour:
     - robotTarget: nv_l2_colossus
       clips:
       - name: Cannon_Heavy_Shot
-        volume: 0.5
+        volume: 0.4
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: cf8ab8876997c24469e9e76d724b986b, type: 3}
           volume: 1
       - name: Heavy_Walker_Step
-        volume: 0.4
+        volume: 0.15
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: f5c875cbb8912574eb10fcd048dcdcdc, type: 3}
           volume: 1
       - name: Heavy_Walker_Turn
-        volume: 0.3
+        volume: 0.15
         delay: 0
         clips:
         - clip: {fileID: 8300000, guid: a9618e6535475a64aa9f44670ff83055, type: 3}

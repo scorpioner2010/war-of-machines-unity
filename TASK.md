@@ -1282,3 +1282,68 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** `HEAD` equals `origin/main`; the remote branch points to the repaired commit; `git lfs fsck` is `OK`; no committed blob exceeds 100 MB; no staged changes remain.
 - **Preservation:** Existing modified and untracked Unity countdown files remain in the working tree and were not included in the amended commit. A local backup branch and external recovery artifacts remain at `C:\Users\TorasPC\AppData\Local\Temp\war-of-machines-git-safety-20261101`.
 - **Remaining limitations:** The working tree is intentionally not clean because the user's pre-existing Unity changes were preserved rather than committed or reverted. The backup branch is intentionally retained until the user confirms it is no longer needed.
+
+## Task: Lock controls after robot landing
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Change the pre-battle flow so robots land first and only then become locked by the countdown; they must not remain suspended in the air while the countdown lock is active.
+- **Scope:** Inspect robot spawn/landing and countdown ownership, then delay the movement/firing lock until the robots have completed their landing while preserving the existing countdown UI and turret-aim behavior.
+- **Acceptance criteria:** Robots are allowed to descend/settle after spawn; the movement/firing lock begins only after landing is complete; the countdown remains synchronized and does not permit movement or firing afterward; the change uses a focused owner and compiles without unrelated regressions.
+- **Next steps:** Identify the robot landing signal or physics settling state, wire it into the countdown gate/authority, and validate runtime/editor builds plus source/YAML integrity.
+
+### Discovery and implementation checkpoint — 2026-11-01
+
+- Root cause: `VehicleMovementController.SimulateMovement` returned before calling `CharacterController.Move` whenever the countdown gate was active, so gravity never moved a newly spawned robot toward the ground.
+- Decision: keep the existing movement controller as the owner of `CharacterController` gravity and add a focused gravity-only landing path under the countdown gate. It clears horizontal speed and does not rotate the hull; weapon classes remain blocked and turret aim remains available.
+- Changed `Assets/Game/Scripts/Gameplay/Robots/VehicleMovementController.cs` and documented the ownership boundary in `docs/codex-game/battle-countdown.md`.
+- Next steps: build runtime/editor assemblies, run source/YAML checks, then close the task with validation results.
+
+### Completion checkpoint — 2026-11-01
+
+- Result: countdown-gated robots now execute a gravity-only `CharacterController.Move` pass, so they descend and settle on the map instead of hanging in the air. Horizontal movement, hull rotation, and firing remain blocked; turret aiming is unchanged.
+- Validation: runtime and editor assemblies both built successfully with 0 errors; targeted `git diff --check` passed for the implementation and documentation files.
+- Remaining limitation: Unity Play Mode was not run because the project is already open in another Unity instance. Existing unrelated Unity-generated working-tree changes were preserved.
+
+## Task: Fade Back and Back2 with countdown reticle
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Include `Back` and `Back2` in the same countdown hide/reveal behavior as the reticle.
+- **Scope:** Extend the existing reticle presentation transition to the `Back`/`Back2` CanvasGroups while preserving the user-configured reticle opacity and lifecycle resets.
+- **Acceptance criteria:** `Back` and `Back2` are alpha 0 during countdown; they reveal over exactly 2 unscaled seconds after countdown; opacity slider value is still respected; runtime/editor assemblies compile.
+- **Result:** Wired the existing runtime-resolved `Back`/`Back2` opacity CanvasGroups into the reticle countdown transition. They hide immediately, reveal over two unscaled seconds, and retain the configured reticle opacity.
+- **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` both build with 0 errors; targeted `git diff --check` passed.
+- **Remaining limitation:** Unity Play Mode was not run because the project is already open in another Unity instance. Existing unrelated Unity-generated working-tree changes were preserved.
+
+### Discovery and implementation checkpoint — 2026-11-01
+
+- `Back` and `Back2` are standalone `CanvasGroup` objects under the faction crosshair roots, not children of the main reticle transition groups.
+- `GunCrosshair` now tracks them separately, applies countdown alpha directly, and multiplies it by the saved slider opacity so the setting is not overwritten.
+
+### Completion checkpoint — 2026-11-01
+
+- Runtime and editor builds passed with 0 errors.
+- Targeted diff check passed. Play Mode remains unverified because Unity is already open in another instance.
+
+## Task: Hide and fade the reticle during battle countdown
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Hide the aiming reticle while the pre-battle countdown is running, then reveal it smoothly over 2 seconds after the countdown ends.
+- **Scope:** Identify the reticle presentation owner and countdown lifecycle, add a focused visibility transition without changing reticle aiming behavior, and preserve teardown/menu behavior.
+- **Acceptance criteria:** The reticle is fully hidden during countdown; it remains hidden until countdown completion; it fades in over exactly 2 seconds using unscaled time; it resets safely when the gameplay HUD is disabled or a new countdown starts; runtime/editor assemblies compile.
+- **Next steps:** Trace reticle presentation and countdown state, implement the transition at the presentation boundary, document ownership, and validate builds and targeted diffs.
+
+### Discovery and implementation checkpoint — 2026-11-01
+
+- `GunCrosshair` owns the central faction reticle group, including the camera crosshair and server reticle; `SniperScopeOverlay` owns the zoom overlay separately.
+- `BattleCountdownGate` now emits a client countdown state event. Both presentation owners subscribe to it, hide immediately at countdown start, and reveal with unscaled alpha interpolation over exactly 2 seconds after countdown completion.
+- The implementation preserves aiming/zoom state and resets presentation safely on disable; the ownership boundary is documented in `docs/codex-game/battle-countdown.md`.
+- Next steps: validate runtime/editor assemblies and targeted whitespace/source checks, then close the task.
+
+### Completion checkpoint — 2026-11-01
+
+- Result: central reticle visuals and sniper scope overlay are hidden for the entire countdown and fade in from alpha 0 to 1 over exactly 2 seconds after countdown completion. The transition uses unscaled time and does not alter aiming or zoom state.
+- Validation: runtime and editor assemblies both built successfully with 0 errors; targeted `git diff --check` passed for all implementation, documentation, and journal files.
+- Remaining limitation: Unity Play Mode was not run because the project is already open in another Unity instance. Existing unrelated Unity-generated working-tree changes were preserved.

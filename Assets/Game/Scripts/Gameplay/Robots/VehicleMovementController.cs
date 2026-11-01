@@ -141,10 +141,15 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (vehicleRoot == null
                 || !vehicleRoot.IsServerInitialized
-                || BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot)
                 || !CanMoveController())
             {
                 ResetMotionState();
+                return;
+            }
+
+            if (BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot))
+            {
+                SimulateLockedLanding(dt);
                 return;
             }
 
@@ -195,6 +200,17 @@ namespace Game.Scripts.Gameplay.Robots
                     ReconcileForwardSpeedAfterSideCollision(positionBeforeMove, horizontalVelocity, dt);
                 }
             }
+        }
+
+        private void SimulateLockedLanding(float dt)
+        {
+            RobotMovementGlobalSettings settings = ServerSettings.GetRobotMovement();
+            bool grounded = controller.isGrounded;
+
+            _forwardSpeed = 0f;
+            _traverseSpeedDegPerSecond = 0f;
+            _vVel = grounded ? -GetGroundedSnap(settings) : _vVel - GetGravity(settings) * dt;
+            controller.Move(Vector3.up * _vVel * dt);
         }
 
         private bool CanMoveController()

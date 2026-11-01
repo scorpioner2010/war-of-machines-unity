@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Lobby;
@@ -9,15 +10,29 @@ namespace Game.Scripts.Gameplay.Battle
         private static readonly HashSet<string> ServerLockedRooms = new HashSet<string>();
 
         public static bool IsClientMovementAndFiringBlocked { get; private set; }
+        public static bool IsClientCountdownActive => IsClientMovementAndFiringBlocked;
+        public static event Action<bool> ClientCountdownStateChanged;
 
         public static void BeginClient()
         {
+            if (IsClientMovementAndFiringBlocked)
+            {
+                return;
+            }
+
             IsClientMovementAndFiringBlocked = true;
+            ClientCountdownStateChanged?.Invoke(true);
         }
 
         public static void EndClient()
         {
+            if (!IsClientMovementAndFiringBlocked)
+            {
+                return;
+            }
+
             IsClientMovementAndFiringBlocked = false;
+            ClientCountdownStateChanged?.Invoke(false);
         }
 
         public static void BeginServer(string roomId)
