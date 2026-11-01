@@ -210,6 +210,62 @@ namespace Game.Tests.PlayMode
             }
         }
 
+        [UnityTest]
+        public IEnumerator RemoteImpactWaitsForMinimumVisibleFlight()
+        {
+            Type projectileType = FindGameType("Projectile");
+            GameObject projectileObject = new GameObject("RemoteProjectile");
+
+            try
+            {
+                Component projectile = projectileObject.AddComponent(projectileType);
+                MethodInfo init = projectileType.GetMethod("Init", BindingFlags.Instance | BindingFlags.Public);
+                MethodInfo resolve = projectileType.GetMethod(
+                    "ResolveImpactAfterMinimumFlight",
+                    BindingFlags.Instance | BindingFlags.Public);
+                Assert.IsNotNull(init);
+                Assert.IsNotNull(resolve);
+
+                init.Invoke(
+                    projectile,
+                    new object[]
+                    {
+                        Vector3.zero,
+                        Vector3.forward * 100f,
+                        Vector3.zero,
+                        3f,
+                        500f,
+                        0.05f,
+                        0f,
+                        false
+                    });
+                resolve.Invoke(
+                    projectile,
+                    new object[]
+                    {
+                        Vector3.forward * 100f,
+                        Vector3.back,
+                        -1,
+                        null,
+                        null,
+                        0.15f
+                    });
+
+                yield return new WaitForSecondsRealtime(0.05f);
+
+                Assert.IsNotNull(projectileObject);
+                Assert.IsTrue(projectileObject.activeSelf);
+
+                yield return new WaitForSecondsRealtime(0.2f);
+
+                Assert.IsTrue(projectileObject == null || !projectileObject.activeSelf);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(projectileObject);
+            }
+        }
+
         private static Type FindGameType(string typeName)
         {
             Type type = Type.GetType(typeName + ", Assembly-CSharp");

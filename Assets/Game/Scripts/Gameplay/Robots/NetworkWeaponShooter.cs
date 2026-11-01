@@ -76,6 +76,7 @@ namespace Game.Scripts.Gameplay.Robots
         public float normalizationDeg = 0f;
 
         private const float MAX_PASSED_TIME = 0.30f;
+        private const float MIN_REMOTE_VISUAL_FLIGHT_SECONDS = 0.12f;
         private const float MAX_CLIENT_MUZZLE_OFFSET = 8f;
         private const int NO_NETWORK_OBJECT_ID = -1;
 
@@ -86,7 +87,8 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _serverDispersionInitialized;
 
         private readonly HashSet<int> _processedShots = new HashSet<int>();
-        private readonly HashSet<int> _observedResolvedHitShots = new HashSet<int>();
+        private readonly Dictionary<int, ObservedShotResolution> _observedResolvedShots =
+            new Dictionary<int, ObservedShotResolution>();
         private readonly Dictionary<int, Projectile> _predictedProjectiles = new Dictionary<int, Projectile>();
         private readonly Dictionary<int, Projectile> _observedProjectiles = new Dictionary<int, Projectile>();
         private readonly GunDispersionModel _ownerDispersion = new GunDispersionModel();
@@ -296,6 +298,15 @@ namespace Game.Scripts.Gameplay.Robots
             public ImpactAudioCode ImpactAudio;
         }
 
+        private struct ObservedShotResolution
+        {
+            public bool Hit;
+            public Vector3 ImpactPoint;
+            public Vector3 ImpactNormal;
+            public int TargetObjectId;
+            public ImpactAudioCode ImpactAudio;
+        }
+
         private struct DispersedShotRay
         {
             public Vector3 Direction;
@@ -433,7 +444,8 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 impactNormal,
             bool visible = true,
             System.Action onAuthoritativeImpact = null,
-            bool configureResolvedTarget = true)
+            bool configureResolvedTarget = true,
+            bool enableClientVisualCollision = true)
         {
             if (authoritative)
             {
@@ -455,7 +467,7 @@ namespace Game.Scripts.Gameplay.Robots
                 onAuthoritativeImpact,
                 configureResolvedTarget);
             Projectile projectile = ProjectileVisualSpawner.Spawn(spawnParams);
-            if (projectile != null && !authoritative)
+            if (projectile != null && !authoritative && enableClientVisualCollision)
             {
                 projectile.ConfigureClientVisualCollision(vehicleRoot != null ? vehicleRoot.transform : null);
             }
@@ -771,7 +783,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             ProfileScope.RecordEvent("RPC.FireObservers", DiagnosticsCategories.Rpc);
             DiagnosticsManager.RecordOutgoing("RPC.FireObservers", 64);
-            FireObserversRpc(shotId, startPos, dispersedRay.TargetPoint, clientTick);
+            FireObserversRpc(shotId, startPos, dispersedRay.TargetPoint);
         }
 
         private void InitOwnerDispersion()
@@ -1296,7 +1308,7 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [ObserversRpc(ExcludeOwner = true)]
-        private void FireObserversRpc(int shotId, Vector3 startPos, Vector3 targetPoint, uint clientTick)
+        private void FireObserversRpc(int shotId, Vector3 startPos, Vector3 targetPoint)
         {
             if (IsOwner)
             {
@@ -1310,26 +1322,42 @@ namespace Game.Scripts.Gameplay.Robots
                 vehicleRoot?.RuntimeStats?.Code);
             vehicleRoot.gunRecoilController?.PlayRecoil();
 
-            if (_observedResolvedHitShots.Remove(shotId))
+            bool hasBufferedResolution = _observedResolvedShots.TryGetValue(
+                shotId,
+                out ObservedShotResolution bufferedResolution);
+            if (hasBufferedResolution)
             {
-                return;
+                _observedResolvedShots.Remove(shotId);
             }
-
-            float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
-            passed = Mathf.Min(MAX_PASSED_TIME, passed);
 
             Projectile projectile = SpawnLocal(
                 startPos,
                 targetPoint,
-                passed,
+                0f,
                 false,
                 false,
-                Vector3.up
+                Vector3.up,
+                enableClientVisualCollision: false
             );
             if (projectile != null)
             {
                 projectile.AssignClientShot(shotId);
                 _observedProjectiles[shotId] = projectile;
+                if (hasBufferedResolution)
+                {
+                    ApplyObservedShotResolution(shotId, projectile, bufferedResolution);
+                }
+            }
+            else if (hasBufferedResolution && bufferedResolution.Hit)
+            {
+                SpawnImpactFx(
+                    bufferedResolution.ImpactPoint,
+                    bufferedResolution.ImpactNormal,
+                    bufferedResolution.TargetObjectId);
+                PlayImpactAudio(
+                    bufferedResolution.ImpactAudio,
+                    bufferedResolution.ImpactPoint,
+                    bufferedResolution.TargetObjectId);
             }
         }
 
@@ -1468,12 +1496,14 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (!_observedProjectiles.TryGetValue(shotId, out Projectile projectile))
             {
-                if (hit)
+                _observedResolvedShots[shotId] = new ObservedShotResolution
                 {
-                    _observedResolvedHitShots.Add(shotId);
-                    SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
-                    PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
-                }
+                    Hit = hit,
+                    ImpactPoint = impactPoint,
+                    ImpactNormal = impactNormal,
+                    TargetObjectId = targetObjectId,
+                    ImpactAudio = impactAudio
+                };
                 return;
             }
 
@@ -1482,22 +1512,43 @@ namespace Game.Scripts.Gameplay.Robots
                 _observedProjectiles.Remove(shotId);
                 if (hit)
                 {
-                    _observedResolvedHitShots.Add(shotId);
                     SpawnImpactFx(impactPoint, impactNormal, targetObjectId);
                     PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
                 }
                 return;
             }
 
-            if (hit)
+            ApplyObservedShotResolution(
+                shotId,
+                projectile,
+                new ObservedShotResolution
+                {
+                    Hit = hit,
+                    ImpactPoint = impactPoint,
+                    ImpactNormal = impactNormal,
+                    TargetObjectId = targetObjectId,
+                    ImpactAudio = impactAudio
+                });
+        }
+
+        private void ApplyObservedShotResolution(
+            int shotId,
+            Projectile projectile,
+            ObservedShotResolution resolution)
+        {
+            if (resolution.Hit)
             {
-                projectile.ResolveImpactNow(
-                    impactPoint,
-                    impactNormal,
-                    targetObjectId,
-                    GetImpactAttachmentTransform(targetObjectId),
-                    GetImpactTargetRoot(targetObjectId));
-                PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
+                projectile.ResolveImpactAfterMinimumFlight(
+                    resolution.ImpactPoint,
+                    resolution.ImpactNormal,
+                    resolution.TargetObjectId,
+                    GetImpactAttachmentTransform(resolution.TargetObjectId),
+                    GetImpactTargetRoot(resolution.TargetObjectId),
+                    MIN_REMOTE_VISUAL_FLIGHT_SECONDS);
+                PlayImpactAudio(
+                    resolution.ImpactAudio,
+                    resolution.ImpactPoint,
+                    resolution.TargetObjectId);
             }
             else
             {

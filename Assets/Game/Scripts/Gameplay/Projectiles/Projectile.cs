@@ -250,11 +250,18 @@ public class Projectile : MonoBehaviour
     private bool _tracerConfigured;
     private bool _waitingForTrailFade;
     private bool _waitingForAuthoritativeResolution;
+    private bool _pendingResolvedImpact;
     private bool _clientTracerWidthConfigured;
     private bool _clientTracerGradientConfigured;
     private float _trailReleaseTime;
     private int _clientShotId;
     private int _predictedImpactTargetObjectId = NoNetworkObjectId;
+    private Vector3 _pendingImpactPoint;
+    private Vector3 _pendingImpactNormal;
+    private int _pendingImpactTargetObjectId = NoNetworkObjectId;
+    private Transform _pendingImpactAttachmentParent;
+    private VehicleRoot _pendingImpactTarget;
+    private float _pendingImpactTime;
 
     public Vector3 Origin => _origin;
     public Vector3 InitialVelocity => _initialVelocity;
@@ -668,6 +675,7 @@ public class Projectile : MonoBehaviour
         _predictedImpactTargetObjectId = NoNetworkObjectId;
         _waitingForTrailFade = false;
         _waitingForAuthoritativeResolution = false;
+        ClearPendingResolvedImpact();
         _trailReleaseTime = 0f;
 
         _elapsedTime = authoritative ? 0f : Mathf.Max(0f, passedTime);
@@ -765,6 +773,7 @@ public class Projectile : MonoBehaviour
         Transform attachmentParent = null,
         VehicleRoot impactTarget = null)
     {
+        ClearPendingResolvedImpact();
         bool shouldPlayAuthoritativeImpact = ShouldPlayAuthoritativeImpact(impactPoint, targetObjectId);
         _waitingForAuthoritativeResolution = false;
         _hasLastHitPoint = true;
@@ -781,6 +790,30 @@ public class Projectile : MonoBehaviour
         CompleteFlight();
     }
 
+    public void ResolveImpactAfterMinimumFlight(
+        Vector3 impactPoint,
+        Vector3 impactNormal,
+        int targetObjectId,
+        Transform attachmentParent = null,
+        VehicleRoot impactTarget = null,
+        float minimumFlightSeconds = 0f)
+    {
+        float targetTime = Mathf.Max(_elapsedTime, Mathf.Max(0f, minimumFlightSeconds));
+        if (!_initialized || targetTime <= _elapsedTime)
+        {
+            ResolveImpactNow(impactPoint, impactNormal, targetObjectId, attachmentParent, impactTarget);
+            return;
+        }
+
+        _pendingResolvedImpact = true;
+        _pendingImpactPoint = impactPoint;
+        _pendingImpactNormal = impactNormal;
+        _pendingImpactTargetObjectId = targetObjectId;
+        _pendingImpactAttachmentParent = attachmentParent;
+        _pendingImpactTarget = impactTarget;
+        _pendingImpactTime = targetTime;
+    }
+
     public void CancelPrediction()
     {
         _waitingForAuthoritativeResolution = false;
@@ -789,6 +822,7 @@ public class Projectile : MonoBehaviour
 
     public void ResolveMiss(float maxDistance)
     {
+        ClearPendingResolvedImpact();
         if (_waitingForAuthoritativeResolution)
         {
             _waitingForAuthoritativeResolution = false;
@@ -872,6 +906,18 @@ public class Projectile : MonoBehaviour
                     ReleaseOrDestroy();
                 }
 
+                return;
+            }
+
+            if (_pendingResolvedImpact && _initialized && _elapsedTime >= _pendingImpactTime)
+            {
+                Vector3 impactPoint = _pendingImpactPoint;
+                Vector3 impactNormal = _pendingImpactNormal;
+                int targetObjectId = _pendingImpactTargetObjectId;
+                Transform attachmentParent = _pendingImpactAttachmentParent;
+                VehicleRoot impactTarget = _pendingImpactTarget;
+                ClearPendingResolvedImpact();
+                ResolveImpactNow(impactPoint, impactNormal, targetObjectId, attachmentParent, impactTarget);
                 return;
             }
 
@@ -1300,6 +1346,7 @@ public class Projectile : MonoBehaviour
 
     private void CompleteFlight()
     {
+        ClearPendingResolvedImpact();
         _initialized = false;
         _liveCollisionEnabled = false;
         _pendingAuthoritativeCatchupTime = 0f;
@@ -1354,6 +1401,17 @@ public class Projectile : MonoBehaviour
         SetTracerVisible(_visualsEnabled && _tracerConfigured);
     }
 
+    private void ClearPendingResolvedImpact()
+    {
+        _pendingResolvedImpact = false;
+        _pendingImpactPoint = Vector3.zero;
+        _pendingImpactNormal = Vector3.up;
+        _pendingImpactTargetObjectId = NoNetworkObjectId;
+        _pendingImpactAttachmentParent = null;
+        _pendingImpactTarget = null;
+        _pendingImpactTime = 0f;
+    }
+
     internal void PrepareForPoolRelease()
     {
         _initialized = false;
@@ -1367,6 +1425,7 @@ public class Projectile : MonoBehaviour
         _pendingAuthoritativeCatchupTime = 0f;
         _waitingForTrailFade = false;
         _waitingForAuthoritativeResolution = false;
+        ClearPendingResolvedImpact();
         _trailReleaseTime = 0f;
         _clientShotId = 0;
         _ignoredRoot = null;

@@ -2,6 +2,30 @@
 
 This file is the durable handoff point between Codex sessions. Keep entries append-only.
 
+## Task: Import Fires prefabs and resources into Particles111
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Transfer the prefabs and their resources from `C:\Users\TorasPC\Documents\Codex\2026-11-01\new-chat-3\work\UnityAssetScratch\Assets\Fires` into this game project under `Particles111`.
+- **Scope:** Inspect the source asset tree and target project structure, copy the complete Unity asset bundle including `.meta` files and referenced local resources, preserve existing project files, and validate that copied references remain internally resolvable.
+- **Acceptance criteria:** The requested prefabs and their required source resources exist under the game's `Particles111` folder; Unity `.meta` files are preserved; no unrelated files are changed; validation results and any limitations are recorded here.
+
+### Progress
+
+- Confirmed the shared Codex memory and project task journal were read before repository inspection.
+- No exact archive workflow for Unity asset transfer was found; applying the repository's journal and safe Unity asset handling rules.
+- The source `Assets\\Fires` tree contains top-level prefabs plus `Explosions` and `Unlit` subfolders; the target `Assets\\Particles111` does not exist yet.
+- The prefab dependency closure includes 58 additional source assets outside `Fires` (about 174 MB); the current project already contains `CFX_AutoDestructShuriken.cs` with the same GUID, so that duplicate will be reused instead of copied.
+- The target project uses matching installed Cinemachine and URP package cache versions for the package references used by these prefabs; package files will remain managed by Unity rather than copied into `Assets`.
+- Copied the complete `Fires` tree into `Assets\\Particles111`, including its folder/file `.meta` files, and copied 57 missing dependency assets under `Assets\\Particles111\\Dependencies`; one dependency GUID was reused from an existing project script.
+- **Next steps:** Validate hashes, GUID uniqueness, and all local/package references, then close this entry.
+
+### Completion checkpoint — 2026-11-01
+
+- **Result:** Imported all 19 prefabs from the source `Assets\\Fires` tree into `Assets\\Particles111`, preserved their `.meta` files, and added 57 missing source dependencies under `Assets\\Particles111\\Dependencies`; the original source files were left unchanged.
+- **Validation:** Main and dependency hashes matched the source with 0 mismatches; 0 duplicate GUID groups were found; all 76 copied non-meta assets and 20 copied prefab assets are present; `git diff --check -- TASK.md` passed.
+- **Remaining limitations:** The source set itself contains two unresolved GUID references: `bfc512c3569cde9488366dbbd1be5c99` for a texture referenced by several explosion materials and `e667b58ffcfec0e46ab3c0360ca38fe9` for a disabled light reference in the base explosion prefab. No corresponding source files exist, so they were not fabricated or altered.
+
 ## Task: Persistent task journal workflow
 
 - **Status:** COMPLETED
@@ -1403,3 +1427,67 @@ The persistent task journal workflow is installed. Future tasks must start with 
 
 - Runtime and editor builds passed with 0 errors.
 - Targeted diff check passed. Unity Play Mode audio listening remains unverified because the project is already open in another Unity instance.
+
+## Task: Diagnose intermittent missing bot projectile visuals
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-01
+- **User request:** Analyze why bot shots, especially enemy shots, often have no visible projectile flight; determine the real root cause and provide three visually strong, non-breaking solution options.
+- **Scope:** Trace bot firing, network delivery/deduplication, projectile spawn and lifetime, camera/visibility, pooling or destruction, and relevant timing/configuration. Do not modify implementation unless explicitly requested; provide evidence-based alternatives with trade-offs.
+- **Acceptance criteria:** Identify the most likely concrete failure path(s) from the repository code; distinguish confirmed facts from hypotheses; propose three viable fixes that preserve gameplay authority and improve visual reliability; record validation and remaining uncertainty.
+- **Next steps:** Inspect repository state and applicable projectile/bot/network scripts, follow the shot event from bot decision to observer rendering, then close this analysis entry with findings and validation.
+
+### Discovery checkpoint — 2026-11-01
+
+- Confirmed bot firing is server-authoritative: `BotCombatController` calls `WeaponReloadController.ServerTryFireAuthoritative()`, which calls `NetworkWeaponShooter.ServerFireAuthoritative()`; bots have no client-side prediction path.
+- Confirmed remote presentation uses two separate observer RPCs: `FireObserversRpc` spawns the projectile and `ResolveObserversProjectileTargetRpc` ends it or shows impact FX. `_observedResolvedHitShots` explicitly handles a resolution arriving before the fire event by skipping the projectile spawn, which is a direct visual-loss path.
+- Confirmed remote projectiles are backdated by up to `MAX_PASSED_TIME = 0.30s` before local visual collision is enabled. If the shell has already reached or crossed a nearby target, `Projectile.TryCastEmbeddedCollision` immediately stops and hides it before a frame can show the flight.
+- Confirmed active robot prefabs reference `ProjectileVisual.prefab` for clients and `ServerProjectile.prefab` for authority. The pool never drops a projectile when exhausted; it instantiates overflow objects, so pool capacity is not the primary cause.
+- Confirmed enemy renderer visibility is separate from projectile RPC delivery; hidden enemy meshes do not disable the projectile presentation path. Current evidence therefore points to remote timing/catch-up plus fire/resolve ordering, not bot aim or prefab absence.
+- **Decision pending:** choose a fix that preserves server hit authority while guaranteeing a minimum observer-visible flight window without creating duplicate impacts or changing damage timing.
+
+### Analysis checkpoint — 2026-11-01
+
+- The remote catch-up is especially dangerous when runtime shell speeds are high: the repository's offline vehicle test data uses `800 + level * 25 m/s`, so the current `0.30s` cap can advance a visual shell by roughly `240–300m`, greater than the measured active-map span. Even with the normal prefab fallback of `70 m/s`, close-range shots can be advanced to the target before the first rendered frame.
+- The current client visual settings use a `0.06s` tracer lifetime and a low-alpha fade, which can make a surviving remote shell visually weak, but this is secondary to the timing paths that skip or immediately hide the projectile.
+- Recommended direction for implementation: keep server collision/damage unchanged, move remote presentation into a focused per-shot state owner, cap or remove remote catch-up, suppress local remote collision, and guarantee a short minimum visible flight before applying the authoritative impact presentation. Preserve a buffered resolved-shot record instead of discarding the fire event when RPC order reverses.
+
+### Completion checkpoint — 2026-11-01
+
+- **Status:** COMPLETED
+- **Result:** Identified the concrete root cause as a remote-projectile presentation race/timeline error, not bot firing failure, missing prefab, or pool exhaustion. Enemy shots use the non-predicted observer path; that path backdates the projectile by up to `0.30s`, enables local collision immediately, and can hide it before rendering. A separate resolve RPC can also arrive before the fire RPC; the current handler records that state and intentionally skips the projectile spawn.
+- **Validation:** Traced bot input through `BotCombatController`, `WeaponReloadController`, `NetworkWeaponShooter`, `ProjectileVisualSpawner`, `Projectile`, and `ProjectileRuntimePool`; inspected active robot prefab references and client projectile settings; confirmed no implementation files were modified; `git diff --check -- TASK.md` passed.
+- **Remaining limitations:** No live multiplayer capture or Unity Play Mode reproduction was run, so the exact share of failures caused by catch-up versus RPC ordering still needs runtime counters/logging. Existing unrelated font modifications remain untouched.
+
+## Task: Implement option 1 for reliable remote bot projectiles
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-01
+- **User request:** Implement the first, minimal and safest fix for missing bot projectile flight; preserve the option to expand the solution into the buffered per-shot presentation owner later.
+- **Scope:** Keep server collision, damage, reload, and authoritative hit timing unchanged. Adjust only remote projectile presentation so catch-up cannot skip the visible launch, local remote collision cannot hide it before the first frame, and early authoritative resolution does not discard the visual shot. Improve tracer readability only as needed.
+- **Acceptance criteria:** Remote bot shots always receive a short visible flight window when their observer fire event is delivered; server gameplay remains authoritative; owner prediction and local collision behavior remain unchanged; lifecycle/despawn paths do not leak pooled projectiles; focused tests or build/source validation pass; document the ownership boundary and remaining runtime limitation.
+- **Next steps:** Inspect current projectile APIs and tests, implement the focused remote-presentation timing change, update mechanic documentation, then build and validate without touching unrelated working-tree changes.
+
+### Implementation checkpoint — 2026-11-01
+
+- Added a remote-only observer presentation path in `NetworkWeaponShooter`: observer shells start at `passedTime = 0`, skip client visual collision, and retain an authoritative hit/miss record when the resolve RPC arrives before the fire RPC.
+- Added a short `0.12s` minimum remote visual flight in `Projectile`; owner prediction still uses the existing immediate impact path, while server projectile simulation and damage timing are unchanged.
+- Added `RemoteImpactWaitsForMinimumVisibleFlight` to `CloseRangeProjectilePlayModeTests` and documented the ownership boundary in `docs/codex-game/weapons-damage.md`.
+- **Next steps:** Run source/build validation, inspect the final diff, then close this task with results and any runtime verification limitation.
+
+### Completion checkpoint — 2026-11-01
+
+- **Status:** COMPLETED
+- **Result:** Implemented option 1. Remote observer shots now spawn from the live muzzle, bypass local remote collision, preserve early authoritative hit/miss resolution, and keep confirmed hits visible for `0.12s` before impact. Owner prediction and authoritative server collision/damage/reload timing remain unchanged.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore`, `dotnet build Assembly-CSharp-Editor.csproj --no-restore`, and `dotnet build Game.PlayMode.Tests.csproj --no-restore` passed with 0 errors; targeted `git diff --check` passed. Added a focused Play Mode regression test, but did not run Unity Play Mode in this session.
+- **Remaining limitations:** No live multiplayer capture was run, so the final visual quality still needs an in-game bot-vs-player check. Existing unrelated font modifications remain untouched.
+
+## Task: Зібрати 15 звуків вибухів техніки й споруд
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-01
+- **User request:** Знайти загалом 15 звукових файлів із вибухами, зокрема вибухами автомобіля, техніки, танка, будинку та спорідненими ефектами, і зберегти їх на Робочому столі.
+- **Scope:** Підготувати окрему папку лише з 15 аудіофайлами. Додатково зберегти таблицю джерел і ліцензій поруч, щоб її не рахувати як аудіофайл і не класти в sound-folder.
+- **Acceptance criteria:** 15 валідних, різних, не порожніх аудіофайлів; різноманітні типи руйнувань/вибухів; джерела, автори, ліцензії, атрибуція і примітка щодо відповідності записані; окрема папка на Desktop; перевірені кількість і SHA-256.
+- **Destination plan:** C:\Users\TorasPC\Desktop\WarOfMachines_Explosion_Sounds
+- **Next steps:** Перевірити наявні ліцензовані джерела й доступні локальні пакети, відібрати 15 придатних файлів, перевірити ліцензії/хеші, зібрати папку та перевірити копію на Desktop.
