@@ -168,7 +168,7 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         [Server]
-        public void ServerKill()
+        public void ServerKill(bool broadcastDeathPresentation = true)
         {
             if (!IsServerInitialized || _dead.Value)
             {
@@ -180,15 +180,18 @@ namespace Game.Scripts.Gameplay.Robots
             SetObservedHealth(0f, maxHealth, true);
             DamagedObserversRpc(old, _hp.Value, maxHealth);
             _dead.Value = true;
-            DeathServer(-1);
+            DeathServer(-1, broadcastDeathPresentation);
         }
 
         [Server]
-        private void DeathServer(int killerObjectId)
+        private void DeathServer(int killerObjectId, bool broadcastDeathPresentation = true)
         {
             SetCollidersEnabled(false);
             OnServerDeath?.Invoke(this);
-            DiedObserversRpc(killerObjectId);
+            if (broadcastDeathPresentation)
+            {
+                DiedObserversRpc(killerObjectId);
+            }
             if (ShouldDespawnAfterDeath(IsServerInitialized, IsSpawned))
             {
                 Despawn();

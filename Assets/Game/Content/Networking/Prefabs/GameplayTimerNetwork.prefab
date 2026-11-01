@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 427714077869306214}
   - component: {fileID: 8975664439472260232}
   - component: {fileID: 5805746888609840445}
+  - component: {fileID: 5805746888609840446}
   m_Layer: 0
   m_Name: GameplayTimerNetwork
   m_TagString: Untagged
@@ -75,6 +76,7 @@ MonoBehaviour:
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
   - {fileID: 5805746888609840445}
+  - {fileID: 5805746888609840446}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -118,3 +120,18 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 427714077869306214}
   networkObject: {fileID: 427714077869306214}
   serverRoom: {fileID: 0}
+--- !u!114 &5805746888609840446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9118390247338199346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b22b2df2c444dbe8a4c2d2f4b3d9f12, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _componentIndexCache: 1
+  _addedNetworkObject: {fileID: 427714077869306214}
+  _networkObjectCache: {fileID: 427714077869306214}

@@ -5,6 +5,7 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
+using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.MenuController;
@@ -72,6 +73,7 @@ namespace Game.Scripts.Networking.Lobby
             _roomsBySceneHandle.Clear();
             _abandonedRoomIdsAwaitingResult.Clear();
             _sceneSlotAllocator.Clear();
+            BattleCountdownGate.ClearAllServerLocks();
             PendingBattleResults.Clear();
         }
 
@@ -549,7 +551,7 @@ namespace Game.Scripts.Networking.Lobby
 
             if (player.playerRoot != null && player.playerRoot.health != null && !player.playerRoot.health.IsDead)
             {
-                player.playerRoot.health.ServerKill();
+                player.playerRoot.health.ServerKill(false);
             }
 
             player.Connection = null;
@@ -614,6 +616,7 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             serverRoom.spawnStarted = true;
+            BattleCountdownGate.BeginServer(serverRoom.roomId);
             await VehicleStatsProvider.PreloadAsync();
 
             foreach (Player player in serverRoom.GetPlayers())
@@ -647,6 +650,7 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
+            BattleCountdownGate.BeginServer(serverRoom.roomId);
             NetworkGameplayTimer timer = Instantiate(gameplayTimerPrefab, Vector3.zero, Quaternion.identity);
             timer.serverRoom = serverRoom;
             ServerManager.Spawn(timer.networkObject, LocalConnection, roomScene);

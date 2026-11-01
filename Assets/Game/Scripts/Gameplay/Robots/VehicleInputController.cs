@@ -3,6 +3,7 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Game.Scripts.AI.WaypointGraph;
 using Game.Scripts.Diagnostics;
+using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Server;
@@ -150,7 +151,11 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private bool IsLocalInputBlocked => _controlsBlocked || IsGameplayInputBlockedByUi || IsAutonomous;
+        private bool IsLocalInputBlocked => _controlsBlocked
+            || IsGameplayInputBlockedByUi
+            || IsAutonomous
+            || BattleCountdownGate.IsClientMovementAndFiringBlocked;
+        private bool IsLocalAimBlocked => _controlsBlocked || IsGameplayInputBlockedByUi || IsAutonomous;
         private bool HasLocalInput => IsOwner;
 
         public Vector2 Move
@@ -275,18 +280,19 @@ namespace Game.Scripts.Gameplay.Robots
 
             using (ProfileScope.Measure("Client.VehicleInput.Update", DiagnosticsCategories.Client))
             {
-                bool blocked = IsLocalInputBlocked;
-                ReadMovementInput(blocked, out float x, out float y);
+                bool movementAndFireBlocked = IsLocalInputBlocked;
+                bool aimBlocked = IsLocalAimBlocked;
+                ReadMovementInput(movementAndFireBlocked, out float x, out float y);
 
-                bool newShoot = !blocked && Input.GetMouseButton(0);
-                bool newAction = !blocked && Input.GetKey(KeyCode.Space);
+                bool newShoot = !movementAndFireBlocked && Input.GetMouseButton(0);
+                bool newAction = !movementAndFireBlocked && Input.GetKey(KeyCode.Space);
                 ResolveAutoAimController();
-                bool turretAimLocked = HandleRightMouseAimLock(blocked, out bool aimLockChanged);
+                bool turretAimLocked = HandleRightMouseAimLock(aimBlocked, out bool aimLockChanged);
 
                 bool autoAimActive = false;
                 Vector3 autoAimPoint = Vector3.zero;
                 Vector3 autoAimForward = Vector3.zero;
-                if (!blocked && !turretAimLocked && autoAimController != null)
+                if (!aimBlocked && !turretAimLocked && autoAimController != null)
                 {
                     autoAimActive = autoAimController.TryGetAimTarget(out autoAimPoint, out autoAimForward);
                 }
@@ -298,7 +304,7 @@ namespace Game.Scripts.Gameplay.Robots
                 Vector3 aimPoint;
                 Vector3 aimForward;
 
-                if (blocked)
+                if (aimBlocked)
                 {
                     yawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
                     pitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
@@ -504,6 +510,13 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyServerInput(Vector2 move, bool shoot, bool action, bool syncAnimation)
         {
+            if (BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot))
+            {
+                move = Vector2.zero;
+                shoot = false;
+                action = false;
+            }
+
             _moveServer = move;
             _shootServer = shoot;
             _actionServer = action;

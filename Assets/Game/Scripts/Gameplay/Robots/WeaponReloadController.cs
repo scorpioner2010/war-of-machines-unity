@@ -3,6 +3,7 @@ using FishNet.Object.Synchronizing;
 using FishNet.Connection;
 using Game.Scripts.Audio;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
 
@@ -47,7 +48,10 @@ namespace Game.Scripts.Gameplay.Robots
         {
             get
             {
-                return IsServerInitialized && !_isReloading.Value && _ammoLeft.Value > 0;
+                return IsServerInitialized
+                    && !BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot)
+                    && !_isReloading.Value
+                    && _ammoLeft.Value > 0;
             }
         }
 
@@ -216,7 +220,11 @@ namespace Game.Scripts.Gameplay.Robots
 
                 bool localGate = (_clientReloadRemain > 0f);
 
-                if (!localGate && !_isReloading.Value && _ammoLeft.Value > 0 && vehicleRoot.inputManager.Shoot)
+                if (!localGate
+                    && !BattleCountdownGate.IsClientMovementAndFiringBlocked
+                    && !_isReloading.Value
+                    && _ammoLeft.Value > 0
+                    && vehicleRoot.inputManager.Shoot)
                 {
                     _clientReloadRemain = Mathf.Max(_clientReloadRemain, reloadTime);
                     ApplyHud();

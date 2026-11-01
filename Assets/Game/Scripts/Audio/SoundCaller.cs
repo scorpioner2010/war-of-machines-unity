@@ -233,7 +233,6 @@ namespace Game.Scripts.Audio
 
             _battleAudioActive = true;
             PlayMusic(AudioEventNames.BattleMusic);
-            PlayUi(AudioEventNames.UiBattleCountdown);
         }
 
         public static void StopBattleAudio()

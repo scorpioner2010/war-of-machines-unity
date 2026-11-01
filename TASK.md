@@ -1148,3 +1148,137 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - Result: select `Client > Settings > General > ReticleOpacitySlider` in the scene hierarchy and edit its `RectTransform` height directly; the label is next to it as `ReticleOpacitySlider_Label`.
 - Validation: `dotnet build Assembly-CSharp.csproj --no-restore --verbosity quiet` and `dotnet build Assembly-CSharp-Editor.csproj --no-restore --verbosity quiet` passed with 0 errors; static scene fileID/reference checks passed; `git diff --check` passed.
 - Remaining limitation: Unity batch scene validation was not run because another Unity instance already had this project open. Existing reference/obsolescence warnings remain.
+
+## Task: Investigate explosion-like sound on disconnect
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Investigate the incorrect explosion-like noise heard when pressing Disconnect, including whether a tank destruction sound is triggered during teardown, and fix the bug.
+- **Scope:** Trace the Disconnect UI/action through connection teardown, vehicle destruction/despawn, and audio event calls; identify the unintended sound path and make the smallest focused fix without suppressing legitimate gameplay destruction audio.
+- **Acceptance criteria:** Disconnect no longer emits an unintended explosion/destruction sound; legitimate tank destruction still plays its configured audio; disconnect lifecycle and audio assemblies compile.
+- **Next steps:** Search Disconnect call sites and teardown handlers, trace all destruction/explosion sound calls and guards, patch the owning lifecycle path, then validate with focused static checks and builds.
+
+### Discovery checkpoint — 2026-11-01
+
+- `PauseMenu.DisconnectButtonPressed()` calls `GameplaySpawner.ReturnToMainMenu()` and the server-side `AbandonPlayer()` path.
+- `AbandonPlayer()` calls `VehicleHealth.ServerKill()`, which currently broadcasts `DiedObserversRpc(-1)` just like a real combat death.
+- `DiedObserversRpc()` invokes `VehicleHealth.OnClientDeath`; the owner `CameraController` responds by playing `AudioEventNames.OwnRobotDestroyed`, which is the explosion-like sound heard during disconnect.
+
+### Decision
+
+- Extend the server kill path with an explicit observer-presentation flag and disable the death observer RPC for disconnect cleanup only. Keep the existing default behavior for real combat kills so legitimate destruction audio and death presentation remain unchanged.
+
+### Change checkpoint — 2026-11-01
+
+- `Assets/Game/Scripts/Gameplay/Robots/VehicleHealth.cs`: added an optional `broadcastDeathPresentation` flag to `ServerKill`/`DeathServer`; disconnect cleanup can now kill and despawn the vehicle without broadcasting client death presentation.
+- `Assets/Game/Scripts/Networking/Lobby/GameplaySpawner.cs`: calls `ServerKill(false)` from `AbandonPlayer`, while combat damage still uses the default broadcast behavior.
+
+### Completion checkpoint — 2026-11-01
+
+- Result: disconnect cleanup no longer sends `DiedObserversRpc`, so the local `CameraController` cannot play `Combat_Own_Robot_Destroyed` or start the death spectator sequence. Legitimate combat kills still broadcast the existing death presentation and destruction audio.
+- Validation: targeted search confirmed the disconnect-only `ServerKill(false)` call and default combat death path; `dotnet build Assembly-CSharp.csproj --no-restore --verbosity quiet` passed with 0 errors; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --verbosity quiet` passed with 0 errors; targeted `git diff --check` passed.
+- Remaining limitation: manual Unity play-mode reproduction was not run because another Unity instance already had the project open.
+
+## Task: Locate UI_Battle_Countdown usage
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Identify where the `UI_Battle_Countdown` sound is currently used.
+- **Scope:** Find code call sites, event-name definitions, and serialized audio resource entries without changing project files.
+- **Acceptance criteria:** Report the exact runtime call site(s) and the configured audio resource location.
+- **Next steps:** Search the project for the event name and its related countdown flow, then close the journal entry with the findings.
+
+### Completion checkpoint — 2026-11-01
+
+- Result: `UI_Battle_Countdown` is triggered by `SoundCaller.StartBattleAudio()` when the Gameplay HUD opens; `LobbyManager.TargetStartGameResponseRpc()` starts that battle audio after matchmaking succeeds. The event is resolved through `SoundCaller.PlayUi()`.
+- Resource: the configured UI audio entry is in `Assets/Game/Content/Audio/Prefabs/AudioManager.prefab` with volume `0.2` and clip GUID `86a807ce7062d9743893cd1c1bd9d2b6`.
+- Validation: project-wide search found one direct playback call, one event-name constant, and one serialized resource entry; no files besides `TASK.md` were changed.
+
+## Task: Remove UI_Battle_Countdown playback
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Remove `UI_Battle_Countdown` from the battle audio startup location identified in the previous task.
+- **Scope:** Remove only the `PlayUi(AudioEventNames.UiBattleCountdown)` call from `SoundCaller.StartBattleAudio()`, preserve battle music and all other UI/audio events, then validate the runtime and editor assemblies.
+- **Acceptance criteria:** Starting battle audio no longer plays `UI_Battle_Countdown`; battle music and unrelated audio calls remain unchanged; assemblies compile.
+- **Next steps:** Patch the single startup call, verify no direct playback remains, build runtime/editor assemblies, and close the journal entry.
+
+### Change checkpoint — 2026-11-01
+
+- `Assets/Game/Scripts/Audio/SoundCaller.cs`: removed only `PlayUi(AudioEventNames.UiBattleCountdown)` from `StartBattleAudio()`; `PlayMusic(AudioEventNames.BattleMusic)` remains unchanged.
+
+### Completion checkpoint — 2026-11-01
+
+- Result: battle startup no longer directly plays `UI_Battle_Countdown`; the serialized resource and constant remain available for future intentional use.
+- Validation: no direct `PlayUi(AudioEventNames.UiBattleCountdown)` call remains; runtime and editor assemblies passed with 0 errors; targeted `git diff --check` passed.
+- Remaining limitation: manual Unity play-mode audio audition was not run in this session.
+
+## Task: Implement pre-battle countdown and gameplay lock
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Add a separate gameplay countdown UI and logic: 10-second countdown, play `UI_Battle_Countdown` on each tick, start 0.5 seconds after the loading screen is hidden, show animated large numbers, block robot movement and firing while allowing turret rotation.
+- **Scope:** Trace the loading lifecycle and movement/firing owners, then implement focused countdown state, network authority, UI presentation, and scene wiring without changing unrelated audio or menu behavior.
+- **Acceptance criteria:** Countdown starts after the loading screen is hidden plus 0.5 seconds; displays `10` through `1` clearly with animation; plays the countdown sound once per number; server and clients block movement and firing for all robots while preserving turret aiming; the feature is split into maintainable components and compiles.
+- **Next steps:** Implement the focused gate, network authority, countdown controller/view, and scene/prefab wiring; then validate source references, YAML integrity, and runtime/editor builds.
+
+### Discovery checkpoint — 2026-11-01
+
+- `MenuLoadingScreenManager` hides the scene loading menu through `HideLoading()` after the minimum loading presentation; a dedicated scene-loading-hidden event can avoid triggering the countdown during disconnect cleanup.
+- Robot movement is server-authoritative in `VehicleMovementController`; player and bot inputs converge through `VehicleInputController`, while firing must also be guarded at `WeaponReloadController`/`NetworkWeaponShooter` to reject stale or direct shot requests.
+- `GameplayTimerNetwork.prefab` is the existing per-match network object and can host a separate countdown authority component; `GameplayHUD` already contains the gameplay UI canvas and can receive a dedicated countdown child using the existing Roboto Condensed/TMP style.
+
+### Implementation checkpoint — 2026-11-01
+
+- Added `BattleCountdownGate`, `BattleCountdownController`, `BattleCountdownView`, and `BattleCountdownAuthority` as separate owners for lock state, lifecycle/timing, animation, and network completion.
+- Added a `SceneLoadingHidden` event that is raised only by the normal scene-loading flow, so disconnect cleanup cannot accidentally start another countdown.
+- Added the countdown UI under `GameplayHudContent` with the project TMP font/color, large centered numbers, scale/alpha animation, and serialized `0.5` second start delay.
+- Added the authority component to `GameplayTimerNetwork.prefab`; the server room lock now starts before robot spawn and releases only after connected real players report completion. Movement, hull rotation, firing prediction, owner shot RPCs, bot shots, and authoritative movement all consume the gate while turret aim remains enabled.
+- Initial runtime/editor builds exposed a `Player` namespace collision in the authority; this was resolved with an explicit lobby-player alias.
+
+### Completion checkpoint — 2026-11-01
+
+- Result: pre-battle countdown is wired into the gameplay HUD, starts 0.5 seconds after the normal loading screen is hidden, displays animated `10` through `1`, plays `UI_Battle_Countdown` once per tick, and releases movement/firing while preserving turret rotation.
+- Validation: runtime and editor assemblies both built successfully with 0 errors; targeted `git diff --check` passed; temporary generated project-file entries were removed.
+- Remaining limitation: Unity Play Mode was not run in this session because the project was already open in another Unity instance.
+
+## Task: Safely repair failed commit push
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **Completed:** 2026-11-01
+- **User request:** Diagnose the Git error shown in the attached screenshot, fix the cause, and push the commit without losing any work or breaking the project.
+- **Scope:** Inspect the screenshot, repository working tree, branch/upstream/remote state, and commit/push error context; preserve all existing user changes; make only the minimum safe Git or project changes required; validate before pushing.
+- **Acceptance criteria:** The cause of the push/commit failure is identified; no uncommitted or untracked user work is lost; any required fix is narrowly applied; the intended commit is pushed successfully if the remote permits it; validation and any remaining limitation are recorded here.
+- **Safety constraints:** Do not use destructive reset/clean/checkout operations, do not overwrite unrelated changes, do not force-push, and create no commit unless the user’s existing commit state and intended contents are verified first.
+
+### Next steps
+
+- Inspect the attached error and current Git state without mutation.
+- Preserve and, if needed, snapshot all local work before repair.
+- Apply the smallest non-destructive fix and validate repository state.
+- Push only the verified branch using a non-force push, then close this entry.
+
+### Discovery checkpoint — 2026-11-01
+
+- The screenshot shows GitHub rejecting `Assets/Resources/GameAudio/Music/Garage_DevelopmentTree_Music.wav` because the committed file is about 199 MB, above GitHub's 100 MB regular-blob limit.
+- `main` is one commit ahead of `origin/main`; the rejected file is in local `HEAD` commit `e84851c6` and is not present in the remote commit.
+- The working tree contains unrelated/uncommitted Unity countdown changes and journal changes; they must remain untouched.
+- Git LFS `3.6.0` is installed, but `.gitattributes` is currently absent. The repository therefore needs a non-destructive LFS conversion or equivalent history correction before a normal push.
+- The committed blob is `208,667,740` bytes, while the current working-tree file reports `740` bytes; this representation must be inspected and preserved before staging any replacement.
+
+### Repair checkpoint — 2026-11-01
+
+- Created safety artifacts outside the repository at `C:\Users\TorasPC\AppData\Local\Temp\war-of-machines-git-safety-20261101`: a backup branch, Git bundle, tracked-worktree diff, status snapshot, and untracked-file archive.
+- Added `.gitattributes` for only the oversized WAV, restaged it as a Git LFS pointer, and amended the local unpushed `finish main sound` commit from `e84851c6` to `5f09a5c9`.
+- Confirmed the local WAV remains `208,667,740` bytes, the committed representation is a `134`-byte LFS pointer, `git lfs fsck` is `OK`, and no committed blob exceeds 100 MB.
+- First normal push attempt failed before object transfer because the configured GitHub SSH remote returned `Permission denied (publickey)`.
+
+### Completion checkpoint — 2026-11-01
+
+- **Status:** COMPLETED
+- **Result:** Repaired the rejected local `finish main sound` commit by storing only `Assets/Resources/GameAudio/Music/Garage_DevelopmentTree_Music.wav` in Git LFS through `.gitattributes`; the local full-size WAV was preserved.
+- **Pushed commit:** `5f09a5c9ccf0b670e02799cf2a1d051b090b010c` is now present on `origin/main`.
+- **Validation:** `HEAD` equals `origin/main`; the remote branch points to the repaired commit; `git lfs fsck` is `OK`; no committed blob exceeds 100 MB; no staged changes remain.
+- **Preservation:** Existing modified and untracked Unity countdown files remain in the working tree and were not included in the amended commit. A local backup branch and external recovery artifacts remain at `C:\Users\TorasPC\AppData\Local\Temp\war-of-machines-git-safety-20261101`.
+- **Remaining limitations:** The working tree is intentionally not clean because the user's pre-existing Unity changes were preserved rather than committed or reverted. The backup branch is intentionally retained until the user confirms it is no longer needed.

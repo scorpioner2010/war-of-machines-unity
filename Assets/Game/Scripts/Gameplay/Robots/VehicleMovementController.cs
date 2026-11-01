@@ -1,6 +1,7 @@
 using FishNet.Managing.Timing;
 using UnityEngine;
 using Game.Scripts.Diagnostics;
+using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.Server;
 
 namespace Game.Scripts.Gameplay.Robots
@@ -138,7 +139,10 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void SimulateMovement(float dt)
         {
-            if (vehicleRoot == null || !vehicleRoot.IsServerInitialized || !CanMoveController())
+            if (vehicleRoot == null
+                || !vehicleRoot.IsServerInitialized
+                || BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot)
+                || !CanMoveController())
             {
                 ResetMotionState();
                 return;

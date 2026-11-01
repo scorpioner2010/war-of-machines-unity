@@ -4,6 +4,7 @@ using FishNet.Managing.Scened;
 using Game.Scripts.MenuController;
 using Game.Scripts.UI.MainMenu;
 using System.Collections;
+using System;
 using UnityEngine;
 using StandardLoading = Game.Scripts.UI.Helpers.StandardLoadingOverlay;
 
@@ -34,6 +35,7 @@ namespace Game.Scripts.UI.Loading
         private static int _connectionLoadingVersion;
 
         public static MenuLoadingScreenMode CurrentMode { get; private set; } = MenuLoadingScreenMode.SceneLoading;
+        public static event Action SceneLoadingHidden;
 
         private IEnumerator Start()
         {
@@ -143,6 +145,7 @@ namespace Game.Scripts.UI.Loading
 
             _activeSceneLoad = null;
             HideLoading();
+            SceneLoadingHidden?.Invoke();
         }
 
         private async UniTask<bool> AnimateProgressAsync(LoadQueueData sceneLoad, int loadingVersion, float from, float to, float duration)

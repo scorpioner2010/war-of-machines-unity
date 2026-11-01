@@ -6,6 +6,7 @@ using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Audio;
+using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
@@ -310,6 +311,11 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
+                if (BattleCountdownGate.IsClientMovementAndFiringBlocked)
+                {
+                    return;
+                }
+
                 Vector3 startPos = muzzleTransform.position;
                 Vector3 baseAimPoint = GetShotAimPoint(startPos);
                 int shotId = ++_shotSeq;
@@ -363,6 +369,11 @@ namespace Game.Scripts.Gameplay.Robots
             using (ProfileScope.Measure("Server.Weapon.BotFire", DiagnosticsCategories.Server))
             {
                 if (!IsServerInitialized || muzzleTransform == null)
+                {
+                    return;
+                }
+
+                if (BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot))
                 {
                     return;
                 }
@@ -624,6 +635,12 @@ namespace Game.Scripts.Gameplay.Robots
 
                 if (sender != base.Owner)
                 {
+                    return;
+                }
+
+                if (BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot))
+                {
+                    RejectOwnerShot(sender, shotId);
                     return;
                 }
 
