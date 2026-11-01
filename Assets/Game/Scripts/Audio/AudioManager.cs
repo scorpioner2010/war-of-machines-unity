@@ -10,10 +10,15 @@ namespace Game.Scripts.Audio
         private readonly AudioPreset _presetPrefab;
         private readonly Transform _root;
         private readonly float _defaultVolume;
+        private float _sfxMinDistance = DefaultSfxMinDistance;
+        private float _sfxMaxDistance = DefaultSfxMaxDistance;
+        private AudioRolloffMode _sfxRolloffMode = AudioRolloffMode.Logarithmic;
 
         public const string MusicVol = "MusicVol";
         public const string SfxVol = "SFXVol";
         public const string UIVol = "UIVol";
+        public const float DefaultSfxMinDistance = 2f;
+        public const float DefaultSfxMaxDistance = 50f;
 
         public const float MusicVolParameter = 1;
         public const float SfxVolParameter = 1;
@@ -70,6 +75,10 @@ namespace Game.Scripts.Audio
 
             SetPosition(position, audioPreset, parent, type);
             audioPreset.SetType(type);
+            if (type == SoundType.Sfx)
+            {
+                audioPreset.SetSpatialSettings(_sfxMinDistance, _sfxMaxDistance, _sfxRolloffMode);
+            }
             audioPreset.Play(element, loop || type == SoundType.Music);
             audioPreset.SetVolume(GetVolume(type));
             audioPreset.gameObject.name = element.name;
@@ -112,6 +121,26 @@ namespace Game.Scripts.Audio
             PlayerPrefs.SetFloat(GetVolumeKey(type), Mathf.Clamp01(volume));
             UpdateVolume();
             PlayerPrefs.Save();
+        }
+
+        public void SetSfxSpatialSettings(
+            float minDistance,
+            float maxDistance,
+            AudioRolloffMode rolloffMode)
+        {
+            _sfxMinDistance = Mathf.Max(0.01f, minDistance);
+            _sfxMaxDistance = Mathf.Max(_sfxMinDistance, maxDistance);
+            _sfxRolloffMode = rolloffMode;
+
+            RemoveNullEntries();
+            for (int i = 0; i < Library.Count; i++)
+            {
+                AudioPreset preset = Library[i];
+                if (preset.Type == SoundType.Sfx)
+                {
+                    preset.SetSpatialSettings(_sfxMinDistance, _sfxMaxDistance, _sfxRolloffMode);
+                }
+            }
         }
 
         public void Stop(SoundType type)

@@ -70,6 +70,20 @@ namespace Game.Scripts.Audio
             }
         }
 
+        public void SetSpatialSettings(float minDistance, float maxDistance, AudioRolloffMode rolloffMode)
+        {
+            EnsureSource();
+            if (source == null)
+            {
+                return;
+            }
+
+            float safeMinDistance = Mathf.Max(0.01f, minDistance);
+            source.minDistance = safeMinDistance;
+            source.maxDistance = Mathf.Max(safeMinDistance, maxDistance);
+            source.rolloffMode = rolloffMode;
+        }
+
         public void Play(AudionElement element)
         {
             Play(element, false);

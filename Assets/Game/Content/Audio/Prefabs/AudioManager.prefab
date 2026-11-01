@@ -48,6 +48,9 @@ MonoBehaviour:
   volumeDefaultParameter: 1
   resources: {fileID: 6937648354336009650}
   prefab: {fileID: 2432784254237568436, guid: c33e6b8a9ecc0d34f8b2ca7a38d90d6c, type: 3}
+  sfxMinDistance: 4
+  sfxMaxDistance: 50
+  sfxRolloffMode: 0
 --- !u!114 &6937648354336009650
 MonoBehaviour:
   m_ObjectHideFlags: 0

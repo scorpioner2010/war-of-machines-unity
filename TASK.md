@@ -1316,6 +1316,36 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` both build with 0 errors; targeted `git diff --check` passed.
 - **Remaining limitation:** Unity Play Mode was not run because the project is already open in another Unity instance. Existing unrelated Unity-generated working-tree changes were preserved.
 
+## Task: Add runtime distance settings for robot sounds
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Add runtime distance control for robot sounds because distant robots currently sound as if they are nearby.
+- **Scope:** Inspect the audio playback and mixer/spatialization ownership, add a focused runtime distance setting for robot/world sounds, and preserve UI, music, and existing volume settings.
+- **Acceptance criteria:** Robot sounds attenuate with distance in gameplay; the distance behavior is configurable at runtime; the setting does not change UI/music routing; runtime/editor assemblies compile.
+- **Result:** Added live SFX spatial settings for minimum distance, maximum distance, and rolloff mode. The default changed from linear to logarithmic attenuation, while UI/music remain non-positional.
+- **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` both build with 0 errors; targeted `git diff --check` passed for all changed implementation, prefab, documentation, and journal files.
+- **Remaining limitation:** Unity Play Mode audio listening was not run because the project is already open in another Unity instance; the runtime behavior is covered by source inspection and successful compilation.
+
+### Implementation checkpoint — 2026-11-01
+
+- `AudioPreset` now applies runtime `minDistance`, `maxDistance`, and `AudioRolloffMode` values to its `AudioSource`.
+- `AudioManager` stores the active SFX spatial configuration, applies it to new sounds, and updates already pooled SFX when the configuration changes.
+- `SoundCaller` exposes live-editable `sfxMinDistance`, `sfxMaxDistance`, and `sfxRolloffMode` fields plus `SetRuntimeSfxSpatialSettings(...)`; runtime changes are detected without affecting UI/music.
+- Updated `AudioManager.prefab`, `AudioPreset.prefab`, and `docs/codex-game/audio-presentation.md` to make the logarithmic default and ownership explicit.
+
+### Completion checkpoint — 2026-11-01
+
+- Runtime and editor builds passed with 0 errors.
+- Targeted diff check passed. Existing unrelated working-tree changes were preserved.
+
+### Discovery checkpoint — 2026-11-01
+
+- `SoundCaller` routes robot effects through `AudioManager.PlaySfx`; `AudioPreset.SetType` already makes SFX fully spatial and robot callers provide either a robot parent or a world position.
+- `AudioPreset.prefab` currently uses `MinDistance: 1`, `MaxDistance: 100`, and `rolloffMode: 1`, which is Unity's linear rolloff. This keeps distant sources too loud over most of the range.
+- Decision: keep UI/music non-positional, add live-editable SFX spatial settings at `SoundCaller`, and have `AudioManager` apply them to active and future SFX sources. Use logarithmic rolloff by default while preserving the existing 1–100 metre range.
+- Next steps: implement runtime synchronization, update the audio prefab and ownership documentation, then build and run targeted checks.
+
 ### Discovery and implementation checkpoint — 2026-11-01
 
 - `Back` and `Back2` are standalone `CanvasGroup` objects under the faction crosshair roots, not children of the main reticle transition groups.
@@ -1347,3 +1377,29 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - Result: central reticle visuals and sniper scope overlay are hidden for the entire countdown and fade in from alpha 0 to 1 over exactly 2 seconds after countdown completion. The transition uses unscaled time and does not alter aiming or zoom state.
 - Validation: runtime and editor assemblies both built successfully with 0 errors; targeted `git diff --check` passed for all implementation, documentation, and journal files.
 - Remaining limitation: Unity Play Mode was not run because the project is already open in another Unity instance. Existing unrelated Unity-generated working-tree changes were preserved.
+
+## Task: Tune robot SFX distance for the active map scale
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Tune the robot sound-distance parameters using the active map size and robot dimensions so distant robots do not sound nearby.
+- **Scope:** Use measured map bounds, spawn separation, and representative robot controller dimensions to choose realistic default SFX distances without changing the runtime distance feature or UI/music routing.
+- **Acceptance criteria:** Tuned `minDistance` and `maxDistance` values are applied consistently in code and prefabs; the values are documented with their scale rationale; runtime/editor assemblies compile.
+- **Result:** Tuned the active-map defaults to `minDistance = 2 m` and `maxDistance = 50 m` with logarithmic rolloff. The values are applied in code and both audio prefabs.
+- **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` both build with 0 errors; targeted `git diff --check` passed for the code, prefabs, documentation, and journal.
+
+### Scale-tuning checkpoint — 2026-11-01
+
+- Active `Map` waypoint bounds measure approximately `120.96 m` wide by `72.47 m` deep; Team A and Team B spawn roots are approximately `100.8 m` apart.
+- Representative robot `CharacterController` dimensions range from radius `0.46–0.70 m` and height `1.0–1.56 m`, giving an effective robot width of roughly `1–1.4 m`.
+- `2 m` keeps the full-volume zone close to the robot body, while `50 m` covers local combat without making robots on the opposite side of the map sound nearby.
+
+### Implementation checkpoint — 2026-11-01
+
+- Updated `AudioManager` defaults, `AudioManager.prefab`, `AudioPreset.prefab`, and `docs/codex-game/audio-presentation.md` to the measured range.
+- The live runtime controls and logarithmic rolloff behavior remain unchanged.
+
+### Completion checkpoint — 2026-11-01
+
+- Runtime and editor builds passed with 0 errors.
+- Targeted diff check passed. Unity Play Mode audio listening remains unverified because the project is already open in another Unity instance.

@@ -12,7 +12,17 @@ namespace Game.Scripts.Audio
         public AudioPreset prefab;
         public AudioManager Manager;
 
+        [Header("Runtime SFX Spatial Settings")]
+        [Min(AudioManager.DefaultSfxMinDistance)]
+        public float sfxMinDistance = AudioManager.DefaultSfxMinDistance;
+        [Min(AudioManager.DefaultSfxMinDistance)]
+        public float sfxMaxDistance = AudioManager.DefaultSfxMaxDistance;
+        public AudioRolloffMode sfxRolloffMode = AudioRolloffMode.Logarithmic;
+
         private static bool _battleAudioActive;
+        private float _appliedSfxMinDistance = float.NaN;
+        private float _appliedSfxMaxDistance = float.NaN;
+        private AudioRolloffMode _appliedSfxRolloffMode;
 
         private bool StopPlay => InstanceFinder.IsServerStarted && InstanceFinder.IsClientStarted == false;
         
@@ -27,6 +37,7 @@ namespace Game.Scripts.Audio
             _in = this;
             _battleAudioActive = false;
             Manager = new AudioManager(prefab, transform, volumeDefaultParameter);
+            SyncRuntimeSfxSpatialSettings(true);
         }
 
         private void OnEnable()
@@ -42,6 +53,7 @@ namespace Game.Scripts.Audio
         {
             if (!StopPlay)
             {
+                SyncRuntimeSfxSpatialSettings();
                 Manager?.UpdateVolume();
             }
         }
@@ -257,6 +269,40 @@ namespace Game.Scripts.Audio
         public void ChangeVolume(float volume, SoundType type)
         {
             Manager?.SetVolume(volume, type);
+        }
+
+        public void SetRuntimeSfxSpatialSettings(
+            float minDistance,
+            float maxDistance,
+            AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic)
+        {
+            sfxMinDistance = minDistance;
+            sfxMaxDistance = maxDistance;
+            sfxRolloffMode = rolloffMode;
+            SyncRuntimeSfxSpatialSettings(true);
+        }
+
+        private void SyncRuntimeSfxSpatialSettings(bool force = false)
+        {
+            if (Manager == null)
+            {
+                return;
+            }
+
+            float minDistance = Mathf.Max(AudioManager.DefaultSfxMinDistance, sfxMinDistance);
+            float maxDistance = Mathf.Max(minDistance, sfxMaxDistance);
+            if (!force
+                && Mathf.Approximately(_appliedSfxMinDistance, minDistance)
+                && Mathf.Approximately(_appliedSfxMaxDistance, maxDistance)
+                && _appliedSfxRolloffMode == sfxRolloffMode)
+            {
+                return;
+            }
+
+            _appliedSfxMinDistance = minDistance;
+            _appliedSfxMaxDistance = maxDistance;
+            _appliedSfxRolloffMode = sfxRolloffMode;
+            Manager.SetSfxSpatialSettings(minDistance, maxDistance, sfxRolloffMode);
         }
 
         private static void HandleMenuOpened(MenuType type)
