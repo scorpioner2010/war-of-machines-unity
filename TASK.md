@@ -5,6 +5,7 @@ This file is the durable handoff point between Codex sessions. Keep entries appe
 ## Task: Import Fires prefabs and resources into Particles111
 
 - **Status:** COMPLETED
+
 - **Started:** 2026-11-01
 - **User request:** Transfer the prefabs and their resources from `C:\Users\TorasPC\Documents\Codex\2026-11-01\new-chat-3\work\UnityAssetScratch\Assets\Fires` into this game project under `Particles111`.
 - **Scope:** Inspect the source asset tree and target project structure, copy the complete Unity asset bundle including `.meta` files and referenced local resources, preserve existing project files, and validate that copied references remain internally resolvable.
@@ -1965,3 +1966,201 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Result:** The previous Etallon scale-normalization change is fully reverted in the three affected prefabs.
 - **Validation:** Static assertions passed for 7 original Transform scales and 15 original `startSize` pairs.
 - **Remaining limitation:** Unity Play Mode was not run; reload/reimport the prefabs if the Editor already has cached serialized data open.
+
+## Task: Integrate projectile and robot destruction particle effects
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Replace the old projectile, muzzle, and impact particle prefabs with the prepared effects; orient directional effects correctly; remove `OtherObjectImpact`; add robot-hit and robot-destruction particle sequences; keep persistent fire effects on detached robot parts.
+- **Scope:** Inspect the current projectile collision, muzzle-spawn, robot destruction, detached-part, and particle prefab ownership; implement the smallest focused runtime integration using explicit effect ownership; update the relevant gameplay documentation; preserve unrelated working-tree changes and optimize transient/persistent effect lifecycle.
+- **Acceptance criteria:** `GunShoot` replaces `CFX3_Fire_Shoot` and points its local Z toward the gun/object direction; `ExplosionProjectileGround` replaces `RobotImpact` and points local Z along the collision normal; `OtherObjectImpact` is removed from project references/files; robot hits spawn `ShootInRobot`; robot destruction spawns `ExplosionMain` plus one random `Explosion 1/2/3` and one random `Explosion FREE 1-4`; detached turret/body parts receive persistent `PartFire`, with up to three additional random parts; transient effects clean up safely; focused validation passes.
+- **Next steps:** Inspect repository state, identify effect owners and prefab references, document the ownership boundary, implement integration, then run focused static/build validation and close this entry.
+
+### Discovery checkpoint — 2026-11-02
+
+- The working tree already contains unrelated modifications in `Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset` and `RobotoCondensed-Regular SDF2.asset`; these must remain untouched. `TASK.md` is modified by this task.
+- New prepared effects are present under `Assets/PartDone/Etallon`, including `GunShoot`, `ExplosionProjectileGround`, `ShootInRobot`, `ExplosionMain`, `PartFire`, and the requested explosion variants. Duplicate copies also exist under `Assets/Particles111/Copu`.
+- The active combat path is `Projectile` plus `ProjectileRuntimePool`/`PooledImpactFx`; `Projectile` currently stores separate `robotImpactFxPrefab` and `otherObjectImpactFxPrefab` references and always routes impact visuals through `PooledImpactFx`.
+- `NetworkWeaponShooter` owns projectile prefab spawning and prewarming, while `DeathLogic` owns detached turret/body part lifecycle. New destruction/fire presentation should be a focused VFX owner coordinated by those existing domain owners rather than added as unrelated policy to the projectile coordinator.
+- The current projectile impact pool applies a camera-facing visual offset intended for projector decals, so the directional ground impact needs a separate particle-effect spawn path that preserves the exact collision point and normal.
+- **Next steps:** Inspect prefab component types and all shooter/death call sites, then define the focused transient/persistent VFX owner and serialized wiring.
+
+### Implementation checkpoint — 2026-11-02
+
+- Added particle-only support to `PooledImpactFx` with automatic particle-profile discovery and a `UsesSurfaceProjectors` distinction; `ProjectileRuntimePool` now keeps particle impacts at the exact collision point while preserving the legacy projector offset only for projector profiles.
+- Replaced `Projectile.otherObjectImpactFxPrefab` with `groundImpactFxPrefab`, routed non-robot impacts to the new ground effect, and made projectile/muzzle orientation use stable rotations with local `+Z` aligned to the collision normal or shot direction.
+- Added `RobotDestructionParticleController` as the focused destruction presentation owner. It pools `ExplosionMain` and the requested random standard/free variants, then attaches persistent `PartFire` to the first detached part plus up to three unique random additional parts at each part's bounds center.
+- Updated `DeathLogic` to calculate the robot visual center, detach debris as before, and pass the resulting center/part list to the new VFX owner without changing health, damage, authority, or network lifetime decisions.
+- Added a temporary Editor wiring utility at `Assets/Editor/ConfigureCombatParticleEffects.cs`; it will add `PooledImpactFx` to transient prepared prefabs, remove incompatible legacy auto-destruct components, orient the authored directional particle shapes, update projectile/client references, and wire all eight IA/NV robot prefabs.
+- **Next steps:** Run the Editor wiring utility, inspect serialized output, then remove old asset references/files and update stale tests/docs.
+
+### Wiring and cleanup checkpoint - 2026-11-02
+
+- Ran the temporary wiring utility successfully, then removed the utility after its one-time serialized setup completed.
+- Wired `GunShoot` into the client muzzle settings, `ExplosionProjectileGround` and `ShootInRobot` into `ProjectileVisual`, and `RobotDestructionParticleController` into all eight IA/NV robot prefabs.
+- Removed the old `CFX3_Fire_Shoot`, `RobotImpact`, and `OtherObjectImpact` prefabs, their old decal/material asset trees, the obsolete decal build utility, and the stale projector-focused test; preserved unrelated font modifications.
+- Added `CombatParticleEffectsPlayModeTests` for projectile references, particle-only profiles, persistent `PartFire`, and all robot destruction-controller bindings.
+
+### Completion checkpoint - 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** Directional muzzle and ground effects now use local `+Z` for shot direction and collision normal; robot hits use exact collision-point `ShootInRobot`; robot destruction emits the required three center bursts and persistent fire on four detached parts maximum.
+- **Optimization:** Transient bursts use the existing bounded `ProjectileRuntimePool`; looping `PartFire` is instantiated once per selected detached part and is not routed through one-shot cleanup.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors; focused Unity PlayMode run passed `4/4`; `git diff --check` passed. The full PlayMode suite reported 7 pre-existing unrelated failures while the new fixture passed `4/4`.
+- **Remaining limitation:** Manual in-game visual QA was not run; the focused asset and wiring tests passed, and the existing full-suite failures are outside this particle-effects change.
+
+### Final cleanup checkpoint - 2026-11-02
+
+- Removed the remaining orphan texture and folder metadata files from the deleted `ImpactOtherObject` and `ImpactRobot` trees.
+- Final audit passed with no active references to the old effect names, eight robot prefab controller bindings, no legacy files under the projectile content folder, and `git diff --check` clean.
+- **Status:** COMPLETED
+
+### Persistent fire hardening checkpoint - 2026-11-02
+
+- Removed the legacy `CFX_AutoDestructShuriken` component from `PartFire`; its looping particle systems now cannot self-destruct through the old one-shot cleanup path.
+- Extended `CombatParticleEffectsPlayModeTests` to assert that `PartFire` has neither pooled FX nor auto-destruction.
+- Focused Unity PlayMode validation passed `4/4` again after this final prefab change.
+- **Status:** COMPLETED
+
+## Task: Fix PartFire scale and restore projectile impact decals
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Fix the oversized `PartFire` effect so its world scale remains `1,1,1`, and restore the projectile impact decals that disappeared after the particle integration.
+- **Scope:** Inspect detached-part fire transform/parenting and the prior decal assets/runtime path; preserve the new particle routing while restoring only the missing decal behavior and correcting scale handling.
+- **Acceptance criteria:** `PartFire` remains world-scale `1,1,1` on detached parts; projectile hits show the authored decals again; ground/robot particle effects and persistent fire behavior remain intact; focused validation passes.
+- **Next steps:** Inspect current prefab serialization and git history for the removed decal chain, implement the smallest focused fix, validate references and runtime behavior, then close this entry.
+
+### Discovery checkpoint - 2026-11-02
+
+- `PartFire` was instantiated as a child with local scale `1`, so any non-unit detached-part scale was inherited and made the effect oversized in world space.
+- The new `GunShoot`, `ExplosionProjectileGround`, and `ShootInRobot` profiles had all decal projector fields set to `0`; the previous `RobotImpact` and `OtherObjectImpact` prefabs still contain the authored projector configuration in repository history.
+- Restored only the authored decal materials/textures and metadata from `HEAD`; the old impact prefabs themselves remain removed. The new impact particle prefabs will receive the restored projectors while keeping their new particle systems.
+
+### Implementation checkpoint — 2026-11-02
+
+- Changed `RobotDestructionParticleController` to place `PartFire` at each detached part's world-space bounds center, preserve world scale `1,1,1`, and then attach it without inheriting the part's scale.
+- Restored the authored `Impact Decal`, `Impact Glow Decal`, and optional `Impact Glow Halo` children on `ExplosionProjectileGround` and `ShootInRobot`, referencing the restored material GUIDs and the original ground/robot profile sizes.
+- Added projector-parent scale compensation in `PooledImpactFx`, so decal and halo world dimensions remain profile-defined even when a particle prefab has a non-unit root scale such as `ShootInRobot`.
+- Updated the focused PlayMode asset test and gameplay/asset documentation to distinguish particle-only effects from projector-backed impact effects.
+- **Validation:** Static prefab audit passes for both impact prefabs: every added `MonoBehaviour` has a valid `m_GameObject`, every profile projector reference resolves to a declared local file ID, and all six restored decal material GUIDs exist. `dotnet build Assembly-CSharp.csproj --no-restore` passes with 0 errors; `git diff --check` passes; no active asset reference to `CFX3_Fire_Shoot`, `RobotImpact`, or `OtherObjectImpact` remains.
+- **Remaining limitation:** A fresh Unity PlayMode run and manual visual QA were not repeated because the user's Unity Editor is open and the batch runner is project-locked. The editor log contained the initial pre-fix broken `ShootInRobot` import warning; the missing `m_GameObject` reference was corrected and the current YAML audit is clean, but a fresh editor refresh should still be used for final visual confirmation.
+- **Result:** `PartFire` now keeps world scale `1,1,1` after attachment to scaled detached parts, and the authored decal/glow/halo projectors are restored on `ExplosionProjectileGround` and `ShootInRobot` while the legacy impact prefabs remain deleted.
+- **Status:** COMPLETED
+
+## Task: Add timed PartFire cleanup, preserve particle prefab scale, and keep enemy list entries
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Make `PartFire` live for 30 seconds and then disappear; keep every particle effect at the exact scale authored in its prefab; add configurable camera-side spawn offset for explosion/impact particles except `GunShoot` and `PartFire`; keep defeated enemies in the in-game enemy list for the whole game.
+- **Scope:** Inspect the current particle pooling/spawn path, client runtime settings owner, `PartFire` lifecycle, and the enemy-list visibility/removal owner. Preserve existing directional/projector behavior and network/authority boundaries.
+- **Acceptance criteria:** `PartFire` is removed after 30 seconds; particle FX are spawned with their authored root scale (for example `ExplosionProjectileGround` remains `0.05`); all eligible explosion/impact FX receive a client-configurable camera offset while `GunShoot`/`PartFire` do not; an enemy remains represented in the list after death until the game/session ends; focused validation passes.
+- **Next steps:** Locate the responsible VFX/settings and enemy-list owners, record the current behavior, then implement focused lifecycle, scale/offset, and list-retention changes with regression coverage.
+
+### Discovery checkpoint - 2026-11-02
+
+- `RobotDestructionParticleController` owns detached-part fire creation, so the 30-second lifetime and world-scale correction belong there rather than in a generic particle component.
+- `ProjectileRuntimePool` already captures each prefab root `localScale`, but the generic visual-FX entry point also serves muzzle effects; camera offset must therefore be explicit so `GunShoot` remains untouched.
+- `ClientSettings.gameplayRuntime` is the existing inspector-wired client runtime settings owner; it now exposes a clamped camera-side particle offset with a default of `1` world unit.
+- `GameplayPlayerListHud` retains missing rows only when `row.IsDead` was already set; an enemy can disappear before that event reaches the HUD. Enemy rows will be retained as dead when their vehicle leaves the active registry, while session `Clear()` remains the only normal removal path.
+- `ExplosionProjectileGround` and the renamed `ExplosionProjectileRobot` use the restored decal projector profile fields and share the expected robot-impact GUID, so decal restoration should remain in the runtime projector setup rather than reintroducing legacy prefabs.
+
+### Implementation checkpoint - 2026-11-02
+
+- Added a serialized `ClientSettings.gameplayRuntime.particleCameraOffset` with default `1` world unit and finite `0..10` validation. `ProjectileRuntimePool` reads it at spawn time, so runtime Inspector changes apply without restarting the client.
+- Applied the camera-side offset to impact and robot-destruction FX only. Muzzle FX use a dedicated no-offset pool entry point, and `PartFire` remains a directly attached effect with no offset.
+- Made pooled impact roots restore their authored prefab world scale after attachment; `PartFire` is parented with an explicit world scale of `1,1,1` and scheduled for destruction after `30` seconds.
+- Kept decal projectors reusable by explicitly toggling their enabled state on configure/reset; ground and robot impact profiles remain wired to their restored decal and glow projectors.
+- Changed enemy HUD retention to preserve every missing enemy row as a dead row for the active session and added stable player-id lookup to avoid duplicate rows after a network object replacement.
+- Updated focused asset tests and `docs/codex-game/` ownership/behavior notes for the runtime offset, prefab scale, timed fire, robot impact name, decals, and enemy-list retention.
+
+### Validation checkpoint - 2026-11-02
+
+- `dotnet build Assembly-CSharp.csproj --no-restore` passes with 0 errors; existing System.Net.Http and obsolete Unity API warnings remain.
+- `git diff --check` passes.
+- Static audit passes: `ProjectileVisual.prefab` references `ExplosionProjectileRobot` and `ExplosionProjectileGround`; both impact prefabs contain valid decal/glow projector profile references; authored robot root scale remains `0.05`.
+- Unity PlayMode/manual visual QA was not rerun because the project is open in the Unity Editor; the new focused tests are ready for the next editor refresh.
+- **Status:** COMPLETED
+
+## Task: Fix PlayMode test namespace compilation
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Fix `CombatParticleEffectsPlayModeTests.cs` compile error: `Game.Scripts.Client` namespace is unavailable to the test assembly.
+- **Scope:** Inspect test assembly references and remove the invalid dependency while preserving coverage for the particle camera offset.
+- **Acceptance criteria:** The test compiles in its Unity test assembly; the camera-offset regression remains covered without adding an invalid assembly dependency; focused validation passes.
+- **Next steps:** None.
+
+### Discovery checkpoint - 2026-11-02
+
+- The project has no `.asmdef` files under `Assets`; the focused test is compiled separately from the main game assembly and cannot resolve a direct `using Game.Scripts.Client` dependency.
+- Existing PlayMode tests already resolve game types through `Type.GetType(..., Assembly-CSharp)`, so the camera-offset regression can keep runtime coverage without adding an assembly dependency.
+
+### Implementation and validation checkpoint - 2026-11-02
+
+- Removed the invalid namespace import and changed the camera-offset test to invoke `GameplayRuntimeSettings` through reflection, matching the surrounding test assembly pattern.
+- `dotnet build Assembly-CSharp.csproj --no-restore` passes with 0 errors; existing project warnings remain.
+- `git diff --check` passes and no direct `Game.Scripts.Client` import remains in `CombatParticleEffectsPlayModeTests.cs`.
+- Unity PlayMode execution was not run because the project remains open in the Unity Editor.
+- **Result:** The reported CS0234 compile error is resolved without changing runtime particle behavior.
+
+## Task: Fix PlayMode test GetType overload compilation
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Fix `CombatParticleEffectsPlayModeTests.cs` error `CS1501`: `GetType` has no overload accepting one argument.
+- **Scope:** Resolve the test helper name collision while preserving the reflection-based camera-offset regression.
+- **Acceptance criteria:** The test compiles without the `GetType` overload error; existing particle test coverage remains unchanged; focused validation passes.
+- **Next steps:** None.
+
+### Discovery and implementation checkpoint - 2026-11-02
+
+- `CombatParticleEffectsPlayModeTests` has no `GetType(string)` helper; the new call incorrectly resolved to `object.GetType()`.
+- Replaced the call with explicit `Type.GetType("Game.Scripts.Client.GameplayRuntimeSettings, Assembly-CSharp")` and retained a null assertion before reflection.
+
+### Validation checkpoint - 2026-11-02
+
+- `dotnet build Assembly-CSharp.csproj --no-restore` passes with 0 errors; existing project warnings remain.
+- `git diff --check` passes.
+- The affected test now uses `Type.GetType(...)`; no one-argument unqualified `GetType` call remains at the reported location.
+- Unity PlayMode execution was not run because the project remains open in the Unity Editor.
+- **Result:** The reported CS1501 error is resolved without changing particle test behavior.
+
+## Task: Fix flat ExplosionProjectileRobot visual
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Fix the serious regression where `ExplosionProjectileRobot` appears flat despite previously looking correct.
+- **Scope:** Inspect the robot impact prefab, authored particle/decal dimensions, pooled transform-scale handling, and collision-normal rotation path; preserve the intended authored size and directional behavior.
+- **Acceptance criteria:** `ExplosionProjectileRobot` renders with its authored three-dimensional appearance at runtime, keeps its configured scale, and remains correctly oriented on robot impacts; focused validation passes.
+- **Next steps:** None.
+
+### Discovery and implementation checkpoint - 2026-11-02
+
+- `ExplosionProjectileRobot` is authored with a root scale of `0.05` and its particle data matches the previous `ShootInRobot` asset; the prefab scale itself was not corrupted.
+- The shared impact path was rotating every impact root from the collision normal. That is correct for `ExplosionProjectileGround`, but incorrect for the robot hit effect, which was authored without a direction and therefore could appear flat after rotation.
+- Added explicit `PooledImpactFx.alignRootToImpactNormal` configuration. Ground keeps it enabled; `ExplosionProjectileRobot` disables it while still receiving the real collision normal for decal projection.
+- Added focused PlayMode coverage for the two impact root-direction modes.
+
+### Validation checkpoint - 2026-11-02
+
+- `dotnet build Assembly-CSharp.csproj --no-restore` passes with 0 errors; existing project warnings remain.
+- `git diff --check` passes.
+- Static audit confirms `ExplosionProjectileRobot` keeps authored root scale `0.05` and has `alignRootToImpactNormal: 0`; ground has the setting enabled.
+- Unity PlayMode/manual visual QA was not run because the project remains open in the Unity Editor.
+- **Result:** Robot impact particles keep their authored orientation instead of being rotated into a flat collision-normal pose; decals still use the collision normal.
+
+## Task: Locate pre-battle countdown setting
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Identify where the current 10-second countdown before battle is configured.
+- **Scope:** Locate the countdown owner and its serialized or constant duration without changing project files.
+- **Acceptance criteria:** Provide the exact file, field/constant, and current value used by the pre-battle countdown.
+- **Next steps:** None.
+
+### Discovery and validation checkpoint - 2026-11-02
+
+- The countdown is owned by `BattleCountdownController` in `Assets/Game/Scripts/Gameplay/Battle/BattleCountdownController.cs`; its serialized `countdownSeconds` field defaults to `10`.
+- The active Client scene overrides the same field at `Assets/Game/Scenes/Client.unity:59408` with `countdownSeconds: 10`.
+- **Result:** The authoritative value for the current client countdown is the `BattleCountdownUI` scene component field `countdownSeconds` in `Client.unity`; no project files were changed beyond this journal entry.

@@ -97,6 +97,9 @@ namespace Game.Scripts.Client
     {
         private static readonly GameplayRuntimeSettings DefaultSettings = new GameplayRuntimeSettings();
 
+        public const float DefaultParticleCameraOffset = 1f;
+        public const float MaxParticleCameraOffset = 10f;
+
         [Header("UI Health")]
         [Tooltip("HP bar color for the local vehicle and allies in the vehicle world-space UI.")]
         public Color alliedHpColor = new Color(0.1f, 0.35f, 1f, 1f);
@@ -186,6 +189,8 @@ namespace Game.Scripts.Client
         public bool autoAimPreferTurretTarget = true;
 
         [Header("Camera")]
+        [Tooltip("World-space offset toward the gameplay camera for impact and destruction particles. Muzzle and detached-part fire effects ignore it.")]
+        public float particleCameraOffset = DefaultParticleCameraOffset;
         [Tooltip("Single array of zoom profiles. Set zoomIndex: 0 = base, positive values = zoom in, negative values = zoom out.")]
         public CameraZoomProfile[] cameraZoomProfiles =
         {
@@ -353,6 +358,7 @@ namespace Game.Scripts.Client
             mapTrackedVehicleRefreshInterval = ClampFinite(mapTrackedVehicleRefreshInterval, 0.1f, Default.mapTrackedVehicleRefreshInterval);
             autoAimMaxAcquireDistance = ClampFinite(autoAimMaxAcquireDistance, 0.1f, Default.autoAimMaxAcquireDistance);
             autoAimFallbackTargetHeight = ClampFinite(autoAimFallbackTargetHeight, 0f, Default.autoAimFallbackTargetHeight);
+            particleCameraOffset = ClampParticleCameraOffset(particleCameraOffset);
             cameraSniperForwardOffset = ClampFinite(cameraSniperForwardOffset, 0f, Default.cameraSniperForwardOffset);
             cameraSniperVerticalOffset = ClampFinite(cameraSniperVerticalOffset, Default.cameraSniperVerticalOffset);
             cameraHorizontalSpeed = ClampFinite(cameraHorizontalSpeed, 0f, Default.cameraHorizontalSpeed);
@@ -402,6 +408,16 @@ namespace Game.Scripts.Client
             treeArrowItemOffset = ClampFinite(treeArrowItemOffset, 0f, Default.treeArrowItemOffset);
         }
 
+        public static float ClampParticleCameraOffset(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                return DefaultParticleCameraOffset;
+            }
+
+            return Mathf.Clamp(value, 0f, MaxParticleCameraOffset);
+        }
+
         public void CopyFrom(GameplayRuntimeSettings source)
         {
             if (source == null)
@@ -449,6 +465,7 @@ namespace Game.Scripts.Client
             autoAimFallbackTargetHeight = source.autoAimFallbackTargetHeight;
             autoAimRejectSameTeam = source.autoAimRejectSameTeam;
             autoAimPreferTurretTarget = source.autoAimPreferTurretTarget;
+            particleCameraOffset = source.particleCameraOffset;
             cameraZoomProfiles = CloneZoomProfiles(source.cameraZoomProfiles);
             runtimeZoomOverrideEnabled = source.runtimeZoomOverrideEnabled;
             runtimeZoomIndex = source.runtimeZoomIndex;

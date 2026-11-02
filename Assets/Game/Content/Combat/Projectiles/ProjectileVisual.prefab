@@ -109,9 +109,9 @@ MonoBehaviour:
     m_Bits: 4294967295
   hitRadius: 0.05
   damage: 40
-  robotImpactFxPrefab: {fileID: 14658567035172846, guid: a73e34be72fe633459346dd67925aebf,
+  robotImpactFxPrefab: {fileID: 7155264316458292629, guid: da844b20c8ec8664290c118e6f8b0b17,
     type: 3}
-  otherObjectImpactFxPrefab: {fileID: 14658567035172846, guid: 804e93436df6326419fbd7b74b33860e,
+  groundImpactFxPrefab: {fileID: 1467099153556624649, guid: e5e08b0f61588ce46832ae80a9887664,
     type: 3}
   visualSettings:
     applyProjectileMaterialProperties: 1

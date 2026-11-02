@@ -59405,7 +59405,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   view: {fileID: 9920000004}
   startDelay: 0.5
-  countdownSeconds: 10
+  countdownSeconds: 3
   tickInterval: 1
 --- !u!1 &9920000006
 GameObject:
@@ -59598,7 +59598,7 @@ MonoBehaviour:
     projectileMaterial: {fileID: 2100000, guid: f444cc14fffa4044bfbe275d1b0c19e1,
       type: 2}
     tracerMaterial: {fileID: 2100000, guid: e09e8aed58e546b29ca4b569e18788c9, type: 2}
-    muzzleFlashPrefab: {fileID: 7923806859326443355, guid: 83ad43f5a5d82d842a61442d91a04ab8,
+    muzzleFlashPrefab: {fileID: 806170389386735967, guid: 191fc8f27fd840841bd823976c3d11ac,
       type: 3}
     muzzleSmokePrefab: {fileID: 0}
     overrideProjectileMaterial: 1
@@ -59672,6 +59672,7 @@ MonoBehaviour:
     autoAimFallbackTargetHeight: 1.2
     autoAimRejectSameTeam: 1
     autoAimPreferTurretTarget: 1
+    particleCameraOffset: 1
     cameraZoomProfiles:
     - zoomIndex: 7
       cameraDistance: 0.01

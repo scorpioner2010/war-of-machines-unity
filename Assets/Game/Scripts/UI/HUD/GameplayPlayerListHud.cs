@@ -229,7 +229,13 @@ namespace Game.Scripts.UI.HUD
                 PlayerListRow row = FindRow(vehicleRoot);
                 if (row == null)
                 {
-                    row = CreateRow(BuildVehiclePlayerId(vehicleRoot), relation, vehicleRoot);
+                    string playerId = BuildVehiclePlayerId(vehicleRoot);
+                    row = FindRowById(playerId);
+                    if (row == null)
+                    {
+                        row = CreateRow(playerId, relation, vehicleRoot);
+                    }
+
                     if (row == null)
                     {
                         continue;
@@ -256,6 +262,12 @@ namespace Game.Scripts.UI.HUD
 
                 if (row.Seen)
                 {
+                    continue;
+                }
+
+                if (row.Relation == PlayerListRelation.Enemy)
+                {
+                    RetainDestroyedVehicleRow(row);
                     continue;
                 }
 

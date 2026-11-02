@@ -189,11 +189,22 @@ namespace Game.Scripts.Gameplay.Robots
                 ProjectileRuntimePool.SpawnImpactFx(
                     impactFxPrefab,
                     impactPoint,
-                    Quaternion.LookRotation(normal),
+                    CreateImpactRotation(normal),
                     attachmentParent,
                     impactTarget,
                     impactCollider);
             }
+        }
+
+        private static Quaternion CreateImpactRotation(Vector3 normal)
+        {
+            Vector3 stableUp = Vector3.Cross(normal, Vector3.up);
+            if (stableUp.sqrMagnitude <= 0.000001f)
+            {
+                stableUp = Vector3.Cross(normal, Vector3.right);
+            }
+
+            return Quaternion.LookRotation(normal, stableUp.normalized);
         }
     }
 }

@@ -193,5 +193,5 @@ MonoBehaviour:
   matchScene:
     sceneSlotSpacingX: 500
     sceneValidationTimeout: 10
-    endGameDelayMilliseconds: 2000
-    matchDurationSeconds: 3000
+    endGameDelayMilliseconds: 5000
+    matchDurationSeconds: 300

@@ -50,7 +50,7 @@ MonoBehaviour:
   hitRadius: 0.05
   damage: 40
   robotImpactFxPrefab: {fileID: 0}
-  otherObjectImpactFxPrefab: {fileID: 0}
+  groundImpactFxPrefab: {fileID: 0}
   projectileRigidbody: {fileID: 0}
   projectileRenderers: []
   projectileParticles: []

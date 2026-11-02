@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using FishNet;
+using Game.Scripts.Client;
 using Game.Scripts.Gameplay.Robots;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -11,7 +12,6 @@ public static class ProjectileRuntimePool
     private const int DefaultProjectileMaxInactive = 64;
     private const int DefaultImpactFxMaxInactive = 64;
     private const float DefaultImpactFxFallbackLifetime = 2f;
-    private const float ImpactSurfaceOffset = 1f;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static readonly ProfilerMarker RentProjectileMarker = new ProfilerMarker("ProjectilePool.Rent");
@@ -182,11 +182,17 @@ public static class ProjectileRuntimePool
         using (SpawnImpactFxMarker.Auto())
 #endif
         {
-            Vector3 cameraFacingPosition = GetCameraFacingImpactPosition(position, rotation);
+            Quaternion visualRotation = prefab.alignRootToImpactNormal
+                ? rotation
+                : Quaternion.identity;
+            Vector3 cameraFacingPosition = GetCameraFacingImpactPosition(
+                position,
+                visualRotation,
+                ClientSettings.GetGameplayRuntime().particleCameraOffset);
             SpawnImpactFxInternal(
                 prefab,
                 cameraFacingPosition,
-                rotation,
+                visualRotation,
                 position,
                 rotation * Vector3.forward,
                 attachmentParent,
@@ -195,8 +201,17 @@ public static class ProjectileRuntimePool
         }
     }
 
-    private static Vector3 GetCameraFacingImpactPosition(Vector3 impactPosition, Quaternion impactRotation)
+    private static Vector3 GetCameraFacingImpactPosition(
+        Vector3 impactPosition,
+        Quaternion impactRotation,
+        float offsetDistance)
     {
+        float safeOffsetDistance = GameplayRuntimeSettings.ClampParticleCameraOffset(offsetDistance);
+        if (safeOffsetDistance <= 0f)
+        {
+            return impactPosition;
+        }
+
         CameraSync cameraSync = CameraSync.In;
         Camera gameplayCamera = cameraSync != null ? cameraSync.gameplayCamera : null;
         Vector3 offset = gameplayCamera != null
@@ -212,10 +227,37 @@ public static class ProjectileRuntimePool
             return impactPosition;
         }
 
-        return impactPosition + offset.normalized * ImpactSurfaceOffset;
+        return impactPosition + offset.normalized * safeOffsetDistance;
     }
 
-    public static void SpawnVisualFx(PooledImpactFx prefab, Vector3 position, Quaternion rotation, float scaleMultiplier)
+    public static void SpawnVisualFx(
+        PooledImpactFx prefab,
+        Vector3 position,
+        Quaternion rotation,
+        float scaleMultiplier = 1f)
+    {
+        if (prefab == null || IsServerOnlyProcess())
+        {
+            return;
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        using (SpawnImpactFxMarker.Auto())
+#endif
+        {
+            Vector3 cameraFacingPosition = GetCameraFacingImpactPosition(
+                position,
+                rotation,
+                ClientSettings.GetGameplayRuntime().particleCameraOffset);
+            SpawnVisualFxInternal(prefab, cameraFacingPosition, rotation, scaleMultiplier);
+        }
+    }
+
+    public static void SpawnMuzzleFx(
+        PooledImpactFx prefab,
+        Vector3 position,
+        Quaternion rotation,
+        float scaleMultiplier)
     {
         if (prefab == null || IsServerOnlyProcess())
         {
@@ -290,6 +332,7 @@ public static class ProjectileRuntimePool
         if (attachmentParent != null)
         {
             fxTransform.SetParent(attachmentParent, true);
+            SetWorldScale(fxTransform, pool.DefaultScale);
         }
 
         fx.PlayImpact(impactPosition, impactNormal, impactTarget, impactCollider);
@@ -347,6 +390,30 @@ public static class ProjectileRuntimePool
     private static Vector3 ScaleVector(Vector3 value, float scale)
     {
         return new Vector3(value.x * scale, value.y * scale, value.z * scale);
+    }
+
+    private static void SetWorldScale(Transform target, Vector3 worldScale)
+    {
+        if (target == null || target.parent == null)
+        {
+            if (target != null)
+            {
+                target.localScale = worldScale;
+            }
+
+            return;
+        }
+
+        Vector3 parentLossyScale = target.parent.lossyScale;
+        target.localScale = new Vector3(
+            worldScale.x * GetSafeInverseScale(parentLossyScale.x),
+            worldScale.y * GetSafeInverseScale(parentLossyScale.y),
+            worldScale.z * GetSafeInverseScale(parentLossyScale.z));
+    }
+
+    private static float GetSafeInverseScale(float scale)
+    {
+        return Mathf.Abs(scale) > 0.0001f ? 1f / scale : 1f;
     }
 
     private static ProjectilePool GetProjectilePool(Projectile prefab)

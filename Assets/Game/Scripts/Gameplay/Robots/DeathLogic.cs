@@ -27,6 +27,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
     public Renderer[] debrisRenderers;
     public MeshCollider[] debrisMeshColliders;
     public VehicleRoot vehicleRoot;
+    [SerializeField] private RobotDestructionParticleController destructionParticleController;
     public GameObject[] forTurnOff;
 
     private readonly List<GameObject> _detachedDebrisObjects = new List<GameObject>(32);
@@ -39,6 +40,11 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
 
     private void Awake()
     {
+        if (destructionParticleController == null)
+        {
+            destructionParticleController = GetComponent<RobotDestructionParticleController>();
+        }
+
         RegisterImpactMeshColliders();
     }
 
@@ -55,6 +61,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
 
         vehicleRoot = root;
+        destructionParticleController?.SetVehicleRoot(root);
         RegisterImpactMeshColliders();
     }
 
@@ -187,6 +194,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         DisableVehicleGameplayColliders();
         DisableConfiguredColliders(collidersToDisableOnDeath);
         Scene mapScene = MapScopedObjectRegistry.ResolveMapScene(GetOwningScene());
+        Vector3 destructionCenter = GetDeathCenter();
 
         if (detachableVisuals != null && detachableVisuals.Length > 0)
         {
@@ -196,6 +204,8 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         {
             DetachLegacyDebris(mapScene, debrisLayer, renderDebris);
         }
+
+        destructionParticleController?.PlayDestruction(destructionCenter, _detachedDebrisObjects);
 
         if (forTurnOff != null)
         {
@@ -364,6 +374,63 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             _detachedDebrisColliders.Add(debrisCollider);
         }
 
+    }
+
+    private Vector3 GetDeathCenter()
+    {
+        bool hasBounds = false;
+        Bounds bounds = default;
+
+        if (detachableVisuals != null)
+        {
+            for (int i = 0; i < detachableVisuals.Length; i++)
+            {
+                DetachableVisual visual = detachableVisuals[i];
+                if (visual == null)
+                {
+                    continue;
+                }
+
+                if (visual.renderer != null)
+                {
+                    if (!hasBounds)
+                    {
+                        bounds = visual.renderer.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(visual.renderer.bounds);
+                    }
+                }
+                else if (visual.root != null)
+                {
+                    Renderer[] renderers = visual.root.GetComponentsInChildren<Renderer>(true);
+                    for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                    {
+                        Renderer renderer = renderers[rendererIndex];
+                        if (renderer == null)
+                        {
+                            continue;
+                        }
+
+                        if (!hasBounds)
+                        {
+                            bounds = renderer.bounds;
+                            hasBounds = true;
+                        }
+                        else
+                        {
+                            bounds.Encapsulate(renderer.bounds);
+                        }
+                    }
+                }
+            }
+        }
+
+        return hasBounds
+            ? bounds.center
+            : vehicleRoot != null ? vehicleRoot.transform.position : transform.position;
     }
 
     private void DestroyDetachedDebris()

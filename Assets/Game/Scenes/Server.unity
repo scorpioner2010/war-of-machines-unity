@@ -574,8 +574,6 @@ MonoBehaviour:
     type: 3}
   arrowHeadPrefab: {fileID: 790000000000000004, guid: 4123666f85c64da1b615bcffa9ba616f,
     type: 3}
-  shaftThickness: 5
-  arrowHeadHeight: 28
 --- !u!114 &1171468201
 MonoBehaviour:
   m_ObjectHideFlags: 0

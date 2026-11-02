@@ -595,7 +595,7 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 PrepareImpactFxPool(visualProjectilePrefab.robotImpactFxPrefab, visualSettings);
-                PrepareImpactFxPool(visualProjectilePrefab.otherObjectImpactFxPrefab, visualSettings);
+                PrepareImpactFxPool(visualProjectilePrefab.groundImpactFxPrefab, visualSettings);
             }
 
             PrepareMuzzleFxPool(visualSettings.muzzleFlashPrefab, visualSettings);
@@ -1653,7 +1653,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             direction.Normalize();
-            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
+            Quaternion rotation = CreateDirectionRotation(direction);
             Vector3 position = startPos + direction * visualSettings.muzzleForwardOffset;
             SpawnMuzzleFxPrefab(visualSettings.muzzleFlashPrefab, position, rotation, visualSettings.muzzleFlashScale);
             SpawnMuzzleFxPrefab(visualSettings.muzzleSmokePrefab, position, rotation, visualSettings.muzzleSmokeScale);
@@ -1679,7 +1679,18 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            ProjectileRuntimePool.SpawnVisualFx(prefab, position, rotation, scale);
+            ProjectileRuntimePool.SpawnMuzzleFx(prefab, position, rotation, scale);
+        }
+
+        private static Quaternion CreateDirectionRotation(Vector3 direction)
+        {
+            Vector3 stableUp = Vector3.Cross(direction, Vector3.up);
+            if (stableUp.sqrMagnitude <= 0.000001f)
+            {
+                stableUp = Vector3.Cross(direction, Vector3.right);
+            }
+
+            return Quaternion.LookRotation(direction, stableUp.normalized);
         }
 
         [TargetRpc]

@@ -70,6 +70,8 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     [Header("Impact Profile")]
     public ImpactFxProfile impactProfile = new ImpactFxProfile();
+    [Tooltip("Rotates the particle root so its forward axis follows the impact normal. Effects authored without a direction should leave this disabled.")]
+    public bool alignRootToImpactNormal = true;
 
     private float _fallbackLifetime;
     private float _releaseTime;
@@ -88,8 +90,25 @@ public sealed class PooledImpactFx : MonoBehaviour
     private uint _impactRenderingLayerMask;
     private ImpactLayerState _impactLayerState;
 
+    public bool UsesSurfaceProjectors
+    {
+        get
+        {
+            ImpactFxProfile profile = GetImpactProfile();
+            return profile.impactDecal != null
+                   || profile.impactGlowDecal != null
+                   || profile.impactGlowHaloRenderer != null;
+        }
+    }
+
+    private void Awake()
+    {
+        EnsureParticleProfile();
+    }
+
     public void Initialize(float fallbackLifetime)
     {
+        EnsureParticleProfile();
         _fallbackLifetime = Mathf.Max(0.1f, fallbackLifetime);
         DisableExternalAutoDestroy();
     }
@@ -219,6 +238,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     private void PlayInternal(ImpactFxProfile profile)
     {
+        EnsureParticleProfile();
         ResetImpactDecal();
         _activeProfile = profile;
         if (_activeProfile == null)
@@ -291,6 +311,20 @@ public sealed class PooledImpactFx : MonoBehaviour
         }
 
         return impactProfile;
+    }
+
+    private void EnsureParticleProfile()
+    {
+        ImpactFxProfile profile = GetImpactProfile();
+        if (profile.particles == null || profile.particles.Length == 0)
+        {
+            profile.particles = GetComponentsInChildren<ParticleSystem>(true);
+        }
+
+        if (profile.cartoonFxEffects == null)
+        {
+            profile.cartoonFxEffects = System.Array.Empty<CFXR_Effect>();
+        }
     }
 
     private static Camera GetGameplayCamera()
@@ -503,6 +537,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
         Transform decalTransform = projector.transform;
         decalTransform.SetPositionAndRotation(surfacePosition, rotation);
+        decalTransform.localScale = GetInverseParentLossyScale(decalTransform);
         ImpactFxProfile profile = _activeProfile;
         if (profile == null)
         {
@@ -516,6 +551,7 @@ public sealed class PooledImpactFx : MonoBehaviour
         projector.pivot = Vector3.zero;
         projector.renderingLayerMask = renderingLayerMask;
         projector.fadeFactor = 1f;
+        projector.enabled = true;
         projector.gameObject.SetActive(true);
     }
 
@@ -523,6 +559,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     {
         projector.renderingLayerMask = WorldImpactRenderingLayerMask;
         projector.fadeFactor = 0f;
+        projector.enabled = false;
         if (projector.gameObject.activeSelf)
         {
             projector.gameObject.SetActive(false);
@@ -738,12 +775,15 @@ public sealed class PooledImpactFx : MonoBehaviour
 
         Transform haloTransform = profile.impactGlowHaloRenderer.transform;
         haloTransform.SetPositionAndRotation(surfacePosition, rotation);
-        haloTransform.localScale = new Vector3(
+        Vector3 haloWorldScale = new Vector3(
             Mathf.Max(0.01f, profile.impactDecalWidth)
             * Mathf.Max(0.01f, profile.impactGlowHaloSizeMultiplier),
             Mathf.Max(0.01f, profile.impactDecalHeight)
             * Mathf.Max(0.01f, profile.impactGlowHaloSizeMultiplier),
             1f);
+        haloTransform.localScale = Vector3.Scale(
+            haloWorldScale,
+            GetInverseParentLossyScale(haloTransform));
         profile.impactGlowHaloRenderer.renderingLayerMask = renderingLayerMask;
         bool haloEnabled = profile.enableImpactGlowHalo
             && profile.impactGlowStrength > 0f
@@ -753,6 +793,26 @@ public sealed class PooledImpactFx : MonoBehaviour
         {
             profile.impactGlowHaloRenderer.gameObject.SetActive(true);
         }
+    }
+
+    private static Vector3 GetInverseParentLossyScale(Transform childTransform)
+    {
+        Transform parent = childTransform.parent;
+        if (parent == null)
+        {
+            return Vector3.one;
+        }
+
+        Vector3 parentLossyScale = parent.lossyScale;
+        return new Vector3(
+            GetSafeInverseScale(parentLossyScale.x),
+            GetSafeInverseScale(parentLossyScale.y),
+            GetSafeInverseScale(parentLossyScale.z));
+    }
+
+    private static float GetSafeInverseScale(float scale)
+    {
+        return Mathf.Abs(scale) > 0.0001f ? 1f / scale : 1f;
     }
 
     private bool TryAcquireImpactLayer(VehicleRoot targetRoot, List<Renderer> targetRenderers)

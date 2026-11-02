@@ -455,7 +455,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 805d44f536815cc4da19ce0c5f7b2d84, type: 3}
-  m_Name: 
+   m_Name:
   m_EditorClassIdentifier: 
   target: {fileID: 5542631702882726890}
   vehicleRoot: {fileID: 0}
@@ -2336,6 +2336,7 @@ GameObject:
   - component: {fileID: 7227677677995702757}
   - component: {fileID: 2705024808742539335}
   - component: {fileID: 839321119422476913}
+  - component: {fileID: 4242374831339781522}
   m_Layer: 0
   m_Name: IA_L2_Colossus
   m_TagString: Untagged
@@ -2673,6 +2674,7 @@ MonoBehaviour:
   debrisRenderers: []
   debrisMeshColliders: []
   vehicleRoot: {fileID: 2321927772602250882}
+  destructionParticleController: {fileID: 4242374831339781522}
   forTurnOff:
   - {fileID: 7005523347427859593}
   - {fileID: 7099114696963006069}
@@ -3100,6 +3102,34 @@ MonoBehaviour:
   recoilSpeed: 3
   returnDelay: 0.04
   returnSpeed: 0.75
+--- !u!114 &4242374831339781522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7389821364265542770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22534bb4a917554386bb79adf6e5ce8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.RobotDestructionParticleController
+  vehicleRoot: {fileID: 2321927772602250882}
+  mainExplosionPrefab: {fileID: 7895526309886889511, guid: a1997d60dc39d5f488dbfa129b672ef6,
+    type: 3}
+  explosionPrefabs:
+  - {fileID: 9015463708815447821, guid: 3ace37360f306cb4aac03640550fa9ef, type: 3}
+  - {fileID: 7927315749024585710, guid: 57e5b83dfee152a47aedf7d83c83e9f5, type: 3}
+  - {fileID: 7641316990100946040, guid: 621e45f610d611746802ad828f66b094, type: 3}
+  freeExplosionPrefabs:
+  - {fileID: 5059456254890995883, guid: b70fbea4bc8994749ba52e4f560f9f28, type: 3}
+  - {fileID: 5781437055185426201, guid: c6fb71e58ec36784687d958bc39de3f2, type: 3}
+  - {fileID: 8005932543330399626, guid: ac8053bb68b7997419467a34b74fb975, type: 3}
+  - {fileID: 6815330625743013050, guid: 9571e0e1b1e65834cbba759493c171d3, type: 3}
+  partFirePrefab: {fileID: 100000, guid: 8f4c8e6e19f6811488df5bbe56510f9d, type: 3}
+  additionalFirePartCount: 3
+  fxPoolMaxInactive: 8
+  fxPoolPrewarmCount: 1
 --- !u!1 &7823136765894104739
 GameObject:
   m_ObjectHideFlags: 0

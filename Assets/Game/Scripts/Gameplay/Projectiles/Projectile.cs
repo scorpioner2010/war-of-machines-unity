@@ -170,11 +170,11 @@ public class Projectile : MonoBehaviour
     public float hitRadius = 0.05f;
     public int damage = 40;
     public PooledImpactFx robotImpactFxPrefab;
-    public PooledImpactFx otherObjectImpactFxPrefab;
+    public PooledImpactFx groundImpactFxPrefab;
 
     public PooledImpactFx GetImpactFxPrefab(VehicleRoot impactTarget)
     {
-        return impactTarget != null ? robotImpactFxPrefab : otherObjectImpactFxPrefab;
+        return impactTarget != null ? robotImpactFxPrefab : groundImpactFxPrefab;
     }
 
     [Header("Projectile Visuals")]
@@ -1332,11 +1332,22 @@ public class Projectile : MonoBehaviour
             ProjectileRuntimePool.SpawnImpactFx(
                 impactFxPrefab,
                 position,
-                Quaternion.LookRotation(safeNormal),
+                CreateSurfaceRotation(safeNormal),
                 attachmentParent,
                 impactTarget,
                 impactCollider);
         }
+    }
+
+    private static Quaternion CreateSurfaceRotation(Vector3 normal)
+    {
+        Vector3 stableUp = Vector3.Cross(normal, Vector3.up);
+        if (stableUp.sqrMagnitude <= 0.000001f)
+        {
+            stableUp = Vector3.Cross(normal, Vector3.right);
+        }
+
+        return Quaternion.LookRotation(normal, stableUp.normalized);
     }
 
     private void DestroyWithoutExplosion()

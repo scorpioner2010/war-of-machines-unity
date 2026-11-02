@@ -60,7 +60,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8157332987337599132, guid: 3ef8c9151fb4beb41b1d71201c760f53,
         type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 0dabf48a4cebc8848b9dec45937811c8, type: 2}
     - target: {fileID: 8157332987337599133, guid: 3ef8c9151fb4beb41b1d71201c760f53,
@@ -71,5 +71,59 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8157332987337599133, guid: 3ef8c9151fb4beb41b1d71201c760f53,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8005932543330399626}
   m_SourcePrefab: {fileID: 100100000, guid: 3ef8c9151fb4beb41b1d71201c760f53, type: 3}
+--- !u!1 &3654741155788002110 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8157332987337599133, guid: 3ef8c9151fb4beb41b1d71201c760f53,
+    type: 3}
+  m_PrefabInstance: {fileID: 4867428670327487395}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8005932543330399626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3654741155788002110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b375f9fe4520fd64ea6e8f687dc6d200, type: 3}
+   m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PooledImpactFx
+  impactProfile:
+    particles:
+    - {fileID: 3654741155788002240}
+    - {fileID: 3654741156627264491}
+    cartoonFxEffects: []
+    impactDecal: {fileID: 0}
+    impactGlowDecal: {fileID: 0}
+    impactGlowHaloRenderer: {fileID: 0}
+    enableImpactGlowHalo: 1
+    impactGlowStrength: 1
+    impactGlowHaloStrength: 1
+    impactGlowHaloEmissionColor: {r: 4, g: 0.25, b: 0.02, a: 1}
+    impactGlowHaloBaseColor: {r: 1, g: 1, b: 1, a: 1}
+    impactGlowHaloSizeMultiplier: 2
+    impactGlowDecalEmissionStrength: 1
+    impactGlowFadeDuration: 2
+    impactDecalWidth: 1.2
+    impactDecalHeight: 1.2
+    impactDecalProjectionDepth: 0.4
+    impactDecalSurfaceOffset: 0.003
+--- !u!198 &3654741155788002240 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 8157332987337599075, guid: 3ef8c9151fb4beb41b1d71201c760f53,
+    type: 3}
+  m_PrefabInstance: {fileID: 4867428670327487395}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &3654741156627264491 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 8157332986026477640, guid: 3ef8c9151fb4beb41b1d71201c760f53,
+    type: 3}
+  m_PrefabInstance: {fileID: 4867428670327487395}
+  m_PrefabAsset: {fileID: 0}

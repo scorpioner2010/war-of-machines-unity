@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4550654522017626897}
   - component: {fileID: 2977138979816364520}
   - component: {fileID: 7794682966078898811}
-  - component: {fileID: 4572312001167962261}
+  - component: {fileID: 7895526309886889511}
   m_Layer: 0
   m_Name: ExplosionMain
   m_TagString: Untagged
@@ -4862,7 +4862,7 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
---- !u!114 &4572312001167962261
+--- !u!114 &7895526309886889511
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4871,10 +4871,33 @@ MonoBehaviour:
   m_GameObject: {fileID: 2106427973850015533}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6fd2e8874f60266498a388d7229a1bac, type: 3}
+  m_Script: {fileID: 11500000, guid: b375f9fe4520fd64ea6e8f687dc6d200, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  OnlyDeactivate: 0
+  m_EditorClassIdentifier: Assembly-CSharp::PooledImpactFx
+  impactProfile:
+    particles:
+    - {fileID: 2977138979816364520}
+    - {fileID: 4796579504372043444}
+    - {fileID: 2406088826138282694}
+    - {fileID: 7481680805315858053}
+    - {fileID: 703406435831406004}
+    - {fileID: 3892777561808145568}
+    cartoonFxEffects: []
+    impactDecal: {fileID: 0}
+    impactGlowDecal: {fileID: 0}
+    impactGlowHaloRenderer: {fileID: 0}
+    enableImpactGlowHalo: 1
+    impactGlowStrength: 1
+    impactGlowHaloStrength: 1
+    impactGlowHaloEmissionColor: {r: 4, g: 0.25, b: 0.02, a: 1}
+    impactGlowHaloBaseColor: {r: 1, g: 1, b: 1, a: 1}
+    impactGlowHaloSizeMultiplier: 2
+    impactGlowDecalEmissionStrength: 1
+    impactGlowFadeDuration: 2
+    impactDecalWidth: 1.2
+    impactDecalHeight: 1.2
+    impactDecalProjectionDepth: 0.4
+    impactDecalSurfaceOffset: 0.003
 --- !u!1 &4164574100926000972
 GameObject:
   m_ObjectHideFlags: 0

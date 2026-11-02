@@ -103,7 +103,7 @@ Current owner scripts:
   - Player list HUD for ally/enemy rows under the scene-owned `GameplayHUD` containers.
   - Auto-tracks active non-menu `VehicleRoot` instances, binds each row to `VehicleHealth`, and refreshes names, vehicle type, synchronized kill count, HP, death state, and team relation.
   - Uses `VehicleTeamRelationResolver` for row relation and HP color, so TeamA and TeamB spectators retain the correct ally/enemy colors after local owner despawn.
-  - A row that has received a dead state remains in its ally/enemy list after the server despawns that robot; it keeps the final name, vehicle type, kill count, and zero-HP/dead presentation for the rest of the active HUD session. The row releases its destroyed vehicle/health binding, while a missing row that was not dead is removed.
+  - Enemy rows remain in the enemy list for the complete active HUD session even if the robot leaves `VehicleRoot.ActiveVehicle`; the row keeps its final name, vehicle type, kill count, and zero-HP/dead presentation, then releases its destroyed vehicle/health binding. Ally rows retain the prior dead-state behavior.
   - Clears instantiated row items when the HUD is disabled or the local player vehicle becomes null, so rows from a completed battle do not persist into the next battle.
 - `Assets/Game/Scripts/UI/HUD/GameplayPlayerListItem.cs`
   - Presents each ally/enemy row from `Assets/Game/Content/UI/Prefabs/GameplayPlayerListItem.prefab`, including a compact `K:n` kill-count column.

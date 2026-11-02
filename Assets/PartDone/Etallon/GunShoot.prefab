@@ -599,7 +599,7 @@ ParticleSystem:
     radiusThickness: 1
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
-    m_Rotation: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 90, y: 0, z: 0}
     m_Scale: {x: 1, y: 1, z: 1}
     placementMode: 0
     m_MeshMaterialIndex: 0
@@ -5504,7 +5504,7 @@ ParticleSystem:
     radiusThickness: 1
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
-    m_Rotation: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 90, y: 0, z: 0}
     m_Scale: {x: 1, y: 1, z: 1}
     placementMode: 0
     m_MeshMaterialIndex: 0
@@ -10199,7 +10199,7 @@ ParticleSystem:
     radiusThickness: 0
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
-    m_Rotation: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 90, y: 0, z: 0}
     m_Scale: {x: 1, y: 1, z: 1}
     placementMode: 0
     m_MeshMaterialIndex: 0
@@ -14525,7 +14525,7 @@ GameObject:
   - component: {fileID: 400006}
   - component: {fileID: 19800006}
   - component: {fileID: 19900006}
-  - component: {fileID: 11400000}
+  - component: {fileID: 806170389386735967}
   m_Layer: 0
   m_Name: GunShoot
   m_TagString: Untagged
@@ -19326,7 +19326,7 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
---- !u!114 &11400000
+--- !u!114 &806170389386735967
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -19335,10 +19335,32 @@ MonoBehaviour:
   m_GameObject: {fileID: 100006}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6fd2e8874f60266498a388d7229a1bac, type: 3}
+  m_Script: {fileID: 11500000, guid: b375f9fe4520fd64ea6e8f687dc6d200, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  OnlyDeactivate: 0
+  m_EditorClassIdentifier: Assembly-CSharp::PooledImpactFx
+  impactProfile:
+    particles:
+    - {fileID: 19800006}
+    - {fileID: 19800000}
+    - {fileID: 19800010}
+    - {fileID: 19800004}
+    - {fileID: 19800002}
+    cartoonFxEffects: []
+    impactDecal: {fileID: 0}
+    impactGlowDecal: {fileID: 0}
+    impactGlowHaloRenderer: {fileID: 0}
+    enableImpactGlowHalo: 1
+    impactGlowStrength: 1
+    impactGlowHaloStrength: 1
+    impactGlowHaloEmissionColor: {r: 4, g: 0.25, b: 0.02, a: 1}
+    impactGlowHaloBaseColor: {r: 1, g: 1, b: 1, a: 1}
+    impactGlowHaloSizeMultiplier: 2
+    impactGlowDecalEmissionStrength: 1
+    impactGlowFadeDuration: 2
+    impactDecalWidth: 1.2
+    impactDecalHeight: 1.2
+    impactDecalProjectionDepth: 0.4
+    impactDecalSurfaceOffset: 0.003
 --- !u!1 &100010
 GameObject:
   m_ObjectHideFlags: 0
@@ -19947,7 +19969,7 @@ ParticleSystem:
     radiusThickness: 1
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
-    m_Rotation: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 90, y: 0, z: 0}
     m_Scale: {x: 1, y: 1, z: 1}
     placementMode: 0
     m_MeshMaterialIndex: 0
