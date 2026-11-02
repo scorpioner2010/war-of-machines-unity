@@ -1490,4 +1490,478 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Scope:** Підготувати окрему папку лише з 15 аудіофайлами. Додатково зберегти таблицю джерел і ліцензій поруч, щоб її не рахувати як аудіофайл і не класти в sound-folder.
 - **Acceptance criteria:** 15 валідних, різних, не порожніх аудіофайлів; різноманітні типи руйнувань/вибухів; джерела, автори, ліцензії, атрибуція і примітка щодо відповідності записані; окрема папка на Desktop; перевірені кількість і SHA-256.
 - **Destination plan:** C:\Users\TorasPC\Desktop\WarOfMachines_Explosion_Sounds
-- **Next steps:** Перевірити наявні ліцензовані джерела й доступні локальні пакети, відібрати 15 придатних файлів, перевірити ліцензії/хеші, зібрати папку та перевірити копію на Desktop.
+- **Completion checkpoint — 2026-11-01:** COMPLETED. На Робочому столі збережено рівно 15 різних PCM WAV: 2 великі вибухи, окремий вибух автомобіля з металевими уламками й сигналізацією, по 3 динамітні вибухи з камінням, гранати, мінометні влучання та обвалення споруд. 14 файлів — CC0 1.0 від Kaino; автомобільний ефект — CC BY 4.0 від BudgetPixel AI, обов’язкова атрибуція записана в таблиці. Усі WAV валідні: 14 файлів 48 kHz / mono / 24-bit і 1 файл 44.1 kHz / stereo / 16-bit; тривалість 3.31–4.00 s. SHA-256 унікальні, збігів із попередніми наборами v6 та Replacement Options немає. Soundza-кандидати з непогодженими умовами збережені в робочому архіві й не включені.
+
+## Task: Build reusable cannon muzzle, looping fire, and ground-impact particle variants
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-01
+- **User request:** Study the realistic robot destruction particle effects in `Assets/PartDone/RobotDestroyEffect`, then create five cannon muzzle-shot variants, five looping fire variants, and five ground-impact variants inspired by the same assets and save them under `Assets/PartDone/New10000000parts`.
+- **Scope:** Inspect the source particle systems, materials, textures, prefabs, and project rendering setup; preserve all source assets; create a self-contained new folder with high-quality reusable Unity particle prefabs/assets and supporting documentation if needed.
+- **Acceptance criteria:** Fifteen distinct effect variants exist in the new folder, grouped by purpose, use the same compatible asset/material language as the source effects, are structurally valid Unity assets, and are validated by project-aware checks. No existing scene, prefab, or gameplay integration is changed unless explicitly required.
+- **Next steps:** None.
+
+### Discovery checkpoint — 2026-11-01
+
+- The source pack contains seven reusable URP particle materials: three detailed Explosion materials and four free flipbook materials. The existing destruction prefabs layer burst flash, smoke, sparks, stretch rendering, custom vertex streams, particle lights, and force-field helpers.
+- The project uses Unity `6000.3.13f1` with URP `17.3.0`. The requested `WFX_BImpact Concrete + Hole Unlit` reference is present, but the new ground impacts will use locally copied RobotDestroyEffect materials, with dust/debris/scorch layers built from those assets rather than modifying the WFX prefab.
+- Decision: generate fifteen standalone prefabs through a temporary Unity batch project because the user's open Unity Editor currently locks the main project. Copy only the generated folder and its `.meta` files back; do not alter scenes, existing prefabs, or source materials.
+- The first batch attempt was blocked by Unity's project lock before importing any generated assets. The editor generator is present at `Assets/Editor/GenerateNew10000000Parts.cs`; next step is to run it in the isolated temporary project, inspect the Unity import log, then transfer and validate the generated assets.
+
+### Generation checkpoint — 2026-11-01
+
+- The isolated Unity `6000.3.13f1` batch project generated all 15 requested prefabs successfully and imported seven local copies of the source explosion materials. The batch log ends with `Generated 15 particle prefabs in Assets/PartDone/New10000000parts` and exit code `0`.
+- Generation did not touch the main project's scenes, prefabs, source destruction effects, or gameplay scripts. The next step is to copy only the generated folder and validate the serialized prefab contents in the main repository.
+
+### Completion checkpoint — 2026-11-01
+
+- **Result:** Added 15 reusable particle prefabs under `Assets/PartDone/New10000000parts`: five cannon muzzle shots, five looping/prewarmed fire effects, and five ground-impact effects with flash, dust, rising smoke, debris collision, sparks, and scorch layers. Added seven local copies of the source explosion materials and a README with spawn/orientation guidance.
+- **Validation:** Isolated Unity batch import/generation completed with exit code `0`; final repository checks confirmed exactly 15 prefabs, 5 looping fire prefabs with 4 looping+prewarm systems each, 10 non-looping one-shot prefabs, 7 valid local material GUIDs, and `git diff --check` passed.
+- **Remaining limitations:** I did not run live Play Mode or capture an in-game visual preview because the main Unity Editor was already open and locked the project. Existing source effects, scenes, gameplay prefabs, and gameplay scripts remain unchanged.
+
+## Task: Import 1111111 prefabs and resources into Particles111
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Transfer the Unity assets from `C:\Users\TorasPC\Documents\Codex\2026-11-01\new-chat-3\work\UnityAssetScratch\Assets\1111111` into this game project together with their resources.
+- **Scope:** Inspect the source asset bundle and the existing `Assets\Particles111` destination, preserve Unity `.meta` files and referenced local resources, avoid overwriting unrelated project files, and validate copied GUID references.
+- **Acceptance criteria:** The requested assets and required resources are present in the intended project destination; source files remain unchanged; Unity metadata and local references are preserved or safely resolved; validation and any limitations are recorded here.
+- **Working assumption:** Because the previous journaled import used `Assets\Particles111`, this request targets the same destination. If the user intended another destination, stop before copying and ask for clarification.
+
+### Progress
+
+- Confirmed the shared Codex memory, archive workflow index/history, task-journal workflow, and project journal were read before task-specific work.
+- No dedicated Unity asset-transfer workflow exists in the archive; applying the journaled asset-import process from the prior `Fires` transfer.
+- **Next steps:** Inspect the existing destination and dependency closure, then copy only after confirming the destination and collision plan.
+### Discovery checkpoint — 2026-11-02
+
+- The source bundle contains 18 top-level prefabs and no nested files.
+- The complete local dependency closure is 54 assets: 18 prefabs, 18 `UL_*.mat` materials under `Generated_Tank_VFX/Materials/UnityLabs`, and 18 `*.tga` textures under `Generated_Tank_VFX/Textures/UnityLabs`; all have matching source `.meta` files.
+- The prefabs have no filename or GUID collisions with `Assets/Particles111`. The only non-local references in the closure are the URP package shader/editor GUIDs `0406db5a14f94604a8c57ccfbc9f3b46` and `d0353a89b1f911e48b9e16bdc9f2e058`; these are package resources and will not be copied into `Assets`.
+- Decision: copy the 18 prefabs into `Assets/Particles111` and the local material/texture closure into `Assets/Particles111/Dependencies/Generated_Tank_VFX`, preserving asset and folder metadata. The source scratch project remains unchanged.
+- **Next steps:** Perform the collision-guarded copy, then validate byte hashes, GUID uniqueness, and all local references.
+### Copy checkpoint — 2026-11-02
+
+- Copied 54 source assets into `Assets/Particles111`: 18 prefabs at the destination root, plus 18 materials and 18 textures under `Assets/Particles111/Dependencies/Generated_Tank_VFX`.
+- Copied 59 matching asset/folder `.meta` files, preserving the original GUIDs and source directory metadata. The source scratch files were only read and remain untouched.
+- The copy used a collision guard and created no destination file that already existed.
+- **Next steps:** Compare source/destination hashes, scan for duplicate GUIDs, resolve copied local references, run whitespace/status checks, and close the journal entry.
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** Imported all 18 `UL_*.prefab` assets from `Assets/1111111` into `Assets/Particles111`, together with the 18 referenced `UL_*.mat` materials, 18 referenced `.tga` textures, and their folder/asset `.meta` files under `Assets/Particles111/Dependencies/Generated_Tank_VFX`. The source scratch project was not modified.
+- **Validation:** Recomputed dependency closure contains 54 source assets; 113 asset/metadata paths were expected and present; source/destination SHA-256 hashes matched with 0 mismatches; 0 missing files; 0 duplicate GUID groups across `Assets`; 0 unexpected unresolved local references; only the two expected URP package GUIDs remain external; `git diff --check -- Assets/Particles111 TASK.md` passed.
+- **Remaining limitations:** Unity Editor import/visual Play Mode verification was not run; the two URP shader/editor references rely on the project's installed URP package rather than copied `Assets` files. An unrelated pre-existing font modification remains untouched.
+## Task: Reorient and tune GunShootDirectionZ cannon muzzle effect
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Переробити префаб `GunShootDirectionZ`, який використовується як порохові гази в місці пострілу, щоб ефект мав локальний напрямок і постріл ішов уздовж локальної осі Z; налаштувати його під вигляд пострілу з пушки.
+- **Scope:** Оглянути поточну структуру префаба та залежності, зберегти сумісність із поточним використанням, переналаштувати орієнтацію/particle systems і зробити ефект виразним як короткий спрямований muzzle blast без змін сторонніх сцен або gameplay-коду.
+- **Acceptance criteria:** `GunShootDirectionZ` існує у правильному шляху, його візуальні emission/shape/velocity налаштовані на локальний +Z, дочірні шари не розходяться у всі сторони, prefab YAML має валідні локальні посилання, а зміни проходять доступні проєктні перевірки.
+- **Next steps:** Знайти префаб і всі його локальні залежності/використання, визначити безпечну схему переналаштування, внести мінімальні зміни та перевірити результат.
+
+### Discovery checkpoint — 2026-11-02
+
+- `Assets/PartDone/GunShootDirectionZ.prefab` є побайтовою копією `Assets/PartDone/GunShoot.prefab` з єдиною поточною відмінністю в імені root GameObject.
+- Ефект має п’ять particle systems: центральний one-shot flash на root та чотири дочірні шари (`Dot Sparkles`, `Smoke`, `Glow sparkles`, `Explosion`). Активні ShapeModule-конуси мають нульове `m_Rotation`, тобто їхня стандартна вісь — локальна `Y`, а не потрібна `Z`.
+- Шар `Explosion` додатково має увімкнений `VelocityModule` з ненульовими `X/Y/Z` і `inWorldSpace: 1`; це головна причина, чому частина диму не наслідує локальний напрямок префаба.
+- Рішення: зберегти матеріали, ієрархію, root scale/position та lifecycle script; повернути активні конуси на локальний `+Z`, звузити найбільш широкий glow-конус і перевести вибуховий дим на локальний forward velocity без ненульового бокового розльоту.
+
+### Implementation checkpoint — 2026-11-02
+
+- Оновлено `Assets/PartDone/GunShootDirectionZ.prefab`: усі п’ять ShapeModule отримали `m_Rotation.x = 90`, тому стандартна вісь cone-емісії повертається з локальної `Y` на локальну `+Z`.
+- Звужено cone-розкид для sparkles/smoke до `18°`, `8°`, `24°` і `10°`; центральний flash залишено point-emission шаром із вимкненим ShapeModule.
+- Для активного `Explosion` velocity-модуль переведено в local space, бокові компоненти `X/Y` обнулено, а forward-компонент залишено на локальній `Z = 4`.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** `GunShootDirectionZ` тепер є спрямованим cannon muzzle effect: центральний спалах залишається на дулі, а іскри, glow, пороховий дим і вибуховий smoke trail рухаються вузьким конусом уздовж локальної `+Z` та коректно наслідують поворот зброї.
+- **Validation:** Статичний YAML-парсинг підтвердив 5 ShapeModule, 5 значень `m_Rotation.x = 90`, активний `Explosion` з `inWorldSpace: 0` і `X/Y = 0`, усі 5 non-zero GUID-посилань знайдені в `Assets`; semantic diff від `GunShoot.prefab` містить лише назву, напрямки, кути та Explosion velocity; `git diff --check -- TASK.md` пройшов.
+- **Remaining limitations:** Unity batch import/Play Mode та ручний візуальний preview не запускалися, бо проєкт уже відкритий у Unity Editor; Editor має імпортувати змінений prefab штатно.
+
+## Task: Add runtime direction-force control to GunShootDirectionZ
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Додати скрипт на `GunShootDirectionZ`, щоб у runtime можна було налаштовувати силу напрямку пострілу.
+- **Scope:** Створити окремий presentation-owner MonoBehaviour, який expose-ить runtime-safe силу напрямку, масштабує локальну forward-швидкість particle layers і підключити його до root prefab без змін бойової/network логіки та без порушення існуючого auto-destruct lifecycle.
+- **Acceptance criteria:** Скрипт компілюється в Unity, присутній на `GunShootDirectionZ`, має інспекторне поле сили та публічний runtime setter, значення `1` зберігає поточний вигляд, зміна сили оновлює directional particle systems у runtime, а root flash не отримує небажаного прискорення.
+- **Next steps:** Перевірити стиль і доступні particle APIs, реалізувати focused controller, підключити MonoBehaviour у prefab, виконати source/static validation і закрити журнал.
+
+### Discovery checkpoint — 2026-11-02
+
+- Root prefab уже має `CFX_AutoDestructShuriken`, який відповідає лише за lifecycle; нова сила напрямку не належить до його відповідальності.
+- `Assets/PartDone` не має власного asmdef, тому focused controller компілюється в основному `Assembly-CSharp`; у проєкті вже використовується API `ParticleSystem.MainModule`.
+- Рішення: кешувати authored `startSpeed` та `VelocityOverLifetime` curves один раз, множити їх під час runtime, автоматично реагувати на зміну Inspector-поля й не змінювати root particle system, що відповідає за центральний flash.
+
+### Implementation checkpoint — 2026-11-02
+
+- Додано `Assets/PartDone/GunShootDirectionController.cs` і його Unity metadata.
+- Контролер expose-ить `directionForce` з базовим значенням `1`, публічні `DirectionForce`/`SetDirectionForce(float)`, обмежує некоректні значення та масштабує дочірні start-speed/velocity curves без world-space перемикання.
+- `Assets/PartDone/GunShootDirectionZ.prefab` отримав компонент `11400002` з посиланням на controller script і `directionForce: 1`; існуючий auto-destruct компонент залишено без змін.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** На `GunShootDirectionZ` підключено `GunShootDirectionController`. У runtime поле `directionForce = 1` зберігає поточну швидкість, `0` зупиняє directional travel, а більші значення пропорційно прискорюють дочірні spark/smoke/glow layers; центральний root flash не змінюється.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore` завершився успішно з `0 Error(s)`; статичні перевірки підтвердили включення `.cs` у `Assembly-CSharp.csproj`, наявність script GUID у `.meta`, prefab component/script reference, `directionForce: 1`, public setter і root flash guard; `git diff --check -- TASK.md` пройшов.
+- **Remaining limitations:** Unity Play Mode/runtime visual preview не запускався, бо Unity Editor вже відкритий на цьому проєкті; build показав 4 наявні попередження про `System.Net.Http`/obsolete FishNet API, без помилок.
+
+## Task: Diagnose and correct GunShootDirectionZ local-Z runtime direction
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** З’ясувати, чому `GunShootDirectionZ` фактично не стріляє по локальній осі `Z`, та виправити напрямок.
+- **Scope:** Перевірити serialized ShapeModule, runtime controller, локальний/world-space velocity і фактичну орієнтацію particle systems; змінити лише префаб/controller, не зачіпаючи gameplay/network логіку.
+- **Acceptance criteria:** Усі directional layers мають однозначний локальний `+Z` direction source, runtime force не повертає world-space розліт, root flash залишається без прискорення, а source/build/static validation проходять.
+- **Next steps:** Відтворити причину за serialized/runtime даними, виправити axis handling, перевірити збірку й закрити журнал.
+
+### Discovery checkpoint — 2026-11-02
+
+- У чотирьох активних ShapeModule `type: 0` — це `ParticleSystemShapeType.Sphere`, тому попередня зміна `m_Rotation.x = 90` не могла зробити емісію спрямованою; поворот сфери лишає її сферою.
+- Root flash має окремий вимкнений ShapeModule і не є причиною розльоту. Runtime controller до цього масштабує швидкості, але не перевіряє форму емісії.
+- Рішення: змінити активні шари на `type: 2` (`Cone`), залишити їхню rotation на локальний `+Z` і дублювати цю гарантію в controller під час застосування runtime force.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** Причина була в неправильному типі ShapeModule: `type: 0` означає Sphere, тому попередній `m_Rotation.x = 90` не міг створити напрямок. Усі 4 активні directional layers переведено на `type: 2` (`Cone`), збережено rotation `{x: 90, y: 0, z: 0}`, а controller тепер повторно гарантує Cone/+Z у runtime.
+- **Validation:** Static prefab assertion підтвердив `ActiveCone=4`, `ActiveWrong=0`, root flash `enabled: 0`; `dotnet build Assembly-CSharp.csproj --no-restore` завершився з `0 Error(s)`; `git diff --check -- TASK.md` пройшов.
+- **Remaining limitations:** Play Mode/ручний візуальний preview не запускався через уже відкритий Unity Editor; Unity має переімпортувати змінений prefab штатно.
+
+## Task: Generalize GunShootDirectionController with per-particle force settings
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Зробити скрипт універсальним: автоматично підтягувати всі particle systems префаба і дозволити налаштовувати силу напрямку окремо для кожного particle system у скрипті.
+- **Scope:** Замінити один global force на serialized per-particle settings із auto-discovery дочірніх ParticleSystem, зберегти runtime setter/локальний `+Z` enforcement і не змінювати gameplay/network логіку.
+- **Acceptance criteria:** Усі particle systems `GunShootDirectionZ` присутні в налаштуваннях controller, кожен має власний `directionForce`, missing child systems автоматично додаються, authored curves кешуються окремо для кожної системи, build/static prefab checks проходять.
+- **Next steps:** Переробити controller/list serialization, заповнити prefab references для всіх ParticleSystem, зібрати `Assembly-CSharp` і закрити журнал.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** `GunShootDirectionController` тепер автоматично знаходить усі дочірні ParticleSystem і зберігає для кожного власний `directionForce`. У `GunShootDirectionZ` серіалізовано 5 entries: root flash, `Dot Sparkles`, `Smoke`, `Glow sparkles` та `Explosion`; для кожного можна задати окреме значення в Inspector.
+- **Validation:** Static prefab assertions підтвердили `Entries=5`, `ForceFields=5` і fileID `19800006, 19800000, 19800002, 19800004, 19800010`; controller має auto-discovery, `RefreshParticleSettings`, `SetParticleDirectionForce` і Cone/+Z enforcement; `dotnet build Assembly-CSharp.csproj --no-restore` завершився з `0 Error(s)`; `git diff --check -- TASK.md` пройшов.
+- **Remaining limitations:** Unity Play Mode/ручний preview не запускався, бо Unity Editor уже відкритий на цьому проєкті; build залишає 4 наявні попередження про `System.Net.Http`/obsolete FishNet API.
+
+## Task: Diagnose particles moving downward when direction force is zero
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** З'ясувати, чому після налаштування сили напрямку на `0` частинки `GunShootDirectionZ` все одно летять вниз, і виправити причину, якщо це помилка скрипта.
+- **Scope:** Перевірити скрін налаштувань, controller та prefab-модулі, відокремити напрямок пострілу від гравітації/інших модулів Particle System і внести мінімальне виправлення лише в controller/prefab за потреби.
+- **Acceptance criteria:** Причина руху вниз підтверджена; `directionForce = 0` не додає власної forward-швидкості, але частинки не отримують небажаний вертикальний рух від controller; build/static validation проходять.
+- **Next steps:** Переглянути вкладений скрін, перевірити gravity/velocity/external forces у prefab і коді, виправити root cause та повторно зібрати проєкт.
+
+### Diagnostic checkpoint — 2026-11-02
+
+- Screenshot inspection confirmed all five per-particle `directionForce` values are `0`, while the scene instance keeps `Default Direction Force = 1000` as a default for future/discovered entries.
+- `GunShootDirectionController` scales `Main.startSpeed` and `VelocityOverLifetime` only; it does not modify `Main.gravityModifier`.
+- `Glow sparkles` has `gravityModifier.scalar: 4` at `Assets/PartDone/GunShootDirectionZ.prefab:10142`; `Smoke` and `Explosion` retain small `0.001` gravity values at lines `5447` and `19926`.
+- The scene stores the five per-particle overrides as `0` at `Assets/Game/Scenes/Vehicles.unity:529-546`; no code call overrides them in the project search.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** `directionForce = 0` works for the controller's forward emission speed. The downward motion is caused by Particle System gravity, primarily `Glow sparkles` with `Gravity Modifier = 4`, not by the direction-force calculation.
+- **Validation:** Static source/prefab/scene inspection completed; `git diff --check -- TASK.md` passed with only Git's existing line-ending warning. No implementation file was changed because the request was diagnostic.
+- **Remaining limitations:** Unity Play Mode was not run because the Unity Editor is already open on this project; to make zero force mean no vertical fall, set each affected particle's `Main > Gravity Modifier` to `0` in the prefab/scene instance.
+
+## Task: Diagnose runtime particle settings and local-Z direction still failing
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Повторно перевірити `GunShootDirectionZ`: після встановлення Gravity Modifier у `0` particle systems все одно летять вниз, не рухаються по локальній осі `Z`, а параметри controller не впливають на результат.
+- **Scope:** Перевірити scene prefab instance, локальні transform-и дочірніх particle systems, runtime serialization/overrides, фактичне застосування `ParticleSystem` модулів і порядок lifecycle; виправити root cause у focused controller/prefab без зміни gameplay/network логіки.
+- **Acceptance criteria:** У runtime controller гарантовано застосовує налаштування до фактичних particle systems scene instance; напрямок визначається локальним `+Z` root effect; per-particle force реально змінює швидкість; причина руху вниз усунена або явно локалізована.
+- **Next steps:** Проаналізувати prefab/scene hierarchy та serialized overrides, перевірити controller lifecycle і дані модулів, внести мінімальний root-cause fix, зібрати проєкт і виконати static validation.
+
+## Task: Normalize GunShootS prefab scale while preserving particle size
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** У префаба `GunShootS` root scale зменшено до `0.05`, але потрібно повернути scale до `1` і зменшити розмір на рівні particle systems, щоб фактичний вигляд залишився таким самим.
+- **Scope:** Знайти точний prefab `GunShootS`, перевірити його ієрархію та particle-модулі, перенести масштаб із root Transform у відповідні particle-параметри без змін сторонніх сцен, gameplay-коду чи unrelated assets.
+- **Acceptance criteria:** Root Transform префаба має scale `1,1,1`; particle-level налаштування компенсують попередній загальний масштаб `0.05`; локальні посилання та YAML залишаються валідними; статичні перевірки проходять.
+- **Next steps:** Знайти `GunShootS`, встановити фактичний тип ієрархії/particle-параметрів, визначити безпечну компенсацію та перевірити результат.
+
+### Discovery checkpoint — 2026-11-02
+
+- Знайдено `Assets/PartDone/GunShootS.prefab`; root `GunShootS` має `m_LocalScale: {x: 0.05, y: 0.05, z: 0.05}` і містить п’ять ParticleSystem (`Dot Sparkles`, `Smoke`, `Glow sparkles`, root flash та `Explosion`).
+- Усі чотири дочірні particle-вузли мають локальний scale `1,1,1` і `scalingMode: 0` (`Hierarchy`), тому масштаб можна безпечно перенести з root на їхні Transform-и без зміни внутрішніх particle curves.
+- Root flash має вимкнений ShapeModule, тому для нього масштаб компенсується на рівні `InitialModule.startSize` і `startSpeed`; дочірні системи отримують локальний scale `0.05`.
+- Рішення: встановити root scale `1,1,1`, дочірні particle Transform-и — `0.05,0.05,0.05`, а root flash constants `startSize`/`startSpeed` помножити на `0.05`.
+
+### Implementation checkpoint — 2026-11-02
+
+- Оновлено `Assets/PartDone/GunShootS.prefab` без змін сцени чи gameplay-коду.
+- Root `GunShootS` переведено на scale `1,1,1`; чотири дочірні particle Transform-и переведено на `0.05,0.05,0.05`.
+- Для root flash збережено попередній ефективний масштаб через `startSpeed: 0.15/0.25` та `startSize: 0.35/0.05` для authored min/max значень.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** `GunShootS` тепер має root scale `1`, а візуальний масштаб ефекту компенсовано на рівні particle-вузлів; зовнішній розмір має залишитися як при попередньому root scale `0.05`.
+- **Validation:** Static YAML checks підтвердили root scale `1`, чотири дочірні scale `0.05`, п’ять ParticleSystem, правильні parent links і root particle compensation; усі 6 GUID-посилань (включно з built-in mesh) перевірені, 0 missing non-builtin GUID; `.meta` GUID валідний; `git diff --check -- TASK.md` пройшов.
+- **Remaining limitations:** Unity Play Mode та ручний візуальний preview не запускалися; фінальна візуальна перевірка потребує імпорту цього prefab у відкритому Unity Editor.
+
+## Task: Add randomized spread to Smoke111 exhaust smoke
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Fix the `Smoke111` particle so smoke emits from one point in the intended direction while spreading with slight random variation like vehicle exhaust.
+- **Scope:** Inspect the `Smoke111` prefab and its particle modules, adjust only the relevant Unity particle asset/settings, preserve the emission origin and overall direction, and validate the serialized effect configuration.
+- **Acceptance criteria:** `Smoke111` emits from a single point, keeps its authored directional flow, adds controlled random lateral/upward dispersion rather than a single identical trajectory, and has valid Unity YAML/references.
+- **Next steps:** Locate `Smoke111`, inspect shape/velocity/force modules and working-tree state, then apply the smallest focused prefab change and validate it.
+
+### Discovery checkpoint — 2026-11-02
+
+- `Assets/PartDone/Smoke111.prefab` is a single root `ParticleSystem`; the scene instance references it without transform rotation overrides.
+- The emitter is effectively point-sized (`ShapeModule.radius.value: 0.0001`) but uses `ShapeModule.type: 0` (`Sphere`), so its `angle: 5` setting does not define a directional cone. The main module has no gravity, while `ForceModule` is enabled with a gradual upward force.
+- Decision: preserve the point-sized radius and upward force, but switch the shape to `Cone` (`type: 2`) so particles leave the same point along local `+Z` with the existing small `5°` spread.
+- Existing unrelated working-tree changes are present in the scene, other particle assets, and imported folders; only `Smoke111.prefab` and this journal entry are in scope.
+
+### Implementation checkpoint — 2026-11-02
+
+- Updated `Assets/PartDone/Smoke111.prefab` so its active `ShapeModule` uses `type: 2` (`Cone`) while retaining `angle: 5` and the point-sized `radius.value: 0.0001`.
+- No scene, script, material, or unrelated particle asset was modified. This makes each particle launch from the same emitter point along local `+Z`, with controlled random direction inside the narrow cone; the existing upward `ForceModule` remains responsible for the exhaust lift.
+- **Next steps:** Run static YAML/reference checks and inspect the final diff, then close the journal entry if validation passes.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** `Smoke111` now emits from the same point in the authored local `+Z` direction with a controlled `5°` cone spread, while its existing upward exhaust force remains active.
+- **Changed files:** `Assets/PartDone/Smoke111.prefab` and this journal entry only for this task; pre-existing unrelated working-tree changes were left untouched.
+- **Validation:** Static YAML assertions passed for one active Cone Shape module, point radius/position, 5° angle, retained upward Force module, and two referenced non-builtin GUIDs; `git diff --check -- TASK.md` passed.
+- **Remaining limitations:** Unity Play Mode and manual visual preview were not run because the project Editor is already open; Unity should reimport the prefab before the final in-editor visual check.
+
+### Follow-up checkpoint — 2026-11-02
+
+- User reported that the first change was not visually apparent. The file contained the intended `Cone` shape, but the retained `5°` angle was too narrow for a clear exhaust plume preview.
+- Decision: keep the single-point radius, widen the controlled cone spread to `15°`, and use a neutral Shape scale so the Cone module is not left with a zero axis scale.
+
+### Follow-up implementation checkpoint — 2026-11-02
+
+- Updated `Assets/PartDone/Smoke111.prefab` Shape Module to `type: 2` (`Cone`), `angle: 15`, and `m_Scale: {x: 1, y: 1, z: 1}`.
+- Kept `radius.value: 0.0001`, `m_Position: {x: 0, y: 0, z: 0}`, and the existing upward Force module unchanged so the effect still starts at one point and rises in its authored direction.
+
+### Follow-up completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** The visible spread is now widened to `15°`; `Smoke111` remains point-emitted with its authored upward force and local `+Z` flow.
+- **Validation:** Static Shape/Force assertions passed; the prefab GUID is still referenced by `Assets/Game/Scenes/Vehicles.unity`; `git diff --check -- TASK.md` passed.
+- **Remaining limitation:** Unity Editor must reimport or reload the prefab for the updated serialized settings to appear in an already-open Inspector/preview; Play Mode was not run.
+
+### User verification checkpoint — 2026-11-02
+
+- The supplied Inspector screenshot shows `Shape: Hemisphere` (`ParticleSystemShapeType` value `1`), while the on-disk `Assets/PartDone/Smoke111.prefab` currently has `ShapeModule.type: 2` (`Cone`) at line 604.
+- The screenshot's `Scale 1,1,1` matches the latest prefab adjustment, but its `Hemisphere` selection means the Inspector is stale or is showing a different particle asset/instance rather than the current imported prefab state.
+- No additional project asset was changed for this verification; the next action is to reimport/reopen `Smoke111.prefab` in Unity and confirm `Shape: Cone`, `Angle: 15`, and `Radius: 0.0001`.
+
+### Visible instance fix checkpoint — 2026-11-02
+
+- The open Unity scene instance under `Vehicles` was still showing `Shape: Hemisphere`, so the earlier prefab-file change was not visible in the already-loaded Inspector.
+- Updated that visible `Smoke111` instance in Unity to `Shape: Cone`, `Angle: 15`, and `Radius: 0.0001`; the Inspector now visibly shows the intended point-emitted cone spread.
+- The on-disk source remains `Assets/PartDone/Smoke111.prefab`; no other implementation asset was edited. The scene already had unrelated unsaved changes, so it was not saved or discarded.
+
+### Unity serialization correction checkpoint — 2026-11-02
+
+- Unity 6 Inspector confirmed the visible `Cone` selection and rewrote the prefab’s `ShapeModule.type` as `4`; the earlier hand-written `type: 2` value was not the correct serialized enum for this Unity version.
+- Final serialized values are now validated from `Assets/PartDone/Smoke111.prefab`: `type: 4` (`Cone` in this editor), `angle: 15`, point radius `0.0001`, zero position, neutral scale, and enabled upward `ForceModule`.
+
+### Visible instance completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** The currently open `Smoke111` Inspector visibly shows `Cone`, `Angle 15`, and `Radius 0.0001`; the source prefab is `Assets/PartDone/Smoke111.prefab`.
+- **Validation:** Exact serialized `ShapeModule` and `ForceModule` assertions passed; only `Smoke111.prefab` and the append-only journal entry were changed for this task. Existing unrelated unsaved scene changes were preserved.
+- **Remaining limitation:** The open `Vehicles` scene still has its pre-existing unsaved state; it was not saved or discarded by this fix.
+
+## Task: Configure Smoke111 Velocity over Lifetime
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Configure `Velocity over Lifetime` directly so `Smoke111` rises slowly and its movement gradually slows down.
+- **Scope:** Change only the `Smoke111` particle prefab’s velocity/force settings; preserve the existing point emission, Cone spread, and scene changes.
+- **Acceptance criteria:** `Velocity over Lifetime` is visibly configured with a local upward velocity curve and a lifetime speed reduction; the accelerating upward force does not override the intended behavior; serialized validation passes.
+- **Next steps:** Inspect the current Unity Inspector/module state, configure the curves in the open prefab/instance, then validate the serialized prefab and visible Inspector.
+
+### Discovery checkpoint — 2026-11-02
+
+- `Assets/PartDone/Smoke111.prefab` already contains the intended upward `Y` curve (`0.25` to `0.03`) and speed curve (`1` to `0.25`), but `VelocityModule.enabled` is `0`, so neither curve is active.
+- The serialized `Radial` velocity is still `1.36`, which adds unwanted outward motion; `ForceModule.enabled` is `1`, which accelerates the smoke upward instead of letting it slow naturally.
+- Decision: enable `VelocityModule`, zero radial velocity, keep local-space upward/slowdown curves, and disable the accelerating Force module.
+
+### Implementation checkpoint — 2026-11-02
+
+- Enabled `VelocityModule` in `Assets/PartDone/Smoke111.prefab` and kept local simulation (`inWorldSpace: 0`).
+- Configured the upward `Y` curve from `0.25` at particle birth to `0.03` at the end of its lifetime.
+- Configured `speedModifier` from `1` to `0.25`, set radial velocity to `0`, and disabled `ForceModule` so the smoke no longer accelerates upward.
+- Refreshed Unity and enabled the visible `Velocity over Lifetime` module on the open `Smoke111` instance without saving or discarding unrelated scene changes.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** `Smoke111` now has active local `Velocity over Lifetime`: upward Y velocity fades from `0.25` to `0.03`, overall speed fades from `1` to `0.25`, and radial velocity is `0`.
+- **Supporting change:** `ForceModule` is disabled so it does not accelerate the smoke upward and defeat the slowdown curve.
+- **Validation:** Serialized prefab checks passed for module enablement, local space, both curves, radial zero, and disabled force; `git diff --check -- TASK.md` passed with only the existing line-ending warning.
+- **Remaining limitation:** Unity’s open `Vehicles` scene still has pre-existing unsaved changes and was not saved or discarded.
+\n+## Task: Keep Smoke111 rising and prevent curl-in-place motion
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Make `Smoke111` continue spreading upward instead of stopping and curling around one position.
+- **Scope:** Inspect and adjust only the `Smoke111` particle motion modules; preserve the point Cone emission and controlled spread.
+- **Acceptance criteria:** Smoke retains forward dispersion, has a sustained upward component, does not reduce its speed to near-zero, and has no unintended radial/noise motion causing it to curl in place.
+- **Next steps:** Inspect Noise/Limit Velocity/Velocity curves, increase the sustained upward and forward motion, disable unwanted curl sources, then validate the prefab.
+
+### Discovery checkpoint — 2026-11-02
+
+- `NoiseModule`, `ClampVelocityModule` (`Limit Velocity over Lifetime`), `RotationBySpeedModule`, and `ExternalForcesModule` are disabled, so the curl is not coming from those modules in the prefab.
+- The active velocity curves reduce the upward component to `0.03` and the overall travel speed to `0.25`, which makes the smoke appear to stall.
+- Decision: keep the motion local and radial velocity at zero, but raise the sustained values to `Y: 0.35 → 0.18` and `Speed Modifier: 1 → 0.7`.
+
+### Implementation checkpoint — 2026-11-02
+
+- Updated `Assets/PartDone/Smoke111.prefab` so the upward velocity remains `0.35 → 0.18` instead of fading to near-zero.
+- Raised the speed modifier minimum to `0.7`, preserving forward Cone travel while still applying a mild slowdown.
+- Kept radial velocity at `0`; Noise, Clamp Velocity, Rotation by Speed, External Forces, and Force over Lifetime remain disabled.
+- Refreshed Unity; the Smoke111 particle preview now shows a continuing upward plume rather than a stalled curl.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** Smoke continues moving upward and forward without reducing to a near-stationary curl; the active curves are `Y: 0.35 → 0.18` and `Speed Modifier: 1 → 0.7`.
+- **Validation:** Serialized checks passed for sustained velocity, radial/noise/force disablement, and `git diff --check -- TASK.md` passed with only the existing line-ending warning.
+- **Remaining limitation:** The open `Vehicles` scene still contains pre-existing unsaved changes and was not saved or discarded.
+## Task: Build a sedan-style exhaust smoke plume
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Rework `Smoke111` to resemble ordinary sedan exhaust: one dense emission point, short forward stream, gradual lateral expansion, gentle upward drift, and continuous movement without a straight single trail or stationary curl.
+- **Scope:** Inspect every relevant Particle System motion module and modify only `Assets/PartDone/Smoke111.prefab`; preserve the point Cone origin and existing renderer/material setup.
+- **Acceptance criteria:** Emission starts at one point; motion remains forward while widening progressively; upward drift is sustained; no module cancels motion or creates an unintended orbit/curl; serialized settings validate.
+- **Next steps:** Inspect all motion modules and lifetime/size behavior, design the plume as coordinated curves, apply the focused prefab patch, refresh Unity, and validate the result.
+
+### Discovery checkpoint — 2026-11-02
+
+- The current `ShapeModule` is `Cone` (`type: 4`) but its `angle` is `0`, so the emission is effectively a single forward stream; this explains the one-direction appearance.
+- `VelocityModule` has local upward motion and no radial motion, but its X axis is currently zero rather than providing gradual left/right separation.
+- The plume design will use `Cone angle: 12°` for a narrow initial spread plus random local X velocity between `-0.12` and `0.12` so particles widen progressively without orbiting. Noise remains disabled to avoid introducing a spiral.
+### Implementation checkpoint - 2026-11-02
+
+- Updated only `Assets/PartDone/Smoke111.prefab`: kept point emission radius `0.0001`, set the Unity 6 Cone shape to `12` degrees, and preserved the renderer/material.
+- Kept upward velocity `0.35 -> 0.18`, speed modifier `1 -> 0.8`, radial velocity `0`, local velocity space, and disabled Force, Noise, Clamp Velocity, and related curl-producing modules.
+- Unity requires all linear Velocity over Lifetime axes to share one curve mode. After the console reported a mode mismatch, normalized X/Y/Z to Curve mode; the Cone angle provides per-particle lateral spread without invalid velocity data.
+
+### Completion checkpoint - 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** `Smoke111` emits from one point, starts as a narrow forward plume, spreads through Cone direction variance, rises continuously, and slows mildly instead of stalling or curling in place.
+- **Validation:** Unity AssetDatabase refresh completed; the selected `Smoke111` preview generated no new motion-module errors, and the Unity Console remained at `0` errors / `0` warnings after clearing old messages. Serialized prefab values were rechecked after refresh.
+- **Remaining limitation:** The open `Vehicles` scene still contains pre-existing unsaved changes and was not saved or discarded.
+## Task: Add SmokeFromPipe exhaust controller
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Create a script that controls the `SmokeFromPipe` particle effect from a normalized engine-load value where `0` is idle and `1` is maximum RPM.
+- **Scope:** Add a focused exhaust-particle controller, expose a clamped `0..1` input and tunable idle/max particle behavior, and attach it to the `SmokeFromPipe` prefab if the prefab structure supports it.
+- **Acceptance criteria:** The controller produces a continuous low-level idle exhaust, increases density/strength/speed/spread toward maximum load, preserves the existing particle material/setup, and exposes an explicit API for engine code to update the normalized load.
+- **Implementation checkpoint:** Added `Assets/Game/Scripts/Effects/SmokeFromPipeController.cs` with a clamped `SetEngineLoad(float)` API and tunable idle-to-maximum response for emission rate, forward speed, lifetime, size, cone spread, and upward drift. Attached it to `Assets/PartDone/Etallon/SmokeFromPipe.prefab`; preserved the renderer/material and documented ownership in `docs/codex-game/smoke-effects.md` and `docs/codex-game/README.md`.
+- **Next steps:** Validate C# syntax/compilation compatibility, prefab script GUID/serialized fields, and the focused diff without touching pre-existing changes.
+- **Completion checkpoint:** Unity imported `SmokeFromPipeController.cs` and reloaded assemblies without C# compiler errors. Static checks passed for the script GUID, prefab component reference, serialized controller fields, and whitespace. Existing unrelated working-tree changes were left untouched.
+- **Validation:** `git diff --check -- TASK.md Assets/PartDone/Etallon/SmokeFromPipe.prefab docs/codex-game/README.md docs/codex-game/smoke-effects.md` passed; Unity `Editor.log` showed the new script import followed by assembly reload with no `CS` errors.
+- **Final validation:** `dotnet build Assembly-CSharp.csproj --no-restore --verbosity minimal` passed with `0 Error(s)` and 4 existing warnings; focused static assertions passed for the controller API, clamped input, prefab reference, serialized fields, local cone response, and cleaned velocity modules.
+- **Remaining limitation:** The effect was not manually previewed in Play Mode, and the caller still needs to feed real engine RPM/load data into `SetEngineLoad(float)`.
+
+## Task: Revert SmokeFromPipe exhaust controller
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Restore `SmokeFromPipe` because the added controller made the exhaust emit from the wrong place and broke the particle behavior.
+- **Scope:** Remove only the controller component and files added by the previous task; preserve the original particle modules, renderer/material, scene, and unrelated working-tree changes.
+- **Acceptance criteria:** `SmokeFromPipe.prefab` no longer references `SmokeFromPipeController`, the added script/documentation changes are removed, and static/reference validation passes.
+- **Next steps:** Remove the prefab component and task-owned files, validate the prefab no longer references the script, then close this recovery entry.
+- **Completion checkpoint:** Removed the added `SmokeFromPipeController` component from `Assets/PartDone/Etallon/SmokeFromPipe.prefab`, deleted the controller script/meta and smoke-effect documentation, and removed the documentation index entry. The original particle system, renderer, material, and three original GameObject components remain.
+- **Validation:** Static assertions passed for absent controller references/GUID, three original prefab components, retained ParticleSystem/renderer/material sections, removed task-owned paths, and `git diff --check` passed. No scene or unrelated working-tree change was touched.
+- **Remaining limitations:** The prefab was not manually previewed in Unity after the revert; the user should reload/reimport it if the Inspector was already open.
+
+## Task: Increase SmokeFromPipe initial exhaust speed
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Make `SmokeFromPipe` leave the exhaust point faster while preserving its current trajectory, shape, position, spread, and final stopping behavior.
+- **Scope:** Change only the particle speed setting responsible for initial exhaust travel; preserve all other serialized particle modules and renderer/material references.
+- **Acceptance criteria:** Smoke exits the pipe faster, retains the authored trajectory and visual form, and keeps the existing lifetime/slowdown behavior at the end of the path.
+- **Next steps:** Inspect the current speed and velocity modules, apply the smallest focused prefab change, then validate serialized values and references.
+- **Implementation checkpoint:** Updated only the two birth-time keys of `VelocityModule.speedModifier` in `Assets/PartDone/Etallon/SmokeFromPipe.prefab` from `1` to `1.5`. Kept `InitialModule.startSpeed`, Shape, trajectory axes, spread, lifetime, renderer, and material unchanged; kept the final speed keys at `0.8` and `1`.
+- **Completion checkpoint:** Smoke now receives a 50% stronger initial velocity multiplier while retaining the same authored local trajectory and final speed/slowdown values.
+- **Validation:** Focused YAML assertions passed for exactly two changed start keys, unchanged start speed/shape/trajectory/material, preserved final keys, absent controller reference, and `git diff --check` passed. No scene or unrelated working-tree change was touched.
+- **Remaining limitation:** The particle was not manually previewed in Play Mode; Unity should reimport/reload the prefab before visual confirmation if the Inspector was already open.
+
+## Task: Keep SmokeFromPipe visible while the vehicle moves
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Fix `SmokeFromPipe` disappearing or appearing with a delay while the vehicle moves; smoke must remain visible as a continuous exhaust tail and show particles leaving the pipe during motion.
+- **Scope:** Inspect culling, simulation-space, and transform-following settings; change only the particle-system lifecycle/motion settings needed for a stable moving exhaust trail, preserving the authored shape, trajectory, speed response, and renderer/material.
+- **Acceptance criteria:** The system keeps simulating while moving or temporarily outside the camera view, emitted particles remain behind the moving exhaust point instead of being dragged with it, and the existing smoke appearance remains intact.
+- **Next steps:** Inspect the serialized lifecycle and simulation settings, apply the smallest focused prefab change, then validate all preserved motion/visual values and references.
+- **Implementation checkpoint:** Changed only `cullingMode` from `1` to `3` (`Always Simulate`) and `moveWithTransform` from `1` to `0` in `Assets/PartDone/Etallon/SmokeFromPipe.prefab`. Preserved the shape, start-speed boost, velocity curves, lifetime, renderer, and material.
+- **Completion checkpoint:** `SmokeFromPipe` now continues simulating during vehicle motion/camera culling, and emitted particles stay behind the moving pipe as a visible exhaust tail instead of being carried with the emitter.
+- **Validation:** Static assertions passed for always-simulate mode, detached particles, preserved loop/play state, shape/trajectory/speed/material values, absent controller reference, and `git diff --check` passed. Unity reimported the prefab without recent YAML/compiler errors.
+- **Remaining limitation:** Play Mode was not manually driven after the change; reload/reimport the prefab in an already-open Unity Inspector before visual confirmation.
+
+## Task: Normalize Etallon particle prefab scale
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** In `Assets/PartDone/Etallon`, set every prefab root scale to `1,1,1` while preserving the current visible particle size.
+- **Scope:** Inspect all prefabs in the Etallon folder, identify non-unit transform scales, and compensate particle-system size settings only where needed so the rendered effect keeps its current dimensions.
+- **Acceptance criteria:** Every Etallon prefab has root/local transform scale `1,1,1`; each affected particle effect retains its previous effective size; no unrelated assets or prefab settings change.
+- **Next steps:** Inventory prefab hierarchy and particle size fields, apply focused YAML changes, validate scale compensation and references, then close this entry.
+
+### Discovery checkpoint — 2026-11-02
+
+- The Etallon folder contains 13 prefab files; prefab variants backed by unit-scale source prefabs already resolve to unit root scale.
+- Non-unit transforms are limited to `ExplosionMain` root scale `0.5`, `GunShootS` child Particle System transforms at `0.05`, and `ShootInRobot` root scale `0.05`.
+- The affected Particle System Main modules use scalar/random start-size values; the visual-size compensation will multiply those serialized size values by the original transform scale before setting the transforms to `1,1,1`.
+- No unrelated scripts, scenes, materials, or imported dependency assets will be changed.
+
+### Implementation checkpoint — 2026-11-02
+
+- Set every non-unit Etallon Transform scale to `1,1,1` in `ExplosionMain.prefab`, `GunShootS.prefab`, and `ShootInRobot.prefab`.
+- Compensated the affected Particle System Main `startSize.scalar` and `minScalar` values by the removed uniform scale: `0.5` for `ExplosionMain`, `0.05` for `GunShootS` child systems, and `0.05` for `ShootInRobot`.
+- Preserved all other serialized particle settings, references, and asset files.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** All serialized Transform scales under `Assets/PartDone/Etallon` are now `1,1,1`; the affected particle systems retain their previous particle sprite sizes through focused Main `startSize` compensation.
+- **Changed files:** `Assets/PartDone/Etallon/ExplosionMain.prefab`, `Assets/PartDone/Etallon/GunShootS.prefab`, `Assets/PartDone/Etallon/ShootInRobot.prefab`, and this journal entry only.
+- **Validation:** Static YAML assertions passed for 14 prefabs, zero remaining non-unit scales, and 15 expected start-size compensations. `git diff --check -- TASK.md` passed with the repository's existing LF-to-CRLF warning.
+- **Remaining limitation:** Unity Play Mode/manual visual preview was not run; Unity should reimport or reload the Etallon prefabs before visual confirmation if the Editor was already open.
+
+## Task: Roll back Etallon particle scale normalization
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-02
+- **User request:** Revert the previous Etallon scale-normalization change because it broke the particle effects.
+- **Scope:** Restore only the three prefabs changed by the previous task to their pre-change Transform scales and Particle System Main `startSize` values; leave all other project changes untouched.
+- **Acceptance criteria:** `ExplosionMain`, `GunShootS`, and `ShootInRobot` match their pre-normalization scale and start-size serialization; no unrelated files are changed.
+- **Next steps:** Apply the recorded inverse values, validate all restored fields, then close this recovery entry.
+
+### Implementation checkpoint — 2026-11-02
+
+- Restored `ExplosionMain` root scale `0.5`, `GunShootS` child scales `0.05`, and `ShootInRobot` root scale `0.05`.
+- Restored all 15 affected Particle System Main `startSize.scalar/minScalar` pairs to their pre-normalization values.
+- No other Etallon prefab fields were changed by the rollback.
+
+### Completion checkpoint — 2026-11-02
+
+- **Status:** COMPLETED
+- **Result:** The previous Etallon scale-normalization change is fully reverted in the three affected prefabs.
+- **Validation:** Static assertions passed for 7 original Transform scales and 15 original `startSize` pairs.
+- **Remaining limitation:** Unity Play Mode was not run; reload/reimport the prefabs if the Editor already has cached serialized data open.
