@@ -518,12 +518,32 @@ namespace Game.Scripts.Testing
             _status = "Loading vehicles from API...";
 
             VehicleRuntimeStats[] result = await VehicleStatsProvider.GetAllAsync(forceReload: true);
-            _vehicles = result != null ? result : new VehicleRuntimeStats[0];
+            _vehicles = FilterVehiclesWithPrefabs(result);
             _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _vehicles.Length - 1));
             _status = _vehicles.Length > 0
-                ? "Loaded " + _vehicles.Length + " vehicles."
-                : "No vehicles loaded. Check API server.";
+                ? "Loaded " + _vehicles.Length + " vehicles with prefabs."
+                : "No vehicles with prefabs loaded. Check API server or RobotRegistry.";
             _loading = false;
+        }
+
+        private VehicleRuntimeStats[] FilterVehiclesWithPrefabs(VehicleRuntimeStats[] vehicles)
+        {
+            if (vehicles == null || vehicles.Length == 0)
+            {
+                return new VehicleRuntimeStats[0];
+            }
+
+            List<VehicleRuntimeStats> filtered = new List<VehicleRuntimeStats>(vehicles.Length);
+            for (int i = 0; i < vehicles.Length; i++)
+            {
+                VehicleRuntimeStats stats = vehicles[i];
+                if (stats != null && HasVehiclePrefab(stats.Code))
+                {
+                    filtered.Add(stats);
+                }
+            }
+
+            return filtered.ToArray();
         }
 
         private void DrawVehicleList(float height, float width = 0f)
@@ -711,7 +731,8 @@ namespace Game.Scripts.Testing
                 return null;
             }
 
-            return registry.GetPrefab(stats.Code);
+            VehicleRoot prefab = registry != null ? registry.GetPrefab(stats.Code) : null;
+            return prefab != null ? prefab : GameResourceManager.GetPrefab(stats.Code);
         }
 
         private async UniTaskVoid AutoSpawnFirstVehicleAsync()

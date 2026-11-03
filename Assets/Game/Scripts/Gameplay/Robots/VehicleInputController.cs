@@ -355,22 +355,7 @@ namespace Game.Scripts.Gameplay.Robots
                 short yawQ = AngleQuantization.QuantizeAngle01(yawDeg);
                 short pitchQ = AngleQuantization.QuantizeAngle01(pitchDeg);
 
-                float lastYawDeg = AngleQuantization.DequantizeAngle01(_lastSentYawQ);
-                float lastPitchDeg = AngleQuantization.DequantizeAngle01(_lastSentPitchQ);
                 VehicleInputSyncSettings inputSync = GetInputSyncSettings();
-                float yawPitchDeadzone = Mathf.Max(0f, inputSync.yawPitchSendDeadzoneDeg);
-
-                bool yawBeyond = Mathf.Abs(Mathf.DeltaAngle(yawDeg, lastYawDeg)) >= yawPitchDeadzone;
-                bool pitchBeyond = Mathf.Abs(Mathf.DeltaAngle(pitchDeg, lastPitchDeg)) >= yawPitchDeadzone;
-
-                if (!yawBeyond)
-                {
-                    yawQ = _lastSentYawQ;
-                }
-                if (!pitchBeyond)
-                {
-                    pitchQ = _lastSentPitchQ;
-                }
 
                 bool moveChanged = (_lastSentMove - _moveLocal).sqrMagnitude > 0.0001f;
                 bool shootChanged = _lastSentShoot != newShoot;

@@ -58,6 +58,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - Test-only local host spawn harness for `VehicleTest`.
   - Also serves the editor-only Client vehicle test mode when enabled by `ClientVehicleTestMode`; it uses the scene-owned HUD and the existing Client `GameplaySpawner` for timer/visibility services.
+  - Filters the API vehicle catalog before presenting it in the test panel, so only registry/resource entries with a valid `VehicleRoot` prefab can be selected or spawned.
   - Loads the configured gameplay scene through FishNet with automatic unload disabled and waits for the local owner connection to be present in that scene through FishNet's client-loaded acknowledgement before calling `MatchVehicleSpawner`.
   - Maintains a test `ServerRoom` with the local test player plus any VehicleTest-created bots, preserving bot entries when the player vehicle is respawned.
   - The VehicleTest `Bots` tab adds random ally/enemy bot `Player` records and uses `MatchVehicleSpawner.SpawnBotAsync` instead of custom bot instantiation.

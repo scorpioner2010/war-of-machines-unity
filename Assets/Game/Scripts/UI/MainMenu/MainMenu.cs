@@ -3,6 +3,7 @@ using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
+using Game.Scripts.UI;
 using Game.Scripts.UI.Tree;
 using TMPro;
 using UnityEngine;
@@ -23,31 +24,10 @@ namespace Game.Scripts.UI.MainMenu
         [SerializeField] private TMP_Text user;
         [SerializeField] private TMP_Text bolts;
         [SerializeField] private TMP_Text freeXp;
-        [SerializeField] private TMP_Text xp;
         [SerializeField] private TMP_Text adamant;
         [SerializeField] private TMP_Text mmr;
 
-        [Header("Selected vehicle")]
-        [SerializeField] private TMP_Text selectedVehicleName;
-        [SerializeField] private Image selectedVehicleTierIcon;
-        [SerializeField] private Sprite[] tierSprites;
-        [SerializeField] private TMP_Text selectedVehicleFaction;
-        [SerializeField] private TMP_Text selectedVehicleHitPoints;
-        [SerializeField] private TMP_Text selectedVehicleTurretArmor;
-        [SerializeField] private TMP_Text selectedVehicleHullArmor;
-        [SerializeField] private TMP_Text selectedVehicleViewRange;
-        [SerializeField] private TMP_Text selectedVehicleSpeed;
-        [SerializeField] private TMP_Text selectedVehicleAcceleration;
-        [SerializeField] private TMP_Text selectedVehicleTraverseSpeed;
-        [SerializeField] private TMP_Text selectedVehicleTurretTraverseSpeed;
-        [SerializeField] private TMP_Text selectedVehicleDamage;
-        [SerializeField] private TMP_Text selectedVehiclePenetration;
-        [SerializeField] private TMP_Text selectedVehicleShellSpeed;
-        [SerializeField] private TMP_Text selectedVehicleShellsCount;
-        [SerializeField] private TMP_Text selectedVehicleReloadTime;
-        [SerializeField] private TMP_Text selectedVehicleAccuracy;
-        [SerializeField] private TMP_Text selectedVehicleAimTime;
-        [SerializeField] private TMP_Text selectedVehicleAverageDps;
+        [SerializeField] private RightInfoPanel rightInfoPanel;
         
         [SerializeField] private GameObject[] mainMenuObjects;
 
@@ -141,7 +121,7 @@ namespace Game.Scripts.UI.MainMenu
                 SetText(bolts, string.Empty);
                 SetText(adamant, string.Empty);
                 SetText(freeXp, string.Empty);
-                SetText(xp, string.Empty);
+                rightInfoPanel?.SetMainMenuExperience(string.Empty);
                 return;
             }
 
@@ -152,47 +132,13 @@ namespace Game.Scripts.UI.MainMenu
             SetText(freeXp, profile.freeXp.ToString(CultureInfo.InvariantCulture));
             
             OwnedVehicleDto active = profile.GetSelected();
-            SetText(xp, active != null ? active.xp.ToString(CultureInfo.InvariantCulture) : string.Empty);
+            string experience = active != null ? active.xp.ToString(CultureInfo.InvariantCulture) : string.Empty;
+            rightInfoPanel?.SetMainMenuExperience(experience);
         }
 
         public void UpdateVehicleInfo(VehicleSlotVehicleData vehicle)
         {
-            SetText(selectedVehicleName, vehicle?.Name);
-            SetText(selectedVehicleFaction, vehicle?.FactionName);
-            SetTierIcon(vehicle != null ? vehicle.Level : 0);
-            SetText(selectedVehicleHitPoints, FormatInt(vehicle?.Hp ?? 0));
-            SetText(selectedVehicleTurretArmor, vehicle?.TurretArmor);
-            SetText(selectedVehicleHullArmor, vehicle?.HullArmor);
-            SetText(selectedVehicleViewRange, FormatFloat(vehicle?.ViewRange ?? 0f));
-            SetText(selectedVehicleSpeed, FormatFloat(vehicle?.Speed ?? 0f));
-            SetText(selectedVehicleAcceleration, FormatFloat(vehicle?.Acceleration ?? 0f));
-            SetText(selectedVehicleTraverseSpeed, FormatFloat(vehicle?.TraverseSpeed ?? 0f));
-            SetText(selectedVehicleTurretTraverseSpeed, FormatFloat(vehicle?.TurretTraverseSpeed ?? 0f));
-            SetText(selectedVehicleDamage, FormatRange(vehicle?.DamageMin ?? 0f, vehicle?.DamageMax ?? 0f));
-            SetText(selectedVehiclePenetration, FormatInt(vehicle?.Penetration ?? 0));
-            SetText(selectedVehicleShellSpeed, FormatFloat(vehicle?.ShellSpeed ?? 0f));
-            SetText(selectedVehicleShellsCount, FormatInt(vehicle?.ShellsCount ?? 0));
-            SetText(selectedVehicleReloadTime, FormatFloat(vehicle?.ReloadTime ?? 0f));
-            SetText(selectedVehicleAccuracy, FormatFloat(vehicle?.Accuracy ?? 0f));
-            SetText(selectedVehicleAimTime, FormatFloat(vehicle?.AimTime ?? 0f));
-            SetText(selectedVehicleAverageDps, FormatAverageDps(vehicle));
-        }
-
-        private void SetTierIcon(int level)
-        {
-            if (selectedVehicleTierIcon == null)
-            {
-                return;
-            }
-
-            int tierIndex = level - 1;
-            bool hasTierSprite = tierSprites != null
-                && tierIndex >= 0
-                && tierIndex < tierSprites.Length
-                && tierSprites[tierIndex] != null;
-
-            selectedVehicleTierIcon.enabled = hasTierSprite;
-            selectedVehicleTierIcon.sprite = hasTierSprite ? tierSprites[tierIndex] : null;
+            rightInfoPanel?.ShowMainMenuVehicle(vehicle);
         }
 
         private static void SetText(TMP_Text text, string value)
@@ -201,49 +147,6 @@ namespace Game.Scripts.UI.MainMenu
             {
                 text.text = string.IsNullOrWhiteSpace(value) ? "-" : value;
             }
-        }
-
-        private static string FormatInt(int value)
-        {
-            return value > 0 ? value.ToString(CultureInfo.InvariantCulture) : string.Empty;
-        }
-
-        private static string FormatFloat(float value)
-        {
-            return value > 0f ? value.ToString("0.##", CultureInfo.InvariantCulture) : string.Empty;
-        }
-
-        private static string FormatRange(float min, float max)
-        {
-            if (min <= 0f && max <= 0f)
-            {
-                return string.Empty;
-            }
-
-            if (Mathf.Approximately(min, max))
-            {
-                return min.ToString("0.##", CultureInfo.InvariantCulture);
-            }
-
-            return min.ToString("0.##", CultureInfo.InvariantCulture)
-                + "-"
-                + max.ToString("0.##", CultureInfo.InvariantCulture);
-        }
-
-        private static string FormatAverageDps(VehicleSlotVehicleData vehicle)
-        {
-            if (vehicle == null || vehicle.ReloadTime <= 0f)
-            {
-                return string.Empty;
-            }
-
-            float averageDamage = (vehicle.DamageMin + vehicle.DamageMax) * 0.5f;
-            if (averageDamage <= 0f)
-            {
-                return string.Empty;
-            }
-
-            return (averageDamage / vehicle.ReloadTime).ToString("0.##", CultureInfo.InvariantCulture);
         }
         
         public void SetActive(bool isActive)

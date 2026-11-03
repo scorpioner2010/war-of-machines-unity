@@ -231,8 +231,6 @@ namespace Game.Scripts.Gameplay.Robots
         private const float MaxTurretMovementDispersion01 = 0.5f;
         private const float MaxVehicleMovementDispersion01 = 0.5f;
         private const float ShotDispersion01 = 0.5f;
-        private const float TurretSpeedDeadZone01 = 0.05f;
-
         private bool _hasLastSample;
         private float _lastTurretLocalYaw;
         private Vector3 _lastMovePosition;
@@ -375,12 +373,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             float speed01 = Mathf.Clamp01(degPerSecond / referenceDegPerSecond);
-            if (speed01 <= TurretSpeedDeadZone01)
-            {
-                return 0f;
-            }
-
-            return Mathf.InverseLerp(TurretSpeedDeadZone01, 1f, speed01);
+            return speed01;
         }
 
         private static float GetMaxMovementSpeed(VehicleRoot root)

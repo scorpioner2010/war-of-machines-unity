@@ -608,8 +608,8 @@ namespace Game.Scripts.Server
         [Header("Input Sending")]
         [Tooltip("Maximum pause between owner-to-server control packets when input does not change.")]
         public float sendInterval = 0.05f;
-        [Tooltip("Minimum yaw/pitch change in degrees before the client sends a new aiming direction.")]
-        public float yawPitchSendDeadzoneDeg = 0.03f;
+        [Tooltip("Legacy compatibility value. Aim yaw/pitch updates are no longer suppressed by a dead zone.")]
+        public float yawPitchSendDeadzoneDeg = 0f;
         [Tooltip("Minimum aiming-point change in meters before the client sends a new point.")]
         public float aimPointSendDeadzoneMeters = 0.02f;
 

@@ -8,8 +8,6 @@ namespace Game.Scripts.Gameplay.Robots
     [DefaultExecutionOrder(-20)]
     public class VehicleTurretRotationController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {
-        private const float AimHoldDeadZoneDegrees = 0.25f;
-
         public VehicleRoot vehicleRoot;
 
         public float rotationSpeed = 30f;
@@ -109,14 +107,11 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 bool wasRotating = _wasRotatingForAudio;
-                if (!ShouldHoldTargetYaw(_localYaw, _targetYawServer, AimHoldDeadZoneDegrees))
-                {
-                    float step = rotationSpeed * Time.deltaTime;
-                    _localYaw = Mathf.MoveTowardsAngle(_localYaw, _targetYawServer, step);
-                }
+                float step = rotationSpeed * Time.deltaTime;
+                _localYaw = Mathf.MoveTowardsAngle(_localYaw, _targetYawServer, step);
 
                 transform.rotation = _chassisTransform.rotation * Quaternion.Euler(0f, _localYaw, 0f);
-                bool isRotating = !ShouldHoldTargetYaw(_localYaw, _targetYawServer, AimHoldDeadZoneDegrees);
+                bool isRotating = HasTargetYawError(_localYaw, _targetYawServer);
                 UpdateRotationAudio(isRotating, wasRotating);
             }
         }
@@ -161,9 +156,9 @@ namespace Game.Scripts.Gameplay.Robots
             StopRotationAudio();
         }
 
-        private static bool ShouldHoldTargetYaw(float currentYaw, float targetYaw, float deadZoneDegrees)
+        private static bool HasTargetYawError(float currentYaw, float targetYaw)
         {
-            return Mathf.Abs(Mathf.DeltaAngle(currentYaw, targetYaw)) <= Mathf.Max(0f, deadZoneDegrees);
+            return Mathf.DeltaAngle(currentYaw, targetYaw) != 0f;
         }
 
         private bool ShouldDriveRotation()

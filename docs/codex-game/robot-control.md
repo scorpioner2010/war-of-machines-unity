@@ -107,6 +107,7 @@ Current owner scripts:
   - Restores the authored local Y position when disabled or when the vehicle dies, so it remains isolated from turret aiming, ground alignment, and walker animation.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleTurretRotationController.cs`
   - Turret yaw controller.
+  - Applies every nonzero target-yaw error without a micro-yaw dead zone; the exact target is the only hold state.
 - `Assets/Game/Scripts/Gameplay/Robots/WeaponAimController.cs`
   - Gun pitch and aim point controller.
   - Resolves camera/gun aim rays and pitch constraints.

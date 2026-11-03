@@ -50,363 +50,81 @@ namespace Game.Scripts.Testing
 
         [Header("Demo Profile")]
         [SerializeField] private string testPlayerName = "Menu Tester";
-        [SerializeField] private int testMmr = 1475;
-        [SerializeField] private int testBolts = 48620;
-        [SerializeField] private int testAdamant = 720;
-        [SerializeField] private int testFreeXp = 23850;
-        [SerializeField] private int testMmrDelta = 86;
-        [SerializeField] private string testLastBattleAt = "2026-10-26T19:42:00Z";
+        [SerializeField] private int testMmr = 1620;
+        [SerializeField] private int testBolts = 54320;
+        [SerializeField] private int testAdamant = 880;
+        [SerializeField] private int testFreeXp = 26400;
+        [SerializeField] private int testMmrDelta = 112;
+        [SerializeField] private string testLastBattleAt = "2026-11-03T20:12:00Z";
 
         [Header("Test Vehicles")]
-        [Tooltip("All vehicles in this array belong to the test profile and appear in the vehicle selector and their faction tech tree.")]
-        [SerializeField] private ClientMenuTestVehicle[] testVehicles =
+        [Tooltip("The offline catalog is regenerated on Awake so every run starts from the same clear, coherent demo roster.")]
+        [SerializeField] private ClientMenuTestVehicle[] testVehicles;
+
+        private static ClientMenuTestVehicle[] CreateGeneratedTestVehicles()
         {
-            new ClientMenuTestVehicle
+            return new[]
             {
-                vehicleId = 1,
-                code = "ia_l1_starter",
-                vehicleName = "Aegis Vanguard",
-                factionCode = "iron_alliance",
-                factionName = "Iron Alliance",
-                vehicleClass = "Assault",
-                level = 1,
-                branch = "vanguard",
-                profileCurrentXp = 1840,
-                profileBattles = 48,
-                profileWins = 29,
-                profileDraws = 2,
-                profileKills = 61,
-                profileDamage = 46200,
-                profileBestKills = 4,
-                profileBestDamage = 2100,
-                profileXpEarned = 12400,
-                profileBoltsEarned = 18600,
-                profileFreeXpEarned = 1240,
-                profileLastPlayedAt = "2026-10-26T18:42:00Z"
-            },
-            new ClientMenuTestVehicle
+                CreateTestVehicleDefinition(1, "ia_l1_starter", "Aegis Vanguard", "iron_alliance", "Iron Alliance", "Assault", 1, "vanguard", "2026-11-03T18:42:00Z", 1),
+                CreateTestVehicleDefinition(2, "ia_l2_scout", "Strider Scout", "iron_alliance", "Iron Alliance", "Scout", 2, "recon", "2026-11-02T21:18:00Z", 2),
+                CreateTestVehicleDefinition(3, "ia_l2_guardian", "Bastion Guardian", "iron_alliance", "Iron Alliance", "Defender", 2, "bulwark", "2026-11-02T16:05:00Z", 3),
+                CreateTestVehicleDefinition(4, "ia_l2_colossus", "Colossus Breaker", "iron_alliance", "Iron Alliance", "Heavy", 2, "siege", "2026-11-01T19:42:00Z", 4),
+                CreateTestVehicleDefinition(5, "ia_l2_scout", "Longshot Mk II", "iron_alliance", "Iron Alliance", "Sniper", 2, "artillery", "2026-10-31T20:27:00Z", 5),
+                CreateTestVehicleDefinition(6, "ia_l2_guardian", "Bulwark Medic", "iron_alliance", "Iron Alliance", "Support", 2, "support", "2026-10-30T18:54:00Z", 6),
+                CreateTestVehicleDefinition(7, "ia_l2_colossus", "Raptor Assault", "iron_alliance", "Iron Alliance", "Assault", 2, "striker", "2026-10-29T22:11:00Z", 7),
+                CreateTestVehicleDefinition(8, "nv_l1_starter", "Specter Recon", "nova_syndicate", "Nova Syndicate", "Scout", 1, "recon", "2026-11-03T19:46:00Z", 8),
+                CreateTestVehicleDefinition(9, "nv_l2_scout", "Harrier Strike", "nova_syndicate", "Nova Syndicate", "Assault", 2, "striker", "2026-11-02T20:36:00Z", 9),
+                CreateTestVehicleDefinition(10, "nv_l2_guardian", "Warden Guardian", "nova_syndicate", "Nova Syndicate", "Defender", 2, "bulwark", "2026-11-01T17:32:00Z", 10),
+                CreateTestVehicleDefinition(11, "nv_l2_colossus", "Atlas Siege", "nova_syndicate", "Nova Syndicate", "Heavy", 2, "siege", "2026-10-31T21:04:00Z", 11),
+                CreateTestVehicleDefinition(12, "nv_l2_scout", "Shade Longshot", "nova_syndicate", "Nova Syndicate", "Sniper", 2, "artillery", "2026-10-30T20:18:00Z", 12),
+                CreateTestVehicleDefinition(13, "nv_l2_guardian", "Aegis Nova", "nova_syndicate", "Nova Syndicate", "Support", 2, "support", "2026-10-29T18:21:00Z", 13),
+                CreateTestVehicleDefinition(14, "nv_l2_colossus", "Ravager Assault", "nova_syndicate", "Nova Syndicate", "Assault", 2, "striker", "2026-10-28T22:44:00Z", 14),
+                CreateTestVehicleDefinition(15, "nv_l1_starter", "Nomad Patrol", "nova_syndicate", "Nova Syndicate", "Scout", 1, "recon", "2026-10-27T19:08:00Z", 15)
+            };
+        }
+        private static ClientMenuTestVehicle CreateTestVehicleDefinition(
+            int vehicleId,
+            string code,
+            string vehicleName,
+            string factionCode,
+            string factionName,
+            string vehicleClass,
+            int level,
+            string branch,
+            string lastPlayedAt,
+            int historySeed)
+        {
+            int battles = 22 + historySeed * 3;
+            int draws = historySeed % 3;
+            int wins = Mathf.Clamp(10 + historySeed * 2, 0, battles - draws);
+            int kills = 24 + historySeed * 6;
+            int damage = battles * (650 + historySeed * 18);
+            int bestKills = Mathf.Min(kills, 3 + historySeed % 4);
+            int bestDamage = Mathf.Min(damage, 1350 + historySeed * 95);
+            return new ClientMenuTestVehicle
             {
-                vehicleId = 2,
-                code = "ia_l2_scout",
-                vehicleName = "Strider Scout",
-                factionCode = "iron_alliance",
-                factionName = "Iron Alliance",
-                vehicleClass = "Scout",
-                level = 2,
-                branch = "recon",
-                profileCurrentXp = 920,
-                profileBattles = 37,
-                profileWins = 20,
-                profileDraws = 1,
-                profileKills = 43,
-                profileDamage = 33800,
-                profileBestKills = 4,
-                profileBestDamage = 1950,
-                profileXpEarned = 10300,
-                profileBoltsEarned = 15100,
-                profileFreeXpEarned = 980,
-                profileLastPlayedAt = "2026-10-25T21:18:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 3,
-                code = "ia_l2_guardian",
-                vehicleName = "Bastion Guardian",
-                factionCode = "iron_alliance",
-                factionName = "Iron Alliance",
-                vehicleClass = "Defender",
-                level = 2,
-                branch = "bulwark",
-                profileCurrentXp = 3450,
-                profileBattles = 29,
-                profileWins = 18,
-                profileDraws = 1,
-                profileKills = 36,
-                profileDamage = 29900,
-                profileBestKills = 3,
-                profileBestDamage = 2300,
-                profileXpEarned = 11800,
-                profileBoltsEarned = 14200,
-                profileFreeXpEarned = 1100,
-                profileLastPlayedAt = "2026-10-24T16:05:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 4,
-                code = "ia_l2_colossus",
-                vehicleName = "Colossus Breaker",
-                factionCode = "iron_alliance",
-                factionName = "Iron Alliance",
-                vehicleClass = "Heavy",
-                level = 2,
-                branch = "siege",
-                profileCurrentXp = 6120,
-                profileBattles = 64,
-                profileWins = 39,
-                profileDraws = 3,
-                profileKills = 85,
-                profileDamage = 72800,
-                profileBestKills = 6,
-                profileBestDamage = 3200,
-                profileXpEarned = 22800,
-                profileBoltsEarned = 26600,
-                profileFreeXpEarned = 2010,
-                profileLastPlayedAt = "2026-10-26T19:42:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 5,
-                code = "ia_l2_scout",
-                vehicleName = "Longshot Mk II",
-                factionCode = "iron_alliance",
-                factionName = "Iron Alliance",
-                vehicleClass = "Sniper",
-                level = 2,
-                branch = "artillery",
-                profileCurrentXp = 2780,
-                profileBattles = 22,
-                profileWins = 12,
-                profileDraws = 0,
-                profileKills = 27,
-                profileDamage = 21500,
-                profileBestKills = 3,
-                profileBestDamage = 1800,
-                profileXpEarned = 7300,
-                profileBoltsEarned = 9200,
-                profileFreeXpEarned = 760,
-                profileLastPlayedAt = "2026-10-22T20:27:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 6,
-                code = "ia_l2_guardian",
-                vehicleName = "Bulwark Medic",
-                factionCode = "iron_alliance",
-                factionName = "Iron Alliance",
-                vehicleClass = "Support",
-                level = 2,
-                branch = "support",
-                profileCurrentXp = 1960,
-                profileBattles = 31,
-                profileWins = 17,
-                profileDraws = 1,
-                profileKills = 40,
-                profileDamage = 33200,
-                profileBestKills = 4,
-                profileBestDamage = 2400,
-                profileXpEarned = 10100,
-                profileBoltsEarned = 13200,
-                profileFreeXpEarned = 1040,
-                profileLastPlayedAt = "2026-10-21T18:54:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 7,
-                code = "ia_l2_colossus",
-                vehicleName = "Raptor Assault",
-                factionCode = "iron_alliance",
-                factionName = "Iron Alliance",
-                vehicleClass = "Assault",
-                level = 2,
-                branch = "striker",
-                profileCurrentXp = 740,
-                profileBattles = 18,
-                profileWins = 8,
-                profileDraws = 1,
-                profileKills = 17,
-                profileDamage = 12400,
-                profileBestKills = 3,
-                profileBestDamage = 1600,
-                profileXpEarned = 5600,
-                profileBoltsEarned = 7600,
-                profileFreeXpEarned = 540,
-                profileLastPlayedAt = "2026-10-19T22:11:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 8,
-                code = "nv_l1_starter",
-                vehicleName = "Specter Recon",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Scout",
-                level = 1,
-                branch = "recon",
-                profileCurrentXp = 4120,
-                profileBattles = 53,
-                profileWins = 32,
-                profileDraws = 2,
-                profileKills = 72,
-                profileDamage = 51900,
-                profileBestKills = 5,
-                profileBestDamage = 2600,
-                profileXpEarned = 17800,
-                profileBoltsEarned = 22300,
-                profileFreeXpEarned = 1860,
-                profileLastPlayedAt = "2026-10-25T19:46:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 9,
-                code = "nv_l2_scout",
-                vehicleName = "Harrier Strike",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Assault",
-                level = 2,
-                branch = "striker",
-                profileCurrentXp = 2680,
-                profileBattles = 41,
-                profileWins = 25,
-                profileDraws = 1,
-                profileKills = 55,
-                profileDamage = 42800,
-                profileBestKills = 5,
-                profileBestDamage = 2400,
-                profileXpEarned = 14900,
-                profileBoltsEarned = 19100,
-                profileFreeXpEarned = 1520,
-                profileLastPlayedAt = "2026-10-24T20:36:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 10,
-                code = "nv_l2_guardian",
-                vehicleName = "Warden Guardian",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Defender",
-                level = 2,
-                branch = "bulwark",
-                profileCurrentXp = 1320,
-                profileBattles = 27,
-                profileWins = 14,
-                profileDraws = 1,
-                profileKills = 32,
-                profileDamage = 26600,
-                profileBestKills = 4,
-                profileBestDamage = 2200,
-                profileXpEarned = 8900,
-                profileBoltsEarned = 11600,
-                profileFreeXpEarned = 900,
-                profileLastPlayedAt = "2026-10-20T17:32:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 11,
-                code = "nv_l2_colossus",
-                vehicleName = "Atlas Siege",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Heavy",
-                level = 2,
-                branch = "siege",
-                profileCurrentXp = 5240,
-                profileBattles = 36,
-                profileWins = 21,
-                profileDraws = 2,
-                profileKills = 49,
-                profileDamage = 40100,
-                profileBestKills = 6,
-                profileBestDamage = 2900,
-                profileXpEarned = 13500,
-                profileBoltsEarned = 18400,
-                profileFreeXpEarned = 1480,
-                profileLastPlayedAt = "2026-10-23T21:04:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 12,
-                code = "nv_l2_scout",
-                vehicleName = "Shade Longshot",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Sniper",
-                level = 2,
-                branch = "artillery",
-                profileCurrentXp = 1680,
-                profileBattles = 19,
-                profileWins = 10,
-                profileDraws = 0,
-                profileKills = 21,
-                profileDamage = 18500,
-                profileBestKills = 3,
-                profileBestDamage = 1700,
-                profileXpEarned = 6600,
-                profileBoltsEarned = 8400,
-                profileFreeXpEarned = 680,
-                profileLastPlayedAt = "2026-10-18T20:18:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 13,
-                code = "nv_l2_guardian",
-                vehicleName = "Aegis Nova",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Support",
-                level = 2,
-                branch = "support",
-                profileCurrentXp = 3860,
-                profileBattles = 44,
-                profileWins = 27,
-                profileDraws = 1,
-                profileKills = 63,
-                profileDamage = 49700,
-                profileBestKills = 5,
-                profileBestDamage = 2800,
-                profileXpEarned = 16800,
-                profileBoltsEarned = 21600,
-                profileFreeXpEarned = 1720,
-                profileLastPlayedAt = "2026-10-24T18:21:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 14,
-                code = "nv_l2_colossus",
-                vehicleName = "Ravager Assault",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Assault",
-                level = 2,
-                branch = "striker",
-                profileCurrentXp = 2290,
-                profileBattles = 33,
-                profileWins = 19,
-                profileDraws = 1,
-                profileKills = 45,
-                profileDamage = 36600,
-                profileBestKills = 5,
-                profileBestDamage = 2700,
-                profileXpEarned = 12700,
-                profileBoltsEarned = 16900,
-                profileFreeXpEarned = 1350,
-                profileLastPlayedAt = "2026-10-22T22:44:00Z"
-            },
-            new ClientMenuTestVehicle
-            {
-                vehicleId = 15,
-                code = "nv_l1_starter",
-                vehicleName = "Nomad Patrol",
-                factionCode = "nova_syndicate",
-                factionName = "Nova Syndicate",
-                vehicleClass = "Scout",
-                level = 1,
-                branch = "recon",
-                profileCurrentXp = 1180,
-                profileBattles = 26,
-                profileWins = 13,
-                profileDraws = 1,
-                profileKills = 28,
-                profileDamage = 23700,
-                profileBestKills = 4,
-                profileBestDamage = 1900,
-                profileXpEarned = 8200,
-                profileBoltsEarned = 10700,
-                profileFreeXpEarned = 860,
-                profileLastPlayedAt = "2026-10-17T19:08:00Z"
-            }
-        };
+                vehicleId = vehicleId,
+                code = code,
+                vehicleName = vehicleName,
+                factionCode = factionCode,
+                factionName = factionName,
+                vehicleClass = vehicleClass,
+                level = level,
+                branch = branch,
+                profileCurrentXp = 700 + historySeed * 310,
+                profileBattles = battles,
+                profileWins = wins,
+                profileDraws = draws,
+                profileKills = kills,
+                profileDamage = damage,
+                profileBestKills = bestKills,
+                profileBestDamage = bestDamage,
+                profileXpEarned = battles * 280 + historySeed * 175,
+                profileBoltsEarned = battles * 360 + historySeed * 220,
+                profileFreeXpEarned = battles * 24 + historySeed * 18,
+                profileLastPlayedAt = lastPlayedAt
+            };
+        }
 
         private int _selectedVehicleId;
 
@@ -417,6 +135,7 @@ namespace Game.Scripts.Testing
         private void Awake()
         {
             _instance = this;
+            testVehicles = CreateGeneratedTestVehicles();
             _selectedVehicleId = 0;
         }
 
@@ -662,6 +381,11 @@ namespace Game.Scripts.Testing
 
         private VehicleLite[] CreateVehicles()
         {
+            if (testVehicles == null || testVehicles.Length == 0)
+            {
+                testVehicles = CreateGeneratedTestVehicles();
+            }
+
             List<VehicleLite> vehicles = new List<VehicleLite>();
             HashSet<int> usedIds = new HashSet<int>();
 
@@ -896,6 +620,11 @@ namespace Game.Scripts.Testing
                 ? code
                 : definition.vehicleName.Trim();
             int level = Mathf.Clamp(definition.level, 1, 10);
+            int classOffset = ResolveClassOffset(definition.vehicleClass);
+            int variantOffset = Mathf.Max(0, vehicleId - 1);
+            int armorOffset = level * 8 + classOffset * 4 + variantOffset;
+            float damageMin = 88f + level * 18f + classOffset * 7f + variantOffset * 2f;
+            float damageMax = damageMin + 34f + classOffset * 3f;
 
             return new VehicleLite
             {
@@ -907,25 +636,82 @@ namespace Game.Scripts.Testing
                 factionName = factionName,
                 @class = string.IsNullOrWhiteSpace(definition.vehicleClass) ? "Assault" : definition.vehicleClass.Trim(),
                 level = level,
-                purchaseCost = 0,
+                purchaseCost = level <= 1 ? 0 : 2400 + level * 1200 + variantOffset * 180,
                 isVisible = true,
-                hp = 300 + level * 50,
-                penetration = 70 + level * 10,
-                shellSpeed = 800f + level * 25f,
-                shellsCount = 20 + level * 2,
-                damageMin = 75f + level * 15f,
-                damageMax = 105f + level * 15f,
-                reloadTime = Mathf.Max(1f, 4.2f - level * 0.15f),
-                accuracy = 0.35f,
-                aimTime = 2f,
-                viewRange = 320f + level * 10f,
-                speed = 42f + level * 2f,
-                acceleration = 7f + level,
-                traverseSpeed = 30f + level * 2f,
-                turretTraverseSpeed = 34f + level * 2f,
-                turretArmor = "70/45/30",
-                hullArmor = "80/50/35"
+                hp = 380 + level * 95 + classOffset * 34 + variantOffset * 9,
+                damage = Mathf.RoundToInt((damageMin + damageMax) * 0.5f),
+                penetration = 68 + level * 11 + classOffset * 5 + variantOffset,
+                shellSpeed = 720f + level * 42f + classOffset * 18f + variantOffset * 4f,
+                shellsCount = 16 + level * 3 + classOffset + variantOffset % 4,
+                damageMin = damageMin,
+                damageMax = damageMax,
+                reloadTime = Mathf.Max(1.2f, 5.4f - level * 0.24f - classOffset * 0.08f - variantOffset * 0.035f),
+                accuracy = Mathf.Clamp(0.22f + classOffset * 0.018f + variantOffset * 0.006f, 0.1f, 0.95f),
+                aimTime = Mathf.Max(0.8f, 2.25f - classOffset * 0.08f - variantOffset * 0.025f),
+                viewRange = 300f + level * 16f + classOffset * 9f + variantOffset * 2f,
+                speed = 34f + level * 2.5f + ResolveSpeedOffset(definition.vehicleClass) + variantOffset * 0.45f,
+                acceleration = 5.5f + level * 0.65f + classOffset * 0.22f + variantOffset * 0.08f,
+                traverseAcceleration = 4f + level * 0.45f + classOffset * 0.18f,
+                traverseSpeed = 25f + level * 1.8f + classOffset * 1.7f + variantOffset * 0.35f,
+                turretTraverseSpeed = 29f + level * 2f + classOffset * 1.9f + variantOffset * 0.4f,
+                turretArmor = BuildArmor(62 + armorOffset, 40 + level * 4 + classOffset * 3, 24 + level * 3 + variantOffset / 2),
+                hullArmor = BuildArmor(74 + armorOffset + classOffset * 2, 48 + level * 4 + classOffset * 2, 30 + level * 3 + variantOffset / 2)
             };
+        }
+
+        private static int ResolveClassOffset(string vehicleClass)
+        {
+            if (string.Equals(vehicleClass, "Heavy", StringComparison.OrdinalIgnoreCase))
+            {
+                return 4;
+            }
+
+            if (string.Equals(vehicleClass, "Defender", StringComparison.OrdinalIgnoreCase))
+            {
+                return 3;
+            }
+
+            if (string.Equals(vehicleClass, "Support", StringComparison.OrdinalIgnoreCase))
+            {
+                return 2;
+            }
+
+            if (string.Equals(vehicleClass, "Sniper", StringComparison.OrdinalIgnoreCase))
+            {
+                return 1;
+            }
+
+            if (string.Equals(vehicleClass, "Scout", StringComparison.OrdinalIgnoreCase))
+            {
+                return -1;
+            }
+
+            return 0;
+        }
+
+        private static float ResolveSpeedOffset(string vehicleClass)
+        {
+            if (string.Equals(vehicleClass, "Scout", StringComparison.OrdinalIgnoreCase))
+            {
+                return 7f;
+            }
+
+            if (string.Equals(vehicleClass, "Heavy", StringComparison.OrdinalIgnoreCase))
+            {
+                return -4f;
+            }
+
+            if (string.Equals(vehicleClass, "Defender", StringComparison.OrdinalIgnoreCase))
+            {
+                return -2f;
+            }
+
+            return 0f;
+        }
+
+        private static string BuildArmor(int front, int side, int rear)
+        {
+            return front + "/" + side + "/" + rear;
         }
 
         private static string GetFactionName(string factionCode)

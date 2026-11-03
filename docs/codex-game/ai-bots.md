@@ -98,7 +98,7 @@ Current waypoint arrival behavior:
 - `waypointReachDistance` accepts a waypoint if the bot enters the reach radius.
 - `turnInPlaceEnterAngle` and `turnInPlaceExitAngle` add hysteresis for pivot turning. The bot stops forward movement, rotates in place toward the waypoint, then resumes driving once aligned.
 - `turnDeadZoneAngle` suppresses micro-corrections around a straight heading, and `turnInputSmoothing` prevents the movement controller's angular acceleration from turning a short-lived sign change into visible body oscillation.
-- `VehicleTurretRotationController` holds yaw inside a 0.25-degree target dead zone, so an already aligned turret does not alternate one frame left/right around the target while the body or target position receives tiny updates.
+- `VehicleTurretRotationController` applies every nonzero target-yaw error, including sub-degree corrections; exact target equality is the only stop condition, so micro-aim adjustments reach the turret and convergence reticle.
 - `waypointApproachSlowDistance` reduces forward input near the waypoint for tighter arrival.
 - `waypointPassDistance` and `waypointPassedAngle` let the navigator accept a waypoint if the bot passed it nearby instead of circling forever.
 - `HasMovedPastPathSegment` also advances a waypoint if the bot has crossed beyond the segment from the previous waypoint to the current one.

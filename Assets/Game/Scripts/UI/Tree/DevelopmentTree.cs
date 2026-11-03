@@ -17,6 +17,7 @@ using Game.Scripts.Player.Data;
 using Game.Scripts.Testing;
 using Game.Scripts.UI.Helpers;
 using Game.Scripts.UI.MainMenu;
+using Game.Scripts.UI;
 using Game.Scripts.UI.Screens;
 using NaughtyAttributes;
 using TMPro;
@@ -39,7 +40,7 @@ namespace Game.Scripts.UI.Tree
         [SerializeField] private FactionButtonView factionButtonPrefab;
         [SerializeField] private Button buttonBack;
         [SerializeField] private GameObject treeMenuRoot;
-        [SerializeField] private DevelopmentTreeDetailsPanel detailsPanel;
+        [SerializeField] private RightInfoPanel rightInfoPanel;
 
         private VehicleGraph[] _graphs;
         private VehicleLite[] _vehicleLites;
@@ -198,7 +199,7 @@ namespace Game.Scripts.UI.Tree
             }
 
             ClearRuntimeTree();
-            detailsPanel.Clear();
+            rightInfoPanel.Clear();
 
             if (_factionCodes == null || _graphs == null || _factionCodes.Length == 0 || _graphs.Length == 0)
             {
@@ -241,7 +242,7 @@ namespace Game.Scripts.UI.Tree
                 _factionButtons[i].SetSelected(i == index);
             }
 
-            detailsPanel.Clear();
+            rightInfoPanel.Clear();
             FactionView activeView = _views[index];
             SelectVehicle(activeView.DefaultTreeItem, activeView.DefaultProgress);
             RedrawActive(index).Forget();
@@ -411,7 +412,7 @@ namespace Game.Scripts.UI.Tree
 
             _selectedVehicleId = progress.Node.id;
             SetSelectedTreeItem(item);
-            detailsPanel.Show(progress, TryBuy, TryResearch);
+            rightInfoPanel.ShowDevelopment(progress, TryBuy, TryResearch);
         }
 
         private void SelectVehicle(TreeItem item, VehicleNode node)
@@ -466,7 +467,7 @@ namespace Game.Scripts.UI.Tree
 
             if (selectedProgress != null && _selectedTreeItem != null)
             {
-                detailsPanel.Show(selectedProgress, TryBuy, TryResearch);
+                rightInfoPanel.ShowDevelopment(selectedProgress, TryBuy, TryResearch);
             }
         }
 
@@ -623,7 +624,7 @@ namespace Game.Scripts.UI.Tree
                 && arrowDrawer != null
                 && buttonsContainer != null
                 && factionButtonPrefab != null
-                && detailsPanel != null;
+                && rightInfoPanel != null;
         }
 
         private void ClearRuntimeTree()

@@ -300,23 +300,23 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator BotTurretHoldsInsideMicroYawDeadZone()
+        public IEnumerator BotTurretMovesInsideFormerMicroYawDeadZone()
         {
             Type turretType = Type.GetType(
                 "Game.Scripts.Gameplay.Robots.VehicleTurretRotationController, Assembly-CSharp");
             Assert.IsNotNull(turretType);
 
-            MethodInfo shouldHoldYaw = turretType.GetMethod(
-                "ShouldHoldTargetYaw",
+            MethodInfo hasTargetYawError = turretType.GetMethod(
+                "HasTargetYawError",
                 BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.IsNotNull(shouldHoldYaw);
+            Assert.IsNotNull(hasTargetYawError);
 
-            bool holdsSmallError = (bool)shouldHoldYaw.Invoke(null, new object[] { 0f, 0.2f, 0.25f });
-            bool holdsWrappedSmallError = (bool)shouldHoldYaw.Invoke(null, new object[] { 179.9f, -179.9f, 0.25f });
-            bool movesForRealError = (bool)shouldHoldYaw.Invoke(null, new object[] { 0f, 1f, 0.25f });
-            Assert.IsTrue(holdsSmallError);
-            Assert.IsTrue(holdsWrappedSmallError);
-            Assert.IsFalse(movesForRealError);
+            bool movesForSmallError = (bool)hasTargetYawError.Invoke(null, new object[] { 0f, 0.2f });
+            bool movesForWrappedSmallError = (bool)hasTargetYawError.Invoke(null, new object[] { 179.9f, -179.9f });
+            bool staysAtExactTarget = (bool)hasTargetYawError.Invoke(null, new object[] { 0f, 0f });
+            Assert.IsTrue(movesForSmallError);
+            Assert.IsTrue(movesForWrappedSmallError);
+            Assert.IsFalse(staysAtExactTarget);
             yield return null;
         }
 

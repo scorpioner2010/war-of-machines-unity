@@ -172,7 +172,7 @@ MonoBehaviour:
     debugBallisticTrajectory: 0
   vehicleInputSync:
     sendInterval: 0.05
-    yawPitchSendDeadzoneDeg: 0.03
+    yawPitchSendDeadzoneDeg: 0
     aimPointSendDeadzoneMeters: 0.02
   matchVisibility:
     enabled: 1

@@ -2246,6 +2246,120 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation checkpoint:** All 58 clip GUIDs referenced by `AudioManager.prefab` resolve to project `.meta` files. The working tree had pre-existing changes in `Client.unity`, font assets, and `TASK.md`; no implementation files were changed by this investigation.
 - **Status:** COMPLETED
 - **Completed:** 2026-11-03
+
+## Task: Diagnose RightInfoPanel behavior in ClientMenuTestMode
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Explain why the unified `RightInfoPanel` does not work in `ClientMenuTestMode`, and determine whether the test menu follows different behavior from the real menu.
+- **Scope:** Compare `ClientMenuTestMode` startup, menu routing, scene wiring, selected-vehicle/profile data flow, and shared panel lifecycle against the normal MainMenu and DevelopmentTree flows; do not change implementation until the concrete cause is confirmed.
+- **Acceptance criteria:** Identify the exact reason the panel fails or differs in test mode, distinguish intentional test-mode behavior from a regression, name the relevant files/serialized references, and record validation and limitations.
+- **Progress:** Read the global Codex instructions, task-journal recovery workflow, archive history, current project journal, and the menu/progression ownership documentation. No exact dedicated workflow for this diagnosis was found; proceed with focused repository inspection.
+- **Next steps:** Inspect `ClientMenuTestMode`, `MainMenu`, `DevelopmentTree`, `RightInfoPanel`, `MenuManager`, and the Client scene wiring, then record the confirmed cause and close this diagnostic entry.
+- **Discovery checkpoint:** `ClientMenuTestMode` uses the same `MenuManager.OpenMenu(MenuType.MainMenu)`, `MainMenu`, `RobotView`, and `RightInfoPanel` lifecycle as the normal menu; only profile/vehicle data comes from local `ClientMenuTestMode` factories instead of HTTP/RPC. The shared panel therefore does not require a separate test-mode implementation.
+- **Discovery checkpoint:** The current `Client.unity` serialization is incomplete: the active `MainMenu` component at line 33559 and active `DevelopmentTree` component at line 29380 both have `rightInfoPanel: {fileID: 0}`, and the shared `RightInfoPanel` GameObject at line 5154 is inactive. Because an inactive GameObject does not run `RightInfoPanel.Awake`, it never subscribes to `MenuManager.OnEnable`; because both coordinator references are null, vehicle/tree updates are also discarded.
+- **Result:** The failure is a scene-wiring/lifecycle regression, not a different test-menu principle. The offline mode intentionally bypasses server data and runs the same presentation path after creating local profile data. It currently exposes the missing serialized references and inactive shared panel immediately.
+- **Validation:** Static inspection confirmed `ClientMenuTestMode.Start` opens `MainMenu` and calls local `ProfileServer.UpdateProfile`; `RobotView` calls `MainMenu.UpdateVehicleInfo`; `DevelopmentTree` calls `RightInfoPanel.ShowDevelopment`; and the three scene conditions above are present. No implementation files were changed.
+- **Remaining limitations:** This diagnosis was static; Unity PlayMode was not run. The concrete repair is to assign `{fileID: 2147000001}` to both menu fields and leave the shared panel root active in the saved scene so its `Awake` can manage visibility.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Repair MainMenu and DevelopmentTree shared RightInfoPanel wiring
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Make both real menus fully functional after the `RightInfoPanel` unification, while keeping only generated local data in `ClientMenuTestMode`.
+- **Scope:** Repair serialized scene references and shared-panel lifecycle state, preserve normal server-backed menu flows, preserve offline test-mode data generation, and validate builds plus static menu/layout wiring.
+- **Acceptance criteria:** MainMenu and DevelopmentTree reference the single shared panel; the panel starts active enough for `Awake` and hides/shows itself through menu routing; offline test mode still uses only local generated profile/vehicle/tree data; normal menu paths remain server-backed; focused validation passes.
+- **Progress:** Read the global Codex instructions, task-journal recovery workflow, archive history, current journal, and menu/progression documentation. Existing unrelated working-tree changes remain untouched.
+- **Next steps:** Patch the Client scene serialization, verify both menu references and panel activation/layout/button wiring, build the affected assemblies, and close this entry with validation results.
+- **Implementation checkpoint:** Restored `MainMenu.rightInfoPanel` and `DevelopmentTree.rightInfoPanel` to the shared component `{fileID: 2147000001}` and restored the shared `RightInfoPanel` root to active in `Assets/Game/Scenes/Client.unity`, allowing `Awake` to subscribe to menu routing. No test-mode or normal server data logic was changed.
+- **Validation checkpoint:** All 8 focused scene assertions passed: shared root active, both menu references resolved, legacy root inactive, `ButtonBattle` reparented, and both authored placements/sizes preserved. Runtime and PlayMode assemblies built with 0 errors; only existing dependency warnings remain in runtime build. `git diff --check -- TASK.md` passed; unrelated scene whitespace warnings remain outside this focused journal check.
+- **Result:** Both real menus now use the same functional shared panel, while `ClientMenuTestMode` continues to generate only local profile/vehicle/tree data through its existing test factories. Normal profile and vehicle server fallbacks remain unchanged.
+- **Remaining limitations:** Unity PlayMode/manual visual interaction was not run because the Unity Editor is already open; the saved scene wiring and C# compilation are validated.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Keep RightInfoPanel disabled by default
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Keep `RightInfoPanel` disabled by default while preserving fully working MainMenu and DevelopmentTree behavior.
+- **Scope:** Add a focused lifecycle owner that can initialize and activate the disabled shared panel when `MenuManager` opens the relevant menu; preserve scene positions, button context, normal server-backed data, and offline generated test data.
+- **Acceptance criteria:** The panel GameObject is inactive in the saved scene by default; MainMenu and DevelopmentTree still receive the same shared panel; lifecycle initialization and Buy/Research listeners work despite the panel starting inactive; builds and static layout/reference checks pass.
+- **Progress:** Read the global instructions, task-journal workflow, archive history, current journal, and menu/progression documentation. Existing unrelated working-tree changes remain untouched.
+- **Next steps:** Implement the active Canvas-level lifecycle host, change the panel default state, update documentation, validate scene wiring and builds, then close this entry.
+- **Implementation checkpoint:** Added `RightInfoPanelHost` on the active Canvas. It initializes the inactive panel, owns the `MenuManager.OnEnable` subscription, and delegates context activation. `RightInfoPanel` now has idempotent initialization so its progression button listeners and cached layout work even when its GameObject starts inactive.
+- **Implementation checkpoint:** Set the shared panel inactive by default in `Assets/Game/Scenes/Client.unity`; kept both menu references, the legacy duplicate state, button parenting, and authored placements unchanged. Updated `docs/codex-game/menus-settings-progression.md` with the lifecycle boundary.
+- **Validation checkpoint:** All 11 focused scene/code/documentation assertions passed. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` and `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:minimal` passed with 0 errors; runtime retains only existing dependency/obsolete API warnings. `git diff --check` passed for journal and documentation files.
+- **Result:** `RightInfoPanel` is now disabled in the saved scene by default but is fully initialized and shown only when MainMenu or DevelopmentTree is opened. Test mode still uses only generated local data; normal menu data flow is unchanged.
+- **Remaining limitations:** Unity PlayMode/manual interaction was not run because the Unity Editor is already open; Unity should reload `Client.unity` before visual verification.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Regenerate ClientMenuTestMode data and repair panel updates
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Regenerate all generated test-menu data from scratch because vehicle selection did not reliably change the parameters shown in the shared `RightInfoPanel`; keep all menu panels functional.
+- **Scope:** Inspect the test-data source, profile/selection propagation, MainMenu and DevelopmentTree panel consumers, and the shared panel contract. Replace ambiguous test records with a coherent deterministic roster and repair only the test-mode synchronization path without changing real server behavior.
+- **Acceptance criteria:** Every generated vehicle has a unique stable identity and visibly distinct coherent stats; selecting a vehicle updates the selected state, slots, and `RightInfoPanel`; development-tree data remains usable; existing panel placement/visibility behavior remains unchanged; project and focused test assemblies compile.
+- **Progress:** Traced `ClientMenuTestMode` → `ProfileServer` → `RobotView` → `RightInfoPanel`; confirmed selection is ID-based and found the real defect in the generator: same-level records received nearly identical combat values. Replaced the stale serialized roster with a deterministic generated 15-vehicle catalog, regenerated profile history, and kept the scene array empty so old data cannot leak into runtime.
+- **Changes:** Added role/variant-specific HP, armor, mobility, firepower, accuracy, reload, view range, and damage values; kept valid `RobotRegistry` codes and unique IDs; added a reflection-based PlayMode regression test for selection, distinct stats, and two-faction tree coverage; updated menu documentation.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:q` passed with 0 errors and 4 pre-existing warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:q` passed with 0 errors; static scene/layout checks passed for the cleared roster, shared panel wiring, default-inactive state, and both preserved placements. Unity PlayMode/manual visual interaction was not run because the Unity Editor is already open.
+- **Next steps:** Reload the changed scene in Unity and click several generated vehicle slots in MainMenu and DevelopmentTree to visually confirm the expected values and panel context.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Unify duplicated RightInfoPanel in MainMenu and DevelopmentTree
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Make `RightInfoPanel` a single reusable element instead of duplicated panels in `MainMenu` and `DevelopmentTree`, while preserving the current appearance, positions, behavior, and context-specific buttons.
+- **Scope:** Trace both UI hierarchies, scripts, prefabs/scenes, serialized references, and button visibility/state ownership; extract or reuse one focused panel owner; keep the existing layout and interactions unchanged; verify dimensions, offsets, anchors, and runtime behavior for both contexts.
+- **Acceptance criteria:** Only one reusable `RightInfoPanel` implementation/asset is maintained; `MainMenu` and `DevelopmentTree` show the correct context-specific buttons; existing positions, sizes, styling, and interactions remain visually and functionally equivalent; focused validation and static layout/reference checks pass; unrelated working-tree changes remain untouched.
+- **Progress:** Read the global Codex instructions, repository journal, task-journal recovery workflow, and archive history. No exact workflow for this UI refactor was found; use the project's existing UI style and focused ownership rules.
+- **Next steps:** Inspect the current `RightInfoPanel` hierarchy and all related scripts/assets, record the ownership boundary and baseline layout values, then implement the smallest safe unification and validate serialized references and UI dimensions.
+- **Discovery checkpoint:** `Client.unity` contains `RightInfoPanel` roots `202115661` under `DevelopmentTree/AnimationPanel` and `994464634` under `MainMenu/AnimationPanel`. The development panel owns the shared stats plus `ButtonBuy`/`ButtonResearch`; the main-menu panel owns the same visual/stat structure plus `ButtonBattle`. The common top-level child layout is identical after the MainMenu offset `{x: 18.04, y: 73}`, while root placements remain distinct: DevelopmentTree `{position: -249.69,-165.46; size: 499.38,-330.93}` and MainMenu `{position: -267.72974,-12.404846; size: 535.4595,-24.810421}`. Both panels use the same right-side anchors and sibling index `3`.
+- **Ownership decision:** Keep one `RightInfoPanel` instance as a focused UI owner under the shared Canvas, move it to the active menu placement on `MenuManager.OnEnable`, and switch only the context-specific buttons/content. `MainMenu` and `DevelopmentTree` remain coordinators and delegate panel presentation/data/actions to this owner.
+- **Implementation checkpoint:** Added one shared `RightInfoPanel` owner under the Canvas, migrated both menu coordinators to it, preserved the common content layout, and reparented `ButtonBattle` into the shared panel while retaining its local transform. The former MainMenu hierarchy remains inactive as a safe serialized legacy container and is not rendered or scripted at runtime.
+- **Validation checkpoint:** Static reference and layout checks passed: the shared root and context references resolve, the legacy MainMenu root is inactive, both exact root placements and the MainMenu content offset match the recorded baseline, and the context buttons are attached to the shared owner. `Assembly-CSharp.csproj` and `Game.PlayMode.Tests.csproj` both build successfully; scoped diff whitespace checks pass.
+- **Result:** MainMenu uses the MainMenu placement and `ButtonBattle`; DevelopmentTree uses the DevelopmentTree placement and `ButtonBuy`/`ButtonResearch`, with the existing data formatting and actions centralized in the shared owner.
+- **Remaining limitations:** Unity PlayMode/manual visual QA was not run in this session, so the final visual confirmation should be made in the open Unity Editor. No unrelated working-tree changes were modified.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Remove robots without prefabs from ClientVehicleTestMode
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Remove from `ClientVehicleTestMode` the robots that do not have prefabs.
+- **Scope:** Identify how test-mode robot entries are selected and validate their prefab references, then exclude only entries whose configured prefab asset is missing or invalid without changing normal gameplay robot registration.
+- **Acceptance criteria:** `ClientVehicleTestMode` no longer offers or spawns robots without prefabs, valid test-mode robots remain available, focused validation passes, and unrelated working-tree changes remain untouched.
+- **Progress:** Re-read the global instructions, gameplay ownership workflow, task-journal recovery workflow, and current repository journal. The next step is to inspect the test-mode roster and prefab-reference validation path.
+- **Next steps:** Trace the test-mode robot list and its spawn/selection owner, implement the smallest focused filtering fix, update relevant documentation or regression coverage, validate, then close this entry.
+- **Discovery checkpoint:** `VehicleTestSceneController.LoadVehiclesAsync` copied every API vehicle into the visible catalog, while prefab validation happened only when spawning. Bot random selection already used `HasVehiclePrefab`; `RobotRegistry.GetFirstCode` also skipped missing prefabs. The focused fix belongs in the test controller's catalog-loading owner, not in the shared registry, because development-only no-prefab entries must remain available to other systems.
+- **Implementation checkpoint:** Added `FilterVehiclesWithPrefabs` to `VehicleTestSceneController`, applied it immediately after API loading, made selected-prefab lookup use the registry/resource fallback consistently, documented the test catalog contract, and added `VehicleTestCatalogPlayModeTests` covering valid and missing prefab entries.
+- **Validation checkpoint:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing `System.Net.Http`/obsolete API warnings. `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:minimal` passed with `0` errors and `0` warnings. Scoped `git diff --check` passed. Full `git diff --check` reports only pre-existing trailing whitespace in the already modified `Assets/Game/Scenes/Client.unity`; Unity batch PlayMode was not run because Unity Editor processes for this project are already open.
+- **Result:** The Client vehicle test catalog now contains only API vehicles with a valid prefab in the configured registry/resource lookup, so missing-prefab robots cannot be selected or spawned from the test panel. Shared registry contents remain unchanged.
+- **Remaining limitations:** Unity PlayMode execution was not run; the new regression is compile-validated and should be run after closing the currently open Unity Editor instances.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Remove horizontal turret aim dead zones
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Remove the small-movement thresholds so a player can make small horizontal gun adjustments and see the convergence reticle move.
+- **Scope:** Remove the horizontal turret, dispersion, and aim-update dead zones that suppress small yaw changes, preserve unrelated turret-rotation sound behavior, and validate the change.
+- **Acceptance criteria:** Small horizontal aim changes reach the turret and reticle without dead-zone suppression, project builds, focused static checks pass, and unrelated working-tree changes remain untouched.
+- **Progress:** Re-read the relevant gameplay ownership workflow and confirmed the current turret hold, dispersion, input-send, and server-dispersion thresholds that can suppress micro-yaw changes.
+- **Next steps:** Inspect all affected call sites and regression coverage, implement the focused threshold removal, update mechanic documentation, validate the build and diff, then close this entry.
+- **Implementation checkpoint:** Removed the turret's `0.25`-degree hold dead zone, removed the `5%` turret-speed dispersion dead zone, and stopped the input controller from replacing sub-threshold yaw/pitch packets with the previous values. Set the active server setting to zero for compatibility and updated the turret regression test and ownership documentation. Turret-rotation audio event calls and assets were not edited.
+- **Validation checkpoint:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and the existing `System.Net.Http`/obsolete API warnings. `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:minimal` passed with `0` errors and `0` warnings. `git diff --check` passed; `AudioEventNames.cs` is unchanged and the remaining working-tree changes are limited to the requested code, test, docs, and journal files.
+- **Result:** Sub-degree horizontal turret corrections now advance every frame toward the target, dispersion reacts to any nonzero turret yaw speed, and network aim packets preserve the current quantized yaw/pitch instead of suppressing micro-adjustments. The existing reticle smoothing remains unchanged because it is interpolation, not a dead zone.
+- **Remaining limitations:** Unity Play Mode/manual aiming verification was not run; the final feel should be checked by moving the gun by a very small amount in `ClientVehicleTestMode`.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
 - **Result:** The missing sounds have multiple causes: the test camera does not own an audio listener while the normal Client and additive Map cameras keep listeners active; spatial SFX are attenuated from those listeners over 4–50 metres; turret rotation events are called but not registered; map ambience events are configured at zero volume and are not called; and the IMGUI/test-mode path bypasses several normal UI, matchmaking, countdown, and result triggers. A server-only startup or zero `SFXVol`/`UIVol` PlayerPrefs value can additionally suppress whole categories.
 - **Validation:** Static source and serialized-asset audit completed; 58/58 referenced audio clip GUIDs resolve; `git diff --check -- TASK.md` passed; no runtime Unity playtest was performed.
 - **Remaining limitations:** The exact listener chosen at runtime and the current PlayerPrefs volume values require a live Play Mode check. No implementation change was requested or made.
@@ -2280,5 +2394,20 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation checkpoint:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 4 existing warnings. `git diff --check` passed; static validation found 2 intentional listeners in `Client` (normal + test), 0 in `Map`, movement audio bound to `objectMover`, and no changes in the turret-rotation files.
 - **Result:** The additive map no longer contributes an extra `AudioListener`, and the vehicle movement/step/hydraulic sources follow the transform that actually moves instead of remaining at the vehicle root's spawn position.
 - **Remaining limitations:** Unity PlayMode/manual audio verification was not run; the final audible result should be confirmed by driving a tracked vehicle and, if needed, a walker in `ClientVehicleTestMode`.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Explain small horizontal turret aim movement
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Explain why the aiming/convergence reticle does not move when the turret is moved only slightly horizontally.
+- **Scope:** Trace the turret yaw input, movement dead zones, and convergence/reticle update path without changing implementation files.
+- **Acceptance criteria:** Identify the exact threshold or smoothing behavior responsible, cite the relevant owner files, and distinguish a true no-op from a visually smoothed movement.
+- **Next steps:** Inspect the turret input/rotation and dispersion presentation code, then close this diagnostic entry with the confirmed explanation.
+- **Discovery checkpoint:** The turret controller intentionally holds target yaw when the error is at or below `0.25` degrees (`AimHoldDeadZoneDegrees`). The convergence model also ignores turret motion below `5%` of the configured turret rotation speed, and client input/network serialization suppresses yaw updates below `0.03` degrees. The HUD reticle position then follows its projected aim point with exponential horizontal smoothing (`uiReticleHorizontalLerpSpeed`, `10` in the active server settings prefab).
+- **Result:** Very small horizontal mouse movement can produce no visible turret/reticle change because it remains inside the `0.25`-degree turret hold zone; if the turret does move, the convergence circle may still barely change because its dispersion contribution is zero below the `5%` speed threshold and the HUD position is smoothed.
+- **Validation:** Static source and serialized-setting audit completed; no implementation files changed.
+- **Remaining limitations:** No live Play Mode measurement of the current mouse delta was run, so the exact observed threshold depends on the active vehicle's runtime `TurretTraverseSpeed`.
 - **Status:** COMPLETED
 - **Completed:** 2026-11-03
