@@ -2213,3 +2213,72 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - Updated ownership documentation in `docs/codex-game/weapons-damage.md`.
 - Unity PlayMode/manual visual QA was not run because the project remains open in the Unity Editor.
 - **Result:** Robot impact FX remain attached to the moving visual mesh/turret, decals continue following the target, and authored particle scale is protected by the neutral anchor.
+
+## Task: Analyze convergence circle growth conditions
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Analyze the convergence/aiming circle and explain under which conditions it increases.
+- **Scope:** Trace the reticle/convergence-circle presentation from its UI owner through aiming, movement, target, and weapon state inputs; identify the exact formulas, thresholds, and lifecycle conditions without changing implementation files.
+- **Acceptance criteria:** Name the responsible files and fields, distinguish direct size inputs from visual/layout effects, explain when the circle grows or shrinks, and record validation and any uncertainty here.
+- **Progress:**
+  - The presentation chain is `NetworkWeaponShooter` → `GunDispersionGlobalSettings.GetUiDiameter` → `GunCrosshair.SetAimingDiameters`; the runtime model is `GunDispersionModel` in `Assets/Game/Scripts/Gameplay/Robots/GunDispersion.cs`.
+  - Dynamic dispersion is `clamp01(vehicleSpeed01 * 0.5 + turretSpeed01 * 0.5 + shotDispersion01)`, then interpolated between the weapon's minimum and maximum dispersion. Vehicle speed is horizontal movement normalized by runtime max speed; turret contribution uses actual turret-local yaw speed and has a 5% dead zone; a shot contributes a temporary `0.5` factor.
+  - Hull rotation, gun pitch, camera movement/rotation, target lock, reload state, and ammo state are not direct growth inputs. Vertical movement is ignored because the movement delta clears `y` before speed calculation.
+  - The active Client scene supplies explicit fully-aimed profile diameters from `38` to `366` UI pixels for zoom steps `-2` through `7`; only dispersion above the fully aimed value adds bloom. The bloom is larger at higher zoom, using the configured distance-to-zoom interpolation.
+  - Growth and shrink are smoothed: global `expandTime` controls expansion toward a larger target, weapon `aimTime` controls settling toward a smaller target, and HUD diameter smoothing uses `uiDiameterLerpSpeed`.
+- **Validation:** Static source/reference audit completed; inspected the focused `LegacyGunDispersionUiPlayModeTests` formula coverage; `git diff --check -- TASK.md` passed. No implementation files were changed. The working tree also contains unrelated modified font assets, which were left untouched.
+- **Result:** The convergence circle grows while the vehicle moves horizontally, the turret rotates above its dead zone, or immediately after firing; simultaneous inputs add together up to the maximum dispersion. It returns toward the configured fully-aimed profile diameter after the inputs stop and the shot bloom settles.
+- **Remaining limitations:** No live Unity visual reproduction was run; the conclusion is based on the current source, scene serialization, mechanic documentation, and focused formula tests.
+- **Completed:** 2026-11-03
+
+## Task: Diagnose missing sounds in ClientVehicleTestMode
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Explain why some sounds cannot be heard in the test mode `ClientVehicleTestMode`.
+- **Scope:** Trace test-mode startup, active scene/object configuration, audio manager/resource registration, sound playback calls, listener/mixer/channel state, and client/server authority or lifecycle conditions that can suppress sounds; do not change implementation files unless explicitly requested.
+- **Acceptance criteria:** Identify the concrete reason(s) for missing sounds, name the relevant files and conditions, distinguish confirmed causes from hypotheses, and record validation and limitations here.
+- **Progress:** Read the global Codex instructions, journal workflow, project journal, gameplay-logic separation workflow, and memory history. No exact dedicated audio-diagnosis workflow was found; proceed with focused repository inspection.
+- **Next steps:** Inspect `ClientVehicleTestMode`, the active audio stack, all callers used by the test mode, and relevant scene/prefab serialization; then update this entry with findings and close it.
+- **Progress checkpoint:** Confirmed `ClientVehicleTestMode` starts a local FishNet host, disables only the normal `Camera` component, and uses `ClientVehicleTestCamera` without an `AudioListener`. The normal Client camera keeps an enabled `AudioListener`, and the additive `Map` scene adds another enabled `GameplayCamera` listener; spatial SFX use a 4–50 metre 3D attenuation range. This can make world sounds quiet, distant, or listener-dependent in the test mode.
+- **Progress checkpoint:** Confirmed `Combat_Turret_Rotation` and `Combat_Turret_Rotation_Finished` are called by `VehicleTurretRotationController` but are absent from `AudioManager.prefab`; `AudioResources.GetResource` therefore returns null and `AudioManager.Play` silently returns. `Map_Industry` and `Map_Wind` are serialized with element volume `0`, and no current caller starts them. The test panel itself is IMGUI, so its buttons do not use `ButtonComponent` click/hover audio; matchmaking/result/progression sounds also require flows the test mode does not automatically execute.
+- **Validation checkpoint:** All 58 clip GUIDs referenced by `AudioManager.prefab` resolve to project `.meta` files. The working tree had pre-existing changes in `Client.unity`, font assets, and `TASK.md`; no implementation files were changed by this investigation.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+- **Result:** The missing sounds have multiple causes: the test camera does not own an audio listener while the normal Client and additive Map cameras keep listeners active; spatial SFX are attenuated from those listeners over 4–50 metres; turret rotation events are called but not registered; map ambience events are configured at zero volume and are not called; and the IMGUI/test-mode path bypasses several normal UI, matchmaking, countdown, and result triggers. A server-only startup or zero `SFXVol`/`UIVol` PlayerPrefs value can additionally suppress whole categories.
+- **Validation:** Static source and serialized-asset audit completed; 58/58 referenced audio clip GUIDs resolve; `git diff --check -- TASK.md` passed; no runtime Unity playtest was performed.
+- **Remaining limitations:** The exact listener chosen at runtime and the current PlayerPrefs volume values require a live Play Mode check. No implementation change was requested or made.
+
+## Task: Fix shot audio in ClientVehicleTestMode
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Do not touch turret-rotation sounds; find and fix why the shot sound is inaudible in `ClientVehicleTestMode`, with the expectation that the same fix restores other missing sounds.
+- **Scope:** Fix the test-mode audio listener/lifecycle path and verify the existing shot event reaches a valid audible `AudioSource`; preserve all turret-rotation event names, callers, and registrations.
+- **Acceptance criteria:** Player and bot shot sounds are audible from the active test camera, no duplicate active listeners remain in the test path, turret-rotation audio files/code are unchanged, focused validation passes, and unrelated working-tree changes remain untouched.
+- **Progress:** Re-read the global instructions, gameplay ownership workflow, and latest journal. The previous investigation identified that `ClientVehicleTestMode` disables only the normal camera, while `Client` and additive `Map` retain active listeners and the test camera has none.
+- **Next steps:** Inspect the current camera/listener ownership and shot playback path, implement the smallest focused fix, validate the diff and project build if feasible, then close this entry.
+- **Implementation checkpoint:** Added `ClientVehicleTestAudioRouting` as the focused test-audio owner, attached a disabled `AudioListener` plus the routing component to `ClientVehicleTestCamera`, and documented the ownership boundary in `docs/codex-game/vehicle-test-scene.md`. The router enables only the test-camera listener and disables other active listeners again after additive scene loads, then restores them on teardown. No turret-rotation source or event asset was changed.
+- **Validation checkpoint:** `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors; existing project warnings remain. `git diff --check` passed, the scene/script references were statically verified, and the protected turret-rotation controller plus audio-event registry are unchanged.
+- **Result:** Shot SFX now use the active test camera as the single listener, so the existing player and bot shot playback path is audible at the camera position; the same listener correction applies to other spatial SFX in `ClientVehicleTestMode` without changing turret-rotation sounds.
+- **Remaining limitations:** Unity PlayMode/manual audio verification was not run. Existing mixer volume or `PlayerPrefs` mute settings can still suppress audio independently of this listener fix.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Fix duplicate listeners and moving vehicle audio in ClientVehicleTestMode
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Remove extra audio listeners and fix vehicle movement audio that stays at its original position after the vehicle moves.
+- **Scope:** Inspect the current test-mode listener routing and the movement/engine audio source ownership, then make focused fixes without changing turret-rotation sounds or unrelated working-tree changes.
+- **Acceptance criteria:** Only the intended test listener remains active, movement audio follows the moving vehicle/source, focused validation passes, and unrelated changes remain untouched.
+- **Progress:** The previous task added `ClientVehicleTestAudioRouting` to enable the test-camera listener and disable listeners found in the loaded scenes. The new report indicates that this routing may be leaving or creating duplicate listeners, and that the movement audio source may be played from a non-moving owner.
+- **Next steps:** Audit listener lifecycle and movement-audio call sites/serialized sources, implement focused fixes, validate the build and diff, then close this entry.
+- **Discovery checkpoint:** Confirmed `Map/GameplayCamera` had a serialized `AudioListener` even though VehicleTest disables that camera; it was an extra listener in the additive test scene. Confirmed `TrackedVehicleAnimator` and `WalkerAnimationController` run on the vehicle root, while the `VehicleMovementController` `CharacterController` moves the child `objectMover` transform, so movement audio parent/positions stayed at the root's initial location.
+- **Implementation checkpoint:** Removed the `Map/GameplayCamera` listener, made `ClientVehicleTestAudioRouting` use only the serialized test-camera listener without runtime `AddComponent`, and restore disabled listeners when the router is disabled. Rebound tracked, walker, hydraulic, step, and turn movement sounds to `vehicleRoot.objectMover.transform` with a root fallback. Updated `docs/codex-game/vehicle-test-scene.md` to document the ownership boundary.
+- **Validation checkpoint:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 4 existing warnings. `git diff --check` passed; static validation found 2 intentional listeners in `Client` (normal + test), 0 in `Map`, movement audio bound to `objectMover`, and no changes in the turret-rotation files.
+- **Result:** The additive map no longer contributes an extra `AudioListener`, and the vehicle movement/step/hydraulic sources follow the transform that actually moves instead of remaining at the vehicle root's spawn position.
+- **Remaining limitations:** Unity PlayMode/manual audio verification was not run; the final audible result should be confirmed by driving a tracked vehicle and, if needed, a walker in `ClientVehicleTestMode`.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03

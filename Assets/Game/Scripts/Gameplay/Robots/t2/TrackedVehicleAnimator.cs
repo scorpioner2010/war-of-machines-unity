@@ -65,7 +65,9 @@ namespace Game.Scripts.Gameplay.Robots.t2
 
             if (_movementAudio == null && _movementVolume > 0.001f)
             {
-                _movementAudio = SoundCaller.PlayLoopedSfx(AudioEventNames.TrackedMovement, transform);
+                _movementAudio = SoundCaller.PlayLoopedSfx(
+                    AudioEventNames.TrackedMovement,
+                    GetMovementAudioTransform());
             }
 
             if (_movementAudio != null)
@@ -84,6 +86,13 @@ namespace Game.Scripts.Gameplay.Robots.t2
             _movementAudio?.Stop();
             _movementAudio = null;
             _movementVolume = 0f;
+        }
+
+        private Transform GetMovementAudioTransform()
+        {
+            return vehicleRoot != null && vehicleRoot.objectMover != null
+                ? vehicleRoot.objectMover.transform
+                : transform;
         }
 
         private void OnDisable()

@@ -129,7 +129,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
             {
                 _movementAudio = SoundCaller.PlayLoopedSfxForRobot(
                     AudioEventNames.WalkerMovement,
-                    transform,
+                    GetMovementAudioTransform(),
                     default,
                     vehicleRoot?.RuntimeStats?.Code);
             }
@@ -138,7 +138,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
             {
                 _hydraulicsAudio = SoundCaller.PlayLoopedSfxForRobot(
                     AudioEventNames.WalkerHydraulics,
-                    transform,
+                    GetMovementAudioTransform(),
                     default,
                     vehicleRoot?.RuntimeStats?.Code);
             }
@@ -167,7 +167,7 @@ namespace Game.Scripts.Gameplay.Robots.t1
             {
                 SoundCaller.PlaySfxForRobot(
                     AudioEventSelector.GetWalkerStepEvent(vehicleRoot),
-                    transform.position,
+                    GetMovementAudioTransform().position,
                     vehicleRoot?.RuntimeStats?.Code);
             }
 
@@ -175,9 +175,16 @@ namespace Game.Scripts.Gameplay.Robots.t1
             {
                 SoundCaller.PlaySfxForRobot(
                     AudioEventSelector.GetWalkerTurnEvent(vehicleRoot),
-                    transform.position,
+                    GetMovementAudioTransform().position,
                     vehicleRoot?.RuntimeStats?.Code);
             }
+        }
+
+        private Transform GetMovementAudioTransform()
+        {
+            return vehicleRoot != null && vehicleRoot.objectMover != null
+                ? vehicleRoot.objectMover.transform
+                : transform;
         }
 
         private static bool HasCycleWrapped(float previous, float current)

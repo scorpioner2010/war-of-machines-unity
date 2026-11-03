@@ -26,6 +26,10 @@ Current owner scripts:
   - After a VehicleTest player or bot vehicle is spawned, the controller binds that vehicle's prefab-assigned `VehicleHUD` to the test gameplay camera, vehicle root, and nickname so the world HP bar scales/rotates like normal gameplay.
   - For the spawned test player, reasserts the test camera's `CameraSync`, initializes the player's `CameraController`, and sets `CameraSync.target` to that controller so additive gameplay maps cannot leave the camera detached.
   - Makes the configured `testCamera` the primary gameplay camera by enabling it, raising its camera depth, and disabling other loaded `CameraSync` cameras such as `Map/GameplayCamera`.
+- `Assets/Game/Scripts/Testing/ClientVehicleTestAudioRouting.cs`
+  - Owns the editor-only test session's audio listener instead of adding audio policy to the vehicle, weapon, or camera movement owners.
+  - Keeps the scene-owned `ClientVehicleTestCamera` as the only active `AudioListener`, including after additive gameplay scenes load; the normal Client listener is restored when the test camera component is disabled or destroyed.
+  - `Map/GameplayCamera` intentionally has no `AudioListener`, because its camera is disabled during the editor-only vehicle test and the Client/test camera owners provide the single listener for their respective modes.
 - `Assets/Game/Scripts/Testing/VehicleTestRuntimeSettings.cs`
   - Builds test runtime stats for reload/ammo overrides.
   - Applies test-only weapon accuracy debug mode to the spawned vehicle.
