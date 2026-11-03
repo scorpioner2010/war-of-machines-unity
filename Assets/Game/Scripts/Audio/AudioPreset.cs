@@ -18,6 +18,8 @@ namespace Game.Scripts.Audio
             && (source.isPlaying || (_scheduledDspTime >= 0d && AudioSettings.dspTime < _scheduledDspTime));
         public bool IsAvailable => source != null && !IsBusy;
         public string EventName => _element != null ? _element.name : string.Empty;
+        public float PlaybackVolume => _playbackVolume;
+        public float Pitch => source != null ? source.pitch : 1f;
 
         private void Awake()
         {

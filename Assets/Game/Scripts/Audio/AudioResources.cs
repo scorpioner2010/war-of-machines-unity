@@ -18,11 +18,15 @@ namespace Game.Scripts.Audio
         {
             SetNames(uiClips);
             SetNames(soundCategories);
+            SetNames(engineProfiles);
             SetNames(musicClips);
         }
 
         public AudionElement[] uiClips;
         public AudioSoundCategory[] soundCategories;
+        public AudioEngineProfile[] engineProfiles;
+        [Tooltip("Overall volume multiplier for every robot engine loop and one-shot sound.")]
+        [Range(0, 1)] public float engineMasterVolume = 1f;
         public AudionElement[] musicClips;
 
         public AudionElement GetResource(string clipName)
@@ -56,6 +60,40 @@ namespace Game.Scripts.Audio
             };
         }
 
+        public AudioEngineProfile GetEngineProfile(string robotCode)
+        {
+            if (engineProfiles == null || engineProfiles.Length == 0)
+            {
+                return null;
+            }
+
+            string factionTarget = GetFactionTarget(robotCode);
+            AudioEngineProfile bestMatch = null;
+            int bestRank = int.MaxValue;
+
+            foreach (AudioEngineProfile profile in engineProfiles)
+            {
+                if (profile == null)
+                {
+                    continue;
+                }
+
+                string target = string.IsNullOrWhiteSpace(profile.robotTarget)
+                    ? AudioRobotTargetIds.Common
+                    : profile.robotTarget;
+                int rank = GetTargetRank(target, robotCode, factionTarget);
+                if (rank >= bestRank)
+                {
+                    continue;
+                }
+
+                bestMatch = profile;
+                bestRank = rank;
+            }
+
+            return bestRank <= 2 ? bestMatch : null;
+        }
+
         private static void SetNames(AudionElement[] elements)
         {
             if (elements == null)
@@ -65,10 +103,15 @@ namespace Game.Scripts.Audio
 
             foreach (AudionElement element in elements)
             {
-                if (element != null && string.IsNullOrWhiteSpace(element.name))
-                {
-                    element.name = GetFirstClipName(element);
-                }
+                SetNames(element);
+            }
+        }
+
+        private static void SetNames(AudionElement element)
+        {
+            if (element != null && string.IsNullOrWhiteSpace(element.name))
+            {
+                element.name = GetFirstClipName(element);
             }
         }
 
@@ -85,6 +128,29 @@ namespace Game.Scripts.Audio
                 {
                     SetNames(category.robotGroups);
                 }
+            }
+        }
+
+        private static void SetNames(AudioEngineProfile[] profiles)
+        {
+            if (profiles == null)
+            {
+                return;
+            }
+
+            foreach (AudioEngineProfile profile in profiles)
+            {
+                if (profile == null)
+                {
+                    continue;
+                }
+
+                SetNames(profile.idleLoop);
+                SetNames(profile.runLoop);
+                SetNames(profile.highLoop);
+                SetNames(profile.startClip);
+                SetNames(profile.stopClip);
+                SetNames(profile.accelerationClips);
             }
         }
 
@@ -282,6 +348,19 @@ namespace Game.Scripts.Audio
         public string name;
         public string factionTarget = AudioRobotTargetIds.Common;
         public AudioRobotSoundGroup[] robotGroups;
+    }
+
+    [Serializable]
+    public class AudioEngineProfile
+    {
+        public string robotTarget;
+        [Range(0.1f, 3f)] public float pitchMultiplier = 1f;
+        public AudionElement idleLoop;
+        public AudionElement runLoop;
+        public AudionElement highLoop;
+        public AudionElement[] accelerationClips;
+        public AudionElement startClip;
+        public AudionElement stopClip;
     }
 
     [Serializable]

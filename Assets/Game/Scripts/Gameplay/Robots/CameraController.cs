@@ -51,6 +51,7 @@ namespace Game.Scripts.Gameplay.Robots
         private VehicleRoot _spectatorCanvasTarget;
         private VehicleRoot _spectatorVisibilityTarget;
         private Transform _deathWreckRig;
+        private bool _deathRigDetached;
         private bool _deathFallbackPoseCaptured;
         private Vector3 _deathFallbackPosition;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
@@ -117,6 +118,12 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void DetachFromVehicleForDeath()
         {
+            if (_deathRigDetached)
+            {
+                return;
+            }
+
+            _deathRigDetached = true;
             _deathWreckRig = rig;
             Transform fallbackSource = _deathWreckRig != null ? _deathWreckRig : transform;
             _deathFallbackPosition = fallbackSource.position;

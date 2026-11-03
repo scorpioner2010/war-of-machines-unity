@@ -87,6 +87,20 @@ namespace Game.Scripts.Audio
 
         public static Transform GetTransform() => _in != null ? _in.transform : null;
 
+        public static AudioEngineProfile GetEngineProfile(string robotCode)
+        {
+            return _in != null && _in.resources != null
+                ? _in.resources.GetEngineProfile(robotCode)
+                : null;
+        }
+
+        public static float GetEngineMasterVolume()
+        {
+            return _in != null && _in.resources != null
+                ? Mathf.Clamp01(_in.resources.engineMasterVolume)
+                : 1f;
+        }
+
         private static bool CanPlay()
         {
             return _in != null
@@ -108,6 +122,19 @@ namespace Game.Scripts.Audio
             }
             
             AudionElement element = _in.resources.GetResource(eventName, SoundType.Sfx);
+            return _in.Manager.PlaySfx(element, localPosition, parent);
+        }
+
+        public static AudioPreset PlaySfx(
+            AudionElement element,
+            Transform parent,
+            Vector3 localPosition = default)
+        {
+            if (!CanPlay())
+            {
+                return null;
+            }
+
             return _in.Manager.PlaySfx(element, localPosition, parent);
         }
 
@@ -140,6 +167,19 @@ namespace Game.Scripts.Audio
             }
 
             AudionElement element = _in.resources.GetResource(eventName, SoundType.Sfx);
+            return _in.Manager.PlaySfx(element, localPosition, parent, true);
+        }
+
+        public static AudioPreset PlayLoopedSfx(
+            AudionElement element,
+            Transform parent,
+            Vector3 localPosition = default)
+        {
+            if (!CanPlay())
+            {
+                return null;
+            }
+
             return _in.Manager.PlaySfx(element, localPosition, parent, true);
         }
 

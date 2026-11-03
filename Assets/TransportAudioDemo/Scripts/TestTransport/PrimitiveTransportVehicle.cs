@@ -7,6 +7,8 @@ public sealed class PrimitiveTransportVehicle : MonoBehaviour
     private float acceleration;
     private float braking;
     private float turnSpeed;
+    private float movementLimitX;
+    private float movementLimitZ;
     private float currentSpeed;
     private Vector2 input;
 
@@ -15,13 +17,15 @@ public sealed class PrimitiveTransportVehicle : MonoBehaviour
     public float Throttle01 => Mathf.Clamp01(Mathf.Abs(input.y));
     public float EngineDemand01 => Mathf.Clamp01(Mathf.Max(Throttle01, NormalizedSpeed * 0.72f));
 
-    public void Configure(float configuredMaxSpeed, float configuredAcceleration, float configuredBraking, float configuredTurnSpeed)
+    public void Configure(float configuredMaxSpeed, float configuredAcceleration, float configuredBraking, float configuredTurnSpeed, float configuredMovementLimitX, float configuredMovementLimitZ)
     {
         maxSpeed = Mathf.Max(1f, configuredMaxSpeed);
         reverseSpeed = maxSpeed * 0.42f;
         acceleration = Mathf.Max(0.1f, configuredAcceleration);
         braking = Mathf.Max(0.1f, configuredBraking);
         turnSpeed = Mathf.Max(1f, configuredTurnSpeed);
+        movementLimitX = Mathf.Max(1f, configuredMovementLimitX);
+        movementLimitZ = Mathf.Max(1f, configuredMovementLimitZ);
     }
 
     public void Simulate(Vector2 requestedInput)
@@ -41,8 +45,8 @@ public sealed class PrimitiveTransportVehicle : MonoBehaviour
 
         transform.position += transform.forward * currentSpeed * Time.deltaTime;
         Vector3 clampedPosition = transform.position;
-        clampedPosition.x = Mathf.Clamp(clampedPosition.x, -27f, 27f);
-        clampedPosition.z = Mathf.Clamp(clampedPosition.z, -17f, 17f);
+        clampedPosition.x = Mathf.Clamp(clampedPosition.x, -movementLimitX, movementLimitX);
+        clampedPosition.z = Mathf.Clamp(clampedPosition.z, -movementLimitZ, movementLimitZ);
         transform.position = clampedPosition;
     }
 }

@@ -10,19 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2328ffae5d1d34c4294d9dcd063ebc81, type: 3}
-  m_Name: HL62
+  m_Name: 1 lvl
   m_EditorClassIdentifier: 
-  displayName: HL-62
+  displayName: Scout Mix
   idleLoop: {fileID: 8300000, guid: 86abe35abfa36f144a43de37727659a8, type: 3}
-  runLoop: {fileID: 8300000, guid: 6cbd608db37b8b54d93a2c0cfb81dc8c, type: 3}
-  highLoop: {fileID: 8300000, guid: e528373fe6272b042836e49f6eb0b6a5, type: 3}
+  runLoop: {fileID: 8300000, guid: 2224fd3eaa071f94a8d0650b61897c85, type: 3}
+  highLoop: {fileID: 8300000, guid: 5ecf278505b70184390b3b1f77b299a4, type: 3}
   accelerationClips:
-  - {fileID: 8300000, guid: 6cbd608db37b8b54d93a2c0cfb81dc8c, type: 3}
+  - {fileID: 8300000, guid: ece634d9c6864b446924611c749c39c9, type: 3}
+  - {fileID: 8300000, guid: 17843d2dbe4752a41956b6c8cb310edf, type: 3}
   startClip: {fileID: 8300000, guid: 523c4faeebbd92c4993c7638524c64d0, type: 3}
-  stopClip: {fileID: 0}
-  masterVolume: 0.88
-  pitchMultiplier: 0.9
-  maxSpeed: 9.5
-  acceleration: 4.2
-  braking: 8
-  turnSpeed: 54
+  stopClip: {fileID: 8300000, guid: 09605c88a27444e48a921b38d64ac6ac, type: 3}
+  masterVolume: 1
+  pitchMultiplier: 1.04
+  maxSpeed: 12.5
+  acceleration: 6.2
+  braking: 9.5
+  turnSpeed: 62

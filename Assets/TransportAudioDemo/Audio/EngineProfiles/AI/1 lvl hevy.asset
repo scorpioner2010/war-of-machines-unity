@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2328ffae5d1d34c4294d9dcd063ebc81, type: 3}
-  m_Name: Leopard1
+  m_Name: 1 lvl hevy
   m_EditorClassIdentifier: 
-  displayName: Leopard 1
-  idleLoop: {fileID: 8300000, guid: 8007f16387b0fa743acb704083d2aef6, type: 3}
-  runLoop: {fileID: 8300000, guid: 2224fd3eaa071f94a8d0650b61897c85, type: 3}
-  highLoop: {fileID: 8300000, guid: a4daa69478aff8e4587f2e42e558f128, type: 3}
+  displayName: Tiger
+  idleLoop: {fileID: 8300000, guid: 7edc4710761154545b439eff717086a5, type: 3}
+  runLoop: {fileID: 8300000, guid: e39ae26d2e6e7bc448464d00014c592d, type: 3}
+  highLoop: {fileID: 8300000, guid: ebcc460851514ae4da5ab956726425f9, type: 3}
   accelerationClips:
-  - {fileID: 8300000, guid: 17843d2dbe4752a41956b6c8cb310edf, type: 3}
-  startClip: {fileID: 8300000, guid: 9f80077ec8b9fd34c90616bbd720a5c1, type: 3}
+  - {fileID: 8300000, guid: ebcc460851514ae4da5ab956726425f9, type: 3}
+  startClip: {fileID: 8300000, guid: 9342052b82296dd49835995c998aefa5, type: 3}
   stopClip: {fileID: 0}
-  masterVolume: 0.92
-  pitchMultiplier: 0.9
+  masterVolume: 1
+  pitchMultiplier: 1
   maxSpeed: 13
   acceleration: 6.5
   braking: 10

@@ -392,6 +392,342 @@ MonoBehaviour:
         clips:
         - clip: {fileID: 8300000, guid: a9618e6535475a64aa9f44670ff83055, type: 3}
           volume: 1
+  engineProfiles:
+  - robotTarget: ia_l1_starter
+    pitchMultiplier: 1.04
+    idleLoop:
+      name: Engine_ia_l1_starter_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 86abe35abfa36f144a43de37727659a8, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_ia_l1_starter_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 2224fd3eaa071f94a8d0650b61897c85, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_ia_l1_starter_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 5ecf278505b70184390b3b1f77b299a4, type: 3}
+        volume: 1
+    accelerationClips:
+    - name: Engine_ia_l1_starter_Accel_HL120
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: ece634d9c6864b446924611c749c39c9, type: 3}
+        volume: 1
+    - name: Engine_ia_l1_starter_Accel_Leopard
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 17843d2dbe4752a41956b6c8cb310edf, type: 3}
+        volume: 1
+    startClip:
+      name: Engine_ia_l1_starter_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 523c4faeebbd92c4993c7638524c64d0, type: 3}
+        volume: 1
+    stopClip:
+      name: Engine_ia_l1_starter_Stop
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 09605c88a27444e48a921b38d64ac6ac, type: 3}
+        volume: 1
+  - robotTarget: ia_l2_scout
+    pitchMultiplier: 1
+    idleLoop:
+      name: Engine_ia_l2_scout_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 8007f16387b0fa743acb704083d2aef6, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_ia_l2_scout_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 2224fd3eaa071f94a8d0650b61897c85, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_ia_l2_scout_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: a4daa69478aff8e4587f2e42e558f128, type: 3}
+        volume: 1
+    accelerationClips:
+    - name: Engine_ia_l2_scout_Accel
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 17843d2dbe4752a41956b6c8cb310edf, type: 3}
+        volume: 1
+    startClip:
+      name: Engine_ia_l2_scout_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 9f80077ec8b9fd34c90616bbd720a5c1, type: 3}
+        volume: 1
+    stopClip: {fileID: 0}
+  - robotTarget: ia_l2_guardian
+    pitchMultiplier: 1
+    idleLoop:
+      name: Engine_ia_l2_guardian_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 7edc4710761154545b439eff717086a5, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_ia_l2_guardian_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: e39ae26d2e6e7bc448464d00014c592d, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_ia_l2_guardian_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: ebcc460851514ae4da5ab956726425f9, type: 3}
+        volume: 1
+    accelerationClips:
+    - name: Engine_ia_l2_guardian_Accel
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: ebcc460851514ae4da5ab956726425f9, type: 3}
+        volume: 1
+    startClip:
+      name: Engine_ia_l2_guardian_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 9342052b82296dd49835995c998aefa5, type: 3}
+        volume: 1
+    stopClip: {fileID: 0}
+  - robotTarget: ia_l2_colossus
+    pitchMultiplier: 1
+    idleLoop:
+      name: Engine_ia_l2_colossus_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: fe24a4f928c7bb040b668e7ab8764ed5, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_ia_l2_colossus_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: fed4782214bb0944180daf16ae6a85c4, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_ia_l2_colossus_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: a35efa55d7f6fbb4cad5babf97ebe0a1, type: 3}
+        volume: 1
+    accelerationClips: []
+    startClip:
+      name: Engine_ia_l2_colossus_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 6a2ab441e538b7143a24d438b6fa6eed, type: 3}
+        volume: 1
+    stopClip: {fileID: 0}
+  - robotTarget: nv_l1_starter
+    pitchMultiplier: 0.9
+    idleLoop:
+      name: Engine_nv_l1_starter_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 86abe35abfa36f144a43de37727659a8, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_nv_l1_starter_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 5f6725c9f49105b478a0d032b5a07161, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_nv_l1_starter_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 116485f2688eb4043baa54e8967ea0ce, type: 3}
+        volume: 1
+    accelerationClips: []
+    startClip:
+      name: Engine_nv_l1_starter_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 523c4faeebbd92c4993c7638524c64d0, type: 3}
+        volume: 1
+    stopClip: {fileID: 0}
+  - robotTarget: nv_l2_scout
+    pitchMultiplier: 0.88
+    idleLoop:
+      name: Engine_nv_l2_scout_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 90165e0a91307a648812c9c719abd71c, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_nv_l2_scout_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 929d133a2cfa8b94b927b2799d187c13, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_nv_l2_scout_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: ebcc460851514ae4da5ab956726425f9, type: 3}
+        volume: 1
+    accelerationClips:
+    - name: Engine_nv_l2_scout_Accel_1
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 2935cff0a2b21924285915fdad1128e8, type: 3}
+        volume: 1
+    - name: Engine_nv_l2_scout_Accel_2
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: c2cc97c154168f245b630a031d6d49b0, type: 3}
+        volume: 1
+    startClip:
+      name: Engine_nv_l2_scout_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 6a2ab441e538b7143a24d438b6fa6eed, type: 3}
+        volume: 1
+    stopClip:
+      name: Engine_nv_l2_scout_Stop
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 09605c88a27444e48a921b38d64ac6ac, type: 3}
+        volume: 1
+  - robotTarget: nv_l2_guardian
+    pitchMultiplier: 1
+    idleLoop:
+      name: Engine_nv_l2_guardian_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 48b6d0055acb1cf43ba53e87eccaad57, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_nv_l2_guardian_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 929d133a2cfa8b94b927b2799d187c13, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_nv_l2_guardian_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 2af792d9fcf80444285892195c46eb94, type: 3}
+        volume: 1
+    accelerationClips:
+    - name: Engine_nv_l2_guardian_Accel
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: ece634d9c6864b446924611c749c39c9, type: 3}
+        volume: 1
+    startClip:
+      name: Engine_nv_l2_guardian_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 5c6ea665d77156d469b5795fb42d3b3a, type: 3}
+        volume: 1
+    stopClip: {fileID: 0}
+  - robotTarget: nv_l2_colossus
+    pitchMultiplier: 1
+    idleLoop:
+      name: Engine_nv_l2_colossus_Idle
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 90165e0a91307a648812c9c719abd71c, type: 3}
+        volume: 1
+    runLoop:
+      name: Engine_nv_l2_colossus_Run
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 0deaa6c8dbe09364d8382bd96b14caa7, type: 3}
+        volume: 1
+    highLoop:
+      name: Engine_nv_l2_colossus_High
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 5ecf278505b70184390b3b1f77b299a4, type: 3}
+        volume: 1
+    accelerationClips:
+    - name: Engine_nv_l2_colossus_Accel_1
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 2935cff0a2b21924285915fdad1128e8, type: 3}
+        volume: 1
+    - name: Engine_nv_l2_colossus_Accel_2
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 20953ee9e864cd340a546ec4df9ce0be, type: 3}
+        volume: 1
+    - name: Engine_nv_l2_colossus_Accel_3
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: c2cc97c154168f245b630a031d6d49b0, type: 3}
+        volume: 1
+    startClip:
+      name: Engine_nv_l2_colossus_Start
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 8a19a9cfbeddceb4a8ec9259dea38c28, type: 3}
+        volume: 1
+    stopClip:
+      name: Engine_nv_l2_colossus_Stop
+      volume: 1
+      delay: 0
+      clips:
+      - clip: {fileID: 8300000, guid: 09605c88a27444e48a921b38d64ac6ac, type: 3}
+        volume: 1
+  engineMasterVolume: 1
   musicClips:
   - name: Battle_Music
     volume: 0.1

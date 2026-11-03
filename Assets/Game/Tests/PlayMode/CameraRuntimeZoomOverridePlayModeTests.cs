@@ -198,6 +198,39 @@ namespace Game.Tests.PlayMode
         }
 
         [Test]
+        public void DeathDetachKeepsFirstPivotWhenRigIsDestroyedBeforeSecondDeathCallback()
+        {
+            GameObject vehicleObject = new GameObject("RepeatedDeathDetachVehicle");
+            GameObject cameraObject = new GameObject("RepeatedDeathDetachCameraPoint");
+            GameObject rigObject = new GameObject("RepeatedDeathDetachCameraRig");
+            try
+            {
+                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                cameraObject.transform.SetParent(vehicleObject.transform, false);
+                rigObject.transform.SetParent(vehicleObject.transform, false);
+                cameraObject.transform.position = new Vector3(-4f, 1f, 2f);
+                rigObject.transform.position = new Vector3(4f, 2f, 8f);
+                Component cameraController = cameraObject.AddComponent(cameraControllerType);
+
+                SetField(cameraController, "rig", rigObject.transform);
+                Invoke(cameraController, "DetachFromVehicleForDeath");
+                Vector3 capturedPivot = (Vector3)GetField(cameraController, "_deathFallbackPosition");
+
+                UnityEngine.Object.DestroyImmediate(rigObject);
+                Invoke(cameraController, "DetachFromVehicleForDeath");
+
+                Assert.That((Vector3)GetField(cameraController, "_deathFallbackPosition"), Is.EqualTo(capturedPivot));
+                Assert.IsNull(cameraObject.transform.parent);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(vehicleObject);
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+                UnityEngine.Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
         public void DeathWreckCameraDoesNotMoveItsDetachedPivot()
         {
             GameObject vehicleObject = new GameObject("StableWreckVehicle");

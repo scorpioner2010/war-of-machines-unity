@@ -16,6 +16,8 @@ namespace Toras.Editor
 
         private SerializedProperty _uiClips;
         private SerializedProperty _soundCategories;
+        private SerializedProperty _engineProfiles;
+        private SerializedProperty _engineMasterVolume;
         private SerializedProperty _musicClips;
         private RobotRegistry _robotRegistry;
         private RobotTargetOption[] _factionTargetOptions;
@@ -43,6 +45,8 @@ namespace Toras.Editor
         {
             _uiClips = serializedObject.FindProperty("uiClips");
             _soundCategories = serializedObject.FindProperty("soundCategories");
+            _engineProfiles = serializedObject.FindProperty("engineProfiles");
+            _engineMasterVolume = serializedObject.FindProperty("engineMasterVolume");
             _musicClips = serializedObject.FindProperty("musicClips");
 
             EditorApplication.projectChanged += InvalidateRobotTargetCache;
@@ -102,12 +106,104 @@ namespace Toras.Editor
             EditorGUILayout.LabelField("Robot Sounds", EditorStyles.boldLabel);
             DrawCategoryCollection(_soundCategories);
 
+            EditorGUILayout.LabelField("Engine Profiles", EditorStyles.boldLabel);
+            if (_engineMasterVolume != null)
+            {
+                EditorGUILayout.PropertyField(
+                    _engineMasterVolume,
+                    new GUIContent(
+                        "Engine Master Volume (All Robots)",
+                        "Overall volume multiplier for every robot engine loop and one-shot sound."));
+            }
+            DrawEngineProfileCollection(_engineProfiles);
+
             EditorGUILayout.LabelField("Music", EditorStyles.boldLabel);
             DrawCollection(
                 _musicClips,
                 "Music");
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void DrawEngineProfileCollection(SerializedProperty profiles)
+        {
+            if (profiles == null)
+            {
+                return;
+            }
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            bool expanded = EditorGUILayout.Foldout(
+                SessionState.GetBool("AudioResources.engineProfiles", true),
+                new GUIContent("Robot Engine Profiles (" + profiles.arraySize + ")"),
+                true);
+            SessionState.SetBool("AudioResources.engineProfiles", expanded);
+
+            if (expanded)
+            {
+                DrawArraySize(profiles, "Profiles");
+                using (new EditorGUI.IndentLevelScope(1))
+                {
+                    for (int i = 0; i < profiles.arraySize; i++)
+                    {
+                        SerializedProperty profile = profiles.GetArrayElementAtIndex(i);
+                        SerializedProperty target = profile.FindPropertyRelative("robotTarget");
+                        string label = target != null && !string.IsNullOrWhiteSpace(target.stringValue)
+                            ? target.stringValue
+                            : "Profile " + (i + 1);
+                        DrawEngineProfile(profile, label, i);
+                    }
+                }
+            }
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space(EditorGUIUtility.standardVerticalSpacing);
+        }
+
+        private static void DrawEngineProfile(
+            SerializedProperty profile,
+            string label,
+            int index)
+        {
+            string profileKey = "AudioResources.engineProfiles." + index;
+            bool storedExpanded = SessionState.GetBool(profileKey, true);
+            bool expanded = EditorGUILayout.Foldout(
+                storedExpanded,
+                new GUIContent(label),
+                true);
+            if (expanded != storedExpanded)
+            {
+                SessionState.SetBool(profileKey, expanded);
+            }
+
+            if (!expanded)
+            {
+                return;
+            }
+
+            using (new EditorGUI.IndentLevelScope(1))
+            {
+                DrawEngineProfileProperty(profile, "robotTarget");
+                DrawEngineProfileProperty(profile, "pitchMultiplier");
+                DrawEngineProfileProperty(profile, "idleLoop");
+                DrawEngineProfileProperty(profile, "runLoop");
+                DrawEngineProfileProperty(profile, "highLoop");
+                DrawEngineProfileProperty(profile, "accelerationClips");
+                DrawEngineProfileProperty(profile, "startClip");
+                DrawEngineProfileProperty(profile, "stopClip");
+            }
+        }
+
+        private static void DrawEngineProfileProperty(
+            SerializedProperty profile,
+            string propertyName,
+            GUIContent label = null)
+        {
+            SerializedProperty property = profile.FindPropertyRelative(propertyName);
+            if (property != null)
+            {
+                EditorGUILayout.PropertyField(property, label, true);
+            }
         }
 
         private void DrawCollection(

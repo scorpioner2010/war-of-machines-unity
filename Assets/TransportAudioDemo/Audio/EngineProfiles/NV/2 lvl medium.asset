@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2328ffae5d1d34c4294d9dcd063ebc81, type: 3}
-  m_Name: HL120
+  m_Name: 2 lvl medium
   m_EditorClassIdentifier: 
   displayName: HL-120
   idleLoop: {fileID: 8300000, guid: 48b6d0055acb1cf43ba53e87eccaad57, type: 3}
@@ -20,9 +20,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: ece634d9c6864b446924611c749c39c9, type: 3}
   startClip: {fileID: 8300000, guid: 5c6ea665d77156d469b5795fb42d3b3a, type: 3}
   stopClip: {fileID: 0}
-  masterVolume: 0.85
-  pitchMultiplier: 0.86
-  maxSpeed: 10
-  acceleration: 4.5
-  braking: 8
-  turnSpeed: 58
+  masterVolume: 1
+  pitchMultiplier: 1
+  maxSpeed: 13
+  acceleration: 6.5
+  braking: 10
+  turnSpeed: 55

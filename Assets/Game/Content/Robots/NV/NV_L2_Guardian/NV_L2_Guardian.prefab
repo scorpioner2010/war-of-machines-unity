@@ -932,6 +932,7 @@ GameObject:
   - component: {fileID: 770931407294341477}
   - component: {fileID: 839321119422476913}
   - component: {fileID: 1498150705997083321}
+  - component: {fileID: -9001000000000000007}
   m_Layer: 0
   m_Name: NV_L2_Guardian
   m_TagString: Untagged
@@ -5289,3 +5290,18 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 6520728015696517426}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &-9001000000000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215269598981264953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b92563078454473087a1badd9611eb78, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Scripts.Gameplay.Robots::RobotEngineAudio
+  robotCode: nv_l2_guardian
+  volumeFadeSpeed: 3.5
+  pitchSmoothing: 4.5

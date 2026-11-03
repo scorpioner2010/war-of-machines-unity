@@ -14,6 +14,8 @@ public sealed class TestTransportDemo : MonoBehaviour
     private GUIStyle headerStyle;
     private GUIStyle bodyStyle;
     private const float ArenaScale = 4f;
+    private const float BaseVehicleLimitX = 27f;
+    private const float BaseVehicleLimitZ = 17f;
 
     private static readonly Vector3[] VehiclePositions =
     {
@@ -22,7 +24,9 @@ public sealed class TestTransportDemo : MonoBehaviour
         new Vector3(0f, 0.05f, 0f),
         new Vector3(7f, 0.05f, 0f),
         new Vector3(14f, 0.05f, 0f),
-        new Vector3(21f, 0.05f, 0f)
+        new Vector3(21f, 0.05f, 0f),
+        new Vector3(28f, 0.05f, 0f),
+        new Vector3(35f, 0.05f, 0f)
     };
 
     private static readonly Color[] VehicleColors =
@@ -32,7 +36,9 @@ public sealed class TestTransportDemo : MonoBehaviour
         new Color(0.25f, 0.34f, 0.23f),
         new Color(0.32f, 0.23f, 0.15f),
         new Color(0.22f, 0.25f, 0.28f),
-        new Color(0.35f, 0.29f, 0.18f)
+        new Color(0.35f, 0.29f, 0.18f),
+        new Color(0.18f, 0.38f, 0.42f),
+        new Color(0.42f, 0.2f, 0.16f)
     };
 
     private void Start()
@@ -98,7 +104,7 @@ public sealed class TestTransportDemo : MonoBehaviour
             vehicleObject.transform.SetPositionAndRotation(VehiclePositions[i], Quaternion.identity);
 
             PrimitiveTransportVehicle vehicle = vehicleObject.AddComponent<PrimitiveTransportVehicle>();
-            vehicle.Configure(profile.maxSpeed, profile.acceleration, profile.braking, profile.turnSpeed);
+            vehicle.Configure(profile.maxSpeed, profile.acceleration, profile.braking, profile.turnSpeed, BaseVehicleLimitX * ArenaScale, BaseVehicleLimitZ * ArenaScale);
             BuildVehicleVisual(vehicleObject.transform, i, VehicleColors[i]);
 
             TransportEngineAudio engine = vehicleObject.AddComponent<TransportEngineAudio>();
@@ -142,6 +148,8 @@ public sealed class TestTransportDemo : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) SelectVehicle(3);
         if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5)) SelectVehicle(4);
         if (Input.GetKeyDown(KeyCode.Alpha6) || Input.GetKeyDown(KeyCode.Keypad6)) SelectVehicle(5);
+        if (Input.GetKeyDown(KeyCode.Alpha7) || Input.GetKeyDown(KeyCode.Keypad7)) SelectVehicle(6);
+        if (Input.GetKeyDown(KeyCode.Alpha8) || Input.GetKeyDown(KeyCode.Keypad8)) SelectVehicle(7);
     }
 
     private void SelectVehicle(int index)
@@ -278,9 +286,9 @@ public sealed class TestTransportDemo : MonoBehaviour
 
         PrimitiveTransportVehicle vehicle = vehicles[activeIndex];
         TransportEngineAudio engine = engines[activeIndex];
-        GUILayout.BeginArea(new Rect(18f, 18f, 450f, 215f), GUI.skin.box);
+        GUILayout.BeginArea(new Rect(18f, 18f, 450f, 260f), GUI.skin.box);
         GUILayout.Label("TEST / TRANSPORT AUDIO DEMO", headerStyle);
-        GUILayout.Label("1-6: select transport    W/S: throttle    A/D: steer", bodyStyle);
+        GUILayout.Label("1-8: select transport    W/S: throttle    A/D: steer", bodyStyle);
         GUILayout.Space(4f);
         GUILayout.Label("Active: " + vehicleNames[activeIndex], bodyStyle);
         GUILayout.Label(string.Format("Speed: {0:0.0} m/s    RPM: {1:0}", Mathf.Abs(vehicle.CurrentSpeed), engine.Rpm), bodyStyle);

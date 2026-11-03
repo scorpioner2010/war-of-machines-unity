@@ -642,6 +642,7 @@ GameObject:
   - component: {fileID: 2562539360778058012}
   - component: {fileID: 839321119422476913}
   - component: {fileID: 505520212982930825}
+  - component: {fileID: -9001000000000000004}
   m_Layer: 0
   m_Name: IA_L2_Scout
   m_TagString: Untagged
@@ -6270,6 +6271,21 @@ MeshRenderer:
     type: 3}
   m_PrefabInstance: {fileID: 9195792857564231117}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &-9001000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2531642004132441329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b92563078454473087a1badd9611eb78, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Game.Scripts.Gameplay.Robots::RobotEngineAudio
+  robotCode: ia_l2_scout
+  volumeFadeSpeed: 3.5
+  pitchSmoothing: 4.5
 --- !u!1 &8313483490263664796 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f835d6e9ecc0ecf4598ee27a53130e86,

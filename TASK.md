@@ -2256,6 +2256,40 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Remaining limitations:** No live Unity visual reproduction was run; the conclusion is based on the current source, scene serialization, mechanic documentation, and focused formula tests.
 - **Completed:** 2026-11-03
 
+## Task: Stabilize camera when controlled robot is destroyed
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Fix the camera jump that occurs when the player's robot is destroyed. Before the destruction animation, detach the robot rig to world space with a null parent so the camera remains stable.
+- **Scope:** Trace the camera follow target, robot root/mover hierarchy, and destruction lifecycle; implement the smallest focused fix at the correct ownership boundary; preserve existing destruction behavior for gameplay and visuals.
+- **Acceptance criteria:** The camera does not jump when the controlled robot dies; the death animation continues from the same world-space pose after detachment; normal live camera following and non-player robot destruction remain unchanged; focused validation/build checks pass.
+
+### Progress
+
+- Read the global Codex memory, task-journal recovery workflow, gameplay-logic separation workflow, background-testing workflow, and existing project task journal before repository inspection.
+- Confirmed `DeathLogic.Death()` detaches the local camera before debris detachment, while `CameraController.HandleClientDeath()` can call the same operation again. If the detached rig disappears during network teardown between those callbacks, the second call currently replaces the saved death pivot with the camera-point position.
+- **Decision:** Keep camera ownership in `CameraController`, make its death detachment idempotent, and preserve the first world-space pivot capture. Add a focused teardown-order regression beside the existing death-camera tests; update `docs/codex-game/robot-control.md` with the lifecycle boundary.
+- Added `_deathRigDetached` guarding to `CameraController.DetachFromVehicleForDeath()` so the rig and camera point are detached once and the initial fallback pivot remains authoritative through teardown.
+- Added `DeathDetachKeepsFirstPivotWhenRigIsDestroyedBeforeSecondDeathCallback` to `CameraRuntimeZoomOverridePlayModeTests`; documented the pre-animation detach and repeated-callback safety in `docs/codex-game/robot-control.md`.
+- **Validation:** `git diff --check` passed. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and the existing 4 `System.Net.Http`/Unity deprecation warnings. `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:minimal` passed with 0 warnings/errors.
+- **Result:** The camera death detach is now one-shot and preserves the first world-space rig pivot even if the detached rig is destroyed before the second death callback. The destruction animation still starts after the local rig/camera point leave the networked robot hierarchy.
+- **Remaining limitation:** Unity PlayMode execution was not run because the project Editor is currently open; the new regression is compiled with the test assembly and should be run in the existing focused death-camera batch suite after the Editor is closed.
+- **Completed:** 2026-11-03.
+- **Status:** COMPLETED
+
+## Task: Add master volume control to robot engine profiles
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Add a common volume slider to `RobotEngineProfile` so all engine sounds in one profile can be reduced together because they are louder than other game sounds.
+- **Scope:** Expose one profile-level master volume in the existing engine profile data and apply it consistently to loops and one-shot engine clips without bypassing the shared SFX volume pipeline.
+- **Acceptance:** The slider is visible/editable in the engine profile inspector, affects idle/run/high/start/acceleration/stop playback, preserves the existing per-layer balance, and the project compiles cleanly.
+- **Progress:** The profile already had a `masterVolume` range field, but runtime application covered only the idle/run/high loop layers; start, acceleration, and stop one-shots used full playback volume.
+- **Implementation:** Added an explicit `Master Volume (All Engine Sounds)` Inspector field with tooltip, routed start/acceleration/stop playback through the profile master-volume helper, and documented that the multiplier preserves each resource's own volume balance.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 4 existing warnings. `git diff --check` passed. Focused assertions confirmed all three one-shot routes and all eight serialized engine profiles use the master-volume setup.
+- **Result:** Each robot engine profile now has one adjustable 0–1 master-volume slider that controls every engine loop and one-shot sound while still respecting global SFX volume and per-clip volume.
+- **Limitations:** Unity Play Mode audio audition was not run; the slider can be tuned in the `AudioManager` prefab under `Engine Profiles` after Unity refreshes the changed scripts.
+- **Completed:** 2026-11-03
+
 ## Task: Diagnose missing sounds in ClientVehicleTestMode
 
 - **Status:** IN_PROGRESS
@@ -2667,4 +2701,108 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Result:** Removed the incorrect T1 `accelerationClips` reference to the Tiger high-loop asset. T1 now transitions through its normal layered idle/run/high loops without the foreign one-shot when movement starts; its valid `startClip` remains unchanged.
 - **Validation:** Focused T1 profile assertions passed; `Assets/Game/Scenes/Vehicles.unity` remained clean; `TASK.md` targeted diff check passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 2 existing `System.Net.Http` conflict warnings.
 - **Limitations:** Unity Play Mode audio verification was not run because the Unity Editor was already open; the unrelated repository-wide diff check still reports pre-existing trailing whitespace in `Assets/Game/Scenes/Client.unity`.
+- **Completed:** 2026-11-03
+
+## Task: Fix quiet HL62 engine audio
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Diagnose why HL62's engine sounds are individually normal but the tank is much quieter than expected in `TransportAudioDemo`, then fix it.
+- **Scope:** Trace HL62's serialized audio profile, source clip import settings, and runtime volume/spatial attenuation; change only the root cause while preserving the other demo audio fixes.
+- **Acceptance:** HL62 has comparable audible engine volume without distorting its clips or changing unrelated vehicle behavior; focused validation and build results are recorded.
+- **Progress:** Compared HL62 with every other demo profile and traced `TransportEngineAudio`. HL62's four referenced clips resolve correctly, all loop recordings are approximately 5–7 seconds (above the 1-second loop cutoff), the scene has one active `AudioListener`, and spatial settings are shared. The concrete profile-specific attenuation was `masterVolume: 0.88`; runtime loop volumes are clamped to 0–1, so `1.0` is the maximum effective value.
+- **Decision:** Raise only HL62's `masterVolume` to `1.0`, preserving its recordings, pitch, spatial attenuation, and all other vehicle profiles.
+- **Result:** Raised HL62's profile `masterVolume` from `0.88` to `1.0`, removing the only profile-specific attenuation below the effective loop-volume ceiling while preserving all audio recordings and shared runtime behavior.
+- **Validation:** HL62 profile/reference assertions passed; `Assets/Game/Scenes/Vehicles.unity` remained clean; `TASK.md` targeted diff check passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 2 existing `System.Net.Http` conflict warnings.
+- **Limitations:** Unity Play Mode audio comparison was not run because the project Editor was already open; final volume confirmation still needs a manual run of `TransportAudioDemo` and selection of HL62 with key `2`.
+- **Completed:** 2026-11-03
+
+## Task: Move unused TransportAudioDemo engine sounds
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Move all unused sounds from `Assets/TransportAudioDemo/Audio/Engine` into an `EngineNotUse` folder.
+- **Scope:** Determine usage from all `TransportAudioDemo` profiles/scenes/scripts and repository GUID references, move only unreferenced sound assets with their `.meta` files, and preserve all active audio paths.
+- **Acceptance:** Every moved sound is unused, every remaining sound is still referenced correctly, Unity GUIDs remain unchanged, and focused validation/build results are recorded.
+- **Progress:** Enumerated the current Engine contents and resolved every present audio GUID against all non-meta files under `Assets`. Three T-55 files have no references anywhere: `t-55_high_1.mp3`, `t-55_run_2.mp3`, and `t-55_slow.mp3`. Two HL62 files are already absent as pre-existing working-tree deletions while their profile references remain, so they are outside this move and will not be restored or reclassified.
+- **Decision:** Move only the three unreferenced T-55 audio files and their `.meta` files into `Assets/TransportAudioDemo/Audio/EngineNotUse`, preserving GUIDs and leaving all active profile references untouched.
+- **Result:** Moved `t-55_high_1.mp3`, `t-55_run_2.mp3`, and `t-55_slow.mp3` plus their `.meta` files into `Assets/TransportAudioDemo/Audio/EngineNotUse`. No active profile, scene, or script references these assets.
+- **Validation:** Source/destination and GUID assertions passed; moved GUIDs have no non-meta references under `Assets`; `TASK.md` targeted diff check passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 2 existing `System.Net.Http` conflict warnings.
+- **Limitations:** Two HL62 files (`HL62_High.mp3` and `HL62_Main.mp3`) were already missing before this task while their profile GUIDs remain referenced; they were preserved as pre-existing working-tree state and not restored or moved. Unity asset-database refresh/visual confirmation was not run because the Editor was already open.
+- **Completed:** 2026-11-03
+
+## Task: Verify remaining T-55 engine sounds
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Confirm whether all sounds still visible in the T-55 Engine folder are actually used.
+- **Scope:** Compare the visible files with the serialized `T55.asset` profile and report the result without changing audio assets.
+- **Acceptance:** Every visible T-55 sound is classified as referenced or unused, with no asset changes unless explicitly requested.
+- **Result:** All eight remaining T-55 recordings visible in the screenshot are referenced by `T55.asset`: `t-55_idle`, `t-55_run`, `t-55_high`, `t-55_start`, `t-55_stop`, and `t-55_accel_1/2/3`.
+- **Validation:** Direct GUID-to-meta mapping passed; no asset changes were made for this verification.
+- **Completed:** 2026-11-03
+
+## Task: Evaluate two additional tanks from existing audio
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Review the six current `TransportAudioDemo` tanks and assess whether two more can be built from the existing engine recordings, including reusing or selectively omitting clips to keep the new tanks distinct.
+- **Scope:** Inspect the six profiles and available recordings, compare their loop/event roles, and propose practical unique audio combinations without modifying assets.
+- **Acceptance:** Provide a concrete feasibility assessment and two distinct profile concepts, noting any source-asset limitations and the recommended next implementation step.
+- **Progress:** Inspected all six profiles in `TEST.unity` and mapped their current loop/event recordings. The existing set provides complete idle/run/high/start coverage plus dedicated acceleration clips from HL-120, Leopard 1, and T-55; T-55 also has a stop clip. The T1 acceleration one-shot remains intentionally empty after its earlier fix.
+- **Decision:** Two additional tanks can be built safely by reusing GUID references; do not remove clips from existing profiles because shared audio assets are valid. Make the new tanks distinct through cross-profile combinations, acceleration selection, pitch, and volume.
+- **Proposed Tank 7:** `HL62_Idle` + `leopard1_run` + `t-55_high`, acceleration from `hl120_accel` and `leopard_accel_1`, `HL62_Start`, and `t-55_stop`; tune pitch slightly above neutral for a medium/scout character.
+- **Proposed Tank 8:** `t-55_idle` + `hl120_run` + `tiger_high`, acceleration from `t-55_accel_1` and `t-55_accel_3`, `t1/start`, and `t-55_stop`; tune pitch below neutral for a heavier assault character. Avoid using a high-loop recording as an acceleration one-shot.
+- **Result:** The idea is feasible and can produce two recognizable variants without new recordings. No assets or profiles were modified during this assessment.
+- **Validation:** Profile-to-clip mapping and the six-profile scene list were inspected; no implementation or runtime validation was required.
+- **Completed:** 2026-11-03
+
+## Task: Add two mixed-audio tanks and expand movement bounds
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Implement the two proposed tanks built from existing audio clips, and fix the enlarged `TransportAudioDemo` arena so vehicle movement/colliders are not still restricted to the old map bounds.
+- **Scope:** Add two distinct `TransportAudioProfile` assets and register them in the demo with selection controls, then propagate the 4× arena bounds into vehicle movement limits without changing unrelated project behavior.
+- **Acceptance:** The demo has eight selectable tanks; the two new profiles use only existing audio GUIDs with distinct loop/event mixes; vehicle movement limits match the enlarged arena; focused asset/script validation and build pass.
+- **Progress:** Existing six profiles, available audio GUIDs, runtime-generated arena scaling, and the static `PrimitiveTransportVehicle` movement clamps were inspected. The old clamp was confirmed as the cause of the invisible movement boundary.
+- **Implementation:** Added `ScoutMix.asset` and `AssaultMix.asset` using existing audio GUIDs with distinct loop/event combinations and pitch settings; registered both in `TEST.unity` as vehicles 7 and 8; added positions, colors, numeric selection keys, and updated help text/README. Replaced the hard-coded vehicle clamps with configured movement limits passed from `TestTransportDemo` as `27/17 * ArenaScale`, yielding `±108/±68` for the 4× arena.
+- **Changed files:** `Assets/TransportAudioDemo/Audio/EngineProfiles/ScoutMix.asset`, `Assets/TransportAudioDemo/Audio/EngineProfiles/ScoutMix.asset.meta`, `Assets/TransportAudioDemo/Audio/EngineProfiles/AssaultMix.asset`, `Assets/TransportAudioDemo/Audio/EngineProfiles/AssaultMix.asset.meta`, `Assets/TransportAudioDemo/TEST.unity`, `Assets/TransportAudioDemo/Scripts/TestTransport/TestTransportDemo.cs`, `Assets/TransportAudioDemo/Scripts/TestTransport/PrimitiveTransportVehicle.cs`, `Assets/TransportAudioDemo/Scripts/TestTransport/README.md`, and this journal.
+- **Validation:** The first assertion wrapper had a PowerShell syntax error; the corrected rerun passed all profile/GUID/scene/bounds assertions, `Vehicles.unity` remained clean, and focused `git diff --check` passed. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 4 existing warnings.
+- **Result:** `TransportAudioDemo` now contains eight selectable tanks, with two new mixed-audio tanks built entirely from existing recordings, and vehicles can drive across the enlarged arena instead of stopping at the old bounds.
+- **Limitations:** Unity Play Mode visual/audio verification was not run because the project Editor was already open; final manual confirmation should press keys `7`/`8` and drive toward the expanded borders.
+- **Completed:** 2026-11-03
+
+## Task: Integrate engine audio into robot audio architecture
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Thoroughly study the project and build a stable engine-audio system that transfers the already tuned robot engine sounds into the actual robots, exposes them through `AudioResources`, respects existing volume settings, and uses a dedicated engine-sound script attached to all relevant robots.
+- **Scope:** Audit `AudioResources`, `SoundCaller`/`AudioManager`/`AudioPreset`, robot prefabs and lifecycle owners, renamed engine recordings, existing tests, and the prior demo engine behavior. Implement the smallest focused production integration with safe missing-resource handling, correct volume routing, and focused validation.
+- **Acceptance:** Each relevant robot resolves its named engine profile from `AudioResources`; engine playback is owned by a dedicated component attached to the robot prefab/owner; idle/movement/high/start/acceleration/stop behavior remains stable; master/SFX volume settings affect playback; no direct per-robot clip wiring bypasses the shared audio system; focused tests/build checks pass.
+- **Progress:** Global instructions, the full repository journal, task-journal recovery workflow, gameplay-logic separation workflow, and background testing workflow were read. The shared audio path was audited: `AudioManager` routes every SFX through `AudioPreset`, reapplies `SFXVol`, and supports stable loop handles; robot motion is exposed through synchronized `VehicleInputController.AnimMove` on all eight production prefabs. The eight available renamed demo profiles and their clip GUIDs were mapped, and the existing `AudioManager` prefab was confirmed as the runtime `AudioResources` source.
+- **Decision:** Add a dedicated `AudioEngineProfile` registry to `AudioResources`, keep clip playback inside `AudioManager`/`AudioPreset` so SFX volume and spatial settings remain authoritative, and add one focused `RobotEngineAudio` component to each robot prefab. The component uses `AnimMove`, smooths the same idle/run/high blend as the tested demo, guards missing profiles/clips, and stops all handles on disable/destroy.
+- **Implementation:** Added `AudioEngineProfile` lookup and editor support to `AudioResources`, typed shared playback overloads to `SoundCaller`, playback-state accessors to `AudioPreset`, and the focused `RobotEngineAudio` component. Serialized eight exact robot-to-profile mappings in `AudioManager.prefab`, using the renamed existing recordings, and attached/configured the component on all eight production IA/NV robot prefabs. Documented the ownership boundary in `docs/codex-game/audio-presentation.md`.
+- **Validation:** All eight engine targets, 30 referenced engine GUIDs, and eight robot prefab components passed focused PowerShell assertions. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 2 existing `System.Net.Http` conflict warnings; `git diff --check` passed.
+- **Result:** Production robots now obtain their engine sounds from `AudioResources.engineProfiles`; playback remains routed through `AudioManager`/`AudioPreset`, so SFX volume, spatial settings, smoothing, and lifecycle cleanup remain centralized and consistent.
+- **Limitations:** Unity Play Mode audio audition was not run because the project Editor was already open; manual runtime confirmation across the eight robots is still recommended. The existing recordings remain in `Assets/TransportAudioDemo/Audio/Engine` and are referenced by GUID to preserve the tested demo setup.
+- **Completed:** 2026-11-03
+
+## Task: Make robot engine volume global
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Use one shared volume slider for all robot engine sounds instead of one volume control per engine profile.
+- **Scope:** Move the master-volume setting to the global `AudioResources` configuration, remove profile-level duplicates, route every robot engine loop and one-shot through the shared value, and keep the existing SFX volume pipeline intact.
+- **Acceptance:** One clearly labeled slider controls every engine profile and every engine sound, no per-profile master sliders remain, and the project compiles with focused serialization checks passing.
+- **Progress:** Confirmed the previous implementation exposed a master value inside each profile, which did not match the requested single control for all robots.
+- **Implementation:** Added one `engineMasterVolume` field to `AudioResources`, exposed it as `Engine Master Volume (All Robots)` above the engine profile list, removed all eight profile-level `masterVolume` values from `AudioManager.prefab`, and routed loop/one-shot playback through the global value.
+- **Validation:** Focused assertions confirmed one global serialized field, no profile-level master fields, and runtime usage for loops and one-shots. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 4 existing warnings; `git diff --check` passed.
+- **Result:** One slider now lowers or raises every robot engine sound together while preserving each profile's clip selection, per-clip volume, and global SFX volume settings.
+- **Limitations:** Unity Play Mode audio audition was not run; tune the single slider in the `AudioManager` prefab after Unity refreshes the scripts.
+- **Completed:** 2026-11-03
+
+## Task: Diagnose robot engine audio not following robots
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Investigate why robot engine audio appears to stay behind instead of following the moving robot, and fix the attachment/spatial playback behavior.
+- **Scope:** Trace robot prefab wiring, engine profile resolution, `SoundCaller`/`AudioManager` parenting, and runtime spatial audio configuration; make the smallest focused fix that keeps engine sounds attached to their robot.
+- **Acceptance:** Engine `AudioPreset` instances follow the robot transform during movement, all engine events use the same spatial path, and focused validation/build checks pass.
+- **Progress:** Traced the shared playback path and inspected all eight production prefabs. The `RobotEngineAudio` component was correctly on the network root, but each vehicle's `VehicleMovementController` moves the child referenced by `VehicleRoot.objectMover`, so the root transform stayed at the spawn point.
+- **Implementation:** Changed `RobotEngineAudio` to create and maintain pooled engine `AudioPreset` instances under `VehicleRoot.objectMover.transform`, with a root-transform fallback for robots without a configured mover. Applied the same anchor to loops and start/acceleration/stop one-shots and documented the ownership rule.
+- **Validation:** Movement-anchor assertions passed for all eight robot prefabs. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 4 existing warnings; `git diff --check` passed.
+- **Result:** Engine audio now follows the transform that actually moves each robot instead of remaining at the stationary network root.
+- **Limitations:** Unity Play Mode audio audition was not run; manually drive one IA and one NV robot to confirm spatial movement after the Editor refreshes the script.
 - **Completed:** 2026-11-03
