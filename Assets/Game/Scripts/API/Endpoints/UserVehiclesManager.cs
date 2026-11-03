@@ -264,6 +264,7 @@ namespace Game.Scripts.API.Endpoints
         public bool isActive;
         public bool isResearched;
         public float viewRange;
+        public float enginePower;
     }
 
     [Serializable]
@@ -282,6 +283,7 @@ namespace Game.Scripts.API.Endpoints
         public bool isActive;
         public bool isResearched;
         public float viewRange;
+        public float enginePower;
     }
 
     [Serializable]

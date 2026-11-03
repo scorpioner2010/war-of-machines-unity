@@ -40,6 +40,7 @@ namespace Game.Scripts.UI
         [Header("Mobility")]
         [SerializeField] private TMP_Text topSpeed;
         [SerializeField] private TMP_Text acceleration;
+        [SerializeField] private TMP_Text enginePower;
         [SerializeField] private TMP_Text hullTraverseSpeed;
         [SerializeField] private TMP_Text turretTraverseSpeed;
 
@@ -274,6 +275,7 @@ namespace Game.Scripts.UI
             SetMainMenuText(viewRange, FormatFloat(vehicle?.ViewRange ?? 0f));
             SetMainMenuText(topSpeed, FormatFloat(vehicle?.Speed ?? 0f));
             SetMainMenuText(acceleration, FormatFloat(vehicle?.Acceleration ?? 0f));
+            SetMainMenuText(enginePower, FormatFloat(vehicle?.EnginePower ?? 0f));
             SetMainMenuText(hullTraverseSpeed, FormatFloat(vehicle?.TraverseSpeed ?? 0f));
             SetMainMenuText(turretTraverseSpeed, FormatFloat(vehicle?.TurretTraverseSpeed ?? 0f));
             SetMainMenuText(damage, FormatRange(vehicle?.DamageMin ?? 0f, vehicle?.DamageMax ?? 0f));
@@ -318,6 +320,7 @@ namespace Game.Scripts.UI
             SetText(hullArmor, vehicle != null ? vehicle.hullArmor : string.Empty);
             SetText(topSpeed, FormatFloat(vehicle != null ? vehicle.speed : 0f));
             SetText(acceleration, FormatFloat(vehicle != null ? vehicle.acceleration : 0f));
+            SetText(enginePower, FormatFloat(vehicle != null ? vehicle.enginePower : node.enginePower));
             SetText(hullTraverseSpeed, FormatFloat(vehicle != null ? vehicle.traverseSpeed : 0f));
             SetText(turretTraverseSpeed, FormatFloat(vehicle != null ? vehicle.turretTraverseSpeed : 0f));
             SetText(damage, BuildDamageText(vehicle, node));
@@ -344,6 +347,7 @@ namespace Game.Scripts.UI
             SetText(hullArmor, string.Empty);
             SetText(topSpeed, string.Empty);
             SetText(acceleration, string.Empty);
+            SetText(enginePower, string.Empty);
             SetText(hullTraverseSpeed, string.Empty);
             SetText(turretTraverseSpeed, string.Empty);
             SetText(damage, string.Empty);

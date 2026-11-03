@@ -2,6 +2,30 @@
 
 This file is the durable handoff point between Codex sessions. Keep entries append-only.
 
+## Task: Transfer TEST transport audio demo
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Move the completed `TEST` primitive transport/audio demo from `C:\Users\TorasPC\Documents\Codex\2026-11-01\new-chat-3\work\UnityAssetScratch\Assets` into this project's `Assets` folder.
+- **Scope:** Copy the isolated demo scene, TestTransport scripts, engine profiles, source engine recordings, and Unity `.meta` files into a dedicated destination folder while preserving existing project changes and avoiding unrelated assets.
+- **Acceptance criteria:** The destination contains the full demo dependency set with valid GUID references; source files remain unchanged; duplicate GUIDs and overwrite risks are checked; destination Unity import/compilation is validated where safe.
+
+### Progress
+
+- Confirmed the destination project has no `AGENTS.md` instructions beyond its persistent journal and focused-ownership rules.
+- Confirmed the destination Unity Editor is not open; only the source project's Unity Editor and its import workers are running.
+- Source dependency inspection found one scene, five `TransportAudioProfile` assets, six focused C# scripts, and the referenced engine recordings; built-in URP/camera references remain package/Unity references.
+- Copied the demo into `Assets\\TransportAudioDemo`, preserving all source asset `.meta` files and adding the required folder `.meta` files; 90 files were copied.
+- Destination path and demo GUID collisions were absent before copy; both projects use Unity `6000.3.13f1`.
+- Static validation passed for 90/90 hashes, zero missing files, zero duplicate demo GUIDs, and two expected external URP GUIDs from the scene.
+- The first destination import exposed a target-project compatibility issue: the destination does not include the Input System package and uses `activeInputHandler: 0`.
+- Adapted only the copied `TestTransportDemo.cs` to Unity's built-in legacy input API and corrected the copied README paths; no package or unrelated gameplay files were changed.
+- Final validation passed: 88/88 unchanged assets match source hashes; the only two intentional content differences are the destination-only legacy-input controller and corrected README paths. Unity headless import/compile exited with code `0`; no C# errors, exceptions, or compilation failures were reported in `Logs\\Codex_TransportAudioDemo_Import.log`.
+- **Result:** The complete demo is available at `Assets\\TransportAudioDemo\\TEST.unity` with local scene/profile/audio/script references intact; existing destination project files were left untouched except for this journal and the new demo package.
+- **Remaining limitation:** The scene was not manually played in the destination Editor, so final visual/audio audition remains a user-side check.
+- **Completed:** 2026-11-03.
+- **Status:** COMPLETED
+
 ## Task: Import Fires prefabs and resources into Particles111
 
 - **Status:** COMPLETED
@@ -2247,6 +2271,23 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Status:** COMPLETED
 - **Completed:** 2026-11-03
 
+## Task: Add engine power to API vehicle parameters window
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Pull the new engine-power parameter from the API and add it to the parameters window like the existing parameters; leave final positioning for later adjustment.
+- **Scope:** Trace the API vehicle DTO/model, mapping and selected-vehicle parameter presentation, add the engine-power field through the existing data path, and expose it in the existing parameters window without changing layout positioning or unrelated UI behavior.
+- **Acceptance criteria:** The API engine-power value deserializes and reaches the selected vehicle data; the parameters window has a dedicated engine-power value/label following the existing parameter pattern; no manual position tuning is introduced; focused validation passes and unrelated working-tree changes remain untouched.
+- **Progress:** Read the global Codex instructions, repository journal, task-journal recovery workflow, gameplay/UI ownership guidance, and archive history. No exact API-parameter workflow was found.
+- **Discovery checkpoint:** The backend API exposes `enginePower` as a positive `float` on `/vehicles`, `/vehicles/graph`, the player profile's owned-vehicle payload, and user-vehicle payloads. The client parameter flow is `VehiclesManager.VehicleLite` → `VehicleSlotVehicleData` → the shared scene-owned `RightInfoPanel`; the active panel already has a Mobility section and serialized TMP references, while the inactive legacy panel is not used at runtime.
+- **Ownership decision:** Keep API deserialization in the API endpoint model, carry the value through the menu presentation DTO, and render it in `RightInfoPanel`. Add one serialized scene row for the label/value pair and leave its authored position at the duplicated existing mobility-row placement for later user adjustment.
+- **Implementation checkpoint:** Added `enginePower` to the vehicle catalog/graph/profile menu DTOs and offline menu data, mapped it through `VehicleSlotVehicleData`, rendered it in both MainMenu and DevelopmentTree contexts, and added a serialized `EnginePower` label/value row to the active shared panel in `Client.unity`. Updated `api-resources.md` and `menus-settings-progression.md`; the existing mobility rows and panel placements remain unchanged.
+- **Validation checkpoint:** Scene ID/reference checks confirmed the new Mobility row, label/value TMP objects, and `RightInfoPanel.enginePower` binding are internally consistent. `git diff --check` passed. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and the existing 4 warnings; `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 0 warnings.
+- **Result:** API `enginePower` now deserializes from the vehicle catalog and related DTOs, reaches selected vehicle presentation data, and displays in the shared parameters panel for both MainMenu and DevelopmentTree. The new row is authored under Mobility at a provisional position for later adjustment.
+- **Remaining limitations:** Unity Play Mode/manual visual inspection was not run, so final text fit and the provisional row position should be checked in the open Unity Editor. No backend files or unrelated working-tree changes were modified.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
 ## Task: Diagnose RightInfoPanel behavior in ClientMenuTestMode
 
 - **Status:** IN_PROGRESS
@@ -2410,4 +2451,220 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** Static source and serialized-setting audit completed; no implementation files changed.
 - **Remaining limitations:** No live Play Mode measurement of the current mouse delta was run, so the exact observed threshold depends on the active vehicle's runtime `TurretTraverseSpeed`.
 - **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Apply server-provided engine power to robot acceleration
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Add the server-provided engine power parameter for the eight robot variants and make it directly affect robot acceleration; treat `1000` as the current baseline, so lower power values take longer to reach top speed. The supplied data is Iron Alliance `IA Skirmisher=700`, `IA Strider=860`, `IA Bulwark=820`, `IA Juggernaut=940`; Nova Syndicate `Nova Wisp=360`, `Nova Flicker=420`, `Nova Aegis=460`, `Nova Titan=520`.
+- **Scope:** Trace the server stat transport and movement acceleration owner, add the power field at the correct domain boundary, preserve current behavior at power `1000`, integrate the eight server values, and validate compilation/static consistency without changing unrelated movement behavior.
+- **Acceptance criteria:** The server payload/model can carry engine power; the runtime movement controller receives it; acceleration scales against `1000` while maximum speed remains unchanged; missing/legacy values safely preserve current behavior; each supplied robot name maps to the requested value; focused documentation and validation are recorded.
+- **Progress:** Global instructions, the repository journal, the task-journal recovery workflow, and the gameplay-logic separation workflow were read. No task-specific repository search has been run yet.
+- **Next steps:** Inspect `RightInfoPanel.cs`, server DTOs/stat mappings, robot movement owners, and mechanic documentation; then implement the smallest focused change and validate it.
+
+### Discovery checkpoint — 2026-11-03
+
+- `git status --short` shows pre-existing modifications in `RightInfoPanel.cs`, API endpoint models/managers, main-menu vehicle UI, `Client.unity`, font data, and related documentation; these changes were present before this task and must be preserved.
+- The repository already contains `enginePower` fields in vehicle API/UI models and `RightInfoPanel` is modified, so the task must trace whether the value currently stops at presentation instead of assuming the transport is missing.
+- The gameplay workflow requires keeping authority/stat transport, movement simulation, and UI presentation as separate responsibilities; the movement change should remain in the runtime stats/movement owner rather than in `RightInfoPanel`.
+
+### Design checkpoint — 2026-11-03
+
+- Spawn flow loads `VehicleRuntimeStats` from `VehicleStatsProvider.GetAsync`, applies it to the server vehicle before spawn, then synchronizes the same stats to observers through `VehicleRoot.RuntimeStatsObserversRpc`.
+- The existing `VehicleMovementController` already owns server-authoritative forward acceleration and has a separate runtime `acceleration` value, so no new coordinator or UI ownership is needed.
+- Decision: normalize missing/non-positive engine power to `1000`; calculate the engine-power multiplier as `enginePower / 1000`; apply that multiplier only while the current input requests a higher speed in the same direction or from rest. Maximum speed, reverse cap, faction stopping multipliers, braking, and turret rotation remain unchanged for this iteration.
+- The eight supplied robot values remain server data, not a hardcoded client name table: `VehicleLite.enginePower` flows through runtime stats and the synchronized RPC.
+- Planned implementation files: `VehicleRuntimeStats.cs`, `VehicleMovementController.cs`, `VehicleRoot.cs`; documentation in `docs/codex-game/api-resources.md` and `docs/codex-game/robot-control.md`; focused edit-mode regression in `Assets/Editor/VehicleRuntimeStatsEditModeTests.cs`.
+
+### Implementation checkpoint — 2026-11-03
+
+- Added `VehicleRuntimeStats.DefaultEnginePower = 1000`, runtime normalization for missing/non-positive API values, and a testable linear acceleration scaling helper.
+- Updated `VehicleMovementController` to store normalized engine power and apply the multiplier only when increasing requested speed; braking/coasting and maximum-speed limits retain existing behavior.
+- Extended `VehicleRoot` observer synchronization so remote runtime stats retain the same engine power as the server.
+- Updated `docs/codex-game/api-resources.md` and `docs/codex-game/robot-control.md` with the data path, baseline, and ownership boundary.
+- Added `Assets/Editor/VehicleRuntimeStatsEditModeTests.cs` plus its Unity `.meta` file for fallback, scaling, and clone coverage.
+- Existing pre-task modifications, including the `RightInfoPanel` engine-power presentation and scene wiring, were not overwritten.
+- **Next steps:** run diff/static checks, compile the project, run the focused Unity test if an available batch-mode Unity executable can be identified, then close the journal entry.
+
+### Validation checkpoint — 2026-11-03
+
+- `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 4 existing warnings (System.Net.Http version conflicts and obsolete Unity PlayerSettings API).
+- `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal` passed with 0 errors and existing warnings; the new edit-mode test source compiles in the editor assembly.
+- `git diff --check` passed for all task-owned source, documentation, and journal files.
+- A full working-tree `git diff --check` still reports trailing whitespace in pre-existing `Assets/Game/Scenes/Client.unity` changes at lines 17399, 57857-57858, 57944, and 58082; those scene changes were not edited by this task.
+- Unity batch tests were not run because Unity Editor is already open on this project (`D:\Programing\UnityProjects\war-of-machines-unity`); no Unity process was stopped or manipulated.
+
+### Completion checkpoint — 2026-11-03
+
+- **Status:** COMPLETED
+- **Result:** Server `enginePower` values now flow from `VehicleLite` into normalized `VehicleRuntimeStats`, across `VehicleRoot` observer synchronization, and into server-authoritative movement. Values use `1000` as the current baseline, so the supplied values produce proportional acceleration (`700` = 70%, `360` = 36%, etc.) while max speed and braking rules remain unchanged.
+- **Changed files:** `Assets/Game/Scripts/Gameplay/Robots/VehicleRuntimeStats.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleMovementController.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleRoot.cs`, `docs/codex-game/api-resources.md`, `docs/codex-game/robot-control.md`, and focused test files under `Assets/Editor`.
+- **Preserved:** Pre-existing API/UI/scene changes, including `RightInfoPanel` engine-power presentation and the eight-value server DTO wiring, were left intact.
+- **Remaining limitation:** Runtime movement and Unity test execution still need an in-game run after the open Editor is closed; compilation and static validation are successful.
+
+## Task: Restore missing gameplay audio
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Investigate and fix the regression where gameplay sounds are no longer audible, likely caused by recent test-mode changes.
+- **Scope:** Trace the active gameplay audio listener, test-mode routing lifecycle, and recent working-tree changes; restore audible gameplay SFX without changing turret-rotation audio assets or unrelated gameplay behavior.
+- **Acceptance criteria:** The active gameplay camera has a valid listener, test-mode routing does not disable all listeners or leave audio muted, focused validation passes, and unrelated changes remain untouched.
+- **Progress:** Confirmed `CameraSync` uses `Map/GameplayCamera` during normal gameplay, but that camera currently has no `AudioListener`. Git history shows the listener was removed while the existing test-mode router already disables the Map listener during test mode, so normal gameplay was left without any active listener.
+- **Implementation checkpoint:** Restored the serialized `AudioListener` on `Map/GameplayCamera` and updated `vehicle-test-scene.md` to document that normal gameplay owns this listener while the test router temporarily disables it.
+- **Validation checkpoint:** Static scene checks passed with one `AudioListener` in `Map.unity` and two serialized listeners in `Client.unity`. The test-mode router still guards on `ClientVehicleTestMode.IsEnabled` and disables other active listeners. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and the existing `System.Net.Http` reference warnings. Focused `git diff --check` passed; no audio scripts or audio assets were modified.
+- **Result:** Normal gameplay again has an active listener on the camera used by `CameraSync`, while ClientVehicleTestMode retains a single routed test listener and restores normal listener ownership outside test mode.
+- **Remaining limitations:** Unity Play Mode audio playback was not manually run because the project Editor is already open; the scene/static fix and C# compilation are validated.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Diagnose sniper reticle dispersion after garage return
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Investigate why, after leaving a battle for the garage and loading another battle without closing the game, the sniper-mode convergence circle becomes larger at zoom than the weapon's real dispersion; determine whether previous parameters are not restored or another state/lifecycle bug is involved, and explain the cause.
+- **Scope:** Trace sniper-mode zoom, dispersion/convergence calculation, runtime vehicle/weapon stats, scene/lifecycle transitions between battle and garage, and any cached/static state that can survive the transition; inspect the currently open Unity Editor/runtime if useful without disrupting it.
+- **Acceptance criteria:** Identify the concrete code/data path responsible or narrow the cause to a verified lifecycle/state mismatch, explain why the issue appears after garage return and why zoom exposes it, record affected files and validation evidence, and avoid unrelated implementation changes unless a fix is explicitly requested.
+- **Progress:** Global instructions, the repository journal, task-journal recovery workflow, and gameplay-logic separation workflow were read. No implementation files have been changed for this task.
+- **Next steps:** Inspect the current working tree and search sniper/dispersion/zoom/lifecycle owners, then compare first-battle and post-garage initialization paths and the open Editor state if accessible.
+
+### Discovery checkpoint — 2026-11-03
+- **Direct cause:** `NetworkWeaponShooter.ApplyCrosshairDispersion` passes the active zoom profile's `aimingCircleDiameter` into `GunDispersionGlobalSettings.GetUiDiameter`. With that override present, the HUD uses the configured profile diameter as the fully-aimed base and does not project the actual gun cone to screen pixels.
+- **Evidence:** The current client profiles configure 80/125/189/366 px for sniper zoom levels 4/5/6/7. Projectile dispersion still uses the angular `GunDispersionModel` value, so a visually oversized ring can coexist with correct shot spread.
+- **Regression point:** Commit `edc0ee36a` replaced the previous physical cone-to-screen calculation with the fixed profile-base calculation; the existing play-mode tests explicitly preserve the new behavior.
+- **Lifecycle finding:** `RemoteServerSettings` is static and is requested only from `LobbyManager.OnStartClient`. Because the client/lobby scene survives garage-to-battle scene swaps, server dispersion settings are not refreshed on the next battle; editor vehicle test mode skips that request entirely. This can leave stale global settings, but it is secondary when the server values are unchanged.
+- **Live inspection:** Unity Editor is running in vehicle test mode on the battle-result screen, not in active sniper view. No implementation files were changed.
+- **Next steps:** Record the final explanation, validation evidence, and remaining limitation, then close this journal entry.
+
+### Completion checkpoint — 2026-11-03
+- **Status:** COMPLETED
+- **Result:** Confirmed the oversized sniper circle is primarily a UI sizing regression/configuration mismatch: the ring uses fixed per-zoom `aimingCircleDiameter` values while real shot dispersion remains angular and stat-driven. Also identified a separate stale `RemoteServerSettings` lifecycle risk across garage-to-battle reloads.
+- **Validation:** Traced the runtime call chain, compared the pre-refactor implementation and commit history, checked serialized zoom values and existing tests, and inspected the live Unity Editor state. `git diff --check -- TASK.md` passed.
+- **Remaining limitations:** The live Editor was on the battle-result screen, so the exact current sniper frame was not reproduced interactively. No implementation fix was applied because the request was diagnosis/explanation only.
+
+### Follow-up checkpoint — 2026-11-03
+- **Clarification:** `CameraController.Init` resets the new vehicle camera to the default zoom step, so the first-battle/second-battle difference is not explained by a permanently stuck camera zoom alone. The first battle is a cold initialization; after returning from the garage, the persistent client/lobby objects and static remote settings form a warm reload path. This lifecycle difference can expose the stale-settings issue, while the fixed profile diameter remains the underlying reason the circle can exceed physical spread.
+
+## Task: Fix sniper reticle state after repeated battle initialization
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Fix the bug where the sniper reticle/convergence circle becomes incorrect after returning to the garage and initializing another battle, while the first battle is correct.
+- **Scope:** Repair the repeated battle initialization path for sniper camera, weapon dispersion, crosshair state, and server/global dispersion settings. Preserve existing unrelated working-tree changes.
+- **Acceptance criteria:** A subsequent battle starts with fresh, synchronized dispersion and reticle state; the fix is idempotent and does not reset active settings incorrectly; focused validation passes; unrelated files remain untouched.
+- **Progress:** Existing diagnosis identified two interacting causes: static server settings are not refreshed after the persistent client/lobby scene survives a battle unload, and the reticle can use stale UI state during the warm reload. The user has now explicitly requested implementation.
+- **Next steps:** Inspect battle scene load/unload hooks and reticle/dispersion reset ownership, implement the smallest focused lifecycle fix, then compile and validate the changed paths.
+
+### Implementation checkpoint — 2026-11-03
+- `LobbyManager` now sends the authoritative server-settings snapshot before every additive battle scene load, while retaining the initial client-start request. This refreshes `RemoteServerSettings` before the next vehicle is initialized.
+- `GunCrosshair` now restores its cached reticle geometry and invalidates diameter/aim-status caches when the HUD is enabled, disabled, or the local vehicle changes. The next weapon update therefore starts from the new vehicle's current profile instead of the previous battle's smoothed size.
+- Updated `docs/codex-game/match-lobby-spawn.md`, `docs/codex-game/server-settings.md`, and `docs/codex-game/ui-hud.md` to document the ownership boundary and repeated-battle lifecycle contract.
+
+### Validation checkpoint — 2026-11-03
+- `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and the existing 4 warnings.
+- Focused `git diff --check` passed for the changed scripts, documentation, and journal.
+- No Unity process was stopped or manipulated; live Play Mode repetition remains the final manual verification because the open Editor was not put through another battle.
+
+### Completion checkpoint — 2026-11-03
+- **Status:** COMPLETED
+- **Result:** Repeated battle initialization now refreshes server settings before scene load and clears the persistent crosshair's previous battle geometry/cache state when the HUD or local vehicle is reinitialized. This removes the warm-reload path that made the sniper reticle inherit stale convergence presentation.
+- **Validation:** Production C# build passed with 0 errors; focused diff check and lifecycle call-site assertions passed.
+- **Remaining limitation:** The open Unity Editor was not driven through a second battle, so final visual confirmation still needs a manual garage → battle → sniper-mode run.
+
+## Task: Delay and extend post-death spectator camera
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** After the local player is destroyed, keep the camera inactive for 5 seconds, then show the enemy as before but for twice the previous duration, and preserve the existing behavior afterward.
+- **Scope:** Trace the current post-death camera/spectator owner and lifecycle, add the requested delay and extended enemy-view duration without changing unrelated camera behavior, and validate the focused code path.
+- **Acceptance criteria:** The local death path leaves the camera inactive for 5 seconds; enemy presentation begins afterward; the enemy-view interval is doubled relative to the current value; existing follow-up behavior remains unchanged; focused validation and documentation/journal updates are recorded.
+- **Progress:** Global instructions, the repository journal, task-journal recovery workflow, and gameplay-logic separation workflow were read. No task-specific repository search or implementation edit has been performed yet.
+- **Next steps:** Locate the post-death camera owner and current duration constants, implement the smallest focused change, update the relevant mechanic documentation, and validate compilation/static consistency.
+- **Discovery checkpoint:** `CameraController` currently enters `KillerIntro` immediately on local death, resolves the killer, follows it for `3` unscaled seconds, then enters `DeathWreck`; manual same-team spectator cycling remains available afterward. The focused owner is already the camera/spectator state machine, so no new coordinator is needed.
+- **Decision:** Add a `KillerDelay` phase lasting `5` unscaled seconds with spectator input disabled, then start the existing killer presentation for `6` seconds (`2x` the current `3` seconds). Preserve the existing `DeathWreck` fallback and later `AllyFollow` behavior.
+- **Implementation checkpoint:** `CameraController` now starts local death in `KillerDelay`, keeps the detached death rig without resolving or accepting spectator input for 5 unscaled seconds, then follows the killer for 6 unscaled seconds before using the unchanged wreck/ally flow. Added a focused PlayMode regression covering the delay phase, constants, and fallback transition. Updated `docs/codex-game/robot-control.md` with the state-machine timings.
+- **Validation checkpoint — 2026-11-03:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and the existing 4 warnings. `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo -v:minimal` passed with 0 warnings/errors. Focused `git diff --check` passed. Unity PlayMode was not run because the project Editor is already open; no Unity process was stopped or manipulated.
+- **Completion checkpoint — 2026-11-03:**
+  - **Status:** COMPLETED
+  - **Result:** Local death now holds the detached camera in a no-input `KillerDelay` for 5 unscaled seconds, follows the killer for 6 unscaled seconds, and then preserves the existing `DeathWreck` and later same-team spectator behavior.
+  - **Changed files:** `Assets/Game/Scripts/Gameplay/Robots/CameraController.cs`, `Assets/Game/Tests/PlayMode/CameraRuntimeZoomOverridePlayModeTests.cs`, `docs/codex-game/robot-control.md`, and this journal.
+  - **Remaining limitation:** Final in-game visual confirmation of the 5-second wait and 6-second killer view still requires a Client/Server PlayMode run after the open Editor session is available for testing.
+
+## Task: Diagnose dedicated server batch build failure
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Explain and resolve the failure shown when building the Windows dedicated server in Unity batch mode.
+- **Scope:** Inspect the batch-build log and current Unity process state, identify whether the failure is caused by the open Editor, command syntax, or project/build configuration, and provide the smallest safe next step without changing implementation files unless required.
+- **Acceptance criteria:** Identify the concrete failure cause from logs, give a corrected command or required prerequisite, preserve the existing project state, and record validation/limitations.
+- **Progress:** The screenshot shows the wrapper error `Server build failed` after `Game.Editor.LocalNetworkBuild.BuildLocalServer`; the underlying Unity log has not yet been inspected.
+- **Discovery checkpoint:** `D:\Programing\war-of-machines-local-builds\server-build.log` contains only Unity startup and project-path initialization, then exits with return code `1` before any `BuildPlayer` output. Unity process `46864` is already running this same project, so the batch invocation cannot open the project concurrently and never reaches `BuildLocalServer`.
+- **Result:** The command syntax is valid; the required fix is to close the Unity Editor for this project, wait for its process to exit, and rerun the same batch build. No implementation files or project configuration were changed.
+- **Validation:** Confirmed the active process command line points to `D:\Programing\UnityProjects\war-of-machines-unity`; confirmed the server executable does not yet exist because the build stopped before output creation.
+- **Status:** COMPLETED
+- **Remaining limitation:** The build was not rerun automatically because closing or stopping the user's open Unity Editor would be disruptive without explicit permission.
+
+## Task: Build and launch dedicated server autonomously
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Check the dedicated-server build failure and handle the full verification/build/launch flow independently.
+- **Scope:** Inspect the active Unity Editor state, safely remove only the project lock if possible, run the configured batch server build, verify the generated executable, launch it in the background, and record logs/process state without changing gameplay implementation.
+- **Acceptance criteria:** The dedicated server build completes or the exact remaining blocker is identified; the generated server executable is verified; if build succeeds, the server is launched with a runtime log and process check; no unrelated project changes are made.
+- **Progress:** The prior batch attempt exited before `BuildLocalServer` because Unity Editor process `46864` already had this project open. The user has now explicitly asked for autonomous investigation and handling.
+- **Discovery checkpoint:** The project Editor was closed gracefully and the batch Unity child process was waited on to completion; the first wrapper check was premature because Unity continued building in child process `11848`.
+- **Build checkpoint:** `D:\Programing\war-of-machines-local-builds\server-build.log` reports `Build Finished, Result: Success`, return code `0`, and the executable exists at `D:\Programing\UnityProjects\war-of-machines-local-builds\Server\WarOfMachinesServer.exe`.
+- **Runtime checkpoint:** `WarOfMachinesServer.exe` is running hidden as PID `4000` with UDP `7770`; the local API was started from the existing `local-postgres` profile, Postgres was already healthy, and `https://localhost:7216/unity-server/status` reports `isOnline: true`, `status: ready`, and `port: 7770`.
+- **Validation checkpoint:** The server runtime log confirms Unity Transport initialization and the API endpoint confirms a live heartbeat. Existing source changes were preserved; no gameplay implementation files were changed by this task.
+- **Completion checkpoint — 2026-11-03:**
+  - **Status:** COMPLETED
+  - **Result:** Dedicated server was rebuilt successfully, launched in the background, and verified together with the local API/Postgres dependency chain.
+  - **Logs:** `D:\Programing\war-of-machines-local-builds\server-build.log`, `D:\Programing\UnityProjects\war-of-machines-local-builds\Server\server-runtime-codex.log`, and the API logs under `D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\logs\`.
+- **Remaining limitation:** No client was launched, so an actual client connection/battle was not exercised; the server/API processes are intentionally left running for the user.
+
+## Task: Add demo T1 tank and enlarge map
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-03
+- **User request:** Create one more T1 tank in the demo and increase the map size fourfold.
+- **Scope:** Identify the active demo scene and its T1 tank/map ownership, add exactly one additional T1 instance, and enlarge the demo map footprint by 4x while preserving existing gameplay setup and unrelated working-tree changes.
+- **Acceptance criteria:** The demo contains one additional T1 tank with valid scene references; the demo map is four times the current footprint; scene serialization remains valid; focused static/build validation is recorded.
+- **Progress:** Global instructions, the repository task journal, task-journal recovery workflow, and gameplay-logic separation workflow were read. No repository implementation files have been inspected or changed yet.
+- **Discovery:** The current demo scene is `Assets/Game/Scenes/Vehicles.unity`, not the removed legacy `VehicleTest.unity`. It contains `IA_L1_Starter` and `NV_L1_Starter` T1 display instances plus a scene-local `Ground`; the live gameplay `Map.unity` is a separate additive map and was not selected for this request.
+- **Implementation:** Added one `IA_L1_Starter (2)` prefab instance at `(3, -4, 8)` with a new FishNet scene id `3401205791`, registered it in `SceneRoots`, and changed the demo Ground scale from `(132.33, 2.6466, 132.33)` to `(529.32, 2.6466, 529.32)` so its X/Z footprint is four times larger.
+- **Changed files:** `Assets/Game/Scenes/Vehicles.unity` and this journal only; no scripts, prefabs, or production map files were edited.
+- **Validation:** `git diff --check -- Assets/Game/Scenes/Vehicles.unity TASK.md` passed. Focused scene assertions passed for the new prefab block, `SceneRoots` registration, `IA_L1_Starter (2)` name, unique `SceneId`, existing prefab GUID, and fourfold Ground footprint. The scene contains 9 unique FishNet scene IDs after the addition. The project Unity Editor is already open, so no batch import or Play Mode run was started.
+- **Result:** The Vehicles demo now contains one additional T1 display tank and a Ground footprint four times larger on X/Z. Existing production map, scripts, prefabs, and unrelated working-tree changes were preserved.
+- **Remaining limitation:** Final visual confirmation in the Unity Scene/Game view requires the open Editor to reload `Assets/Game/Scenes/Vehicles.unity` or a later Play Mode run.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-03
+
+## Task: Correct demo target to TransportAudioDemo
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Correct the previous demo edit: the intended demo is `Assets/TransportAudioDemo`, not `Assets/Game/Scenes/Vehicles.unity`; add one more T1 tank there and enlarge that demo map fourfold.
+- **Scope:** Restore only the prior task's changes in `Vehicles.unity`, inspect `TransportAudioDemo/TEST.unity` and its runtime demo owner, then apply the requested tank/map changes to the correct demo while preserving all unrelated working-tree changes.
+- **Acceptance criteria:** `Vehicles.unity` returns to its pre-task content; `TransportAudioDemo` contains exactly one additional T1 tank and a fourfold map footprint; the correct scene/script assets remain valid; focused static validation is recorded.
+- **Progress:** The previous response edited the wrong scene. The user identified `Assets/TransportAudioDemo` as the intended demo. Global instructions, the full repository journal, task-journal recovery workflow, and gameplay-logic separation workflow were reread.
+- **Discovery:** `Assets/TransportAudioDemo/TEST.unity` is a runtime-generated demo. `TestTransportDemo` creates one primitive vehicle per serialized `TransportAudioProfile`; the existing `t1.asset` profile was present but omitted from the scene's five-profile list. The arena was generated from a 6x Unity Plane, 58x38 border dimensions, and half-extents 29/19.
+- **Correction:** Restored `Assets/Game/Scenes/Vehicles.unity` to its pre-task content; its diff is empty relative to `HEAD`.
+- **Decision:** Preserved existing demo keys 1-5 and appended T1 as key 6 at `(21, 0.05, 0)`. Expanded the generated arena linearly by 4x with `ArenaScale = 4f`.
+- **Implementation:** Added the existing `t1.asset` GUID to `TEST.unity` as the sixth profile, extended `TestTransportDemo` to six positions/colors and key `6`, scaled the generated arena/borders, and updated the demo README.
+- **Changed files:** `Assets/TransportAudioDemo/TEST.unity`, `Assets/TransportAudioDemo/Scripts/TestTransport/TestTransportDemo.cs`, `Assets/TransportAudioDemo/Scripts/TestTransport/README.md`, and this journal. `Assets/Game/Scenes/Vehicles.unity` was restored and is not part of the final change.
+- **Validation:** Focused scene/script assertions and `git diff --check` passed. `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and `30` existing warnings. Unity Play Mode visual/audio confirmation was not run because the project Editor is already open.
+- **Result:** The correct `TransportAudioDemo` now spawns six vehicles, with the existing T1 profile as vehicle 6, and its generated arena footprint/borders are four times larger linearly. The accidental `Vehicles.unity` edit was fully removed.
+- **Completed:** 2026-11-03
+
+## Task: Fix T1 startup audio transient
+- **Status:** COMPLETED
+- **Started:** 2026-11-03
+- **User request:** Diagnose and fix the strange approximately 0.5-second sound that plays when T1 starts moving in `TransportAudioDemo`, while normal engine audio follows afterward.
+- **Scope:** Trace the T1 profile and startup/acceleration audio path, fix only the transient source, and preserve the other demo vehicle and arena changes.
+- **Acceptance:** T1 no longer emits the unwanted startup transient while retaining its normal engine audio; run focused validation and a build when applicable.
+- **Progress:** `TransportEngineAudio` plays `accelerationClips` as a one-shot when throttle crosses the start threshold. T1 was the only profile with an acceleration entry, and it incorrectly referenced the Tiger high-loop clip; the normal T1 loops and start clip are separate and valid.
+- **Decision:** Remove the invalid T1 acceleration one-shot reference rather than changing shared audio playback logic, so T1 keeps its normal layered engine loops and startup clip.
+- **Result:** Removed the incorrect T1 `accelerationClips` reference to the Tiger high-loop asset. T1 now transitions through its normal layered idle/run/high loops without the foreign one-shot when movement starts; its valid `startClip` remains unchanged.
+- **Validation:** Focused T1 profile assertions passed; `Assets/Game/Scenes/Vehicles.unity` remained clean; `TASK.md` targeted diff check passed; `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 2 existing `System.Net.Http` conflict warnings.
+- **Limitations:** Unity Play Mode audio verification was not run because the Unity Editor was already open; the unrelated repository-wide diff check still reports pre-existing trailing whitespace in `Assets/Game/Scenes/Client.unity`.
 - **Completed:** 2026-11-03

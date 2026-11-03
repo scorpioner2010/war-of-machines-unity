@@ -134,6 +134,7 @@ namespace Game.Scripts.UI.HUD
                 _battleCountdownReticleAlpha = 1f;
                 ApplyBattleCountdownReticleAlpha();
             }
+            ResetAimingState();
             ApplySniperPresentation(false);
             VehicleRoot.LocalPlayerVehicleChanged += OnLocalPlayerVehicleChanged;
             CameraController.DeathSpectatorCameraChanged += OnDeathSpectatorCameraChanged;
@@ -151,6 +152,7 @@ namespace Game.Scripts.UI.HUD
             ClientGameplaySettings.ReticleOpacityChanged -= OnReticleOpacityChanged;
             BattleCountdownGate.ClientCountdownStateChanged -= OnBattleCountdownStateChanged;
             StopBattleCountdownReticleReveal();
+            ResetAimingState();
             bool countdownActive = BattleCountdownGate.IsClientCountdownActive;
             _battleCountdownReticleHidden = countdownActive;
             _battleCountdownReticleAlpha = countdownActive ? 0f : 1f;
@@ -182,6 +184,7 @@ namespace Game.Scripts.UI.HUD
 
         private void OnLocalPlayerVehicleChanged(VehicleRoot vehicle)
         {
+            ResetAimingState();
             BindSpectatorCamera(vehicle);
         }
 
@@ -370,6 +373,52 @@ namespace Game.Scripts.UI.HUD
         public void SetAimingDiameters(float localDiameter, float serverDiameter)
         {
             SetAimingDiameters(localDiameter, serverDiameter, 0f);
+        }
+
+        private void ResetAimingState()
+        {
+            ResetAimingDiameter(
+                crosshair,
+                _crosshairBaseSize,
+                _crosshairBaseSizeCached,
+                ref _crosshairDiameter,
+                ref _crosshairDiameterCached);
+            ResetAimingDiameter(
+                serverCrosshair,
+                _serverCrosshairBaseSize,
+                _serverCrosshairBaseSizeCached,
+                ref _serverCrosshairDiameter,
+                ref _serverCrosshairDiameterCached);
+
+            _hasAimStatus = false;
+            _lastAimStatusReady = false;
+            _lastAimStatusPercent = int.MinValue;
+            _lastAimStatusPrefix = null;
+            _lastAimReadyText = null;
+            _lastChargeProgress = -1f;
+        }
+
+        private static void ResetAimingDiameter(
+            RectTransform target,
+            Vector2 baseSize,
+            bool baseSizeCached,
+            ref float currentDiameter,
+            ref bool currentDiameterCached)
+        {
+            if (target != null && baseSizeCached)
+            {
+                if (baseSize.x > 0f && baseSize.y > 0f)
+                {
+                    target.sizeDelta = baseSize;
+                }
+                else
+                {
+                    target.localScale = Vector3.one;
+                }
+            }
+
+            currentDiameter = 0f;
+            currentDiameterCached = false;
         }
 
         public void SetAimingDiameters(float localDiameter, float serverDiameter, float smoothingSpeed)

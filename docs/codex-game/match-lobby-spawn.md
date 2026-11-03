@@ -5,6 +5,7 @@ Read this file before changing matchmaking, rooms, additive scene loading, playe
 Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/LobbyManager.cs`
   - High-level lobby/network flow.
+  - Sends the server-settings snapshot both during client startup and immediately before every additive battle scene load, so a persistent client/lobby scene cannot carry stale `RemoteServerSettings` into a later battle.
 - `Assets/Game/Scripts/Networking/Lobby/LobbyRooms.cs`
   - Static room registry and room lookup helpers.
 - `Assets/Game/Scripts/Networking/Lobby/ServerRoom.cs`

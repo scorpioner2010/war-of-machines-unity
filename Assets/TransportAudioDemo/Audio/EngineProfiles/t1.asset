@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2328ffae5d1d34c4294d9dcd063ebc81, type: 3}
+  m_Name: t1
+  m_EditorClassIdentifier: 
+  displayName: t1
+  idleLoop: {fileID: 8300000, guid: fe24a4f928c7bb040b668e7ab8764ed5, type: 3}
+  runLoop: {fileID: 8300000, guid: fed4782214bb0944180daf16ae6a85c4, type: 3}
+  highLoop: {fileID: 8300000, guid: a35efa55d7f6fbb4cad5babf97ebe0a1, type: 3}
+  accelerationClips:
+  startClip: {fileID: 8300000, guid: 6a2ab441e538b7143a24d438b6fa6eed, type: 3}
+  stopClip: {fileID: 0}
+  masterVolume: 0.94
+  pitchMultiplier: 0.82
+  maxSpeed: 9.5
+  acceleration: 4.8
+  braking: 8.5
+  turnSpeed: 45

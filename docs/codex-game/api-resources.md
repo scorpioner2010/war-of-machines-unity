@@ -61,7 +61,9 @@ Post-battle reward API flow:
 
 Vehicle movement API contract:
 - `VehicleLite.traverseAcceleration` receives JSON `traverseAcceleration` and is carried by `VehicleRuntimeStats` to `VehicleMovementController`.
-- A positive value is the hull yaw acceleration in degrees per second squared. It accelerates/decelerates hull turning only; it does not affect `VehicleTurretRotationController`.
+- `VehicleLite.enginePower` receives JSON `enginePower` from the vehicle catalog, is carried by `VehicleRuntimeStats`, synchronized to observers with `VehicleRoot`, and consumed by `VehicleMovementController`.
+- `enginePower` uses `1000` as the legacy baseline. While the vehicle is accelerating toward a higher requested forward/reverse speed, the movement acceleration is multiplied by `enginePower / 1000`; maximum speed, braking, coasting, and turret rotation are unchanged in the current iteration. Missing or non-positive values resolve to `1000`.
+- A positive `traverseAcceleration` value is the hull yaw acceleration in degrees per second squared. It accelerates/decelerates hull turning only; it does not affect `VehicleTurretRotationController` or the engine-power modifier.
 - `VehicleRuntimeStats.ResolveFaction` maps API `factionCode` to `RobotFaction` (`IronAlliance`, `NovaSyndicate`, or `Unknown`) so gameplay systems do not infer a faction from a vehicle-code prefix.
 
 Vehicle armor API contract:

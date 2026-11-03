@@ -248,7 +248,8 @@ namespace Game.Scripts.Testing
                     isActive = isSelected,
                     xp = ResolveProfileCurrentXp(GetDefinition(vehicle.id), vehicle.level),
                     isResearched = true,
-                    viewRange = vehicle.viewRange
+                    viewRange = vehicle.viewRange,
+                    enginePower = vehicle.enginePower
                 };
 
                 if (isSelected)
@@ -273,6 +274,7 @@ namespace Game.Scripts.Testing
                 activeVehicleId = selectedVehicle.id,
                 activeVehicleCode = selectedVehicle.code,
                 activeVehicleName = selectedVehicle.name,
+                activeVehicleEnginePower = selectedVehicle.enginePower,
                 ownedVehicles = ownedVehicles,
                 researchedVehicles = Array.Empty<ResearchedVehicleDto>()
             };
@@ -598,6 +600,7 @@ namespace Game.Scripts.Testing
                 factionCode = vehicle.factionCode,
                 isVisible = true,
                 shellSpeed = vehicle.shellSpeed,
+                enginePower = vehicle.enginePower,
                 shellsCount = vehicle.shellsCount,
                 damageMin = vehicle.damageMin,
                 damageMax = vehicle.damageMax,
@@ -654,6 +657,7 @@ namespace Game.Scripts.Testing
                 traverseAcceleration = 4f + level * 0.45f + classOffset * 0.18f,
                 traverseSpeed = 25f + level * 1.8f + classOffset * 1.7f + variantOffset * 0.35f,
                 turretTraverseSpeed = 29f + level * 2f + classOffset * 1.9f + variantOffset * 0.4f,
+                enginePower = 420f + level * 65f + classOffset * 24f + variantOffset * 7f,
                 turretArmor = BuildArmor(62 + armorOffset, 40 + level * 4 + classOffset * 3, 24 + level * 3 + variantOffset / 2),
                 hullArmor = BuildArmor(74 + armorOffset + classOffset * 2, 48 + level * 4 + classOffset * 2, 30 + level * 3 + variantOffset / 2)
             };

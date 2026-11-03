@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2328ffae5d1d34c4294d9dcd063ebc81, type: 3}
+  m_Name: Leopard1
+  m_EditorClassIdentifier: 
+  displayName: Leopard 1
+  idleLoop: {fileID: 8300000, guid: 8007f16387b0fa743acb704083d2aef6, type: 3}
+  runLoop: {fileID: 8300000, guid: 2224fd3eaa071f94a8d0650b61897c85, type: 3}
+  highLoop: {fileID: 8300000, guid: a4daa69478aff8e4587f2e42e558f128, type: 3}
+  accelerationClips:
+  - {fileID: 8300000, guid: 17843d2dbe4752a41956b6c8cb310edf, type: 3}
+  startClip: {fileID: 8300000, guid: 9f80077ec8b9fd34c90616bbd720a5c1, type: 3}
+  stopClip: {fileID: 0}
+  masterVolume: 0.92
+  pitchMultiplier: 0.9
+  maxSpeed: 13
+  acceleration: 6.5
+  braking: 10
+  turnSpeed: 55

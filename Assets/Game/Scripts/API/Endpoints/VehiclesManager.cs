@@ -253,6 +253,7 @@ namespace Game.Scripts.API
 
         public float speed;
         public float acceleration;
+        public float enginePower;
         public float traverseAcceleration;
         public float traverseSpeed;
         public float turretTraverseSpeed;
@@ -298,6 +299,7 @@ namespace Game.Scripts.API
         public string factionCode;
         public bool isVisible;
         public float shellSpeed;
+        public float enginePower;
         public int shellsCount;
         public float damageMin;
         public float damageMax;

@@ -161,6 +161,7 @@ namespace Game.Scripts.API.Models
         public int activeVehicleId;
         public string activeVehicleCode;
         public string activeVehicleName;
+        public float activeVehicleEnginePower;
 
         public OwnedVehicleDto[] ownedVehicles;
         public ResearchedVehicleDto[] researchedVehicles;
@@ -244,6 +245,7 @@ namespace Game.Scripts.API.Models
         public int xp;
         public bool isResearched;
         public float viewRange;
+        public float enginePower;
     }
 
     [System.Serializable]

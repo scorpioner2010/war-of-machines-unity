@@ -29,7 +29,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Testing/ClientVehicleTestAudioRouting.cs`
   - Owns the editor-only test session's audio listener instead of adding audio policy to the vehicle, weapon, or camera movement owners.
   - Keeps the scene-owned `ClientVehicleTestCamera` as the only active `AudioListener`, including after additive gameplay scenes load; the normal Client listener is restored when the test camera component is disabled or destroyed.
-  - `Map/GameplayCamera` intentionally has no `AudioListener`, because its camera is disabled during the editor-only vehicle test and the Client/test camera owners provide the single listener for their respective modes.
+  - `Map/GameplayCamera` owns the normal gameplay listener. When the editor-only vehicle test is enabled, this router temporarily disables that listener and keeps the test camera as the single active listener; normal gameplay is restored when the test camera is disabled or destroyed.
 - `Assets/Game/Scripts/Testing/VehicleTestRuntimeSettings.cs`
   - Builds test runtime stats for reload/ammo overrides.
   - Applies test-only weapon accuracy debug mode to the spawned vehicle.

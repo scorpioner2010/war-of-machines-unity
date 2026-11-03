@@ -55,6 +55,7 @@ namespace Game.Scripts.Gameplay.Robots
         public const float DefaultDamageMin = 90f;
         public const float DefaultDamageMax = 110f;
         public const float DefaultViewRange = 100f;
+        public const float DefaultEnginePower = 1000f;
 
         public int VehicleId;
         public string Code;
@@ -74,6 +75,7 @@ namespace Game.Scripts.Gameplay.Robots
         public float ViewRange;
         public float Speed;
         public float Acceleration;
+        public float EnginePower = DefaultEnginePower;
         public float TraverseAcceleration;
         public float TraverseSpeed;
         public float TurretTraverseSpeed;
@@ -117,6 +119,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ViewRange = ResolveViewRange(vehicle.viewRange),
                 Speed = Mathf.Max(0f, vehicle.speed),
                 Acceleration = Mathf.Max(0f, vehicle.acceleration),
+                EnginePower = ResolveEnginePower(vehicle.enginePower),
                 TraverseAcceleration = Mathf.Max(0f, vehicle.traverseAcceleration),
                 TraverseSpeed = Mathf.Max(0f, vehicle.traverseSpeed),
                 TurretTraverseSpeed = Mathf.Max(0f, vehicle.turretTraverseSpeed),
@@ -150,6 +153,7 @@ namespace Game.Scripts.Gameplay.Robots
             DamageMin = damageMin;
             DamageMax = damageMax;
             ViewRange = ResolveViewRange(ViewRange);
+            EnginePower = ResolveEnginePower(EnginePower);
         }
 
         public static float ResolveShellSpeed(float value)
@@ -180,6 +184,26 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return DefaultViewRange;
+        }
+
+        public static float ResolveEnginePower(float value)
+        {
+            if (value > 0f)
+            {
+                return value;
+            }
+
+            return DefaultEnginePower;
+        }
+
+        public static float ScaleAccelerationByEnginePower(float baseAcceleration, float enginePower)
+        {
+            if (baseAcceleration <= 0f)
+            {
+                return 0f;
+            }
+
+            return baseAcceleration * ResolveEnginePower(enginePower) / DefaultEnginePower;
         }
 
         public static void ResolveDamageRange(float sourceMin, float sourceMax, out float damageMin, out float damageMax)
@@ -233,6 +257,7 @@ namespace Game.Scripts.Gameplay.Robots
                 ViewRange = ResolveViewRange(ViewRange),
                 Speed = Speed,
                 Acceleration = Acceleration,
+                EnginePower = ResolveEnginePower(EnginePower),
                 TraverseAcceleration = TraverseAcceleration,
                 TraverseSpeed = TraverseSpeed,
                 TurretTraverseSpeed = TurretTraverseSpeed,

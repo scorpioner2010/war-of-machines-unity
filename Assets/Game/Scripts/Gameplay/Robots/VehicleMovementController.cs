@@ -22,6 +22,7 @@ namespace Game.Scripts.Gameplay.Robots
         private float _traverseSpeedDegPerSecond;
         private float _vVel;
         private RobotFaction _faction = RobotFaction.IronAlliance;
+        private float _enginePower = VehicleRuntimeStats.DefaultEnginePower;
         private bool _useRuntimeTraverseAcceleration;
         private float _runtimeTraverseAccelerationDegPerSecondSquared;
         private bool _useRuntimeTraverseSpeed;
@@ -61,6 +62,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             _faction = stats.Faction;
+            _enginePower = VehicleRuntimeStats.ResolveEnginePower(stats.EnginePower);
 
             if (stats.TraverseSpeed > 0f)
             {
@@ -165,7 +167,9 @@ namespace Game.Scripts.Gameplay.Robots
                 float baseAcceleration = GetAcceleration(settings) * settings.GetAccelerationMultiplier(isLegged);
 
                 float desiredSpeed = GetDesiredForwardSpeed(mi.y, speedLimit);
-                float accelerationRate = baseAcceleration;
+                float accelerationRate = IsAccelerating(desiredSpeed)
+                    ? VehicleRuntimeStats.ScaleAccelerationByEnginePower(baseAcceleration, _enginePower)
+                    : baseAcceleration;
                 if (IsCoasting(desiredSpeed))
                 {
                     accelerationRate *= GetStoppingAccelerationMultiplier(settings);
@@ -349,6 +353,22 @@ namespace Game.Scripts.Gameplay.Robots
         {
             return Mathf.Abs(_forwardSpeed) > 0.0001f
                    && Mathf.Abs(desiredSpeed) <= 0.0001f;
+        }
+
+        private bool IsAccelerating(float desiredSpeed)
+        {
+            if (Mathf.Abs(desiredSpeed) <= 0.0001f)
+            {
+                return false;
+            }
+
+            if (Mathf.Abs(_forwardSpeed) <= 0.0001f)
+            {
+                return true;
+            }
+
+            return _forwardSpeed * desiredSpeed > 0f
+                   && Mathf.Abs(desiredSpeed) > Mathf.Abs(_forwardSpeed);
         }
 
         private bool IsBraking(float desiredSpeed)

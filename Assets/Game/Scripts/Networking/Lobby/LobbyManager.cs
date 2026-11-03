@@ -70,7 +70,13 @@ namespace Game.Scripts.Networking.Lobby
         [ServerRpc(RequireOwnership = false)]
         private void RequestServerSettingsServerRpc(NetworkConnection sender = null)
         {
-            if (sender == null)
+            SendServerSettings(sender);
+        }
+
+        [Server]
+        private void SendServerSettings(NetworkConnection target)
+        {
+            if (target == null)
             {
                 return;
             }
@@ -81,7 +87,7 @@ namespace Game.Scripts.Networking.Lobby
             VehicleInputSyncSettings vehicleInputSync = ServerSettings.GetVehicleInputSync();
             MatchSceneGlobalSettings matchScene = ServerSettings.GetMatchScene();
             TargetServerSettingsRpc(
-                sender,
+                target,
                 ServerSettings.GetMaxPlayersForFindRoom(),
                 ServerSettings.GetFindRoomSeconds(),
                 robotMovement.fallbackMaxSpeed,
@@ -331,6 +337,7 @@ namespace Game.Scripts.Networking.Lobby
 
             for (int i = 0; i < connections.Count; i++)
             {
+                SendServerSettings(connections[i]);
                 TargetStartGameResponseRpc(connections[i]);
             }
 

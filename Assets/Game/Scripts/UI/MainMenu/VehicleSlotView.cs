@@ -127,6 +127,7 @@ namespace Game.Scripts.UI.MainMenu
         public float ViewRange;
         public float Speed;
         public float Acceleration;
+        public float EnginePower;
         public float TraverseSpeed;
         public float TurretTraverseSpeed;
         public string TurretArmor;
@@ -158,6 +159,7 @@ namespace Game.Scripts.UI.MainMenu
             ViewRange = VehicleRuntimeStats.ResolveViewRange(vehicle.viewRange);
             Speed = vehicle.speed;
             Acceleration = vehicle.acceleration;
+            EnginePower = vehicle.enginePower;
             TraverseSpeed = vehicle.traverseSpeed;
             TurretTraverseSpeed = vehicle.turretTraverseSpeed;
             TurretArmor = vehicle.turretArmor;

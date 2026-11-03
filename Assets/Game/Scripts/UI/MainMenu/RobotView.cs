@@ -109,6 +109,7 @@ namespace Game.Scripts.UI.MainMenu
                     vehicleData.IsSelected = selected != null && selected.vehicleId == vehicle.vehicleId;
                     vehicleData.Name = vehicle.name;
                     vehicleData.ViewRange = VehicleRuntimeStats.ResolveViewRange(vehicle.viewRange);
+                    vehicleData.EnginePower = vehicle.enginePower;
                     vehicleData.ApplyVehicleLite(FindVehicleStats(vehicleStats, vehicle.code, vehicle.vehicleId));
                     vehicles.Add(vehicleData);
                 }
@@ -167,6 +168,7 @@ namespace Game.Scripts.UI.MainMenu
                     vehicleData.IsSelected = selected != null && selected.vehicleId == vehicle.vehicleId;
                     vehicleData.Name = vehicle.name;
                     vehicleData.ViewRange = VehicleRuntimeStats.ResolveViewRange(vehicle.viewRange);
+                    vehicleData.EnginePower = vehicle.enginePower;
                     vehicleData.ApplyVehicleLite(FindVehicleStats(localTestVehicles, vehicle.code, vehicle.vehicleId));
                     vehicles.Add(vehicleData);
                 }

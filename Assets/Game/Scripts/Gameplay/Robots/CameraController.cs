@@ -15,11 +15,14 @@ namespace Game.Scripts.Gameplay.Robots
     public class CameraController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {
         private const int DefaultZoomStep = 0;
+        private const float DeathSpectatorKillerDelaySeconds = 5f;
         private const float DeathSpectatorIntroSeconds = 3f;
+        private const float DeathSpectatorKillerViewSeconds = DeathSpectatorIntroSeconds * 2f;
 
         private enum DeathSpectatorPhase
         {
             Inactive,
+            KillerDelay,
             KillerIntro,
             DeathWreck,
             AllyFollow
@@ -40,6 +43,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _sniperUiApplied;
         private bool _initialized;
         private DeathSpectatorPhase _deathSpectatorPhase;
+        private float _deathSpectatorKillerDelayEndTime;
         private float _deathSpectatorIntroEndTime;
         private int _pendingKillerObjectId = -1;
         private MatchTeam _spectatorTeam = MatchTeam.None;
@@ -303,8 +307,9 @@ namespace Game.Scripts.Gameplay.Robots
 
             SoundCaller.PlaySfx(AudioEventNames.OwnRobotDestroyed, vehicleRoot.transform.position);
             DetachFromVehicleForDeath();
-            _deathSpectatorPhase = DeathSpectatorPhase.KillerIntro;
-            _deathSpectatorIntroEndTime = Time.unscaledTime + DeathSpectatorIntroSeconds;
+            _deathSpectatorPhase = DeathSpectatorPhase.KillerDelay;
+            _deathSpectatorKillerDelayEndTime = Time.unscaledTime + DeathSpectatorKillerDelaySeconds;
+            _deathSpectatorIntroEndTime = 0f;
             _pendingKillerObjectId = killerObjectId;
             CacheSpectatorTeam();
             SpectatorTeamContext.Capture(_spectatorTeam);
@@ -316,11 +321,28 @@ namespace Game.Scripts.Gameplay.Robots
                 ApplyZoomStep(DefaultZoomStep, true);
             }
 
-            TryResolveKillerTarget();
         }
 
         private void UpdateDeathSpectator()
         {
+            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerDelay)
+            {
+                if (Time.unscaledTime < _deathSpectatorKillerDelayEndTime)
+                {
+                    return;
+                }
+
+                _deathSpectatorPhase = DeathSpectatorPhase.KillerIntro;
+                _deathSpectatorIntroEndTime = Time.unscaledTime + DeathSpectatorKillerViewSeconds;
+                TryResolveKillerTarget();
+                if (_pendingKillerObjectId < 0 && !IsLiveBattleVehicle(_spectatorTarget))
+                {
+                    EnterDeathWreck();
+                }
+
+                return;
+            }
+
             if (_deathSpectatorPhase == DeathSpectatorPhase.KillerIntro)
             {
                 TryResolveKillerTarget();
@@ -360,7 +382,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void CycleSpectatorTargets()
         {
-            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerIntro)
+            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerDelay
+                || _deathSpectatorPhase == DeathSpectatorPhase.KillerIntro)
             {
                 return;
             }
@@ -575,6 +598,8 @@ namespace Game.Scripts.Gameplay.Robots
         {
             ClearSpectatorTarget();
             _pendingKillerObjectId = -1;
+            _deathSpectatorKillerDelayEndTime = 0f;
+            _deathSpectatorIntroEndTime = 0f;
             _deathSpectatorPhase = DeathSpectatorPhase.Inactive;
             SpectatorTeamContext.Clear();
             ReleaseDeathWreckRig();
@@ -741,6 +766,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void UpdateDeathSpectatorInputs()
         {
+            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerDelay)
+            {
+                return;
+            }
+
             UpdateOrbitInputs();
             CycleSpectatorTargets();
 

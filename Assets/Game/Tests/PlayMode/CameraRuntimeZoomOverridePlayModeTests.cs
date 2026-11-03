@@ -301,6 +301,53 @@ namespace Game.Tests.PlayMode
         }
 
         [Test]
+        public void DeathSpectatorDelaysKillerViewAndUsesDoubledDuration()
+        {
+            GameObject cameraObject = new GameObject("DelayedSpectatorCamera");
+            try
+            {
+                Type cameraControllerType = GetType(
+                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type phaseType = cameraControllerType.GetNestedType(
+                    "DeathSpectatorPhase",
+                    BindingFlags.NonPublic);
+                Component cameraController = cameraObject.AddComponent(cameraControllerType);
+                object killerDelayPhase = Enum.Parse(phaseType, "KillerDelay");
+                SetField(cameraController, "_deathSpectatorPhase", killerDelayPhase);
+                SetField(
+                    cameraController,
+                    "_deathSpectatorKillerDelayEndTime",
+                    Time.unscaledTime + 5f);
+
+                Invoke(cameraController, "UpdateDeathSpectator");
+
+                Assert.AreEqual(killerDelayPhase, GetField(cameraController, "_deathSpectatorPhase"));
+                FieldInfo delaySeconds = cameraControllerType.GetField(
+                    "DeathSpectatorKillerDelaySeconds",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+                FieldInfo viewSeconds = cameraControllerType.GetField(
+                    "DeathSpectatorKillerViewSeconds",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+                Assert.IsNotNull(delaySeconds);
+                Assert.IsNotNull(viewSeconds);
+                Assert.That((float)delaySeconds.GetValue(null), Is.EqualTo(5f));
+                Assert.That((float)viewSeconds.GetValue(null), Is.EqualTo(6f));
+
+                SetField(
+                    cameraController,
+                    "_deathSpectatorKillerDelayEndTime",
+                    Time.unscaledTime - 1f);
+                Invoke(cameraController, "UpdateDeathSpectator");
+
+                Assert.IsTrue((bool)GetProperty(cameraController, "IsDeathSpectatorWreck"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
         public void DeathSpectatorCachesLocalTeamBeforeVehicleRootIsDestroyed()
         {
             GameObject vehicleObject = new GameObject("SpectatorTeamVehicle");

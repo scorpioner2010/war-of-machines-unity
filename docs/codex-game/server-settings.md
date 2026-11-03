@@ -11,7 +11,7 @@ Current owner files:
   - Serialized settings source used in runtime scenes/prefabs.
   - New serialized fields may need explicit YAML/prefab updates if Unity has not serialized them yet.
 - `Assets/Game/Scripts/Server/RemoteServerSettings.cs`
-  - Remote/server settings support.
+  - Remote/server settings support. The static snapshot is refreshed at client startup and before each new battle scene; editor vehicle test mode uses the local `ServerSettings` instance instead of requesting a remote snapshot.
 - `Assets/Game/Scripts/Server/ServerDebugOverlay.cs`
   - Debug overlay for server-side settings/diagnostics.
 - `Assets/Editor/ServerSettingsEditor.cs`
