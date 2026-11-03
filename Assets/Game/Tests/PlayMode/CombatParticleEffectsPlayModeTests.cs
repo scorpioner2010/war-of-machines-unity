@@ -73,6 +73,51 @@ namespace Game.Tests.PlayMode
         }
 
         [Test]
+        public void ImpactFxUsesAttachedNeutralAnchorForNonUniformMeshScale()
+        {
+            GameObject impactPrefab = LoadPrefab(RobotHitPath);
+            GameObject impactInstance = UnityEngine.Object.Instantiate(impactPrefab);
+            Component impactFx = impactInstance.GetComponent("PooledImpactFx");
+            MethodInfo attachMethod = impactFx.GetType().GetMethod(
+                "AttachToImpactTarget",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo detachMethod = impactFx.GetType().GetMethod(
+                "DetachFromImpactTarget",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(attachMethod);
+            Assert.IsNotNull(detachMethod);
+
+            GameObject mesh = new GameObject("ImpactFxMeshScaleTest");
+            mesh.transform.localRotation = Quaternion.Euler(17f, 31f, 9f);
+            mesh.transform.localScale = new Vector3(2f, 0.5f, 3f);
+            try
+            {
+                attachMethod.Invoke(
+                    impactFx,
+                    new object[]
+                    {
+                        mesh.transform,
+                        Vector3.zero,
+                        Quaternion.identity,
+                        new Vector3(0.05f, 0.05f, 0.05f)
+                    });
+
+                Transform anchor = impactInstance.transform.parent;
+                Assert.IsNotNull(anchor);
+                Assert.AreSame(mesh.transform, anchor.parent);
+                Assert.AreEqual(0.05f, impactInstance.transform.lossyScale.x, 0.0001f);
+                Assert.AreEqual(0.05f, impactInstance.transform.lossyScale.y, 0.0001f);
+                Assert.AreEqual(0.05f, impactInstance.transform.lossyScale.z, 0.0001f);
+            }
+            finally
+            {
+                detachMethod.Invoke(impactFx, new object[] { null });
+                UnityEngine.Object.DestroyImmediate(mesh);
+                UnityEngine.Object.DestroyImmediate(impactInstance);
+            }
+        }
+
+        [Test]
         public void RobotDestructionFireLifetimeIsThirtySeconds()
         {
             GameObject robot = LoadPrefab(

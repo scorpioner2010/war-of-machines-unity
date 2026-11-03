@@ -79,6 +79,7 @@ public sealed class PooledImpactFx : MonoBehaviour
     private float _impactGlowFadeEndTime;
     private bool _impactGlowPlaying;
     private bool _playing;
+    private Transform _attachmentAnchor;
     private ImpactFxProfile _activeProfile;
     private Material _impactGlowMaterialInstance;
     private Material _impactGlowSourceMaterial;
@@ -111,6 +112,57 @@ public sealed class PooledImpactFx : MonoBehaviour
         EnsureParticleProfile();
         _fallbackLifetime = Mathf.Max(0.1f, fallbackLifetime);
         DisableExternalAutoDestroy();
+    }
+
+    internal void AttachToImpactTarget(
+        Transform attachmentParent,
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        Vector3 worldScale)
+    {
+        if (attachmentParent == null)
+        {
+            return;
+        }
+
+        Transform anchor = GetOrCreateAttachmentAnchor();
+        anchor.SetParent(attachmentParent, false);
+        anchor.localPosition = attachmentParent.InverseTransformPoint(worldPosition);
+        anchor.localRotation = Quaternion.identity;
+        anchor.localScale = GetInverseAttachmentScale(attachmentParent);
+        if (!anchor.gameObject.activeSelf)
+        {
+            anchor.gameObject.SetActive(true);
+        }
+
+        transform.SetParent(anchor, false);
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.Inverse(anchor.rotation) * worldRotation;
+        transform.localScale = worldScale;
+    }
+
+    internal void DetachFromImpactTarget(Transform recycleParent)
+    {
+        Transform anchor = _attachmentAnchor;
+        if (anchor == null)
+        {
+            _attachmentAnchor = null;
+            return;
+        }
+
+        if (transform.parent == anchor)
+        {
+            transform.SetParent(null, true);
+        }
+
+        anchor.SetParent(recycleParent, false);
+        anchor.localPosition = Vector3.zero;
+        anchor.localRotation = Quaternion.identity;
+        anchor.localScale = Vector3.one;
+        if (anchor.gameObject.activeSelf)
+        {
+            anchor.gameObject.SetActive(false);
+        }
     }
 
     public void Play()
@@ -379,6 +431,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
     private void OnDestroy()
     {
+        DestroyAttachmentAnchor();
         ReleaseImpactLayer();
         ProjectileRuntimePool.NotifyImpactFxDestroyed(this);
         if (_impactGlowMaterialInstance != null)
@@ -397,6 +450,43 @@ public sealed class PooledImpactFx : MonoBehaviour
 
         _impactGlowHaloSourceMaterial = null;
         _impactGlowHaloMaterialRenderer = null;
+    }
+
+    private Transform GetOrCreateAttachmentAnchor()
+    {
+        if (_attachmentAnchor != null)
+        {
+            return _attachmentAnchor;
+        }
+
+        GameObject anchorObject = new GameObject(name + "_ImpactAttachmentAnchor");
+        anchorObject.hideFlags = HideFlags.HideInHierarchy;
+        anchorObject.SetActive(false);
+        _attachmentAnchor = anchorObject.transform;
+        return _attachmentAnchor;
+    }
+
+    private void DestroyAttachmentAnchor()
+    {
+        if (_attachmentAnchor == null)
+        {
+            return;
+        }
+
+        Transform anchor = _attachmentAnchor;
+        _attachmentAnchor = null;
+        Destroy(anchor.gameObject);
+    }
+
+    private static Vector3 GetInverseAttachmentScale(Transform attachmentParent)
+    {
+        Vector3 worldRight = attachmentParent.TransformVector(Vector3.right);
+        Vector3 worldUp = attachmentParent.TransformVector(Vector3.up);
+        Vector3 worldForward = attachmentParent.TransformVector(Vector3.forward);
+        return new Vector3(
+            GetSafeInverseScale(worldRight.magnitude),
+            GetSafeInverseScale(worldUp.magnitude),
+            GetSafeInverseScale(worldForward.magnitude));
     }
 
     private void DisableExternalAutoDestroy()

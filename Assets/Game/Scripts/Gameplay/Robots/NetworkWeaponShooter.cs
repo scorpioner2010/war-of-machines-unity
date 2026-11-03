@@ -1473,7 +1473,7 @@ namespace Game.Scripts.Gameplay.Robots
                     impactPoint,
                     impactNormal,
                     targetObjectId,
-                    GetImpactAttachmentTransform(targetObjectId),
+                    GetImpactAttachmentTransform(targetObjectId, impactPoint, impactNormal),
                     GetImpactTargetRoot(targetObjectId));
                 PlayImpactAudio(impactAudio, impactPoint, targetObjectId);
             }
@@ -1542,7 +1542,10 @@ namespace Game.Scripts.Gameplay.Robots
                     resolution.ImpactPoint,
                     resolution.ImpactNormal,
                     resolution.TargetObjectId,
-                    GetImpactAttachmentTransform(resolution.TargetObjectId),
+                    GetImpactAttachmentTransform(
+                        resolution.TargetObjectId,
+                        resolution.ImpactPoint,
+                        resolution.ImpactNormal),
                     GetImpactTargetRoot(resolution.TargetObjectId),
                     MIN_REMOTE_VISUAL_FLIGHT_SECONDS);
                 PlayImpactAudio(
@@ -1600,14 +1603,34 @@ namespace Game.Scripts.Gameplay.Robots
                 visualProjectilePrefab,
                 impactPoint,
                 impactNormal,
-                GetImpactAttachmentTransform(targetObjectId),
+                GetImpactAttachmentTransform(targetObjectId, impactPoint, impactNormal),
                 GetImpactTargetRoot(targetObjectId));
         }
 
-        private static Transform GetImpactAttachmentTransform(int targetObjectId)
+        private static Transform GetImpactAttachmentTransform(
+            int targetObjectId,
+            Vector3 impactPoint,
+            Vector3 impactNormal)
         {
             VehicleRoot targetRoot = GetImpactTargetRoot(targetObjectId);
-            return targetRoot != null ? targetRoot.transform : null;
+            if (targetRoot == null)
+            {
+                return null;
+            }
+
+            if (VehicleColliderRegistry.TryGetImpactVisualSurface(
+                    targetRoot,
+                    impactPoint,
+                    impactNormal,
+                    out _,
+                    out _,
+                    out Renderer surfaceRenderer)
+                && surfaceRenderer != null)
+            {
+                return surfaceRenderer.transform;
+            }
+
+            return targetRoot.transform;
         }
 
         private static VehicleRoot GetImpactTargetRoot(int targetObjectId)

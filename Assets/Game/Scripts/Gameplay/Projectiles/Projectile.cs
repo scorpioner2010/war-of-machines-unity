@@ -1010,7 +1010,7 @@ public class Projectile : MonoBehaviour
             Explode(
                 hit.point,
                 _lastHitNormal,
-                GetImpactAttachmentParent(hit.collider),
+                GetImpactAttachmentParent(hit.collider, hit.point, _lastHitNormal),
                 impactTarget,
                 hit.collider);
             StopClientVisualAtCollision();
@@ -1027,7 +1027,7 @@ public class Projectile : MonoBehaviour
         Explode(
             hit.point,
             _lastHitNormal,
-            GetImpactAttachmentParent(hit.collider),
+            GetImpactAttachmentParent(hit.collider, hit.point, _lastHitNormal),
             GetImpactTargetRoot(hit.collider),
             hit.collider);
         CompleteFlight();
@@ -1087,12 +1087,30 @@ public class Projectile : MonoBehaviour
             : null;
     }
 
-    private static Transform GetImpactAttachmentParent(Collider hitCollider)
+    private static Transform GetImpactAttachmentParent(
+        Collider hitCollider,
+        Vector3 impactPoint,
+        Vector3 impactNormal)
     {
-        return VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot targetRoot)
-            && targetRoot != null
-            ? hitCollider.transform
-            : null;
+        if (!VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot targetRoot)
+            || targetRoot == null)
+        {
+            return null;
+        }
+
+        if (VehicleColliderRegistry.TryGetImpactVisualSurface(
+                targetRoot,
+                impactPoint,
+                impactNormal,
+                out _,
+                out _,
+                out Renderer surfaceRenderer)
+            && surfaceRenderer != null)
+        {
+            return surfaceRenderer.transform;
+        }
+
+        return hitCollider.transform;
     }
 
     private bool HasExceededLimits()

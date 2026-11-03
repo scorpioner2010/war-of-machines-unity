@@ -5,7 +5,6 @@ This file is the durable handoff point between Codex sessions. Keep entries appe
 ## Task: Import Fires prefabs and resources into Particles111
 
 - **Status:** COMPLETED
-
 - **Started:** 2026-11-01
 - **User request:** Transfer the prefabs and their resources from `C:\Users\TorasPC\Documents\Codex\2026-11-01\new-chat-3\work\UnityAssetScratch\Assets\Fires` into this game project under `Particles111`.
 - **Scope:** Inspect the source asset tree and target project structure, copy the complete Unity asset bundle including `.meta` files and referenced local resources, preserve existing project files, and validate that copied references remain internally resolvable.
@@ -1496,6 +1495,7 @@ The persistent task journal workflow is installed. Future tasks must start with 
 ## Task: Build reusable cannon muzzle, looping fire, and ground-impact particle variants
 
 - **Status:** COMPLETED
+
 - **Started:** 2026-11-01
 - **User request:** Study the realistic robot destruction particle effects in `Assets/PartDone/RobotDestroyEffect`, then create five cannon muzzle-shot variants, five looping fire variants, and five ground-impact variants inspired by the same assets and save them under `Assets/PartDone/New10000000parts`.
 - **Scope:** Inspect the source particle systems, materials, textures, prefabs, and project rendering setup; preserve all source assets; create a self-contained new folder with high-quality reusable Unity particle prefabs/assets and supporting documentation if needed.
@@ -2164,3 +2164,52 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - The countdown is owned by `BattleCountdownController` in `Assets/Game/Scripts/Gameplay/Battle/BattleCountdownController.cs`; its serialized `countdownSeconds` field defaults to `10`.
 - The active Client scene overrides the same field at `Assets/Game/Scenes/Client.unity:59408` with `countdownSeconds: 10`.
 - **Result:** The authoritative value for the current client countdown is the `BattleCountdownUI` scene component field `countdownSeconds` in `Client.unity`; no project files were changed beyond this journal entry.
+
+## Task: Fix intermittent stretched robot impact particles
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Investigate and fix the intermittent bug where impact particles stretch strongly when hitting a robot.
+- **Scope:** Inspect the pooled impact FX transform reset, robot attachment parent, authored scale, and non-uniform parent scale handling; preserve decals and authored particle dimensions.
+- **Acceptance criteria:** Robot impact particles retain their authored uniform scale on every pooled spawn, do not stretch on X/Z, and the focused validation passes without regressing existing impact visuals.
+- **Next steps:** None.
+
+### Discovery and implementation checkpoint - 2026-11-02
+
+- `ExplosionProjectileRobot` is spawned from the shared pooled impact path and is attached to the robot `VehicleRoot` so the impact visuals and decals follow the target.
+- The pool reset correctly restores the authored root scale, but the previous compensation used the parent `lossyScale` axis-by-axis. A non-uniform parent scale combined with a different child rotation can produce a sheared particle transform, which explains the intermittent X/Z stretching.
+- Added `CanSafelyAttachImpactFx`: impact FX attach to the target only when its effective world scale is finite, non-zero, and uniform within tolerance; otherwise the FX remains in world space at its authored scale, while impact decals still use the existing collision target/layer path.
+- Added a focused regression test for rejecting non-uniform attachment scales.
+
+### Validation checkpoint - 2026-11-02
+
+- `dotnet build Assembly-CSharp.csproj --no-restore` passes with 0 errors; existing project warnings remain.
+- `git diff --check` passes.
+- Changed paths are limited to `ProjectileRuntimePool.cs`, `CombatParticleEffectsPlayModeTests.cs`, and this journal entry.
+- Unity PlayMode/manual visual QA was not run because the project remains open in the Unity Editor.
+- **Result:** Impact FX no longer inherit unsafe non-uniform robot parent scales, preventing the intermittent particle deformation while preserving authored prefab dimensions and decal handling.
+- **Status:** COMPLETED
+
+## Task: Keep robot impact FX attached without scale distortion
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-02
+- **User request:** Keep impact decals and particles attached to the robot or turret while fixing the scale distortion caused by the current attachment approach.
+- **Scope:** Replace the world-space fallback with a shared attached anchor at the visual mesh/collider level, preserve movement with the target, and prevent non-uniform scale inheritance without changing unrelated robot transforms.
+- **Acceptance criteria:** Robot impact particles and decals move with the hit mesh/turret, particle dimensions remain authored and uniform, pooled FX reset safely, and focused validation passes.
+- **Next steps:** None.
+
+### Discovery and implementation checkpoint - 2026-11-02
+
+- The local projectile path already had the physics collider, but the network-only impact path attached to the whole `VehicleRoot`, which could inherit unrelated vehicle scale. Both paths now resolve the visual mesh/renderer nearest to the impact point; the root remains the fallback only when no visual renderer is available.
+- Added a reusable hidden attachment anchor under that visual mesh. Its axes compensate the effective mesh scale without changing the mesh transform, while the pooled FX root remains the common parent for particles and decals.
+- Pool release, oldest-instance reuse, one-shot visual spawns, and external destruction all detach/recycle or destroy the anchor safely.
+- Added regression coverage proving an impact root with authored scale `0.05` stays uniformly scaled while attached to a rotated non-uniform mesh parent.
+
+### Validation checkpoint - 2026-11-02
+
+- `dotnet build Assembly-CSharp.csproj --no-restore` passes with 0 errors; existing project warnings remain.
+- `git diff --check` passes.
+- Updated ownership documentation in `docs/codex-game/weapons-damage.md`.
+- Unity PlayMode/manual visual QA was not run because the project remains open in the Unity Editor.
+- **Result:** Robot impact FX remain attached to the moving visual mesh/turret, decals continue following the target, and authored particle scale is protected by the neutral anchor.

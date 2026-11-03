@@ -286,6 +286,7 @@ public static class ProjectileRuntimePool
         }
 
         pool.RemoveActive(fx);
+        fx.DetachFromImpactTarget(pool.Root);
 
         if (pool.Inactive.Count >= pool.MaxInactive)
         {
@@ -305,6 +306,7 @@ public static class ProjectileRuntimePool
         ImpactFxPool pool = GetImpactFxPool(prefab);
         PooledImpactFx fx = RentImpactFx(pool);
 
+        fx.DetachFromImpactTarget(pool.Root);
         Transform fxTransform = fx.transform;
         fxTransform.SetParent(null, false);
         fxTransform.SetPositionAndRotation(position, rotation);
@@ -325,14 +327,21 @@ public static class ProjectileRuntimePool
         ImpactFxPool pool = GetImpactFxPool(prefab);
         PooledImpactFx fx = RentImpactFx(pool);
 
+        fx.DetachFromImpactTarget(pool.Root);
         Transform fxTransform = fx.transform;
-        fxTransform.SetParent(null, false);
-        fxTransform.SetPositionAndRotation(visualPosition, visualRotation);
-        fxTransform.localScale = pool.DefaultScale;
         if (attachmentParent != null)
         {
-            fxTransform.SetParent(attachmentParent, true);
-            SetWorldScale(fxTransform, pool.DefaultScale);
+            fx.AttachToImpactTarget(
+                attachmentParent,
+                visualPosition,
+                visualRotation,
+                pool.DefaultScale);
+        }
+        else
+        {
+            fxTransform.SetParent(null, false);
+            fxTransform.SetPositionAndRotation(visualPosition, visualRotation);
+            fxTransform.localScale = pool.DefaultScale;
         }
 
         fx.PlayImpact(impactPosition, impactNormal, impactTarget, impactCollider);
@@ -353,6 +362,7 @@ public static class ProjectileRuntimePool
         {
             fx = pool.Active[0];
             pool.Active.RemoveAt(0);
+            fx.DetachFromImpactTarget(pool.Root);
             fx.PrepareForPoolRelease();
         }
 
@@ -390,30 +400,6 @@ public static class ProjectileRuntimePool
     private static Vector3 ScaleVector(Vector3 value, float scale)
     {
         return new Vector3(value.x * scale, value.y * scale, value.z * scale);
-    }
-
-    private static void SetWorldScale(Transform target, Vector3 worldScale)
-    {
-        if (target == null || target.parent == null)
-        {
-            if (target != null)
-            {
-                target.localScale = worldScale;
-            }
-
-            return;
-        }
-
-        Vector3 parentLossyScale = target.parent.lossyScale;
-        target.localScale = new Vector3(
-            worldScale.x * GetSafeInverseScale(parentLossyScale.x),
-            worldScale.y * GetSafeInverseScale(parentLossyScale.y),
-            worldScale.z * GetSafeInverseScale(parentLossyScale.z));
-    }
-
-    private static float GetSafeInverseScale(float scale)
-    {
-        return Mathf.Abs(scale) > 0.0001f ? 1f / scale : 1f;
     }
 
     private static ProjectilePool GetProjectilePool(Projectile prefab)
