@@ -12,6 +12,11 @@ namespace Game.Scripts.AI.WaypointGraph
                 return;
             }
 
+            if (shoot)
+            {
+                move = Vector2.zero;
+            }
+
             VehicleServerInput input = VehicleServerInput.Combat(
                 move,
                 shoot,

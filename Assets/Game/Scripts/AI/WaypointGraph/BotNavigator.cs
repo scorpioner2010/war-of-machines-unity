@@ -67,6 +67,8 @@ namespace Game.Scripts.AI.WaypointGraph
         private bool _isInitialized;
         private bool _movementSuppressed;
 
+        public Vector2 CurrentMovementInput { get; private set; }
+
         private void Awake()
         {
             _turnBias = Random.value < 0.5f ? -1f : 1f;
@@ -89,6 +91,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _nextProximityScanTime = now + Random.Range(0f, settings.proximityScanInterval);
             ResetSteeringSmoothing();
             _proximityAvoidance = Vector3.zero;
+            CurrentMovementInput = Vector2.zero;
             InitializeExplorationMemory();
             _lastProgressPosition = GetMovePosition();
         }
@@ -866,6 +869,7 @@ namespace Game.Scripts.AI.WaypointGraph
 
             forward = ClampInput(forward);
             turn = ClampInput(turn);
+            CurrentMovementInput = new Vector2(turn, forward);
             _inputReceiver.ApplyBotInput(forward, turn);
         }
 

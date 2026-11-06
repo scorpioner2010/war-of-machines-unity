@@ -62,8 +62,8 @@ namespace Game.Scripts.AI.WaypointGraph
         private const float SwitchScoreMargin = 0.18f;
         private const float EmergencySwitchScoreMargin = 0.28f;
         private const float CurrentTacticStickiness = 0.12f;
-        private const float NavigationRefreshIntervalSeconds = 0.75f;
-        private const float NavigationRefreshDistance = 6f;
+        private const float NavigationRefreshIntervalSeconds = 1.8f;
+        private const float NavigationRefreshDistance = 10f;
         private const float OccupiedPositionRadius = 9f;
         private const float FireLaneBlockerRadius = 2.5f;
         private const float FireLaneSideStepDistance = 18f;

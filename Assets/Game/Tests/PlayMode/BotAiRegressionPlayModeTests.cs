@@ -353,6 +353,90 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator BotCombatRequiresStoppedSettleBeforeFiring()
+        {
+            Type engagementType = Type.GetType(
+                "Game.Scripts.AI.WaypointGraph.BotCombatEngagementController, Assembly-CSharp");
+            Type decisionType = Type.GetType(
+                "Game.Scripts.AI.WaypointGraph.BotCombatEngagementDecision, Assembly-CSharp");
+            Type vehicleRootType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+            Type movementType = Type.GetType(
+                "Game.Scripts.Gameplay.Robots.VehicleMovementController, Assembly-CSharp");
+            Assert.IsNotNull(engagementType);
+            Assert.IsNotNull(decisionType);
+            Assert.IsNotNull(vehicleRootType);
+            Assert.IsNotNull(movementType);
+
+            GameObject selfObject = new GameObject("BotCombatEngagementSelf");
+            GameObject targetObject = new GameObject("BotCombatEngagementTarget");
+            Component selfRoot = selfObject.AddComponent(vehicleRootType);
+            Component targetRoot = targetObject.AddComponent(vehicleRootType);
+            Component movement = selfObject.AddComponent(movementType);
+            vehicleRootType.GetField("objectMover").SetValue(selfRoot, movement);
+
+            object engagement = Activator.CreateInstance(engagementType, true);
+            MethodInfo tick = engagementType.GetMethod("Tick", BindingFlags.Public | BindingFlags.Instance);
+            FieldInfo phase = decisionType.GetField("Phase");
+            FieldInfo allowFire = decisionType.GetField("AllowFire");
+            Assert.IsNotNull(tick);
+            Assert.IsNotNull(phase);
+            Assert.IsNotNull(allowFire);
+
+            object settling = tick.Invoke(engagement, new object[]
+            {
+                selfRoot,
+                targetRoot,
+                true,
+                true,
+                true,
+                true,
+                true,
+                0f
+            });
+            Assert.AreEqual("Settle", phase.GetValue(settling).ToString());
+            Assert.IsFalse((bool)allowFire.GetValue(settling));
+
+            movementType
+                .GetField("_forwardSpeed", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(movement, 4f);
+            object moving = tick.Invoke(engagement, new object[]
+            {
+                selfRoot,
+                targetRoot,
+                true,
+                true,
+                true,
+                true,
+                true,
+                0.5f
+            });
+            Assert.AreEqual("Settle", phase.GetValue(moving).ToString());
+            Assert.IsFalse((bool)allowFire.GetValue(moving));
+
+            movementType
+                .GetField("_forwardSpeed", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(movement, 0f);
+            object ready = tick.Invoke(engagement, new object[]
+            {
+                selfRoot,
+                targetRoot,
+                true,
+                true,
+                true,
+                true,
+                true,
+                0.5f
+            });
+            Assert.AreEqual("ReadyToFire", phase.GetValue(ready).ToString());
+            Assert.IsTrue((bool)allowFire.GetValue(ready));
+
+            UnityEngine.Object.DestroyImmediate(selfObject);
+            UnityEngine.Object.DestroyImmediate(targetObject);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator AutonomousAimReplicatesServerTargetsToVehiclePresentation()
         {
             Type inputType = Type.GetType(

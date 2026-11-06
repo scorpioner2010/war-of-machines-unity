@@ -29,6 +29,9 @@ namespace Game.Scripts.Gameplay.Robots
         private float _runtimeTraverseSpeedDegPerSecond;
         private TimeManager _timeManager;
 
+        public float CurrentForwardSpeed => _forwardSpeed;
+        public float CurrentTraverseSpeedDegPerSecond => _traverseSpeedDegPerSecond;
+
         public void SetVehicleRoot(VehicleRoot root)
         {
             vehicleRoot = root;

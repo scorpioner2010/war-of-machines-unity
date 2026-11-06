@@ -16,6 +16,7 @@ namespace Game.Scripts.AI.WaypointGraph
         private readonly BotTargetMotionTracker _motionTracker = new BotTargetMotionTracker();
         private readonly BotCombatInputWriter _inputWriter = new BotCombatInputWriter();
         private readonly BotCombatNavigationController _navigationController = new BotCombatNavigationController();
+        private readonly BotCombatEngagementController _engagementController = new BotCombatEngagementController();
         private readonly BotCombatTacticSelector _tacticSelector = new BotCombatTacticSelector();
         private readonly BotFireDecision _fireDecision;
         private readonly BotIdleAimController _idleAimController;
@@ -43,6 +44,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _navigationController.Initialize(navigator);
             _state.ClearTarget();
             _motionTracker.Reset();
+            _engagementController.Reset();
             _tacticSelector.Reset();
             _isInitialized = true;
 
@@ -57,6 +59,7 @@ namespace Game.Scripts.AI.WaypointGraph
             _navigationController.ReleaseControl();
             _state.ClearTarget();
             _motionTracker.Reset();
+            _engagementController.Reset();
             _tacticSelector.Reset();
             _isInitialized = false;
         }
@@ -83,6 +86,7 @@ namespace Game.Scripts.AI.WaypointGraph
                     _navigationController.ReleaseControl();
                     _state.ClearTarget();
                     _motionTracker.Reset();
+                    _engagementController.Reset();
                     _tacticSelector.Reset();
                     return;
                 }
@@ -102,6 +106,7 @@ namespace Game.Scripts.AI.WaypointGraph
 
                 if (_state.TargetRoot == null)
                 {
+                    _engagementController.Reset();
                     _navigationController.ReleaseControl();
                     _idleAimController.ApplyNoTargetTravelAim(_vehicleRoot, _navigator, settings);
                     return;
@@ -223,43 +228,52 @@ namespace Game.Scripts.AI.WaypointGraph
                 now);
             BotCombatTacticDecision tacticDecision = _tacticSelector.Tick(tacticContext);
 
+            bool weaponCanFire = _vehicleRoot.weaponReloadController != null
+                                 && _vehicleRoot.weaponReloadController.ServerCanFire;
+            BotCombatEngagementDecision engagementDecision = _engagementController.Tick(
+                _vehicleRoot,
+                _state.TargetRoot,
+                _state.TargetIsDirectlySpotted,
+                hasLineOfFire,
+                aimResult.HasState,
+                tacticDecision.AllowFire,
+                weaponCanFire,
+                now);
+
             if (!aimResult.HasState)
             {
                 _navigationController.UpdateForTarget(
                     settings,
                     _state.TargetRoot,
                     tacticDecision.NavigationPosition,
-                    tacticDecision.HoldPosition);
+                    engagementDecision.HoldPosition);
                 _inputWriter.ClearCombatInput(_vehicleRoot);
                 return;
             }
 
-            bool weaponCanFire = _vehicleRoot.weaponReloadController != null
-                                 && _vehicleRoot.weaponReloadController.ServerCanFire;
-            bool shoot = tacticDecision.AllowFire
+            bool shoot = engagementDecision.AllowFire
                          && hasLineOfFire
                          && aimReadiness01 >= tacticDecision.RequiredAimReadiness01
                          && _fireDecision.CanShootAtTarget(_vehicleRoot, _state, aimResult, aimPoint, settings, now);
 
-            bool holdPosition = ShouldHoldPositionForCombat(
-                settings.holdPositionWithLineOfFire,
-                tacticDecision.HoldPosition,
-                _state.TargetIsDirectlySpotted,
-                hasLineOfFire,
-                weaponCanFire,
-                tacticDecision.AllowFire);
             _navigationController.UpdateForTarget(
                 settings,
                 _state.TargetRoot,
                 tacticDecision.NavigationPosition,
-                holdPosition);
+                engagementDecision.HoldPosition);
 
-            Vector2 move = holdPosition ? Vector2.zero : _vehicleRoot.inputManager.Move;
+            Vector2 move = engagementDecision.HoldPosition
+                ? Vector2.zero
+                : _navigator != null ? _navigator.CurrentMovementInput : _vehicleRoot.inputManager.Move;
             _inputWriter.ApplyCombatInput(_vehicleRoot, aimResult, shoot, move);
 
             if (shoot && _vehicleRoot.weaponReloadController != null)
             {
-                _vehicleRoot.weaponReloadController.ServerTryFireAuthoritative();
+                if (_vehicleRoot.weaponReloadController.ServerTryFireAuthoritative())
+                {
+                    _engagementController.MarkShot();
+                    _inputWriter.ClearCombatInput(_vehicleRoot);
+                }
             }
         }
 
@@ -286,6 +300,7 @@ namespace Game.Scripts.AI.WaypointGraph
         {
             _state.ClearTarget();
             _motionTracker.Reset();
+            _engagementController.Reset();
             _tacticSelector.Reset();
             _navigationController.ReleaseControl();
             _inputWriter.ClearCombatInput(_vehicleRoot);
