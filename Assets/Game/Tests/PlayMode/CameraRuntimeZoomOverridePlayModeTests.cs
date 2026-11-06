@@ -9,6 +9,38 @@ namespace Game.Tests.PlayMode
     public sealed class CameraRuntimeZoomOverridePlayModeTests
     {
         [Test]
+        public void CameraSyncClearsStaticReferenceWhenDisabled()
+        {
+            GameObject cameraObject = new GameObject("CameraSyncLifecycleTest");
+            FieldInfo cameraSyncIn = null;
+            object previous = null;
+            try
+            {
+                Type cameraSyncType = GetType("Game.Scripts.Gameplay.Robots.CameraSync, Assembly-CSharp");
+                Assert.IsNotNull(cameraSyncType);
+                cameraSyncIn = cameraSyncType.GetField("In", BindingFlags.Public | BindingFlags.Static);
+                Assert.IsNotNull(cameraSyncIn);
+                previous = cameraSyncIn.GetValue(null);
+
+                Behaviour cameraSync = (Behaviour)cameraObject.AddComponent(cameraSyncType);
+
+                Assert.AreSame(cameraSync, cameraSyncIn.GetValue(null));
+
+                cameraSync.enabled = false;
+
+                Assert.IsNull(cameraSyncIn.GetValue(null));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+                if (cameraSyncIn != null)
+                {
+                    cameraSyncIn.SetValue(null, previous);
+                }
+            }
+        }
+
+        [Test]
         public void EnabledOverrideMovesCameraToConfiguredRuntimeZoomIndex()
         {
             GameObject settingsObject = new GameObject("ClientSettingsRuntimeZoomOverrideTest");

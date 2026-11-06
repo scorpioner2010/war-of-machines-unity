@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using TMPro;
 using Game.Scripts.Audio;
 using Game.Scripts.Client;
@@ -99,6 +100,12 @@ namespace Game.Scripts.UI.HUD
         private bool _battleCountdownReticleHidden;
         private float _battleCountdownReticleAlpha = 1f;
         private float _reticleOpacity = 1f;
+        private float _diagnosticRequestedLocalDiameter;
+        private float _diagnosticRequestedServerDiameter;
+        private float _diagnosticCurrentDispersionDeg;
+        private float _diagnosticMinDispersionDeg;
+        private float _diagnosticMaxDispersionDeg;
+        private int _diagnosticAimPercent = -1;
 
         private void Awake()
         {
@@ -423,6 +430,8 @@ namespace Game.Scripts.UI.HUD
 
         public void SetAimingDiameters(float localDiameter, float serverDiameter, float smoothingSpeed)
         {
+            _diagnosticRequestedLocalDiameter = localDiameter;
+            _diagnosticRequestedServerDiameter = serverDiameter;
             ApplyAimingDiameter(
                 crosshair,
                 localDiameter,
@@ -439,6 +448,18 @@ namespace Game.Scripts.UI.HUD
                 ref _serverCrosshairBaseSizeCached,
                 ref _serverCrosshairDiameter,
                 ref _serverCrosshairDiameterCached);
+        }
+
+        public void LogDiagnostics(string context)
+        {
+            CameraZoomDiagnosticsWriter.Write(
+                $"[CameraZoomDiag][Reticle] {context} object={name}#{GetInstanceID()} active={isActiveAndEnabled} " +
+                $"sniperApplied={_sniperModeApplied} factionNova={_activeFactionIsNova} serverEnabled={_serverCrosshairEnabled} " +
+                $"requestedLocal={FormatFloat(_diagnosticRequestedLocalDiameter)} appliedLocal={FormatFloat(_crosshairDiameter)} localCached={_crosshairDiameterCached} " +
+                $"requestedServer={FormatFloat(_diagnosticRequestedServerDiameter)} appliedServer={FormatFloat(_serverCrosshairDiameter)} serverCached={_serverCrosshairDiameterCached} " +
+                $"localReticle[{DescribeReticle(crosshair)}] serverReticle[{DescribeReticle(serverCrosshair)}] " +
+                $"aimStatus=currentDeg={FormatFloat(_diagnosticCurrentDispersionDeg)},minDeg={FormatFloat(_diagnosticMinDispersionDeg)},maxDeg={FormatFloat(_diagnosticMaxDispersionDeg)},percent={_diagnosticAimPercent},ready={_lastAimStatusReady},text={SanitizeText(aimStatusText != null ? aimStatusText.text : null)} " +
+                $"sniperOverlayActive={IsActive(sniperOverlay)} sniperReticleRootActive={IsActive(sniperReticleOnlyRoot)}");
         }
 
         public bool SetFaction(RobotFaction faction)
@@ -660,6 +681,9 @@ namespace Game.Scripts.UI.HUD
 
         public void SetAimStatus(float currentDispersionDeg, float minDispersionDeg, float maxDispersionDeg)
         {
+            _diagnosticCurrentDispersionDeg = currentDispersionDeg;
+            _diagnosticMinDispersionDeg = minDispersionDeg;
+            _diagnosticMaxDispersionDeg = maxDispersionDeg;
             if (aimStatusText == null)
             {
                 return;
@@ -669,6 +693,7 @@ namespace Game.Scripts.UI.HUD
             float max = Mathf.Max(min + 0.0001f, maxDispersionDeg);
             float t = Mathf.InverseLerp(max, min, Mathf.Clamp(currentDispersionDeg, min, max));
             int percent = Mathf.RoundToInt(t * 100f);
+            _diagnosticAimPercent = percent;
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
 
             if (percent >= 99)
@@ -1325,6 +1350,46 @@ namespace Game.Scripts.UI.HUD
             }
 
             return lastRect;
+        }
+
+        private static string DescribeReticle(RectTransform value)
+        {
+            if (value == null)
+            {
+                return "null";
+            }
+
+            return $"{value.name}#{value.GetInstanceID()}(active={value.gameObject.activeInHierarchy},sizeDelta={FormatVector2(value.sizeDelta)},localScale={FormatVector3(value.localScale)},lossyScale={FormatVector3(value.lossyScale)})";
+        }
+
+        private static string IsActive(GameObject value)
+        {
+            return value != null && value.activeInHierarchy ? "true" : "false";
+        }
+
+        private static string SanitizeText(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return "null";
+            }
+
+            return value.Replace("\r", "|").Replace("\n", "|");
+        }
+
+        private static string FormatVector2(Vector2 value)
+        {
+            return $"({FormatFloat(value.x)},{FormatFloat(value.y)})";
+        }
+
+        private static string FormatVector3(Vector3 value)
+        {
+            return $"({FormatFloat(value.x)},{FormatFloat(value.y)},{FormatFloat(value.z)})";
+        }
+
+        private static string FormatFloat(float value)
+        {
+            return value.ToString("F4", CultureInfo.InvariantCulture);
         }
 
         private static bool IsSameOrParentOf(Transform possibleParent, Transform target)

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Game.Scripts.Audio;
 using UnityEngine;
 using Game.Scripts.Core.Services;
@@ -18,6 +19,7 @@ namespace Game.Scripts.Gameplay.Robots
         private const float DeathSpectatorKillerDelaySeconds = 5f;
         private const float DeathSpectatorIntroSeconds = 3f;
         private const float DeathSpectatorKillerViewSeconds = DeathSpectatorIntroSeconds * 2f;
+        private const float DiagnosticSnapshotIntervalSeconds = 0.5f;
 
         private enum DeathSpectatorPhase
         {
@@ -55,6 +57,11 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _deathFallbackPoseCaptured;
         private Vector3 _deathFallbackPosition;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
+        private CameraSync _cameraSync;
+        private static int _nextDiagnosticSessionId;
+        private int _diagnosticSessionId;
+        private float _nextDiagnosticSnapshotTime;
+        private bool _diagnosticSyncTargetMismatchLogged;
 
         public bool IsSniperModeActive => IsSniperStep(_currentZoomStep);
         public CameraZoomProfile CurrentZoomProfile => GetZoomProfile(_currentZoomStep);
@@ -94,15 +101,19 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void Init()
         {
+            StopPreviousDeathSpectator();
+            BeginDiagnosticSession();
             _runtimeSettings = GameplayRuntimeSettingsProvider.Get();
+            _cameraSync = CameraSync.In;
+            _sniperUiApplied = false;
 
             Vector3 angles = transform.eulerAngles;
             _X = angles.y;
             _Y = angles.x;
 
-            if (CameraSync.In != null)
+            if (_cameraSync != null)
             {
-                CameraSync.In.target = transform;
+                _cameraSync.target = transform;
 
             }
 
@@ -114,6 +125,15 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyRuntimeZoomOverride(true);
             ApplyCameraTransform(true);
             SyncGameplayCameraTransform();
+            LogCameraDiagnostics("INIT_COMPLETE");
+        }
+
+        private void StopPreviousDeathSpectator()
+        {
+            if (_activeDeathSpectator != null && _activeDeathSpectator != this)
+            {
+                _activeDeathSpectator.EndDeathSpectator();
+            }
         }
 
         public void DetachFromVehicleForDeath()
@@ -123,6 +143,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            LogCameraDiagnostics("DEATH_DETACH_BEGIN");
             _deathRigDetached = true;
             _deathWreckRig = rig;
             Transform fallbackSource = _deathWreckRig != null ? _deathWreckRig : transform;
@@ -137,10 +158,13 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 transform.SetParent(null, true);
             }
+
+            LogCameraDiagnostics("DEATH_DETACH_COMPLETE");
         }
 
         private void OnDestroy()
         {
+            LogCameraDiagnostics("DESTROY_BEGIN");
             if (vehicleRoot != null && vehicleRoot.health != null)
             {
                 vehicleRoot.health.OnClientDeath -= HandleClientDeath;
@@ -155,6 +179,11 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 _activeDeathSpectator = null;
                 DeathSpectatorCameraChanged?.Invoke(null);
+            }
+
+            if (_cameraSync != null && _cameraSync.target == transform)
+            {
+                _cameraSync.target = null;
             }
         }
 
@@ -224,6 +253,7 @@ namespace Game.Scripts.Gameplay.Robots
                     ApplyCameraTransform(false);
                     SyncGameplayCameraTransform();
                     UpdateFov();
+                    LogCameraDiagnosticsIfDue();
                     return;
                 }
 
@@ -242,14 +272,45 @@ namespace Game.Scripts.Gameplay.Robots
                 ApplyCameraTransform(false);
                 SyncGameplayCameraTransform();
                 UpdateFov();
+                LogCameraDiagnosticsIfDue();
             }
         }
 
         private void SyncGameplayCameraTransform()
         {
-            if (CameraSync.In != null && CameraSync.In.target == transform)
+            CameraSync previousCameraSync = _cameraSync;
+            if (_cameraSync == null || !_cameraSync.isActiveAndEnabled)
             {
-                CameraSync.In.SyncToTarget();
+                CameraSync currentCameraSync = CameraSync.In;
+                if (currentCameraSync != null
+                    && (currentCameraSync.target == null || currentCameraSync.target == transform))
+                {
+                    _cameraSync = currentCameraSync;
+                    _cameraSync.target = transform;
+                }
+
+                if (previousCameraSync != _cameraSync)
+                {
+                    LogCameraDiagnostics("CAMERA_SYNC_REBIND");
+                }
+            }
+
+            if (_cameraSync != null && _cameraSync.target != null && _cameraSync.target != transform)
+            {
+                if (!_diagnosticSyncTargetMismatchLogged)
+                {
+                    _diagnosticSyncTargetMismatchLogged = true;
+                    LogCameraDiagnostics("CAMERA_SYNC_TARGET_MISMATCH");
+                }
+            }
+            else
+            {
+                _diagnosticSyncTargetMismatchLogged = false;
+            }
+
+            if (_cameraSync != null && _cameraSync.target == transform)
+            {
+                _cameraSync.SyncToTarget();
             }
         }
 
@@ -312,6 +373,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            LogCameraDiagnostics($"DEATH_BEGIN killerObjectId={killerObjectId}");
             SoundCaller.PlaySfx(AudioEventNames.OwnRobotDestroyed, vehicleRoot.transform.position);
             DetachFromVehicleForDeath();
             _deathSpectatorPhase = DeathSpectatorPhase.KillerDelay;
@@ -327,6 +389,7 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 ApplyZoomStep(DefaultZoomStep, true);
             }
+            LogCameraDiagnostics("DEATH_AFTER_ZOOM_RESET");
 
         }
 
@@ -530,6 +593,7 @@ namespace Game.Scripts.Gameplay.Robots
             _spectatorTarget = target;
             _spectatorCanvasTarget = target;
             _deathSpectatorPhase = phase;
+            LogCameraDiagnostics($"SPECTATOR_TARGET_SET phase={phase}");
             if (target.vehicleHUD != null)
             {
                 target.vehicleHUD.SetWorldCanvasHidden(true);
@@ -556,6 +620,7 @@ namespace Game.Scripts.Gameplay.Robots
             _pendingKillerObjectId = -1;
             ClearSpectatorTarget();
             _deathSpectatorPhase = DeathSpectatorPhase.DeathWreck;
+            LogCameraDiagnostics("DEATH_WRECK_ENTER");
         }
 
         private void ClearSpectatorTarget()
@@ -599,6 +664,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             _activeDeathSpectator = this;
             DeathSpectatorCameraChanged?.Invoke(this);
+            LogCameraDiagnostics("DEATH_SPECTATOR_REGISTERED");
         }
 
         private void EndDeathSpectator()
@@ -610,6 +676,20 @@ namespace Game.Scripts.Gameplay.Robots
             _deathSpectatorPhase = DeathSpectatorPhase.Inactive;
             SpectatorTeamContext.Clear();
             ReleaseDeathWreckRig();
+            if (_cameraSync != null && _cameraSync.target == transform)
+            {
+                _cameraSync.target = null;
+            }
+
+            _cameraSync = null;
+            _initialized = false;
+            if (_activeDeathSpectator == this)
+            {
+                _activeDeathSpectator = null;
+                DeathSpectatorCameraChanged?.Invoke(null);
+            }
+
+            LogCameraDiagnostics("DEATH_SPECTATOR_END");
         }
 
         private void ReleaseDeathWreckRig()
@@ -1012,6 +1092,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyZoomStep(int zoomStep, bool immediate)
         {
+            int previousZoomStep = _currentZoomStep;
             int maxForwardZoomStep = GetMaxForwardZoomStep();
             if (zoomStep > maxForwardZoomStep)
             {
@@ -1052,6 +1133,12 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             ApplySniperUi(isSniperStep, immediate);
+
+            if (previousZoomStep != _currentZoomStep || immediate)
+            {
+                LogCameraDiagnostics(
+                    $"ZOOM_STEP_APPLIED previousStep={previousZoomStep} requestedStep={zoomStep} immediate={immediate}");
+            }
         }
 
         private int GetMaxForwardZoomStep()
@@ -1182,7 +1269,17 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void UpdateFov()
         {
-            if (CameraSync.In == null || CameraSync.In.gameplayCamera == null)
+            if (_cameraSync == null || !_cameraSync.isActiveAndEnabled)
+            {
+                _cameraSync = CameraSync.In;
+            }
+
+            if (_cameraSync == null || _cameraSync.gameplayCamera == null)
+            {
+                return;
+            }
+
+            if (_cameraSync.target != transform)
             {
                 return;
             }
@@ -1192,12 +1289,22 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyCameraFov(float targetFov, bool immediate)
         {
-            if (CameraSync.In == null || CameraSync.In.gameplayCamera == null)
+            if (_cameraSync == null || !_cameraSync.isActiveAndEnabled)
+            {
+                _cameraSync = CameraSync.In;
+            }
+
+            if (_cameraSync == null || _cameraSync.gameplayCamera == null)
             {
                 return;
             }
 
-            Camera cam = CameraSync.In.gameplayCamera;
+            if (_cameraSync.target != transform)
+            {
+                return;
+            }
+
+            Camera cam = _cameraSync.gameplayCamera;
             if (immediate)
             {
                 cam.fieldOfView = targetFov;
@@ -1233,6 +1340,128 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             SniperScopeOverlay.SetActiveScreen(enabled);
+        }
+
+        private void BeginDiagnosticSession()
+        {
+            _diagnosticSessionId = ++_nextDiagnosticSessionId;
+            _nextDiagnosticSnapshotTime = Time.unscaledTime;
+            _diagnosticSyncTargetMismatchLogged = false;
+            CameraZoomDiagnosticsWriter.Write(
+                $"[CameraZoomDiag][Lifecycle] SESSION_BEGIN session={_diagnosticSessionId} controller={name}#{GetInstanceID()}");
+        }
+
+        private void LogCameraDiagnosticsIfDue()
+        {
+            if (_diagnosticSessionId <= 0 || (!IsSniperModeActive && !IsDeathSpectatorActive))
+            {
+                return;
+            }
+
+            if (Time.unscaledTime < _nextDiagnosticSnapshotTime)
+            {
+                return;
+            }
+
+            _nextDiagnosticSnapshotTime = Time.unscaledTime + DiagnosticSnapshotIntervalSeconds;
+            LogCameraDiagnostics("PERIODIC_SNAPSHOT");
+        }
+
+        private void LogCameraDiagnostics(string stage)
+        {
+            if (_diagnosticSessionId <= 0)
+            {
+                return;
+            }
+
+            CameraSync globalCameraSync = CameraSync.In;
+            CameraSync effectiveCameraSync = _cameraSync != null && _cameraSync.isActiveAndEnabled
+                ? _cameraSync
+                : globalCameraSync;
+            Camera gameplayCamera = effectiveCameraSync != null ? effectiveCameraSync.gameplayCamera : null;
+            CameraZoomProfile profile = CurrentZoomProfile;
+            string profileSummary = profile == null
+                ? "null"
+                : $"index={profile.zoomIndex},distance={FormatFloat(profile.cameraDistance)},fov={FormatFloat(profile.fieldOfView)},aimDiameter={FormatFloat(profile.aimingCircleDiameter)},reticle={profile.showReticle}";
+            string runtimeOverride = _runtimeSettings == null
+                ? "null"
+                : $"enabled={_runtimeSettings.runtimeZoomOverrideEnabled},index={_runtimeSettings.runtimeZoomIndex}";
+
+            CameraZoomDiagnosticsWriter.Write(
+                $"[CameraZoomDiag][Camera] session={_diagnosticSessionId} stage={stage} time={FormatFloat(Time.unscaledTime)} " +
+                $"vehicle={DescribeVehicle(vehicleRoot)} zoomStep={_currentZoomStep} sniper={IsSniperModeActive} lastNonSniper={_lastNonSniperZoomStep} " +
+                $"profile[{profileSummary}] runtimeOverride[{runtimeOverride}] aimUiZoom01={FormatFloat(GetAimUiZoom01())} " +
+                $"targetDistance={FormatFloat(_targetDistance)} currentDistance={FormatFloat(_currentDistance)} angles=({_X.ToString("F4", CultureInfo.InvariantCulture)},{_Y.ToString("F4", CultureInfo.InvariantCulture)}) " +
+                $"deathPhase={_deathSpectatorPhase} deathRigDetached={_deathRigDetached} spectator={DescribeVehicle(_spectatorTarget)} " +
+                $"controllerTransform[{DescribeTransform(transform)}] selectedRig[{DescribeTransform(GetCameraRig())}] " +
+                $"cachedSync[{DescribeCameraSync(_cameraSync)}] globalSync[{DescribeCameraSync(globalCameraSync)}] " +
+                $"effectiveTarget[{DescribeTransform(effectiveCameraSync != null ? effectiveCameraSync.target : null)}] gameplayCamera[{DescribeCamera(gameplayCamera)}]");
+
+            GunCrosshair crosshair = Singleton<GunCrosshair>.CurrentOrNull;
+            if (crosshair != null)
+            {
+                crosshair.LogDiagnostics($"session={_diagnosticSessionId} stage={stage}");
+            }
+            else
+            {
+                CameraZoomDiagnosticsWriter.Write(
+                    $"[CameraZoomDiag][Reticle] session={_diagnosticSessionId} stage={stage} missing=GunCrosshair");
+            }
+        }
+
+        private static string DescribeVehicle(VehicleRoot value)
+        {
+            if (value == null)
+            {
+                return "null";
+            }
+
+            string objectId = value.networkObject != null
+                ? value.networkObject.ObjectId.ToString(CultureInfo.InvariantCulture)
+                : "-";
+            string spawned = value.networkObject != null ? value.networkObject.IsSpawned.ToString() : "-";
+            string dead = value.health != null ? value.health.IsDead.ToString() : "-";
+            return $"{value.name}#{value.GetInstanceID()}(objectId={objectId},owner={value.IsOwner},menu={value.IsMenu},spawned={spawned},dead={dead})";
+        }
+
+        private static string DescribeCameraSync(CameraSync value)
+        {
+            if (value == null)
+            {
+                return "null";
+            }
+
+            return $"{value.name}#{value.GetInstanceID()}(active={value.isActiveAndEnabled},transform={DescribeTransform(value.transform)},target={DescribeTransform(value.target)},camera={DescribeCamera(value.gameplayCamera)})";
+        }
+
+        private static string DescribeCamera(Camera value)
+        {
+            if (value == null)
+            {
+                return "null";
+            }
+
+            return $"{value.name}#{value.GetInstanceID()}(active={value.isActiveAndEnabled},transform={DescribeTransform(value.transform)},fov={FormatFloat(value.fieldOfView)},orthographic={value.orthographic},aspect={FormatFloat(value.aspect)},near={FormatFloat(value.nearClipPlane)},far={FormatFloat(value.farClipPlane)},pixel={value.pixelWidth}x{value.pixelHeight})";
+        }
+
+        private static string DescribeTransform(Transform value)
+        {
+            if (value == null)
+            {
+                return "null";
+            }
+
+            return $"{value.name}#{value.GetInstanceID()}(active={value.gameObject.activeInHierarchy},pos={FormatVector(value.position)},rot={FormatVector(value.eulerAngles)},localPos={FormatVector(value.localPosition)})";
+        }
+
+        private static string FormatVector(Vector3 value)
+        {
+            return $"({FormatFloat(value.x)},{FormatFloat(value.y)},{FormatFloat(value.z)})";
+        }
+
+        private static string FormatFloat(float value)
+        {
+            return value.ToString("F4", CultureInfo.InvariantCulture);
         }
 
         private static bool IsFinite(Vector3 value)

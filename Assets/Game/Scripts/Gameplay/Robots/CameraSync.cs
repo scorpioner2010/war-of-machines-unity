@@ -13,6 +13,31 @@ namespace Game.Scripts.Gameplay.Robots
         private void Awake()
         {
             In = this;
+            LogDiagnostics("AWAKE");
+        }
+
+        private void OnEnable()
+        {
+            In = this;
+            LogDiagnostics("ENABLE");
+        }
+
+        private void OnDisable()
+        {
+            LogDiagnostics("DISABLE_BEFORE_CLEAR");
+            if (In == this)
+            {
+                In = null;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            LogDiagnostics("DESTROY_BEFORE_CLEAR");
+            if (In == this)
+            {
+                In = null;
+            }
         }
 
         public Transform GetAimTransform()
@@ -50,6 +75,15 @@ namespace Game.Scripts.Gameplay.Robots
             {
                 SyncToTarget();
             }
+        }
+
+        private void LogDiagnostics(string stage)
+        {
+            CameraZoomDiagnosticsWriter.Write(
+                $"[CameraZoomDiag][Sync] stage={stage} sync={name}#{GetInstanceID()} frame={Time.frameCount} " +
+                $"active={isActiveAndEnabled} target={(target != null ? target.name + "#" + target.GetInstanceID() : "null")} " +
+                $"syncPos={transform.position} syncRot={transform.eulerAngles} " +
+                $"gameplayCamera={(gameplayCamera != null ? gameplayCamera.name + "#" + gameplayCamera.GetInstanceID() : "null")}");
         }
     }
 }

@@ -2866,6 +2866,50 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Completed:** 2026-11-06.
 - **Status update:** COMPLETED
 
+## Task: Diagnose camera or FOV zoom drift after robot death
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Re-evaluate the two supplied screenshots: the sniper reticle circle is not the broken element; after death and re-entry at the same maximum zoom, the second battle is slightly more zoomed in. Analyze the camera/FOV lifecycle, remove the previous `GunCrosshair` fix, and repair the actual cause.
+- **Scope:** Inspect the screenshots and all camera/zoom/FOV owners and death/spectator transitions; identify the state that survives death or is applied twice; revert only the previous reticle lifecycle patch; apply a focused camera-owned fix and validate it without disturbing unrelated worktree changes.
+- **Acceptance criteria:** The same robot at the same maximum zoom uses the same camera projection/FOV before and after a death/re-entry cycle; camera state is reset by its owning lifecycle; the prior reticle-only patch is removed; focused build/static checks and runtime evidence are recorded.
+- **Progress:** The previous task's clean runtime pass showed no visible reticle change in zoom profile `4`; the user's new screenshots indicate the actual visual difference is camera magnification/FOV, so the earlier reticle hypothesis is superseded.
+- **Discovery:** Both supplied screenshots show the same reticle `RectTransform` size (`366x366`) at maximum zoom; the changed visual is therefore not the spread-circle geometry. Gameplay FOV is written only by `CameraController`, while the camera target/FOV is selected through the mutable static `CameraSync.In`.
+- **Discovery:** The robot prefab has separate `CameraPoint` and `CameraRig` children. Death detaches them, but the normal re-entry path creates a fresh network vehicle rather than restoring the reticle, so the stronger lifecycle risk is stale or wrong `CameraSync.In` ownership during additive scene transitions.
+- **Decision:** Revert the previous `GunCrosshair` death/faction reset patch and keep the existing authored reticle behavior unchanged. The next implementation must make camera/FOV ownership explicit and reset it at the gameplay camera lifecycle boundary.
+- **Implementation:** Removed the two previous `GunCrosshair` reset calls and restored the original HUD ownership note. Added lifecycle cleanup to `CameraSync`, cached the active battle camera in `CameraController`, rebound only when that camera is unavailable, and reset the local zoom/FOV to the default profile on death.
+- **Validation prepared:** Added a focused playmode regression test that disables a `CameraSync` and verifies the static camera reference is cleared before another battle can bind to it.
+- **Next steps:** Open both screenshots, trace `CameraController` and related zoom/FOV state through live/death-spectator/despawn/re-entry paths, then patch and validate the camera owner.
+- **Validation:** `git diff --check`, `Assembly-CSharp.csproj`, and `Assembly-CSharp-Editor.csproj` all pass with `0` errors. Existing `System.Net.Http` conflict and Unity deprecation warnings remain unrelated. The current Unity Editor was already open, so a second batch-mode runtime was not started over it; the attached screenshots remain the visual evidence for the reticle-vs-camera diagnosis.
+- **Worktree safety:** `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab` retains the user's pre-existing `maxPlayersForFindRoom` change. `GunCrosshair.cs` and `docs/codex-game/ui-hud.md` have no remaining diff from the previous reticle patch.
+- **Result:** The fix is camera-owned: map camera singleton cleanup prevents stale references after disable/unload, the local controller remains bound to the active battle camera, and death returns camera zoom/FOV to the default profile before spectator/re-entry state can leak forward.
+- **Remaining limitation:** A post-patch manual death/re-entry pass still needs to be run in the user's live Unity window to confirm the exact screenshot-level magnification, since the current Editor's Game View did not expose a safe accessible runtime state.
+- **Status:** COMPLETED — 2026-11-06
+
+## Task: Reproduce sniper reticle corruption after robot death
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Reproduce the critical bug where the sniper-mode reticle/spread circle changes or breaks after the player's robot is destroyed, by measuring it before death, dying in a fight, returning to the main menu, selecting the same robot, and measuring it again; then locate the reset/lifecycle failure and fix the root cause.
+- **Scope:** Use the existing game flow and supplied test account to perform a controlled runtime reproduction; record the sniper reticle parameters before and after death; inspect the owning gameplay/UI lifecycle code; apply the smallest focused fix only after the failure is confirmed; validate normal entry and post-destruction re-entry without disturbing unrelated worktree changes.
+- **Acceptance criteria:** The same robot can enter sniper mode before and after a death cycle with identical intended spread-circle configuration and runtime behavior; the relevant lifecycle owner is identified; focused code/build checks and a runtime regression check pass; no unrelated discarded-work artifacts are restored.
+- **Progress:** Journal entry created before repository inspection or game launch. Previous attempted changes were discarded per the user's report; current behavior must be reproduced from the present project state rather than inferred from those changes.
+- **Discovery:** The current project has no standalone client build; the existing Unity `6000.3.13f1` Editor Client scene is the runtime client, while the desktop launcher successfully started the local API and dedicated server (`7216`/`7770`).
+- **Discovery:** Runtime login with the user-provided test account succeeded. The selected robot is `IA Strider`; the camera advances through zoom indices `0`, `1`, `2`, `3`, and sniper index `4`, where the circular sniper overlay appears. Before death the reticle reaches `AIM READY` with HP `180/180`; the spread-circle visual is stable at that point.
+- **Discovery:** The already-open Unity Editor was started before this task and its previous log contains `ReticleDebug` instrumentation that is absent from the current files after the user's discard. The first runtime pass therefore used stale loaded assemblies and is not accepted as current-code evidence.
+- **Decision:** Stop Play Mode, close the pre-existing Editor cleanly, reopen the same project from disk, and repeat the minimum before/after-death reticle comparison before changing implementation files.
+- **Next steps:** Launch the existing game, log in with the user-provided test account, measure the reticle through its sniper steps, reproduce death and re-entry, inspect the current reticle and robot lifecycle owners, then patch and validate only if the regression is confirmed.
+- **Discovery checkpoint — 2026-11-06:** The clean current-code run completed the requested IA Strider cycle. At zoom profiles `4`/sniper entry, the reticle reached `AIM READY` before death and appeared unchanged after re-entry; the visual regression was not reproduced in that single faction/profile path.
+- **Lifecycle finding:** `GunCrosshair.ResetAimingState` is currently reached from HUD enable/disable and `VehicleRoot.LocalPlayerVehicleChanged`, while `CameraController.DeathSpectatorCameraChanged` only rebinds spectator state. A death can therefore leave the reticle geometry dependent on despawn/event ordering instead of resetting at the guaranteed death-spectator boundary. `SetFaction` also swaps reticle targets without restoring the previous target's modified geometry first.
+- **Decision:** Keep the existing profile sizing and dispersion formula unchanged. Harden the presentation owner by resetting aiming geometry when death-spectator state changes and restoring the old faction reticle before swapping bindings; this targets retained UI state without changing weapon spread or adding diagnostics.
+- **Next steps after clean run:** Apply the focused `GunCrosshair` lifecycle fix, document the death/faction reset ownership in `docs/codex-game/ui-hud.md`, build the runtime/editor assemblies, then repeat the same-battle reticle check if the Unity window is available without user input.
+- **Implementation:** Added a death-spectator transition reset and restored the previous faction reticle's authored geometry before `SetFaction` swaps targets in `Assets/Game/Scripts/UI/HUD/GunCrosshair.cs`; documented the ownership boundary in `docs/codex-game/ui-hud.md`.
+- **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` both build successfully with `0` errors; existing `System.Net.Http` reference-conflict warnings remain; `git diff --check` passes.
+- **Runtime validation:** The clean current-code run completed the same-robot death and re-entry comparison at sniper profile `4` without a visible change. A post-patch visual rerun was not possible because CUA returned the ChatGPT window instead of Unity while the user-controlled desktop focus was active.
+- **Result:** The identified retained-geometry lifecycle gap is fixed at the focused UI owner without changing weapon dispersion/profile sizing or restoring discarded debug instrumentation. The pre-existing user change in `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab` was left untouched.
+- **Remaining limitation:** Profiles `5`-`7` and a post-patch visual pass still need confirmation in a user-focused Unity window.
+- **Status:** COMPLETED — 2026-11-06
+
 ## Task: Start Docker Desktop minimized to tray
 
 - **Status:** IN_PROGRESS
@@ -2885,3 +2929,63 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Remaining limitation:** Docker Desktop must provide its normal tray integration; the launcher hides the Dashboard window but does not alter Docker Desktop settings or tray notification-area configuration.
 - **Completed:** 2026-11-06.
 - **Status update:** COMPLETED
+
+## Task: Fix CameraSync test assembly compile error
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Fix Unity CS0246/CS0103 errors because `CameraRuntimeZoomOverridePlayModeTests.cs` cannot resolve `CameraSync`.
+- **Scope:** Preserve the camera implementation and user worktree changes; adapt the focused regression test to the repository's test assembly boundary and validate Unity/runtime assembly compilation.
+- **Acceptance criteria:** No direct unresolved `CameraSync` reference remains in the test assembly; focused builds/checks pass; unrelated changes remain untouched.
+- **Progress:** The test directly imports `Game.Scripts.Gameplay.Robots.CameraSync`, while the existing test file uses reflection for runtime types; replace the direct type dependency with reflection.
+- **Implementation:** Removed the direct runtime namespace import and changed the lifecycle regression test to resolve `CameraSync` and its static `In` field through reflection, matching the test assembly's existing pattern.
+- **Discovery:** `Game.PlayMode.Tests.asmdef` references `Game.Gameplay.Shared` but not `Assembly-CSharp`, confirming that direct runtime-type references cannot compile in this test assembly.
+- **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` build successfully with `0` errors; `git diff --check` passes; the test file contains no direct `CameraSync` type reference.
+- **Result:** The CS0246/CS0103 errors are removed without changing the camera implementation or unrelated user worktree changes. The lifecycle regression remains covered through reflection, which is compatible with the test assembly boundary.
+- **Remaining limitation:** The generated Unity PlayMode test assembly is not exposed as a standalone `.csproj`; Unity must complete its normal script reimport to display the cleared compiler state.
+- **Status:** COMPLETED — 2026-11-06
+
+## Task: Add detailed camera zoom lifecycle diagnostics
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Add detailed logs so the user can compare zoom, camera position, projection, and sniper reticle state during the first battle, after death, and during the second battle.
+- **Scope:** Instrument the existing camera/zoom lifecycle without changing gameplay behavior; log uniquely identifiable battle sessions, camera ownership, transform/FOV/projection, zoom profile values, and reticle geometry at the relevant transitions.
+- **Acceptance criteria:** Logs clearly distinguish first entry, death/teardown, and second entry; each sample includes camera and zoom values needed for comparison; no gameplay logic is altered; focused build and diff checks pass.
+- **Discovery:** `CameraController` owns zoom step, target/current distance, FOV application, camera pivot transform, sniper alignment, and death-spectator phases. `CameraSync` owns the gameplay camera reference and follows the controller target. `GunCrosshair` owns the requested/applied reticle diameters and aim status.
+- **Decision:** Keep diagnostics in these existing owners. Log transition snapshots at session init, zoom changes, death/teardown, camera-sync rebinding, and at most twice per second while sniper/death-spectator state is active.
+- **Implementation:** Added `[CameraZoomDiag]` logs to `CameraController.cs` for lifecycle sessions, zoom changes, camera-sync target mismatches/rebinds, death/spectator transitions, profile/runtime override values, transforms, FOV, and periodic settled snapshots. Added reticle diagnostics to `GunCrosshair.cs` for requested/applied local/server diameters, RectTransform geometry, visibility, and aim status.
+- **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` build successfully with `0` errors; the initial diagnostic build caught and then cleared one quoting syntax error in `CameraSync.cs`; `git diff --check` passes. Existing `System.Net.Http` and Unity deprecation warnings remain unrelated.
+- **Result:** Diagnostics are behavior-neutral and distinguish camera-controller sessions, `CameraSync` lifecycle, zoom profile/FOV/transform state, and reticle requested/applied geometry. The pre-existing `ServerSettings.prefab` and other user worktree changes were preserved.
+- **Remaining limitation:** Runtime comparison still requires the user to run the first battle/death/second battle flow and return the `[CameraZoomDiag]` lines; no gameplay fix is claimed yet.
+- **Status:** COMPLETED — 2026-11-06
+
+## Task: Persist camera zoom diagnostics to a project log file
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Write camera/zoom diagnostics to a text file inside the project so logs remain available after the game or Unity is closed and can be inspected later.
+- **Scope:** Replace the current console-only diagnostic sink with a persistent append-only project log, preserving the existing diagnostic content and gameplay behavior; include timestamps and a clear file path.
+- **Acceptance criteria:** Every `[CameraZoomDiag]` event is written to `Logs/CameraZoomDiagnostics.log` under the project root; writes are flushed during runtime; file I/O failures do not break gameplay; focused builds and diff checks pass.
+- **Progress:** Current diagnostics are emitted from `CameraController`, `CameraSync`, and `GunCrosshair` through `Debug.Log`; centralize only the output sink in a dedicated runtime writer.
+- **Implementation:** Added `CameraZoomDiagnosticsWriter` with append-only UTF-8 writes, per-line flush, project-root path resolution, process headers, timestamps, frame numbers, and one-time warning handling. Routed all `[CameraZoomDiag]` messages from `CameraController`, `CameraSync`, and `GunCrosshair` through the writer.
+- **Validation:** `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` build successfully with `0` errors; `git diff --check` passes; the existing root `.gitignore` already ignores `Logs`, so the runtime log remains local.
+- **Result:** Diagnostic events now append to `Logs/CameraZoomDiagnostics.log` with timestamp and frame metadata and remain available after the game or Unity closes. File-write failures are isolated to a one-time warning and do not affect gameplay.
+- **Remaining limitation:** The log file will be created/populated on the next Unity runtime session; the requested first-battle/death/second-battle comparison still awaits the user's test.
+- **Status:** COMPLETED — 2026-11-06
+
+## Task: Analyze persisted camera zoom diagnostic sessions
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Read the persisted camera/zoom logs and determine what differs between the first sniper session and the post-death second session.
+- **Scope:** Inspect `Logs/CameraZoomDiagnostics.log`, segment sessions and lifecycle transitions, compare camera projection/FOV/transforms, zoom profile/distance values, `CameraSync` ownership, and reticle requested/applied geometry; do not change code until the evidence is understood.
+- **Acceptance criteria:** Provide an evidence-based diagnosis with concrete log values and identify the exact lifecycle transition or remaining unknown; preserve all existing worktree changes.
+- **Progress:** The persistent log writer is implemented and the user reports that the test run is complete; the log has now been read and normalized.
+- **Discovery:** Session 1 starts at log line 7 and enters `DeathWreck` at line 179; session 2 starts at line 216. While session 2 is active, session 1 remains `DeathWreck` and both controllers use `GameplayCamera#223790` with session 2's target. At session 2 max sniper zoom, the requested profile FOV is 10 but actual FOV stabilizes around 34.44 because session 1 repeatedly writes its own FOV 60 or 75 to the same camera (for example lines 272-288, 346-376, and 408-418). The log records `CAMERA_SYNC_TARGET_MISMATCH` at line 218.
+- **Diagnosis:** The camera/FOV is corrupted by an orphaned death-spectator controller, not by reticle geometry. Its update loop survives the new battle and writes to the global camera after rebinding; lifecycle handoff and ownership guards are required.
+- **Implementation:** `CameraController.Init()` now ends a previous death spectator before taking the new camera target; ending a spectator clears its static ownership, target, cached sync, and initialization state. FOV writes require the controller to own the sync target, and sync rebinding no longer steals a sync already targeted at another controller. The unrelated unconditional zoom reset on death was reverted.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `Game.PlayMode.Tests.csproj` build successfully; `git diff --check` passes. Unity PlayMode execution was not available in this CLI pass, so the runtime reproduction should be rerun once to confirm the post-death sniper FOV reaches its requested profile.
+- **Result:** The persisted log identifies and the code now addresses the real failure: an old `DeathWreck` controller was competing with the new battle's `CameraSync` and overwriting its FOV. The previous unconditional death zoom reset was removed.
+- **Remaining limitation:** Runtime confirmation still requires one in-game death/re-entry test; the expected log should show session 1 ending before or during session 2 initialization, with no session 1 FOV snapshots writing to the new sync afterward.
+- **Status:** COMPLETED — 2026-11-06
