@@ -2806,3 +2806,82 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Result:** Engine audio now follows the transform that actually moves each robot instead of remaining at the stationary network root.
 - **Limitations:** Unity Play Mode audio audition was not run; manually drive one IA and one NV robot to confirm spatial movement after the Editor refreshes the script.
 - **Completed:** 2026-11-03
+
+## Task: Check whether Start War of Machines is hung
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Determine whether the currently running `Start War of Machines.bat` launcher is hung and identify the stage where it stopped.
+- **Scope:** Inspect current launcher-related processes, ports, control files, timestamps, and runtime logs without stopping or modifying user processes unless explicitly requested.
+- **Acceptance criteria:** Distinguish an active wait from a crashed process, identify the exact wait stage and cause if available, and preserve unrelated working-tree changes.
+- **Progress:** The prior diagnosis established that API startup failed when PostgreSQL was unavailable, while the server build itself succeeded. The user now reports that a new attempt appears stuck; current process and control-file state must be checked.
+- **Next steps:** Inspect `cmd`/PowerShell/dotnet/Unity/server processes, ports `7216`/`7770`, server-build request/result files, and fresh API/server logs; then close this entry with the observed state and safe next action.
+- **Discovery:** A live `cmd.exe` is still running the launcher. It created `server-build-request.txt` at `10:17:04`, but no `server-build-result.txt` exists; ports `7216` and `7770` have no listeners and no API/server process is running.
+- **Discovery:** The current `Assets\Editor\LocalNetworkBuild.cs` contains only menu-driven `BuildLocalServer()` methods and no `[InitializeOnLoad]` watcher or `server-build-request`/`server-build-result` handling. Unity therefore cannot consume the request token, so the batch loop waits silently for its 30-minute timeout.
+- **Discovery:** The open Unity Editor is the correct project (`-projectpath D:\Programing\UnityProjects\war-of-machines-unity`), but `Editor.log` contains no request/result watcher events. The existing API and server logs are from the previous successful run, not this stuck attempt.
+- **Implementation:** No implementation files or running processes were changed. The current launcher remains active so the user can stop it manually with `Ctrl+C`.
+- **Validation:** Confirmed the active `cmd.exe`, request-only control-file state, absent API/server listeners, current `LocalNetworkBuild.cs` contents, and absence of watcher markers in the current Unity `Editor.log`.
+- **Result:** Yes, the current launcher is genuinely stuck waiting for a server-build result that this Editor code cannot produce; it has not reached API startup yet.
+- **Remaining limitation:** The fix requires restoring the request watcher in `LocalNetworkBuild.cs` or changing the launcher to use a supported build path; no fix was applied because the user only asked whether it was hung.
+- **Completed:** 2026-11-06.
+- **Status:** COMPLETED
+
+## Task: Restore discarded launcher build bridge and test startup
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Restore the files discarded from the previous launcher fix, repair `Start War of Machines.bat`, and test that the API and dedicated server start correctly.
+- **Scope:** Recover the Unity Editor request/response watcher and its documentation, preserve unrelated working-tree changes, stop the currently hung launcher safely, and run focused build/start/stop validation without changing PostgreSQL configuration.
+- **Acceptance criteria:** The open Unity Editor consumes a fresh server-build request and writes a matching result; the launcher starts the API and dedicated server; ports/processes/logs confirm both services; the stop path removes only the services; relevant builds and source checks pass.
+- **Progress:** The discarded state is confirmed: `Assets\Editor\LocalNetworkBuild.cs` has only menu-driven builds, while the desktop launcher still waits for `server-build-result.txt`. A live hung launcher process and stale request file are present and must be handled before testing.
+- **Next steps:** Recover the watcher implementation and documentation from repository history/journal context, stop the stale launcher, compile/reload the Editor code, then run a fresh end-to-end cycle and close with validation.
+- **Recovery:** Stopped only the verified hung launcher `cmd.exe` and removed its generated request/result control files. The existing desktop launcher already contained the tokenized request/response flow; the discarded project-side watcher and bridge documentation were the missing pieces.
+- **Implementation:** Restored the `[InitializeOnLoad]` `LocalNetworkBuild` watcher, shared build-root resolution, request claiming, server build invocation, sanitized failure reporting, and atomic result writing in `Assets\Editor\LocalNetworkBuild.cs`. Restored the request/result protocol and open-Editor ownership documentation in `docs\codex-game\local-network-builds.md`.
+- **Validation:** `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal` passed with 0 errors and 5 pre-existing warnings; static watcher/protocol assertions and `git diff --check` passed.
+- **End-to-end validation:** Two fresh `Start War of Machines.bat` cycles completed successfully. The first received `SUCCESS`, started the API and server in about 30 seconds, and the second did the same in about 20 seconds. API GET `/` returned `302 /admin`; API stdout reported `https://localhost:7216`; API stderr was empty; server log reported UnityTransport listening on port `7770`.
+- **Stop validation:** Ran `Stop War of Machines.bat` between cycles; it exited `0`, removed the API PID file, and left no `WarOfMachines.exe` or `WarOfMachinesServer.exe` process before the second start.
+- **Final state:** The second successful cycle is currently running with `WarOfMachines.exe` and `WarOfMachinesServer.exe` active.
+- **Unrelated side effect:** Unity reserialized the two Roboto SDF font assets during the Editor reload/build and left them modified; they were clean at task start and are not part of this launcher fix. Do not include those font diffs with the launcher change.
+- **Result:** The discarded files responsible for the hang were restored, and the launcher now builds through the open Editor and starts both services reliably.
+- **Remaining limitation:** The font reserialization should be discarded or separately reviewed by the user while the Editor is open; no gameplay or API source changes were made.
+- **Completed:** 2026-11-06.
+- **Status:** COMPLETED
+
+## Task: Start Docker and PostgreSQL from War of Machines launcher
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Update `Start War of Machines.bat` so it starts Docker Desktop, starts the local PostgreSQL Compose service, waits for database readiness, and then starts the API and dedicated server.
+- **Scope:** Modify only the desktop start launcher and related project documentation if needed; preserve the existing Unity Editor build bridge, API profile, server startup, stop behavior, PostgreSQL data volume, and unrelated working-tree changes.
+- **Acceptance criteria:** The launcher handles Docker Desktop already running or closed, waits for the Docker engine and healthy PostgreSQL on `127.0.0.1:5433`, fails with a clear diagnostic on timeout, then runs the existing API/server flow successfully; focused static checks and a real end-to-end cycle pass.
+- **Progress:** The current launcher stops API/server and starts the API, but has no Docker or Compose startup step. The local Compose file exposes PostgreSQL at `127.0.0.1:5433` with a healthcheck and named volume.
+- **Next steps:** Verify Docker Desktop executable/CLI behavior, patch the batch flow before API build, test it with the database container stopped, and record the final service/process/log state.
+- **Discovery:** Docker CLI is installed at `C:\Users\TorasPC\AppData\Local\Programs\DockerDesktop\resources\bin\docker.exe`; Docker Desktop is installed at `C:\Users\TorasPC\AppData\Local\Programs\DockerDesktop\Docker Desktop.exe`. With Docker Desktop closed, `docker info` failed and port `5433` was unavailable.
+- **Implementation:** Updated `C:\Users\TorasPC\Desktop\Start War of Machines.bat` to validate Docker/Compose paths, start Docker Desktop when needed, wait up to five minutes for the Docker daemon, run `docker compose ... up -d --wait postgres`, verify port `5433`, and then continue through the existing API/server flow. Updated `docs\codex-game\local-network-builds.md` with the startup ownership and timeout behavior.
+- **Validation:** Static launcher assertions passed and `git diff --check` passed. A real test starting with Docker Desktop closed opened Docker Desktop, reached engine readiness, started `war-of-machines-local-postgres-1`, observed `Healthy`, and continued without manual intervention.
+- **End-to-end validation:** The launcher completed with `API and game server are running.` API GET `/` returned `302 /admin`; API connected on `7216` with empty stderr; the dedicated server log confirmed UnityTransport listening on `7770`; Docker Compose reported PostgreSQL `Up (healthy)` on `127.0.0.1:5433`.
+- **Final state:** Docker Desktop, PostgreSQL, API, and dedicated server are currently running. The named PostgreSQL volume was reused; no database configuration or data was changed.
+- **Result:** `Start War of Machines.bat` now starts Docker Desktop and the local database automatically before building and launching the API and dedicated server.
+- **Remaining limitation:** Docker Desktop must already be installed, and startup may wait up to five minutes for the Docker engine plus the Compose healthcheck.
+- **Completed:** 2026-11-06.
+- **Status update:** COMPLETED
+
+## Task: Start Docker Desktop minimized to tray
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Start Docker Desktop from the launcher without opening a full-size window; keep it minimized/in the system tray while the engine starts.
+- **Scope:** Verify local Docker Desktop startup support, update only the startup invocation and related documentation, and test the change while preserving the current API/server flow.
+- **Acceptance criteria:** The launcher starts Docker Desktop minimized or tray-only, still waits for the Docker engine and database, and starts the API and dedicated server with clear failure diagnostics.
+- **Progress:** The launcher currently uses PowerShell `Start-Process ... -WindowStyle Hidden`, but Docker Desktop still opened its own full-size GUI; a supported startup flag must be verified.
+- **Next steps:** Inspect local Docker Desktop help/CLI, patch the startup invocation and docs, run a controlled restart test, and close the journal.
+- **Discovery:** Docker CLI `29.8.2` exposes `docker desktop start --detach` but no tray/minimized option; the installed executable also ignored `--minimized` in a controlled test. Windows `CloseMainWindow()` hid the Dashboard while preserving the Docker engine and background processes.
+- **Implementation:** Updated `C:\Users\TorasPC\Desktop\Start War of Machines.bat` to call a small PowerShell subroutine that closes only the Docker Desktop Dashboard during engine startup polling and after readiness. Updated `docs\codex-game\local-network-builds.md` to document the tray behavior.
+- **Validation:** Static launcher/documentation checks and `git diff --check` passed. A controlled restart stopped Docker Desktop, confirmed Docker and port `5433` were unavailable, then the launcher started Docker Desktop automatically.
+- **End-to-end validation:** The launcher reached Docker engine readiness, started PostgreSQL as `healthy` on `127.0.0.1:5433`, built/started the API and dedicated server, and completed with `API and game server are running.` API `https://localhost:7216/` returned `302 /admin`; server log confirmed UnityTransport listening on `7770`; API stderr was empty.
+- **Tray validation:** After the launcher completed, all `Docker Desktop` processes had `MainWindowHandle=0`, while `docker info` remained healthy, confirming that the Dashboard was hidden without stopping Docker.
+- **Final state:** Docker Desktop, PostgreSQL, API, and dedicated server are currently running; no database data or configuration was changed.
+- **Result:** The launcher no longer leaves Docker Desktop opened as a full-size application window; it keeps Docker working in the background with its tray presence.
+- **Remaining limitation:** Docker Desktop must provide its normal tray integration; the launcher hides the Dashboard window but does not alter Docker Desktop settings or tray notification-area configuration.
+- **Completed:** 2026-11-06.
+- **Status update:** COMPLETED

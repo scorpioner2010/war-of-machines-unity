@@ -1,16 +1,22 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 namespace Game.Editor
 {
+    [InitializeOnLoad]
     public static class LocalNetworkBuild
     {
         private const string ServerExecutableName = "WarOfMachinesServer.exe";
         private const string ClientExecutableName = "WarOfMachinesClient.exe";
+        private const string ServerBuildRequestFileName = "server-build-request.txt";
+        private const string ServerBuildResultFileName = "server-build-result.txt";
+
+        private static bool externalServerBuildInProgress;
 
         private static readonly string[] ServerScenes =
         {
@@ -23,6 +29,12 @@ namespace Game.Editor
             "Assets/Game/Scenes/Client.unity",
             "Assets/Game/Scenes/Map.unity"
         };
+
+        static LocalNetworkBuild()
+        {
+            EditorApplication.update -= PollExternalServerBuildRequest;
+            EditorApplication.update += PollExternalServerBuildRequest;
+        }
 
         [MenuItem("War Of Machines/Local Build/Windows Server")]
         public static void BuildLocalServer()
@@ -41,6 +53,109 @@ namespace Game.Editor
         {
             BuildLocalServer();
             BuildLocalClient();
+        }
+
+        private static void PollExternalServerBuildRequest()
+        {
+            if (externalServerBuildInProgress || EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                return;
+            }
+
+            string requestPath = Path.Combine(GetBuildsDirectory(), ServerBuildRequestFileName);
+            if (File.Exists(requestPath) == false)
+            {
+                return;
+            }
+
+            string buildToken;
+            try
+            {
+                buildToken = File.ReadAllText(requestPath).Trim();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Could not read the external server build request: {exception.Message}");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(buildToken))
+            {
+                TryDeleteFile(requestPath);
+                return;
+            }
+
+            try
+            {
+                File.Delete(requestPath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Could not claim the external server build request: {exception.Message}");
+                return;
+            }
+
+            externalServerBuildInProgress = true;
+            try
+            {
+                BuildLocalServer();
+                WriteExternalServerBuildResult(buildToken, "SUCCESS", string.Empty);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                try
+                {
+                    WriteExternalServerBuildResult(buildToken, "FAILURE", exception.Message);
+                }
+                catch (Exception resultException)
+                {
+                    Debug.LogException(resultException);
+                }
+            }
+            finally
+            {
+                externalServerBuildInProgress = false;
+            }
+        }
+
+        private static void WriteExternalServerBuildResult(string buildToken, string status, string message)
+        {
+            string buildsDirectory = GetBuildsDirectory();
+            Directory.CreateDirectory(buildsDirectory);
+
+            string resultPath = Path.Combine(buildsDirectory, ServerBuildResultFileName);
+            string temporaryResultPath = resultPath + ".tmp";
+            string safeMessage = (message ?? string.Empty)
+                .Replace('\r', ' ')
+                .Replace('\n', ' ')
+                .Replace('|', '/');
+            string result = $"{buildToken}|{status}|{safeMessage}";
+
+            File.WriteAllText(temporaryResultPath, result, new UTF8Encoding(false));
+            if (File.Exists(resultPath))
+            {
+                File.Replace(temporaryResultPath, resultPath, null);
+            }
+            else
+            {
+                File.Move(temporaryResultPath, resultPath);
+            }
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Could not delete external server build request: {exception.Message}");
+            }
         }
 
         private static void Build(string buildName, string executableName, string[] scenes, StandaloneBuildSubtarget subtarget)
@@ -68,15 +183,19 @@ namespace Game.Editor
 
         private static string GetOutputDirectory(string buildName)
         {
+            return Path.Combine(GetBuildsDirectory(), buildName);
+        }
+
+        private static string GetBuildsDirectory()
+        {
             string projectDirectory = Directory.GetParent(Application.dataPath).FullName;
-            string buildsDirectory = Path.GetFullPath(Path.Combine(projectDirectory, "..", "war-of-machines-local-builds"));
-            return Path.Combine(buildsDirectory, buildName);
+            return Path.GetFullPath(Path.Combine(projectDirectory, "..", "war-of-machines-local-builds"));
         }
 
         private static void PrepareOutputDirectory(string outputDirectory)
         {
             string normalizedOutputDirectory = Path.GetFullPath(outputDirectory);
-            string normalizedBuildsDirectory = Path.GetFullPath(Path.Combine(Directory.GetParent(Application.dataPath).FullName, "..", "war-of-machines-local-builds"));
+            string normalizedBuildsDirectory = GetBuildsDirectory();
             string expectedPrefix = normalizedBuildsDirectory + Path.DirectorySeparatorChar;
 
             if (normalizedOutputDirectory.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase) == false)
