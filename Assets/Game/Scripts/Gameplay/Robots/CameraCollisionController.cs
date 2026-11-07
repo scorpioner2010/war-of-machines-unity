@@ -5,6 +5,8 @@ namespace Game.Scripts.Gameplay.Robots
     public sealed class CameraCollisionController : MonoBehaviour
     {
         private const int HitBufferSize = 32;
+        private const string DeathDebrisLayerName = "Chassis";
+        private static int _deathDebrisLayer = int.MinValue;
 
         public VehicleRoot ignoredVehicle;
         public LayerMask collisionMask = ~(1 << 2);
@@ -83,6 +85,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private bool IsIgnoredCollider(Collider hitCollider)
         {
+            if (IsDetachedDeathDebris(hitCollider))
+            {
+                return true;
+            }
+
             if (ignoredVehicle == null)
             {
                 return false;
@@ -91,6 +98,23 @@ namespace Game.Scripts.Gameplay.Robots
             Transform ignoredTransform = ignoredVehicle.transform;
             Transform hitTransform = hitCollider.transform;
             return hitTransform == ignoredTransform || hitTransform.IsChildOf(ignoredTransform);
+        }
+
+        private static bool IsDetachedDeathDebris(Collider hitCollider)
+        {
+            if (hitCollider == null || hitCollider.attachedRigidbody == null)
+            {
+                return false;
+            }
+
+            if (_deathDebrisLayer == int.MinValue)
+            {
+                _deathDebrisLayer = LayerMask.NameToLayer(DeathDebrisLayerName);
+            }
+
+            return _deathDebrisLayer >= 0
+                   && hitCollider.gameObject.layer == _deathDebrisLayer
+                   && hitCollider.attachedRigidbody.transform.parent == null;
         }
 
         private void OnDisable()

@@ -38373,6 +38373,18 @@ MonoBehaviour:
   fillImage: {fileID: 1060308908}
   label: {fileID: 1291250310}
   vehicleNameLabel: {fileID: 1363503710}
+--- !u!114 &9651175001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1442058919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1769b532cc854c4d85fe8cd713a27613, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &1442058919
 GameObject:
   m_ObjectHideFlags: 0
@@ -38383,6 +38395,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1442058916}
   - component: {fileID: 1442058917}
+  - component: {fileID: 9651175001}
   m_Layer: 0
   m_Name: HealthBar
   m_TagString: Untagged

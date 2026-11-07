@@ -11,7 +11,6 @@ namespace Game.Scripts.Gameplay.Robots
         private float _display01;
         private HealthBar _healthBar;
         private bool _active;
-        private CameraController _cameraController;
         private VehicleRoot _displayTarget;
         private VehicleHealth _displayHealth;
         private int _lastLabelCurrent = int.MinValue;
@@ -23,11 +22,9 @@ namespace Game.Scripts.Gameplay.Robots
             if (vehicleRoot != root)
             {
                 UnsubscribeFromDisplayHealth();
-                UnsubscribeFromSpectatorTarget();
             }
 
             vehicleRoot = root;
-            SubscribeToSpectatorTarget();
         }
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
@@ -38,7 +35,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             vehicleRoot = context.Root;
-            SubscribeToSpectatorTarget();
             TryActivate();
         }
 
@@ -47,15 +43,9 @@ namespace Game.Scripts.Gameplay.Robots
             TryActivate();
         }
 
-        private void OnEnable()
-        {
-            SubscribeToSpectatorTarget();
-        }
-
         private void OnDisable()
         {
             UnsubscribeFromDisplayHealth();
-            UnsubscribeFromSpectatorTarget();
             _active = false;
         }
 
@@ -89,8 +79,7 @@ namespace Game.Scripts.Gameplay.Robots
             RefreshVehicleName();
 
             _active = true;
-            SubscribeToSpectatorTarget();
-            BindDisplayTarget(ResolveDisplayTarget());
+            BindDisplayTarget(vehicleRoot);
         }
 
         private void Update()
@@ -107,7 +96,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (_displayTarget == null || _displayHealth == null)
             {
-                BindDisplayTarget(ResolveDisplayTarget());
+                BindDisplayTarget(vehicleRoot);
             }
 
             if (_displayTarget == null || _displayHealth == null)
@@ -205,56 +194,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return _displayTarget.name;
-        }
-
-        private VehicleRoot ResolveDisplayTarget()
-        {
-            if (vehicleRoot == null || vehicleRoot.cameraController == null)
-            {
-                return vehicleRoot;
-            }
-
-            if (!vehicleRoot.cameraController.IsDeathSpectatorActive)
-            {
-                return vehicleRoot;
-            }
-
-            return vehicleRoot.cameraController.SpectatorTarget ?? vehicleRoot;
-        }
-
-        private void SubscribeToSpectatorTarget()
-        {
-            CameraController nextController = vehicleRoot != null ? vehicleRoot.cameraController : null;
-            if (_cameraController == nextController)
-            {
-                return;
-            }
-
-            UnsubscribeFromSpectatorTarget();
-            _cameraController = nextController;
-            if (_cameraController != null)
-            {
-                _cameraController.SpectatorTargetChanged += OnSpectatorTargetChanged;
-            }
-        }
-
-        private void UnsubscribeFromSpectatorTarget()
-        {
-            if (_cameraController != null)
-            {
-                _cameraController.SpectatorTargetChanged -= OnSpectatorTargetChanged;
-                _cameraController = null;
-            }
-        }
-
-        private void OnSpectatorTargetChanged(VehicleRoot target)
-        {
-            if (!_active)
-            {
-                return;
-            }
-
-            BindDisplayTarget(target ?? vehicleRoot);
         }
 
         private void BindDisplayTarget(VehicleRoot target)

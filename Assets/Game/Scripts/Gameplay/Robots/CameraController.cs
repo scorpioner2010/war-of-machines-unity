@@ -19,6 +19,7 @@ namespace Game.Scripts.Gameplay.Robots
         private const float DeathSpectatorKillerDelaySeconds = 5f;
         private const float DeathSpectatorIntroSeconds = 3f;
         private const float DeathSpectatorKillerViewSeconds = DeathSpectatorIntroSeconds * 2f;
+        private const float DeathSpectatorTargetLossHoldSeconds = 5f;
         private const float DiagnosticSnapshotIntervalSeconds = 0.5f;
 
         private enum DeathSpectatorPhase
@@ -27,7 +28,8 @@ namespace Game.Scripts.Gameplay.Robots
             KillerDelay,
             KillerIntro,
             DeathWreck,
-            AllyFollow
+            AllyFollow,
+            AllyTargetLossHold
         }
 
         private static CameraController _activeDeathSpectator;
@@ -47,15 +49,23 @@ namespace Game.Scripts.Gameplay.Robots
         private DeathSpectatorPhase _deathSpectatorPhase;
         private float _deathSpectatorKillerDelayEndTime;
         private float _deathSpectatorIntroEndTime;
+        private float _deathSpectatorTargetLossEndTime;
         private int _pendingKillerObjectId = -1;
         private MatchTeam _spectatorTeam = MatchTeam.None;
         private VehicleRoot _spectatorTarget;
+        private int _spectatorTargetIndex = -1;
         private VehicleRoot _spectatorCanvasTarget;
         private VehicleRoot _spectatorVisibilityTarget;
         private Transform _deathWreckRig;
         private bool _deathRigDetached;
         private bool _deathFallbackPoseCaptured;
         private Vector3 _deathFallbackPosition;
+        private bool _deathCameraPoseCaptured;
+        private Vector3 _deathCameraPosition;
+        private Quaternion _deathCameraRotation;
+        private bool _spectatorTargetLossPoseCaptured;
+        private Vector3 _spectatorTargetLossPosition;
+        private Quaternion _spectatorTargetLossRotation;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
         private CameraSync _cameraSync;
         private static int _nextDiagnosticSessionId;
@@ -138,6 +148,7 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void DetachFromVehicleForDeath()
         {
+            CaptureDeathCameraPose();
             if (_deathRigDetached)
             {
                 return;
@@ -316,6 +327,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void ApplyCameraTransform(bool immediate)
         {
+            if (TryApplyHeldCameraPose())
+            {
+                return;
+            }
+
             Transform cameraRig = GetCameraRig();
             if (cameraRig == null)
             {
@@ -430,10 +446,26 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            if (_deathSpectatorPhase == DeathSpectatorPhase.AllyTargetLossHold)
+            {
+                if (Time.unscaledTime < _deathSpectatorTargetLossEndTime)
+                {
+                    return;
+                }
+
+                if (TrySelectNextSpectatorTargetAfterLoss())
+                {
+                    return;
+                }
+
+                EnterDeathWreck();
+                return;
+            }
+
             if (_deathSpectatorPhase == DeathSpectatorPhase.AllyFollow
                 && !IsLiveBattleVehicle(_spectatorTarget))
             {
-                EnterDeathWreck();
+                BeginSpectatorTargetLossHold();
             }
         }
 
@@ -493,6 +525,50 @@ namespace Game.Scripts.Gameplay.Robots
                 SetSpectatorTarget(candidate, DeathSpectatorPhase.AllyFollow, false);
                 return;
             }
+        }
+
+        private void BeginSpectatorTargetLossHold()
+        {
+            if (_deathSpectatorPhase != DeathSpectatorPhase.AllyFollow)
+            {
+                return;
+            }
+
+            _spectatorTargetIndex = FindActiveVehicleIndex(_spectatorTarget);
+            _spectatorTargetLossPosition = transform.position;
+            _spectatorTargetLossRotation = transform.rotation;
+            _spectatorTargetLossPoseCaptured = true;
+            _deathSpectatorTargetLossEndTime = Time.unscaledTime + DeathSpectatorTargetLossHoldSeconds;
+            _deathSpectatorPhase = DeathSpectatorPhase.AllyTargetLossHold;
+            LogCameraDiagnostics("SPECTATOR_TARGET_LOSS_HOLD_BEGIN");
+        }
+
+        private bool TrySelectNextSpectatorTargetAfterLoss()
+        {
+            int count = VehicleRoot.ActiveVehicleCount;
+            if (count <= 0)
+            {
+                return false;
+            }
+
+            int currentIndex = FindActiveVehicleIndex(_spectatorTarget);
+            int startIndex = currentIndex >= 0
+                ? currentIndex
+                : _spectatorTargetIndex >= 0 ? _spectatorTargetIndex - 1 : -1;
+            for (int offset = 1; offset <= count; offset++)
+            {
+                int candidateIndex = WrapIndex(startIndex + offset, count);
+                VehicleRoot candidate = VehicleRoot.GetActiveVehicle(candidateIndex);
+                if (!IsSpectatorCandidate(candidate))
+                {
+                    continue;
+                }
+
+                SetSpectatorTarget(candidate, DeathSpectatorPhase.AllyFollow, false);
+                return true;
+            }
+
+            return false;
         }
 
         private static int FindActiveVehicleIndex(VehicleRoot target)
@@ -591,7 +667,10 @@ namespace Game.Scripts.Gameplay.Robots
 
             UpdateSpectatorVisibilityOverride(phase == DeathSpectatorPhase.KillerIntro ? target : null);
             _spectatorTarget = target;
+            _spectatorTargetIndex = FindActiveVehicleIndex(target);
             _spectatorCanvasTarget = target;
+            _spectatorTargetLossPoseCaptured = false;
+            _deathSpectatorTargetLossEndTime = 0f;
             _deathSpectatorPhase = phase;
             LogCameraDiagnostics($"SPECTATOR_TARGET_SET phase={phase}");
             if (target.vehicleHUD != null)
@@ -633,6 +712,7 @@ namespace Game.Scripts.Gameplay.Robots
             UpdateSpectatorVisibilityOverride(null);
             bool changed = _spectatorTarget != null || _spectatorCanvasTarget != null;
             _spectatorTarget = null;
+            _spectatorTargetIndex = -1;
             _spectatorCanvasTarget = null;
             if (changed)
             {
@@ -673,7 +753,10 @@ namespace Game.Scripts.Gameplay.Robots
             _pendingKillerObjectId = -1;
             _deathSpectatorKillerDelayEndTime = 0f;
             _deathSpectatorIntroEndTime = 0f;
+            _deathSpectatorTargetLossEndTime = 0f;
             _deathSpectatorPhase = DeathSpectatorPhase.Inactive;
+            _deathCameraPoseCaptured = false;
+            _spectatorTargetLossPoseCaptured = false;
             SpectatorTeamContext.Clear();
             ReleaseDeathWreckRig();
             if (_cameraSync != null && _cameraSync.target == transform)
@@ -725,6 +808,36 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             return rig;
+        }
+
+        private void CaptureDeathCameraPose()
+        {
+            if (_deathCameraPoseCaptured)
+            {
+                return;
+            }
+
+            _deathCameraPosition = transform.position;
+            _deathCameraRotation = transform.rotation;
+            _deathCameraPoseCaptured = true;
+        }
+
+        private bool TryApplyHeldCameraPose()
+        {
+            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerDelay && _deathCameraPoseCaptured)
+            {
+                transform.SetPositionAndRotation(_deathCameraPosition, _deathCameraRotation);
+                return true;
+            }
+
+            if (_deathSpectatorPhase == DeathSpectatorPhase.AllyTargetLossHold
+                && _spectatorTargetLossPoseCaptured)
+            {
+                transform.SetPositionAndRotation(_spectatorTargetLossPosition, _spectatorTargetLossRotation);
+                return true;
+            }
+
+            return false;
         }
 
         private static Transform GetTargetRig(VehicleRoot target)
@@ -853,7 +966,8 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void UpdateDeathSpectatorInputs()
         {
-            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerDelay)
+            if (_deathSpectatorPhase == DeathSpectatorPhase.KillerDelay
+                || _deathSpectatorPhase == DeathSpectatorPhase.AllyTargetLossHold)
             {
                 return;
             }

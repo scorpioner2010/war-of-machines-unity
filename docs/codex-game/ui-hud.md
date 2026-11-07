@@ -28,8 +28,7 @@ Current owner scripts:
   - Clears hover outline while hidden. `VehicleAutoAimController` and `VehicleHoverOutline` also reject targets whose presenter is hidden.
   - Refreshes on visibility snapshots, local-player changes, and `VehicleNetworkInitializer.ClientTeamChanged`, covering teams assigned by the server after FishNet spawn.
 - `Assets/Game/Scripts/Gameplay/Robots/VehicleHudInitializer.cs`
-  - Initializes HUD for a vehicle owner and owns the only `SpeedHud` writer.
-  - During death spectating, subscribes to `CameraController.SpectatorTargetChanged` and samples the selected target's inspector-wired `VehicleMovementController` transform with the existing interval, multiplier, smoothing, and stop-snap settings; changing targets resets the display to zero before sampling the new robot.
+  - Initializes HUD for a vehicle owner and writes `SpeedHud` only during normal owner gameplay.
 - `Assets/Game/Scripts/Gameplay/HealthBar.cs`
   - Inspector-wired holder for the local vehicle HP slider/fill image, HP value, and vehicle-name label in `Client.unity/Canvas/GameplayHUD/GameplayHudContent/GameplayHudPanels/VehicleStatusPanel`.
   - `SetNormalizedValue` updates either the legacy `Slider` or the new `Image` fill, so the `VehicleStatusPanel/barHp` image can replace the removed slider without changing the health presenter.
@@ -37,7 +36,11 @@ Current owner scripts:
   - Drives the local owner's screen-space HP panel.
   - Shows the runtime vehicle name above the HP bar, falling back to the vehicle code and then the prefab instance name until runtime stats are available.
   - Updates only the HP amount on `VehicleStatusPanel/barHp`; it does not override the `Image.color` authored in the HUD Inspector.
-  - During death spectating, follows `CameraController.SpectatorTarget` through its target-change event and binds/unbinds `VehicleHealth` events without scene searches. The same panel therefore shows the selected living allied robot's name and current/max HP while `GameplayHUD` remains open; the local dead robot remains the only dead-target exception.
+- `Assets/Game/Scripts/UI/HUD/SpectatorVehicleHudPresenter.cs`
+  - Owns screen-space HP, vehicle-name, and speed presentation during death spectator mode from the scene-owned HUD hierarchy.
+  - Subscribes to `CameraController.DeathSpectatorCameraChanged` and the active controller's `SpectatorTargetChanged`, so it remains alive after the local network vehicle despawns and follows each selected robot.
+  - Samples the selected target's client-visible movement transform with the configured speed interval, multiplier, smoothing, and stop-snap settings; changing targets resets the speed display to zero.
+  - Writes the selected target's current/max HP and runtime name to `VehicleStatusPanel` without changing normal owner HUD or sniper presentation.
 - `Assets/Game/Scripts/UI/HUD/DamageScreen.cs`
   - Fullscreen local hit indicator in the scene-owned `Client.unity/Canvas/GameplayHUD` hierarchy.
   - Subscribes to `VehicleRoot.LocalPlayerVehicleChanged`, then to the local vehicle `VehicleHealth.OnDamaged`.

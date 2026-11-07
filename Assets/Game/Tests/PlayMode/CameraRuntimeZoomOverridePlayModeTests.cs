@@ -366,6 +366,171 @@ namespace Game.Tests.PlayMode
         }
 
         [Test]
+        public void DeathSpectatorHoldsLastAllyCameraPointBeforeFallback()
+        {
+            GameObject cameraObject = new GameObject("AllyTargetLossCamera");
+            GameObject targetObject = new GameObject("AllyTargetLossTarget");
+            try
+            {
+                Type cameraControllerType = GetType(
+                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type vehicleRootType = GetType(
+                    "Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type phaseType = cameraControllerType.GetNestedType(
+                    "DeathSpectatorPhase",
+                    BindingFlags.NonPublic);
+                Component cameraController = cameraObject.AddComponent(cameraControllerType);
+                Component targetRoot = targetObject.AddComponent(vehicleRootType);
+                Vector3 lastCameraPosition = new Vector3(2f, 4f, -6f);
+                Quaternion lastCameraRotation = Quaternion.Euler(12f, 35f, 0f);
+                cameraObject.transform.SetPositionAndRotation(lastCameraPosition, lastCameraRotation);
+                SetField(cameraController, "_deathSpectatorPhase", Enum.Parse(phaseType, "AllyFollow"));
+                SetField(cameraController, "_spectatorTarget", targetRoot);
+
+                Invoke(cameraController, "UpdateDeathSpectator");
+
+                Assert.AreEqual(
+                    Enum.Parse(phaseType, "AllyTargetLossHold"),
+                    GetField(cameraController, "_deathSpectatorPhase"));
+                float holdEndTime = (float)GetField(
+                    cameraController,
+                    "_deathSpectatorTargetLossEndTime");
+                Assert.That(holdEndTime, Is.GreaterThan(Time.unscaledTime + 4.9f));
+
+                cameraObject.transform.position = Vector3.zero;
+                Invoke(cameraController, "ApplyCameraTransform", false);
+
+                Assert.That(cameraObject.transform.position, Is.EqualTo(lastCameraPosition));
+                Assert.That(
+                    Quaternion.Angle(cameraObject.transform.rotation, lastCameraRotation),
+                    Is.LessThan(0.001f));
+
+                SetField(cameraController, "_deathSpectatorTargetLossEndTime", Time.unscaledTime - 1f);
+                Invoke(cameraController, "UpdateDeathSpectator");
+
+                Assert.IsTrue((bool)GetProperty(cameraController, "IsDeathSpectatorWreck"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(targetObject);
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
+        public void DeathSpectatorKillerDelayKeepsCapturedCameraPose()
+        {
+            GameObject cameraObject = new GameObject("DeathCameraPose");
+            GameObject rigObject = new GameObject("DeathCameraPoseRig");
+            try
+            {
+                Type cameraControllerType = GetType(
+                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type phaseType = cameraControllerType.GetNestedType(
+                    "DeathSpectatorPhase",
+                    BindingFlags.NonPublic);
+                Component cameraController = cameraObject.AddComponent(cameraControllerType);
+                Vector3 capturedPosition = new Vector3(-3f, 2f, -8f);
+                Quaternion capturedRotation = Quaternion.Euler(8f, 120f, 0f);
+                cameraObject.transform.SetPositionAndRotation(capturedPosition, capturedRotation);
+                rigObject.transform.position = Vector3.zero;
+                SetField(cameraController, "rig", rigObject.transform);
+
+                Invoke(cameraController, "DetachFromVehicleForDeath");
+                SetField(cameraController, "_deathSpectatorPhase", Enum.Parse(phaseType, "KillerDelay"));
+                rigObject.transform.position = new Vector3(100f, 100f, 100f);
+                cameraObject.transform.position = Vector3.zero;
+
+                Invoke(cameraController, "ApplyCameraTransform", false);
+
+                Assert.That(cameraObject.transform.position, Is.EqualTo(capturedPosition));
+                Assert.That(
+                    Quaternion.Angle(cameraObject.transform.rotation, capturedRotation),
+                    Is.LessThan(0.001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+                UnityEngine.Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void SpectatorHudPresenterTracksTargetAfterLocalVehicleDespawn()
+        {
+            GameObject presenterObject = new GameObject("SpectatorHudPresenter");
+            GameObject cameraObject = new GameObject("SpectatorHudCamera");
+            GameObject targetObject = new GameObject("SpectatorHudTarget");
+            try
+            {
+                Type presenterType = GetType(
+                    "Game.Scripts.UI.HUD.SpectatorVehicleHudPresenter, Assembly-CSharp");
+                Type cameraControllerType = GetType(
+                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type vehicleRootType = GetType(
+                    "Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type phaseType = cameraControllerType.GetNestedType(
+                    "DeathSpectatorPhase",
+                    BindingFlags.NonPublic);
+                Component presenter = presenterObject.AddComponent(presenterType);
+                Component cameraController = cameraObject.AddComponent(cameraControllerType);
+                Component targetRoot = targetObject.AddComponent(vehicleRootType);
+                SetField(
+                    cameraController,
+                    "_deathSpectatorPhase",
+                    Enum.Parse(phaseType, "AllyFollow"));
+                SetField(cameraController, "_spectatorTarget", targetRoot);
+
+                Invoke(presenter, "OnDeathSpectatorCameraChanged", cameraController);
+
+                Assert.AreSame(targetRoot, GetField(presenter, "_displayTarget"));
+                Assert.AreSame(targetObject.transform, GetField(presenter, "_displayTransform"));
+
+                UnityEngine.Object.DestroyImmediate(targetObject);
+
+                Assert.IsNotNull(presenter);
+                Invoke(presenter, "OnSpectatorTargetChanged", new object[] { null });
+                Assert.IsNull(GetField(presenter, "_displayTarget"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(targetObject);
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+                UnityEngine.Object.DestroyImmediate(presenterObject);
+            }
+        }
+
+        [Test]
+        public void CameraCollisionIgnoresDetachedDeathDebris()
+        {
+            GameObject cameraObject = new GameObject("DeathDebrisCollisionCamera");
+            GameObject debrisObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                Type collisionControllerType = GetType(
+                    "Game.Scripts.Gameplay.Robots.CameraCollisionController, Assembly-CSharp");
+                Component collisionController = cameraObject.AddComponent(collisionControllerType);
+                Rigidbody debrisRigidbody = debrisObject.AddComponent<Rigidbody>();
+                int chassisLayer = LayerMask.NameToLayer("Chassis");
+                Assert.That(chassisLayer, Is.GreaterThanOrEqualTo(0));
+                debrisObject.layer = chassisLayer;
+                debrisRigidbody.useGravity = false;
+                debrisObject.transform.position = new Vector3(0f, 0f, 2f);
+                cameraObject.transform.position = new Vector3(0f, 0f, 5f);
+                Physics.SyncTransforms();
+
+                Invoke(collisionController, "Resolve", Vector3.zero);
+
+                Assert.That(cameraObject.transform.position.z, Is.EqualTo(5f).Within(0.001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(debrisObject);
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
         public void DeathSpectatorDelaysKillerViewAndUsesDoubledDuration()
         {
             GameObject cameraObject = new GameObject("DelayedSpectatorCamera");

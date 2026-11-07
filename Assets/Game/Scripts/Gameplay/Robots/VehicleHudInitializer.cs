@@ -15,19 +15,12 @@ namespace Game.Scripts.Gameplay.Robots
         private float _targetDisplaySpeed;
         private float _smoothedDisplaySpeed;
         private int _lastShownSpeed = int.MinValue;
-        private CameraController _spectatorCameraController;
         private VehicleRoot _displayTarget;
         private Transform _displayTransform;
 
         public void SetVehicleRoot(VehicleRoot root)
         {
-            if (vehicleRoot != root)
-            {
-                UnsubscribeFromSpectatorTarget();
-            }
-
             vehicleRoot = root;
-            SubscribeToSpectatorTarget();
         }
 
         public void OnVehicleInitialized(VehicleInitializationContext context)
@@ -53,8 +46,7 @@ namespace Game.Scripts.Gameplay.Robots
             _targetDisplaySpeed = 0f;
             _smoothedDisplaySpeed = 0f;
             _lastShownSpeed = int.MinValue;
-            SubscribeToSpectatorTarget();
-            BindDisplayTarget(ResolveDisplayTarget());
+            BindDisplayTarget(vehicleRoot);
         }
 
         private void Update()
@@ -64,9 +56,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            SubscribeToSpectatorTarget();
-
-            VehicleRoot displayTarget = ResolveDisplayTarget();
+            VehicleRoot displayTarget = vehicleRoot;
             Transform displayTransform = ResolveDisplayTransform(displayTarget);
             if (_displayTarget != displayTarget || _displayTransform != displayTransform)
             {
@@ -119,21 +109,6 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private VehicleRoot ResolveDisplayTarget()
-        {
-            if (vehicleRoot == null || vehicleRoot.cameraController == null)
-            {
-                return vehicleRoot;
-            }
-
-            if (!vehicleRoot.cameraController.IsDeathSpectatorActive)
-            {
-                return vehicleRoot;
-            }
-
-            return vehicleRoot.cameraController.SpectatorTarget ?? vehicleRoot;
-        }
-
         private static Transform ResolveDisplayTransform(VehicleRoot target)
         {
             if (target == null)
@@ -162,44 +137,5 @@ namespace Game.Scripts.Gameplay.Robots
             SpeedHud.SetText(0);
         }
 
-        private void SubscribeToSpectatorTarget()
-        {
-            CameraController nextController = vehicleRoot != null ? vehicleRoot.cameraController : null;
-            if (_spectatorCameraController == nextController)
-            {
-                return;
-            }
-
-            UnsubscribeFromSpectatorTarget();
-            _spectatorCameraController = nextController;
-            if (_spectatorCameraController != null)
-            {
-                _spectatorCameraController.SpectatorTargetChanged += OnSpectatorTargetChanged;
-            }
-        }
-
-        private void UnsubscribeFromSpectatorTarget()
-        {
-            if (_spectatorCameraController != null)
-            {
-                _spectatorCameraController.SpectatorTargetChanged -= OnSpectatorTargetChanged;
-                _spectatorCameraController = null;
-            }
-        }
-
-        private void OnSpectatorTargetChanged(VehicleRoot target)
-        {
-            if (!isActive)
-            {
-                return;
-            }
-
-            BindDisplayTarget(target != null ? target : ResolveDisplayTarget());
-        }
-
-        private void OnDestroy()
-        {
-            UnsubscribeFromSpectatorTarget();
-        }
     }
 }

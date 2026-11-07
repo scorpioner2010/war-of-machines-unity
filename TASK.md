@@ -3056,3 +3056,54 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Result:** The fixes are now present as working-tree changes: bots approach/reposition while reload or line-of-fire is unavailable, suppress chassis motion while settling, fire only after stopping, and no longer send movement with a shot or retain a stale shoot latch.
 - **Remaining limitation:** Runtime telemetry should still be collected in one Unity 10v9 battle to confirm lower direction-flip counts and shot-time speed near zero; no unrelated worktree changes were reverted.
 - **Status:** COMPLETED — 2026-11-06
+
+## Task: Fix spectator death camera handoff and delayed target switching
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Fix spectator mode camera jitter when the player's robot is destroyed, exit sniper mode without a camera jump, and keep observing a destroyed ally's last point for five seconds before switching to the next robot.
+- **Scope:** Diagnose the camera/death/spectator lifecycle and collision-related jitter; preserve sniper zoom and camera behavior for other gameplay flows; add focused regression coverage and update mechanic documentation if ownership changes.
+- **Acceptance criteria:** Player death leaves the camera at its current position without explosion-fragment jitter; sniper mode exits cleanly without a jump; allied target death keeps the last observed point for five seconds, then selects the next valid robot; focused builds/tests and diff checks pass.
+- **Progress:** Global gameplay-separation and task-journal workflows are read. Existing camera diagnostics and prior camera ownership fixes must be preserved; repository investigation is next.
+- **Discovery:** `DeathLogic` detaches client debris onto the dynamic `Chassis` layer, while `CameraCollisionController` sphere-cast included that layer and could shorten the camera distance as fragments moved. `CameraController` also recalculated the death pose every frame, and invalid `AllyFollow` targets entered `DeathWreck` immediately.
+- **Decision:** Keep spectator lifecycle ownership in `CameraController`; capture and hold the current world camera pose during local `KillerDelay` and allied-target loss, and ignore only unparented dynamic `Chassis` debris in `CameraCollisionController` so live/static collision behavior remains unchanged.
+- **Implementation:** Added `AllyTargetLossHold` with a five-second unscaled timer and deterministic next-ally selection, froze the local death pose while exiting sniper state, added detached-debris filtering to camera collision, and updated `docs/codex-game/robot-control.md` with the ownership and lifecycle contract.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `Game.PlayMode.Tests.csproj` build successfully with `0` errors; `git diff --check` passes. Added regression coverage for death-pose stability, five-second target-loss holding, and detached-debris collision filtering. Unity batch PlayMode is not run because the project Editor is currently open, and the background-testing workflow forbids concurrent batch execution against the same `Library`.
+- **Result:** Local death now captures the current camera world pose before teardown, exits sniper UI/FOV state without recomputing position during `KillerDelay`, and ignores only detached dynamic `Chassis` debris in collision resolution. Ally target loss now holds the last camera pose for five unscaled seconds and then selects the next eligible same-team vehicle in active order before falling back to `DeathWreck`.
+- **Remaining limitation:** Unity PlayMode runtime execution remains pending until the open project Editor is closed; no batch process was started concurrently. Manual verification should reproduce local death from sniper mode, debris explosion, allied target loss, five-second hold, and automatic next-target selection.
+- **Status:** COMPLETED — 2026-11-06
+
+## Task: Fix spectator HP and speed HUD
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Restore the bottom HP and speed displays while observing a robot in spectator mode.
+- **Scope:** Trace the scene-owned HUD presenters through local vehicle despawn and spectator target changes, fix the focused binding/lifecycle issue without changing normal gameplay or sniper camera behavior, add regression coverage, and update HUD ownership documentation.
+- **Acceptance:** Spectator HP follows the selected target; spectator speed is visible and updates from the selected target; normal local HUD and spectator camera/zoom behavior remain unchanged.
+- **Progress:** The root cause is confirmed: `HealthBarUI` and `VehicleHudInitializer` live on the despawned local vehicle, while only scene-owned crosshair/map presenters reacquire `ActiveDeathSpectator`.
+- **Decision:** Keep normal owner HUD updates in their vehicle components and add a focused scene-owned `SpectatorVehicleHudPresenter` on the existing `HealthBar` scene object; it is the only presenter that writes HP/speed during death spectator mode.
+- **Implementation:** Added camera/target lifecycle binding, target HP/name polling, and movement-speed sampling for spectator mode; wired the presenter into `Client.unity` and documented the ownership boundary.
+- **Validation:** Final `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `Game.PlayMode.Tests.csproj` builds succeed with `0` errors; `git diff --check` passes. Added `SpectatorHudPresenterTracksTargetAfterLocalVehicleDespawn`. Unity batch imported and compiled the project with exit code `0`, but did not emit a test-results XML or execute the runner in this pass.
+- **Result:** Spectator HP/name and speed now have a scene-owned presenter that binds to the active death camera and selected target, so local vehicle despawn no longer removes these HUD updates. Normal owner HUD and camera/sniper code remain unchanged.
+- **Remaining limitation:** Runtime in-game verification still needs one manual spectator session covering local death, target cycling, target death, and HUD updates; no unrelated worktree changes were reverted.
+- **Status:** COMPLETED — 2026-11-06
+
+## Task: Check in-game performance diagnostics
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-06
+- **User request:** Determine whether the game already has a diagnostic system for identifying what causes in-game lag.
+- **Scope:** Inspect the repository for runtime diagnostics, profiling overlays, telemetry/logging, and Unity profiling integrations; do not modify implementation files.
+- **Acceptance criteria:** Identify existing tools, explain what they can measure, and note any important gaps or usage limitations.
+- **Progress:** Global memory, project journal, and journal-recovery workflow read. No dedicated performance-diagnostics workflow exists in the archive.
+
+### Completion checkpoint � 2026-11-06
+
+- **Discovery:** The project contains the Live Diagnostics Bridge under `Assets/Game/Scripts/Diagnostics`, configured in both `Assets/Game/Scenes/Client.unity` and `Assets/Game/Scenes/Server.unity`, plus the F9 runtime overlay and `game-diag.cmd` CLI.
+- **Capabilities:** It samples client FPS/frame time and frame p95/max, profiler scope timings, server tick p95/max, entities/projectiles/bots/players, memory/GC counters, ping/jitter/loss, network throughput, RPC/event summaries, and writes JSONL sessions under `diagnostics/logs`.
+- **Analysis:** The analyzer classifies likely causes as client-bound, server-bound, network-bound, memory/GC-bound, entity-scale-bound, RPC storm, or unknown. Existing hooks include projectile, movement, visibility, map HUD, ping, weapon, bot, and RPC paths.
+- **Evidence:** The newest saved session (`diagnostics/logs/session-20261106-115737.jsonl`) contains frame spikes up to 673.393 ms and lists `Client.Projectile.Update` as the top suspect, demonstrating that the system can identify a concrete lag source.
+- **Validation:** Documentation, runtime code, scene wiring, CLI, and existing logs inspected. `game-diag.cmd health` was attempted but timed out because no diagnostics HTTP listener was available at the time; no implementation files were changed.
+- **Result:** Confirmed that the game has an in-game and external diagnostics system for investigating lag; usage instructions are in `docs/diagnostics.md`.
+- **Remaining limitation:** Live CLI queries require the game/diagnostics bridge to be running; saved JSONL logs remain available for offline analysis.
+- **Status:** COMPLETED
