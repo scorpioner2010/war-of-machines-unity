@@ -11,6 +11,8 @@ namespace Game.Scripts.Gameplay.Battle
     {
         private static BattleCountdownAuthority _currentClient;
 
+        [SerializeField] private NetworkGameplayTimer gameplayTimer;
+
         private readonly HashSet<int> _finishedClientIds = new HashSet<int>();
         private ServerRoom _serverRoom;
         private bool _serverLockStarted;
@@ -21,7 +23,6 @@ namespace Game.Scripts.Gameplay.Battle
         {
             base.OnStartServer();
 
-            NetworkGameplayTimer gameplayTimer = GetComponent<NetworkGameplayTimer>();
             _serverRoom = gameplayTimer != null ? gameplayTimer.serverRoom : null;
             if (_serverRoom == null)
             {

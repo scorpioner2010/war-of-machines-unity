@@ -21,14 +21,8 @@ namespace Game.Scripts.Audio
         public float PlaybackVolume => _playbackVolume;
         public float Pitch => source != null ? source.pitch : 1f;
 
-        private void Awake()
-        {
-            EnsureSource();
-        }
-
         public void Init()
         {
-            EnsureSource();
             if (source == null)
             {
                 return;
@@ -74,7 +68,6 @@ namespace Game.Scripts.Audio
 
         public void SetSpatialSettings(float minDistance, float maxDistance, AudioRolloffMode rolloffMode)
         {
-            EnsureSource();
             if (source == null)
             {
                 return;
@@ -93,7 +86,6 @@ namespace Game.Scripts.Audio
 
         public void Play(AudionElement element, bool loop)
         {
-            EnsureSource();
             Stop();
             _element = element;
 
@@ -160,14 +152,6 @@ namespace Game.Scripts.Audio
                     * Mathf.Clamp01(_element.volume)
                     * Mathf.Clamp01(clipVolume)
                     * _playbackVolume;
-            }
-        }
-
-        private void EnsureSource()
-        {
-            if (source == null)
-            {
-                source = GetComponent<AudioSource>();
             }
         }
 

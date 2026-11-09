@@ -722,7 +722,7 @@ namespace Game.Scripts.Diagnostics
             }
             if (scopeName.Contains("ArmorPrefabHighlighter"))
             {
-                return "Assets/Game/Scripts/Editor/ArmorPrefabHighlighter.cs";
+                return "Assets/Editor/Game/ArmorPrefabHighlighter.cs";
             }
             if (scopeName.Contains("WaypointPointSpawner"))
             {

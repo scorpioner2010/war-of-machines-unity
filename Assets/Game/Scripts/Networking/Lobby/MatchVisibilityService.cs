@@ -362,6 +362,16 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             List<Player> players = _room.GetPlayers();
+            if (_participants.Capacity < players.Count)
+            {
+                _participants.Capacity = players.Count;
+            }
+
+            if (_entries.Capacity < players.Count)
+            {
+                _entries.Capacity = players.Count;
+            }
+
             for (int i = 0; i < players.Count; i++)
             {
                 Player player = players[i];
@@ -1205,11 +1215,13 @@ namespace Game.Scripts.Networking.Lobby
                     return;
                 }
 
-                ObjectIds = new int[count];
-                Relations = new byte[count];
-                Positions = new Vector3[count];
-                Yaws = new float[count];
-                RemainingVisibilitySeconds = new float[count];
+                int nextCapacity = ObjectIds.Length > 0 ? ObjectIds.Length * 2 : 4;
+                nextCapacity = Math.Max(nextCapacity, count);
+                ObjectIds = new int[nextCapacity];
+                Relations = new byte[nextCapacity];
+                Positions = new Vector3[nextCapacity];
+                Yaws = new float[nextCapacity];
+                RemainingVisibilitySeconds = new float[nextCapacity];
             }
         }
     }

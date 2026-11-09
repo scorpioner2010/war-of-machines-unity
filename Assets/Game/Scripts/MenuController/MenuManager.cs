@@ -11,6 +11,7 @@ namespace Game.Scripts.MenuController
 
         [SerializeField] private List<MenuEntry> menus;
         private Dictionary<MenuType, Menu> _map;
+        private Dictionary<MenuType, Component> _presenters;
         public static Action<MenuType> OnDisable;
         public static Action<MenuType> OnEnable;
         public static MenuType CurrentType { get; private set; }
@@ -21,9 +22,15 @@ namespace Game.Scripts.MenuController
         {
             _in = this;
             _map = new Dictionary<MenuType, Menu>();
+            _presenters = new Dictionary<MenuType, Component>();
             
             foreach (MenuEntry e in menus)
             {
+                if (e.presenter != null)
+                {
+                    _presenters[e.type] = e.presenter;
+                }
+
                 if (e.controller == null)
                 {
                     continue;
@@ -33,6 +40,18 @@ namespace Game.Scripts.MenuController
                 e.controller.SetActive(false);
             }
 
+        }
+
+        public static bool TryGetMenuPresenter<T>(MenuType type, out T presenter) where T : Component
+        {
+            presenter = null;
+            if (!IsReady || !_in._presenters.TryGetValue(type, out Component candidate))
+            {
+                return false;
+            }
+
+            presenter = candidate as T;
+            return presenter != null;
         }
 
         public static bool RegisterMenu(MenuType type, Menu controller)
@@ -125,6 +144,7 @@ namespace Game.Scripts.MenuController
         {
             public MenuType type;
             public Menu controller;
+            public Component presenter;
         }
 
         private static bool ShouldCloseMenu(MenuType openingType, MenuType candidateType)

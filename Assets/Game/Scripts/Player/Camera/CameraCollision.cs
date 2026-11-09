@@ -11,8 +11,14 @@ namespace Game.Scripts.Player.Camera
         public float cushionOffset = 1.0f;
         public LayerMask maskedLayers;
 
+        private UnityEngine.Camera _cachedCamera;
+        private GameObject _cachedFocusPoint;
+        private Transform _cameraTransform;
+        private Transform _focusPointTransform;
+
         private void Start()
         {
+            CacheReferences();
             if (mainCamera == null)
             {
                 return;
@@ -28,6 +34,7 @@ namespace Game.Scripts.Player.Camera
         {
             using (ProfileScope.Measure("Camera.Collision.LateUpdate", DiagnosticsCategories.Render))
             {
+                CacheReferences();
                 if (mainCamera == null)
                 {
                     return;
@@ -37,8 +44,8 @@ namespace Game.Scripts.Player.Camera
                     return;
                 }
 
-                Vector3 focusPos = focusPoint.transform.position;
-                Vector3 camPos = mainCamera.transform.position;
+                Vector3 focusPos = _focusPointTransform.position;
+                Vector3 camPos = _cameraTransform.position;
                 Vector3 direction = camPos - focusPos;
                 float distance = direction.magnitude;
                 if (distance > 0)
@@ -53,8 +60,23 @@ namespace Game.Scripts.Player.Camera
                         ? focusPos
                         : hit.point - direction * cushionOffset;
 
-                    mainCamera.transform.position = newPos;
+                    _cameraTransform.position = newPos;
                 }
+            }
+        }
+
+        private void CacheReferences()
+        {
+            if (mainCamera != _cachedCamera)
+            {
+                _cachedCamera = mainCamera;
+                _cameraTransform = mainCamera != null ? mainCamera.transform : null;
+            }
+
+            if (focusPoint != _cachedFocusPoint)
+            {
+                _cachedFocusPoint = focusPoint;
+                _focusPointTransform = focusPoint != null ? focusPoint.transform : null;
             }
         }
     }

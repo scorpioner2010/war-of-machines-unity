@@ -15,6 +15,7 @@ namespace Game.Scripts.UI.HUD
 
         public TMP_Text text;
         private Camera _camera;
+        private Transform _cameraTransform;
         private float _duration;
         private float _elapsed;
         private float _moveUp;
@@ -103,7 +104,12 @@ namespace Game.Scripts.UI.HUD
         {
             if (_camera != null)
             {
-                transform.forward = _camera.transform.forward;
+                if (_cameraTransform == null)
+                {
+                    _cameraTransform = _camera.transform;
+                }
+
+                transform.forward = _cameraTransform.forward;
             }
 
             if (!_playing)
@@ -149,6 +155,7 @@ namespace Game.Scripts.UI.HUD
         private void BeginAnimation(Color color)
         {
             _camera = CameraSync.In != null ? CameraSync.In.gameplayCamera : null;
+            _cameraTransform = _camera != null ? _camera.transform : null;
             GameplayRuntimeSettings settings = GameplayRuntimeSettingsProvider.Get();
             _duration = Mathf.Max(0.01f, settings.floatingDamageTextDuration);
             _moveUp = settings.floatingDamageTextMoveUp;

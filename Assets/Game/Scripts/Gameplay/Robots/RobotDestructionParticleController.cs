@@ -29,11 +29,6 @@ namespace Game.Scripts.Gameplay.Robots
 
         private void Awake()
         {
-            if (vehicleRoot == null)
-            {
-                vehicleRoot = GetComponent<VehicleRoot>();
-            }
-
             ConfigurePools();
         }
 
@@ -43,7 +38,10 @@ namespace Game.Scripts.Gameplay.Robots
             ConfigurePools();
         }
 
-        public void PlayDestruction(Vector3 center, IList<GameObject> detachedParts)
+        public void PlayDestruction(
+            Vector3 center,
+            IList<GameObject> detachedParts,
+            IList<Vector3> detachedPartCenters)
         {
             if (_destructionPlayed)
             {
@@ -56,7 +54,7 @@ namespace Game.Scripts.Gameplay.Robots
             SpawnOneShot(mainExplosionPrefab, safeCenter);
             SpawnOneShot(SelectRandomPrefab(explosionPrefabs), safeCenter);
             SpawnOneShot(SelectRandomPrefab(freeExplosionPrefabs), safeCenter);
-            SpawnPartFire(detachedParts);
+            SpawnPartFire(detachedParts, detachedPartCenters);
         }
 
         private void ConfigurePools()
@@ -101,7 +99,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private void SpawnPartFire(IList<GameObject> detachedParts)
+        private void SpawnPartFire(IList<GameObject> detachedParts, IList<Vector3> detachedPartCenters)
         {
             if (partFirePrefab == null || detachedParts == null || detachedParts.Count == 0)
             {
@@ -123,7 +121,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
-            AttachPartFire(mandatoryPart);
+            AttachPartFire(mandatoryPart, GetDetachedPartCenter(mandatoryPart, detachedParts, detachedPartCenters));
 
             List<GameObject> candidates = new List<GameObject>(detachedParts.Count - 1);
             for (int i = 0; i < detachedParts.Count; i++)
@@ -139,19 +137,19 @@ namespace Game.Scripts.Gameplay.Robots
             for (int i = 0; i < fireCount; i++)
             {
                 int candidateIndex = Random.Range(0, candidates.Count);
-                AttachPartFire(candidates[candidateIndex]);
+                GameObject candidate = candidates[candidateIndex];
+                AttachPartFire(candidate, GetDetachedPartCenter(candidate, detachedParts, detachedPartCenters));
                 candidates.RemoveAt(candidateIndex);
             }
         }
 
-        private void AttachPartFire(GameObject part)
+        private void AttachPartFire(GameObject part, Vector3 partCenter)
         {
             if (part == null)
             {
                 return;
             }
 
-            Vector3 partCenter = GetPartCenter(part);
             GameObject fire = Instantiate(partFirePrefab);
             Transform fireTransform = fire.transform;
             fireTransform.SetParent(part.transform, true);
@@ -184,46 +182,24 @@ namespace Game.Scripts.Gameplay.Robots
             return Mathf.Abs(scale) > 0.0001f ? 1f / scale : 1f;
         }
 
-        private static Vector3 GetPartCenter(GameObject part)
+        private static Vector3 GetDetachedPartCenter(
+            GameObject part,
+            IList<GameObject> detachedParts,
+            IList<Vector3> detachedPartCenters)
         {
-            Renderer[] renderers = part.GetComponentsInChildren<Renderer>(true);
-            bool hasBounds = false;
-            Bounds bounds = default;
-            for (int i = 0; i < renderers.Length; i++)
+            if (detachedParts != null && detachedPartCenters != null)
             {
-                Renderer renderer = renderers[i];
-                if (renderer == null)
+                int count = Mathf.Min(detachedParts.Count, detachedPartCenters.Count);
+                for (int i = 0; i < count; i++)
                 {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = renderer.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(renderer.bounds);
+                    if (detachedParts[i] == part)
+                    {
+                        return detachedPartCenters[i];
+                    }
                 }
             }
 
-            if (hasBounds)
-            {
-                return bounds.center;
-            }
-
-            Collider[] colliders = part.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                Collider collider = colliders[i];
-                if (collider != null)
-                {
-                    return collider.bounds.center;
-                }
-            }
-
-            return part.transform.position;
+            return part != null ? part.transform.position : Vector3.zero;
         }
 
         private static PooledImpactFx SelectRandomPrefab(PooledImpactFx[] prefabs)

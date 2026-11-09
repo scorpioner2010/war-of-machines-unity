@@ -11,11 +11,11 @@ namespace Game.Tests.PlayMode
     {
         private const string ProjectileVisualPath =
             "Assets/Game/Content/Combat/Projectiles/ProjectileVisual.prefab";
-        private const string GunShootPath = "Assets/PartDone/Etallon/GunShoot.prefab";
-        private const string GroundImpactPath = "Assets/PartDone/Etallon/ExplosionProjectileGround.prefab";
-        private const string RobotHitPath = "Assets/PartDone/Etallon/ExplosionProjectileRobot.prefab";
-        private const string MainExplosionPath = "Assets/PartDone/Etallon/ExplosionMain.prefab";
-        private const string PartFirePath = "Assets/PartDone/Etallon/PartFire.prefab";
+        private const string GunShootPath = "Assets/Game/Content/Combat/Effects/GunShoot.prefab";
+        private const string GroundImpactPath = "Assets/Game/Content/Combat/Effects/ExplosionProjectileGround.prefab";
+        private const string RobotHitPath = "Assets/Game/Content/Combat/Effects/ExplosionProjectileRobot.prefab";
+        private const string MainExplosionPath = "Assets/Game/Content/Combat/Effects/ExplosionMain.prefab";
+        private const string PartFirePath = "Assets/Game/Content/Combat/Effects/PartFire.prefab";
 
         [Test]
         public void ProjectileVisualUsesDirectionalGunAndImpactEffects()
@@ -121,7 +121,7 @@ namespace Game.Tests.PlayMode
         public void RobotDestructionFireLifetimeIsThirtySeconds()
         {
             GameObject robot = LoadPrefab(
-                "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab");
+                "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/IA_L1_Starter.prefab");
             Component controller = robot.GetComponent("RobotDestructionParticleController");
 
             Assert.IsNotNull(controller);
@@ -162,14 +162,14 @@ namespace Game.Tests.PlayMode
         {
             string[] robotPaths =
             {
-                "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab",
-                "Assets/Game/Content/Robots/IA/IA_L2_Colossus/IA_L2_Colossus.prefab",
-                "Assets/Game/Content/Robots/IA/IA_L2_Guardian/IA_L2_Guardian.prefab",
-                "Assets/Game/Content/Robots/IA/IA_L2_Scout/IA_L2_Scout.prefab",
-                "Assets/Game/Content/Robots/NV/NV_L1_Starter/NV_L1_Starter.prefab",
-                "Assets/Game/Content/Robots/NV/NV_L2_Colossus/NV_L2_Colossus.prefab",
-                "Assets/Game/Content/Robots/NV/NV_L2_Guardian/NV_L2_Guardian.prefab",
-                "Assets/Game/Content/Robots/NV/NV_L2_Scout/NV_L2_Scout.prefab"
+                "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/IA_L1_Starter.prefab",
+                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Colossus/IA_L2_Colossus.prefab",
+                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Guardian/IA_L2_Guardian.prefab",
+                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Scout/IA_L2_Scout.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L1_Starter/NV_L1_Starter.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Colossus/NV_L2_Colossus.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Guardian/NV_L2_Guardian.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Scout/NV_L2_Scout.prefab"
             };
 
             for (int i = 0; i < robotPaths.Length; i++)

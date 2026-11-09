@@ -16,6 +16,8 @@ namespace Game.Scripts.UI.HUD
         public RectTransform fullMapRobotCanvas;
         public RectTransform localPlayerIconMini;
         public RectTransform localPlayerIconFull;
+        [SerializeField] private Graphic localPlayerMiniIconGraphic;
+        [SerializeField] private Graphic localPlayerFullIconGraphic;
         public GameObject fullMapRoot;
         public Sprite alliedVehicleIcon;
         public Sprite enemyVehicleIcon;
@@ -44,12 +46,14 @@ namespace Game.Scripts.UI.HUD
         private Vector2 _fullMapRobotCanvasBasePosition;
         private Vector3 _localPlayerMiniIconBaseScale = Vector3.one;
         private Vector3 _localPlayerFullIconBaseScale = Vector3.one;
-        private Graphic _localPlayerMiniIconGraphic;
-        private Graphic _localPlayerFullIconGraphic;
         private bool _hasLocalPlayerMiniIconColor;
         private bool _hasLocalPlayerFullIconColor;
         private GameplayRuntimeSettings _runtimeSettings = GameplayRuntimeSettings.Default;
         private readonly List<TrackedVehicleIcon> _trackedVehicleIcons = new List<TrackedVehicleIcon>(16);
+        private readonly Dictionary<int, TrackedVehicleIcon> _trackedVehicleIconsByObjectId =
+            new Dictionary<int, TrackedVehicleIcon>(16);
+        private readonly Stack<PooledIcon> _inactiveMiniIcons = new Stack<PooledIcon>(8);
+        private readonly Stack<PooledIcon> _inactiveFullIcons = new Stack<PooledIcon>(8);
 
         private void Awake()
         {
@@ -283,8 +287,17 @@ namespace Game.Scripts.UI.HUD
 
         private void CacheLocalPlayerIconColors()
         {
-            _hasLocalPlayerMiniIconColor = TryGetIconGraphicAndColor(localPlayerIconMini, out _localPlayerMiniIconGraphic, out _localPlayerMiniIconColor);
-            _hasLocalPlayerFullIconColor = TryGetIconGraphicAndColor(localPlayerIconFull, out _localPlayerFullIconGraphic, out _localPlayerFullIconColor);
+            _hasLocalPlayerMiniIconColor = localPlayerMiniIconGraphic != null;
+            if (_hasLocalPlayerMiniIconColor)
+            {
+                _localPlayerMiniIconColor = localPlayerMiniIconGraphic.color;
+            }
+
+            _hasLocalPlayerFullIconColor = localPlayerFullIconGraphic != null;
+            if (_hasLocalPlayerFullIconColor)
+            {
+                _localPlayerFullIconColor = localPlayerFullIconGraphic.color;
+            }
         }
 
         private void ApplyLocalPlayerIconColor()
@@ -293,12 +306,12 @@ namespace Game.Scripts.UI.HUD
 
             if (_hasLocalPlayerMiniIconColor)
             {
-                ApplyIconColor(_localPlayerMiniIconGraphic, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerMiniIconColor);
+                ApplyIconColor(localPlayerMiniIconGraphic, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerMiniIconColor);
             }
 
             if (_hasLocalPlayerFullIconColor)
             {
-                ApplyIconColor(_localPlayerFullIconGraphic, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerFullIconColor);
+                ApplyIconColor(localPlayerFullIconGraphic, destroyed ? _runtimeSettings.mapDestroyedIconColor : _localPlayerFullIconColor);
             }
         }
 
@@ -340,6 +353,7 @@ namespace Game.Scripts.UI.HUD
                     }
 
                     _trackedVehicleIcons.Add(icon);
+                    _trackedVehicleIconsByObjectId.Add(icon.ObjectId, icon);
                 }
 
                 icon.Seen = true;
@@ -355,6 +369,7 @@ namespace Game.Scripts.UI.HUD
                 {
                     DestroyTrackedVehicleIcon(icon);
                     _trackedVehicleIcons.RemoveAt(i);
+                    _trackedVehicleIconsByObjectId.Remove(icon.ObjectId);
                 }
             }
         }
@@ -371,13 +386,14 @@ namespace Game.Scripts.UI.HUD
 
         private TrackedVehicleIcon FindTrackedVehicleIcon(int objectId)
         {
-            for (int i = 0; i < _trackedVehicleIcons.Count; i++)
+            if (_trackedVehicleIconsByObjectId.TryGetValue(objectId, out TrackedVehicleIcon icon))
             {
-                TrackedVehicleIcon icon = _trackedVehicleIcons[i];
-                if (icon.ObjectId == objectId)
+                if (icon != null)
                 {
                     return icon;
                 }
+
+                _trackedVehicleIconsByObjectId.Remove(objectId);
             }
 
             return null;
@@ -385,8 +401,18 @@ namespace Game.Scripts.UI.HUD
 
         private TrackedVehicleIcon CreateTrackedVehicleIcon(GameplayMapVisibilityEntry entry)
         {
-            RectTransform miniIcon = CreateIconInstance(localPlayerIconMini, "TrackedVehicleIconMini");
-            RectTransform fullIcon = CreateIconInstance(localPlayerIconFull, "TrackedVehicleIconFull");
+            Graphic miniGraphic;
+            Graphic fullGraphic;
+            RectTransform miniIcon = CreateIconInstance(
+                localPlayerIconMini,
+                localPlayerMiniIconGraphic,
+                "TrackedVehicleIconMini",
+                out miniGraphic);
+            RectTransform fullIcon = CreateIconInstance(
+                localPlayerIconFull,
+                localPlayerFullIconGraphic,
+                "TrackedVehicleIconFull",
+                out fullGraphic);
             if (miniIcon == null && fullIcon == null)
             {
                 return null;
@@ -397,8 +423,8 @@ namespace Game.Scripts.UI.HUD
                 ObjectId = entry.ObjectId,
                 MiniIcon = miniIcon,
                 FullIcon = fullIcon,
-                MiniGraphic = GetIconGraphic(miniIcon),
-                FullGraphic = GetIconGraphic(fullIcon),
+                MiniGraphic = miniGraphic,
+                FullGraphic = fullGraphic,
                 Relation = MapVehicleVisibilityRelation.Hidden,
                 WorldPosition = entry.Position,
                 Yaw = entry.Yaw,
@@ -409,16 +435,45 @@ namespace Game.Scripts.UI.HUD
             return icon;
         }
 
-        private RectTransform CreateIconInstance(RectTransform template, string iconName)
+        private RectTransform CreateIconInstance(
+            RectTransform template,
+            Graphic templateGraphic,
+            string iconName,
+            out Graphic graphic)
         {
-            if (template == null || template.parent == null)
+            graphic = null;
+            if (template == null || template.parent == null || templateGraphic == null)
             {
                 return null;
             }
 
-            RectTransform icon = Instantiate(template, template.parent);
-            icon.name = iconName;
             bool isMiniMapIcon = template == localPlayerIconMini;
+            Stack<PooledIcon> inactiveIcons = isMiniMapIcon ? _inactiveMiniIcons : _inactiveFullIcons;
+            RectTransform icon = null;
+            while (inactiveIcons.Count > 0 && icon == null)
+            {
+                PooledIcon pooledIcon = inactiveIcons.Pop();
+                if (pooledIcon == null || pooledIcon.RectTransform == null || pooledIcon.Graphic == null)
+                {
+                    continue;
+                }
+
+                icon = pooledIcon.RectTransform;
+                graphic = pooledIcon.Graphic;
+            }
+
+            if (icon == null)
+            {
+                graphic = Instantiate(templateGraphic, templateGraphic.transform.parent);
+                icon = graphic.rectTransform;
+            }
+            else
+            {
+                icon.SetParent(template.parent, false);
+                icon.gameObject.SetActive(true);
+            }
+
+            icon.name = iconName;
             icon.localScale = isMiniMapIcon
                 ? Vector3.Scale(
                     _localPlayerMiniIconBaseScale,
@@ -432,11 +487,7 @@ namespace Game.Scripts.UI.HUD
             icon.sizeDelta = template.sizeDelta * Mathf.Max(0.1f, _runtimeSettings.mapTrackedVehicleIconScale);
             SetIconVisible(icon, false);
 
-            Graphic graphic = icon.GetComponent<Graphic>();
-            if (graphic != null)
-            {
-                graphic.raycastTarget = false;
-            }
+            graphic.raycastTarget = false;
 
             return icon;
         }
@@ -474,29 +525,6 @@ namespace Game.Scripts.UI.HUD
             }
         }
 
-        private static bool TryGetIconGraphicAndColor(RectTransform iconRect, out Graphic graphic, out Color color)
-        {
-            graphic = GetIconGraphic(iconRect);
-            if (graphic != null)
-            {
-                color = graphic.color;
-                return true;
-            }
-
-            color = Color.white;
-            return false;
-        }
-
-        private static Graphic GetIconGraphic(RectTransform iconRect)
-        {
-            if (iconRect != null)
-            {
-                return iconRect.GetComponent<Graphic>();
-            }
-
-            return null;
-        }
-
         private static void ApplyIconColor(Graphic graphic, Color color)
         {
             if (graphic != null)
@@ -512,8 +540,8 @@ namespace Game.Scripts.UI.HUD
                 return;
             }
 
-            DestroyIcon(icon.MiniIcon);
-            DestroyIcon(icon.FullIcon);
+            ReleaseIcon(icon.MiniIcon, icon.MiniGraphic, true);
+            ReleaseIcon(icon.FullIcon, icon.FullGraphic, false);
         }
 
         private void ClearTrackedVehicleIcons()
@@ -524,6 +552,7 @@ namespace Game.Scripts.UI.HUD
             }
 
             _trackedVehicleIcons.Clear();
+            _trackedVehicleIconsByObjectId.Clear();
         }
 
         private void BringLocalPlayerIconsToFront()
@@ -539,12 +568,20 @@ namespace Game.Scripts.UI.HUD
             }
         }
 
-        private static void DestroyIcon(RectTransform iconRect)
+        private void ReleaseIcon(RectTransform iconRect, Graphic graphic, bool miniMapIcon)
         {
-            if (iconRect != null)
+            if (iconRect == null || graphic == null)
             {
-                Destroy(iconRect.gameObject);
+                return;
             }
+
+            SetIconVisible(iconRect, false);
+            Stack<PooledIcon> inactiveIcons = miniMapIcon ? _inactiveMiniIcons : _inactiveFullIcons;
+            inactiveIcons.Push(new PooledIcon
+            {
+                RectTransform = iconRect,
+                Graphic = graphic
+            });
         }
 
         private void UpdateIcon(
@@ -663,6 +700,12 @@ namespace Game.Scripts.UI.HUD
             public Vector3 WorldPosition;
             public float Yaw;
             public bool Seen;
+        }
+
+        private sealed class PooledIcon
+        {
+            public RectTransform RectTransform;
+            public Graphic Graphic;
         }
     }
 }

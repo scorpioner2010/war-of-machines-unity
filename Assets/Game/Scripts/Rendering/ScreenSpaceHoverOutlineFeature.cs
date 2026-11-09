@@ -7,8 +7,6 @@ namespace Game.Scripts.Rendering
 {
     public sealed class ScreenSpaceHoverOutlineFeature : ScriptableRendererFeature
     {
-        private const string MaskShaderName = "Hidden/Game/HoverOutlineMask";
-        private const string OutlineShaderName = "Hidden/Game/ScreenSpaceHoverOutline";
         private const string MaskTextureName = "_WOM_HoverOutlineMask";
         private const int MaxOutlineRadiusPixels = 8;
 
@@ -19,6 +17,8 @@ namespace Game.Scripts.Rendering
 
         public Material maskMaterial;
         public Material outlineMaterial;
+        [SerializeField] private Shader maskShader;
+        [SerializeField] private Shader outlineShader;
         public bool gameCamerasOnly = true;
 
         private MaskPass _maskPass;
@@ -100,8 +100,8 @@ namespace Game.Scripts.Rendering
 
         public override void Create()
         {
-            Material resolvedMaskMaterial = ResolveMaterial(maskMaterial, MaskShaderName, ref _runtimeMaskMaterial);
-            Material resolvedOutlineMaterial = ResolveMaterial(outlineMaterial, OutlineShaderName, ref _runtimeOutlineMaterial);
+            Material resolvedMaskMaterial = ResolveMaterial(maskMaterial, maskShader, ref _runtimeMaskMaterial);
+            Material resolvedOutlineMaterial = ResolveMaterial(outlineMaterial, outlineShader, ref _runtimeOutlineMaterial);
 
             _maskPass = new MaskPass(resolvedMaskMaterial)
             {
@@ -149,7 +149,7 @@ namespace Game.Scripts.Rendering
             _runtimeOutlineMaterial = null;
         }
 
-        private static Material ResolveMaterial(Material assignedMaterial, string shaderName, ref Material runtimeMaterial)
+        private static Material ResolveMaterial(Material assignedMaterial, Shader assignedShader, ref Material runtimeMaterial)
         {
             if (assignedMaterial != null)
             {
@@ -161,7 +161,7 @@ namespace Game.Scripts.Rendering
                 return runtimeMaterial;
             }
 
-            Shader shader = Shader.Find(shaderName);
+            Shader shader = assignedShader;
             if (shader == null)
             {
                 return null;

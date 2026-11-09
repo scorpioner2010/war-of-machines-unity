@@ -25,6 +25,10 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private Color fallbackEnemyHpColor = new Color(1f, 0.08f, 0.04f, 1f);
 
         private readonly List<PlayerListRow> _rows = new List<PlayerListRow>(32);
+        private readonly Dictionary<string, PlayerListRow> _rowsByPlayerId =
+            new Dictionary<string, PlayerListRow>(32);
+        private readonly Dictionary<VehicleRoot, PlayerListRow> _rowsByVehicleRoot =
+            new Dictionary<VehicleRoot, PlayerListRow>(32);
         private float _nextVehicleScanTime;
         private float _nextRowRefreshTime;
 
@@ -162,6 +166,8 @@ namespace Game.Scripts.UI.HUD
             }
 
             _rows.Clear();
+            _rowsByPlayerId.Clear();
+            _rowsByVehicleRoot.Clear();
             _nextVehicleScanTime = 0f;
             _nextRowRefreshTime = 0f;
             SetContainerVisible(alliesContainer, false);
@@ -187,6 +193,20 @@ namespace Game.Scripts.UI.HUD
             }
 
             UnbindRow(row);
+
+            if (!string.IsNullOrEmpty(row.PlayerId)
+                && _rowsByPlayerId.TryGetValue(row.PlayerId, out PlayerListRow indexedRow)
+                && indexedRow == row)
+            {
+                _rowsByPlayerId.Remove(row.PlayerId);
+            }
+
+            if (row.VehicleRoot != null
+                && _rowsByVehicleRoot.TryGetValue(row.VehicleRoot, out indexedRow)
+                && indexedRow == row)
+            {
+                _rowsByVehicleRoot.Remove(row.VehicleRoot);
+            }
 
             if (row.Item != null)
             {
@@ -242,6 +262,7 @@ namespace Game.Scripts.UI.HUD
                     }
 
                     _rows.Add(row);
+                    IndexRow(row);
                 }
 
                 row.Seen = true;
@@ -308,6 +329,7 @@ namespace Game.Scripts.UI.HUD
                 row.IsDead = data.isDead || row.CurrentHealth <= 0f;
                 row.Seen = true;
                 _rows.Add(row);
+                IndexRow(row);
                 ApplyRow(row);
             }
         }
@@ -425,8 +447,20 @@ namespace Game.Scripts.UI.HUD
             }
 
             UnbindRow(row);
+            if (row.VehicleRoot != null
+                && _rowsByVehicleRoot.TryGetValue(row.VehicleRoot, out PlayerListRow indexedRow)
+                && indexedRow == row)
+            {
+                _rowsByVehicleRoot.Remove(row.VehicleRoot);
+            }
+
             row.VehicleRoot = vehicleRoot;
             row.Health = health;
+
+            if (vehicleRoot != null && !_rowsByVehicleRoot.ContainsKey(vehicleRoot))
+            {
+                _rowsByVehicleRoot.Add(vehicleRoot, row);
+            }
 
             if (health == null)
             {
@@ -488,6 +522,13 @@ namespace Game.Scripts.UI.HUD
             }
 
             UnbindRow(row);
+            if (row.VehicleRoot != null
+                && _rowsByVehicleRoot.TryGetValue(row.VehicleRoot, out PlayerListRow indexedRow)
+                && indexedRow == row)
+            {
+                _rowsByVehicleRoot.Remove(row.VehicleRoot);
+            }
+
             row.VehicleRoot = null;
             row.CurrentHealth = 0f;
             row.IsDead = true;
@@ -586,11 +627,19 @@ namespace Game.Scripts.UI.HUD
                 return null;
             }
 
+            if (_rowsByVehicleRoot.TryGetValue(vehicleRoot, out PlayerListRow indexedRow)
+                && indexedRow != null
+                && indexedRow.VehicleRoot == vehicleRoot)
+            {
+                return indexedRow;
+            }
+
             for (int i = 0; i < _rows.Count; i++)
             {
                 PlayerListRow row = _rows[i];
                 if (row != null && row.VehicleRoot == vehicleRoot)
                 {
+                    _rowsByVehicleRoot[vehicleRoot] = row;
                     return row;
                 }
             }
@@ -605,16 +654,42 @@ namespace Game.Scripts.UI.HUD
                 return null;
             }
 
+            if (_rowsByPlayerId.TryGetValue(playerId, out PlayerListRow indexedRow)
+                && indexedRow != null
+                && indexedRow.PlayerId == playerId)
+            {
+                return indexedRow;
+            }
+
             for (int i = 0; i < _rows.Count; i++)
             {
                 PlayerListRow row = _rows[i];
                 if (row != null && row.PlayerId == playerId)
                 {
+                    _rowsByPlayerId[playerId] = row;
                     return row;
                 }
             }
 
             return null;
+        }
+
+        private void IndexRow(PlayerListRow row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(row.PlayerId) && !_rowsByPlayerId.ContainsKey(row.PlayerId))
+            {
+                _rowsByPlayerId.Add(row.PlayerId, row);
+            }
+
+            if (row.VehicleRoot != null && !_rowsByVehicleRoot.ContainsKey(row.VehicleRoot))
+            {
+                _rowsByVehicleRoot.Add(row.VehicleRoot, row);
+            }
         }
 
         private RectTransform GetContainer(PlayerListRelation relation)
