@@ -91,15 +91,6 @@ namespace Game.Scripts.Gameplay.Robots
                     ballisticSolutionFound,
                     spawnParams.DebugBallisticTrajectory);
 
-                if (spawnParams.DebugBallisticTrajectory)
-                {
-                    string mode = usedBallisticCompensation
-                        ? (spawnParams.PreferHighArc ? "ballistic compensated high arc" : "ballistic compensated low arc")
-                        : "direct";
-                    Debug.Log(
-                        $"Projectile ballistic debug: mode={mode}, gravity={spawnParams.Gravity.magnitude:0.###}, speed={spawnParams.InitialSpeed:0.###}, estimatedDirectDrop={BallisticProjectileMath.EstimateDirectDrop(spawnParams.StartPosition, spawnParams.AimPoint, spawnParams.InitialSpeed, spawnParams.Gravity):0.###}, solutionFound={ballisticSolutionFound}");
-                }
-
                 if (spawnParams.ConfigureResolvedTarget)
                 {
                     if (spawnParams.ExplodeOnArrival)

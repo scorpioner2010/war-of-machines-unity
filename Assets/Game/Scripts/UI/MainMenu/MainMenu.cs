@@ -1,6 +1,7 @@
 using System.Globalization;
 using Game.Scripts.API.Models;
 using Game.Scripts.API.ServerManagers;
+using Game.Scripts.Audio;
 using Game.Scripts.Core.Services;
 using Game.Scripts.MenuController;
 using Game.Scripts.UI;
@@ -28,6 +29,7 @@ namespace Game.Scripts.UI.MainMenu
         [SerializeField] private TMP_Text mmr;
 
         [SerializeField] private RightInfoPanel rightInfoPanel;
+        [SerializeField] private Camera mainMenuCamera;
         
         [SerializeField] private GameObject[] mainMenuObjects;
 
@@ -158,6 +160,7 @@ namespace Game.Scripts.UI.MainMenu
             
             if (isActive)
             {
+                AudioListenerRoot.SetTarget(mainMenuCamera);
                 MenuManager.OpenMenu(MenuType.MainMenu);
             }
             else

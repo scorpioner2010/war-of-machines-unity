@@ -1,4 +1,5 @@
 using FishNet.Managing;
+using Game.Scripts.Audio;
 using Game.Scripts.Core.Resources;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Server;
@@ -120,6 +121,7 @@ namespace Game.Scripts.Testing
                 normalClientCamera.enabled = false;
             }
 
+            AudioListenerRoot.SetTarget(testCamera);
             controller.gameObject.SetActive(true);
         }
 

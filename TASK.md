@@ -26,6 +26,29 @@ This file is the durable handoff point between Codex sessions. Keep entries appe
 - **Completed:** 2026-11-03.
 - **Status:** COMPLETED
 
+## Task: Investigate hit-induced freeze and particle effects
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-10
+- **User request:** Investigate the persistent hitch/freeze that occurs when a shot hits an enemy, first inspect the particle effects used by the game, fix the root cause if it can be established confidently, and otherwise prepare focused diagnostics for a reproducible in-game capture.
+- **Scope:** Inventory hit, impact, damage, destruction, and related particle assets and runtime call sites; inspect for repeated instantiation, unbounded particle settings, synchronous work, or duplicate network/event processing; make only a root-cause fix supported by evidence, or add narrowly scoped diagnostics if evidence is insufficient.
+- **Acceptance criteria:** Identify whether a particle or another hit-processing path causes the hitch; preserve gameplay/network authority boundaries; validate any fix or diagnostic changes; provide three practical ways to isolate the issue and clearly state confidence and remaining limitations.
+- **Progress:** Task started after reading the global memory instructions, repository journal, task-journal recovery workflow, gameplay-logic separation guidance, and background Unity testing workflow. No implementation files changed yet.
+- **Findings:** Combat impact prefabs use finite particle counts and are pooled; robot-hit prefabs additionally configure two decal projectors and a glow halo. The robot-hit presentation path calls `VehicleColliderRegistry.TryGetImpactVisualSurface`, which scans roughly 10–17 registered mesh colliders per active robot. Each mesh-collider raycast currently activates/deactivates parents as needed and calls `Physics.SyncTransforms()` even when the collider and hierarchy are already active, making repeated synchronous physics work a strong freeze candidate.
+- **Ownership decision:** Keep impact-surface lookup in `VehicleColliderRegistry` as the focused visual-surface owner; keep hit authority and FX orchestration in the existing projectile/network owners. Apply a narrow optimization to skip `Physics.SyncTransforms()` when no active/enabled state changed.
+- **Changes:** Updated `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs` so `Physics.SyncTransforms()` runs only when the visual mesh collider or one of its ancestors had to be enabled/activated for the raycast. Updated `docs/codex-game/weapons-damage.md` with the ownership and performance boundary.
+- **Next steps:** Patch the redundant synchronization, validate compilation/static behavior, and document the result and remaining runtime confidence.
+
+### Final update
+
+- **Changes:** Added `Projectile.ImpactSurface.Resolve` profiling around the shared visual-surface lookup so a runtime capture can separate mesh-collider correction from particle playback.
+- **Validation:** `git diff --check` passed. Unity `6000.3.13f1` batch compilation completed with exit code `0`, no C# errors, and no `Compilation failed` marker. Targeted source/doc assertions passed.
+- **Runtime limitation:** The PlayMode test could not start because Unity reported that another instance already had the project open; no Unity Editor process was safe to terminate automatically. The fix therefore has static and compile validation, but not an in-game hitch capture yet.
+- **Result:** Particle assets are finite and impact FX are pooled; the strongest confirmed candidate is repeated `Physics.SyncTransforms()` during robot visual-surface correction, not an unbounded particle emission path. The redundant sync is now skipped for already active/enabled visual colliders.
+- **Next runtime checks:** (1) reproduce with the Unity Profiler and inspect `Physics.SyncTransforms` plus `Projectile.ImpactSurface.Resolve`; (2) compare Deep Profile/Timeline around one hit with robot impact FX disabled; (3) use the existing diagnostics overlay/HTTP top scopes to compare `Projectile.ImpactSurface.Resolve`, `Projectile.ImpactFx.Spawn`, and `Projectile.ImpactFx.Play` during the hitch.
+- **Completed:** 2026-11-10.
+- **Status:** COMPLETED
+
 ## Task: Import Fires prefabs and resources into Particles111
 
 - **Status:** COMPLETED
@@ -3376,3 +3399,105 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Limitation:** Unity Editor reimport/PlayMode visual verification was not run in this CLI pass.
 - **Status:** COMPLETED
 - **Result:** COMPLETED — the original 199 MB GitHub rejection was fixed without deleting the audio or resetting project changes, and the corrected commit is now on `origin/main`.
+
+## Task: Clean combat logs and diagnose false miss results
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-09
+- **User request:** Temporarily remove unnecessary project logs so the log stays clean, add detailed hit logs with hit status, armor thickness, and effective/reduced armor, and investigate/fix the bug where damage is sometimes not applied while the hit notification reports a miss even though the projectile hit the enemy.
+- **Scope:** Inspect the projectile collision, server-side hit/damage resolution, armor/penetration calculation, network hit notification, and logging call sites; remove noisy non-essential logs, add focused diagnostic hit logs, fix the root cause if confirmed, and preserve authority/transport boundaries.
+- **Acceptance criteria:** Unnecessary logs are disabled or removed without hiding errors; each resolved hit records status, armor thickness, and effective/reduced armor; hit notifications agree with authoritative damage resolution; focused static/tests or Unity validation are run where available; unrelated working-tree changes remain untouched.
+- **Progress:** Global instructions, repository journal, task-journal recovery workflow, gameplay-logic separation workflow, and memory history were read. No dedicated combat-log workflow exists.
+- **Findings:** The active Nova walker prefabs keep an enabled `CharacterController` on Unity's `Default` layer while armor colliders use `Armor`. `Projectile.TryCastCollision` treats `Default` as a blocking world layer and therefore can select the robot `CharacterController` before an armor collider. That collider is not in `additionalVehicleColliders`, so `ServerHitResolver` cannot resolve a `VehicleRoot`; `BuildResolvedShot` sets the HUD status to `Miss` and `ApplyResolvedShotDamage` skips damage.
+- **Ownership decision:** Keep authority and damage in `NetworkWeaponShooter`/`ServerHitResolver`, keep collider-to-vehicle fallback and mapping in `VehicleColliderRegistry`, and keep collision candidate selection in `Projectile`. Add only focused authoritative hit-resolution logs in the combat owner; do not add logging to client-only prediction.
+- **Logging decision:** Remove ordinary informational runtime diagnostics/ballistic debug logs while preserving warnings/errors. Add one authoritative `[CombatHit]` line per server hit or true miss with status, armor zone, base armor, effective line-of-sight armor, penetration, and damage.
+- **Changes:** `Projectile` now treats a `Default`-layer collider under a `VehicleRoot` as a vehicle candidate and prefers same-root `Armor` colliders over the robot's default `CharacterController`. `VehicleColliderRegistry.TryGetRoot` falls back to the parent hierarchy. `NetworkWeaponShooter` logs authoritative hit/miss resolution and carries armor metrics into the log path. Removed ordinary runtime diagnostics, ballistic-debug, and test-controller info logs while retaining warnings/errors and the dedicated smoke-test result log. Added a focused PlayMode regression and documented the ownership/selection rule in `docs/codex-game/weapons-damage.md`.
+- **Validation:** `git diff --check` passed. Static assertions passed for the collision fallback, regression test, and all `[CombatHit]` fields. The open Unity Editor regenerated `Library/ScriptAssemblies/Assembly-CSharp.dll` after the gameplay changes without visible compiler errors in the checked worker logs. An initial log assertion wrapper reported a false failure because `rg` interpreted the bracketed marker; the corrected `Select/IndexOf` assertion passed.
+- **Limitation:** The dedicated Unity PlayMode batch run was not executed because the same project is open in Unity Editor; the background-testing workflow forbids concurrent batch mode and no process was terminated. The user should run `CloseRangeProjectilePlayModeTests` after closing the Editor, then verify a live server hit log and HP change in a match.
+- **Result:** The false miss/damage path caused by robot `CharacterController` colliders on `Default` is fixed at collision selection and root resolution. Authoritative logs now expose status, base armor, effective armor, penetration, and damage while the normal log remains quiet.
+- **Completed:** 2026-11-09.
+- **Status:** COMPLETED
+## Task: Fix VehicleRoot namespace in projectile regression test
+ - Status: COMPLETED
+- Started: 2026-11-09
+- User request: Resolve CS0234 in `CloseRangeProjectilePlayModeTests.cs`.
+- Scope: Correct the test's `VehicleRoot` type reference without changing gameplay behavior.
+- Acceptance: The test compiles without the reported namespace error and validation is recorded here.
+- Progress: Follow-up task opened after the previous combat logging and projectile collision fix.
+- Changes: Replaced the direct `VehicleRoot` generic reference with `FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot")` and `AddComponent(Type)`.
+- Validation: `git diff --check` passed; the problematic generic reference is absent. Unity PlayMode compilation was not run in batch mode because the project Editor is already open.
+- Result: COMPLETED. The reported CS0234 source is removed from the test assembly.
+- Remaining limitations: Final confirmation still depends on Unity recompiling the test assembly in the open Editor.
+
+## Task: Analyze duplicate Unity audio listeners
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-09
+- **User request:** Analyze the duplicate `AudioListener` setup between the main menu camera and gameplay camera, provide three strong solution options, and recommend the best approach before implementation.
+- **Scope:** Inspect project scenes, cameras, audio bootstrap/lifecycle code, and existing audio documentation without changing gameplay or scene assets.
+- **Acceptance criteria:** Identify the current listener ownership and transition risks; compare three viable Unity-specific designs; recommend one with clear trade-offs and implementation boundaries.
+- **Progress:** Global memory instructions, the task-journal recovery workflow, gameplay-logic separation guidance, and archive history were read. No dedicated audio-listener workflow exists.
+- **Findings:** `Assets/Game/Scenes/Client.unity` contains an enabled `AudioListener` on `Main Camera`; it also contains a disabled listener on `ClientVehicleTestCamera`. `Assets/Game/Scenes/Map.unity` contains another enabled listener on `GameplayCamera`. The menu camera is included in `MainMenu.mainMenuObjects` and `MenuLoadingScreenManager` attempts to disable it before gameplay, but additive scene loading and asynchronous return transitions can overlap the cameras. `ClientVehicleTestAudioRouting` globally disables listeners only while the client vehicle test mode is enabled, so it is not a production ownership solution. `AudioManager` owns playback/pooling and has no listener-routing responsibility.
+- **Decision:** Recommend one persistent dedicated listener anchor with a focused `AudioListenerRouter` owner. It should follow an explicitly registered active camera in `LateUpdate`, switch targets at menu/gameplay lifecycle boundaries, and leave all camera objects without `AudioListener` components. Do not put camera ownership into `AudioManager` or `CameraSync`; they have different responsibilities.
+- **Result:** Provided three Unity-specific solution options and trade-offs in the response; no implementation or scene assets were changed.
+- **Validation:** Static YAML/script inspection completed; `git status --short` confirmed only pre-existing working-tree changes plus this journal entry. Unity runtime/PlayMode validation was not applicable because implementation was not requested.
+- **Limitations:** The exact runtime overlap window still needs confirmation in the Unity Profiler/Console after implementation; the recommendation is based on serialized scene state and transition code.
+- **Completed:** 2026-11-09.
+- **Status:** COMPLETED
+
+## Task: Implement single persistent Unity audio listener
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-09
+- **User request:** Implement the recommended `AudioListenerRoot` solution so the project always has exactly one active audio listener.
+- **Scope:** Add a focused listener-routing owner, wire it to menu and gameplay camera lifecycle, remove camera-owned listeners including test-camera conflicts, and preserve existing audio playback responsibilities and unrelated working-tree changes.
+- **Acceptance criteria:** Exactly one listener is enabled in the active client setup; the listener follows the menu camera and gameplay camera; transitions do not re-enable duplicate listeners; focused static validation and available Unity compilation checks pass.
+- **Progress:** Re-read global instructions, task-journal recovery, gameplay ownership guidance, and the existing journal after the previous turn was interrupted. The prior analysis identified enabled listeners in `Client.unity` and `Map.unity`, plus a test-only global listener suppressor.
+- **Changes:** Added `Assets/Game/Scripts/Audio/AudioListenerRoot.cs` and its `.meta`, then added one `AudioListenerRoot` scene object to `Client.unity` with the menu camera as its initial target. The focused owner keeps one listener enabled, disables any other listeners on scene load, and synchronizes its transform to the registered camera in `LateUpdate`. Removed listeners from `Client.unity`'s menu/test cameras and `Map.unity`'s gameplay camera, including the obsolete test routing component. Menu activation, gameplay scene loading (client and host/server callback), and editor vehicle test setup now register their active camera target. Documented the ownership boundary in `docs/codex-game/audio-presentation.md`.
+- **Validation:** `git diff --check` passed. Static YAML scan found exactly one `AudioListener` declaration under `Assets/Game/Scenes` (`Client.unity` root only), zero in `Map.unity`, zero old test-routing scene references, and two gameplay target registration call sites. Unity Editor automatically rebuilt `Library/ScriptAssemblies/Assembly-CSharp.dll`; the compiled assembly contains `AudioListenerRoot` and no new listener-related compiler error was found.
+- **Limitation:** Full PlayMode/batch validation was not run because the project Unity Editor is already open; the background-testing workflow forbids a concurrent batch run. The existing Unity log contains an unrelated historical `CloseRangeProjectilePlayModeTests` `VehicleRoot` compiler error, outside this audio task.
+- **Result:** The client now owns one dedicated listener object that follows menu, gameplay, and editor test cameras; camera-owned listener components no longer create duplicate-listener warnings.
+- **Completed:** 2026-11-09.
+- **Status:** COMPLETED
+
+## Task: Add runtime diagnostics for IA_L2 Colossus hit freeze
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-10
+- **User request:** Add diagnostics for the recurring freeze when a projectile hits `IA_L2_Colossus`; wait for the user to start the game and reproduce the hitch before analyzing the captured runtime data.
+- **Scope:** Add opt-in, low-noise diagnostics around projectile hit handling, impact-surface correction, particle/impact FX playback, physics synchronization, and frame-time spikes. Do not change combat behavior or require stopping the user's Unity Editor.
+- **Acceptance criteria:** Diagnostics can be enabled for a user-run reproduction, identify whether the hitch is in particles, mesh-collider correction, physics synchronization, or another hit-processing segment, and write actionable output that can be reviewed after the reproduction.
+- **Progress:** Global memory instructions, task-journal recovery, gameplay-logic separation, and background Unity testing workflows were read. No repository search or implementation edit has been performed yet for this task.
+- **Findings:** The existing diagnostics system is enabled by default in the Unity Editor fallback, records frame spikes over `50 ms`, writes JSONL to `diagnostics/logs`, exposes HTTP snapshots on port `8765`, and already has `Projectile.ImpactSurface.Resolve` profiling from the previous investigation. It did not yet separate particle playback, pool spawn, mesh raycasts, physics synchronization, or the target robot name.
+- **Ownership decision:** Keep the instrumentation at the existing projectile, impact-FX, and `VehicleColliderRegistry` owners; extend the existing diagnostics pipeline instead of adding gameplay state or a second capture manager.
+- **Changes:** Added scopes for live-hit handling, impact-FX spawn/play, particle playback, target-specific visual-surface resolution, mesh-collider raycasts, and `Physics.SyncTransforms`. The target-specific scope includes the runtime `VehicleRoot` name, so `IA_L2_Colossus` can be isolated in the client top-scope report.
+- **Changes:** Kept particle/target presentation scopes in the `client` group, kept mesh physics scopes in `physics`, and added `/diagnostics/top/physics` and `/diagnostics/top/render` HTTP views for the reproduction.
+- **Validation:** `git diff --check` passed; focused scope/brace assertions passed. The Unity Editor is already open on this project, so a concurrent batch compile/test was intentionally not started. The existing `Assembly-CSharp.dll` predates the latest external edits; the next Editor refresh or user run must provide the final compiler confirmation.
+- **Runtime handoff:** Wait for the user to launch the game and confirm readiness. Then check `/diagnostics/health`, capture baseline `/diagnostics/current`, ask the user to reproduce one `IA_L2_Colossus` hit, and immediately collect `/diagnostics/frame-spikes?seconds=10`, `/diagnostics/top/client?seconds=10`, `/diagnostics/top/physics?seconds=10`, and `/diagnostics/top/render?seconds=10` plus the current JSONL session.
+- **Baseline capture:** Diagnostics is running at `127.0.0.1:8765`, session `20261109-165942`, with a clean baseline: `9.199 ms` current frame, `21.531 ms` max over the initial 10-second window, and no hit/impact scopes recorded yet.
+- **Next step:** The user is now reproducing one `IA_L2_Colossus` hit; collect the four endpoint snapshots and JSONL immediately after the reported hitch.
+- **Capture result:** The reproduction produced client frame spikes of `265–332 ms`. `Projectile.ImpactSurface.Resolve.IA_L2_Colossus(Clone)` reached `318.572 ms` max across six samples; the generic physics resolver reached `318.54 ms` max and `2026.886 ms` total over 13 samples. `Client.Projectile.ImpactFx.Spawn` and `Projectile.ImpactFx.Play.IA_L2_Colossus(Clone)` inherited the same stall because they contain the surface lookup.
+- **Root-cause boundary:** Particle playback and decal/projector setup were not the source: no particle/projector scope appeared as a dominant suspect, while physics resolver time dominated. GC did not change during the critical spike, ping was `27 ms`, and packet loss was `0%`. The earlier per-collider `Physics.SyncTransforms()` optimization was therefore insufficient; the remaining bottleneck is the full visual mesh-surface correction/traversal for the Colossus.
+- **Result:** Runtime diagnostics successfully distinguished FX from hit-surface processing and confirmed the freeze is in `VehicleColliderRegistry` visual-surface resolution, with `IA_L2_Colossus` the worst case. No gameplay behavior was changed during this diagnostic task.
+- **Validation:** HTTP endpoints and the session JSONL were read immediately after reproduction; the critical spike was recorded with `topSuspect: Projectile.ImpactSurface.Resolve.IA_L2_Colossus(Clone)`.
+- **Limitation:** The capture identifies the resolver boundary, but the current per-call threshold did not isolate whether Colossus time is dominated by mesh bounds access, mesh traversal, or a sub-threshold individual raycast. A focused optimization of the resolver is the next separate implementation task.
+- **Completed:** 2026-11-10.
+- **Status:** COMPLETED
+- **Next steps:** Validate compilation/static scope placement, then wait for the user's game reproduction before reading the live diagnostics endpoint and JSONL session.
+
+## Task: Restrict hit raycasts to active armor colliders
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-10
+- **User request:** Replace the expensive all-visual-mesh impact lookup with a direct hit ray/armor resolution that ignores disabled death/destruction colliders and considers only the armor collider actually hit.
+- **Scope:** Inspect projectile collision selection, registered vehicle armor data, disabled death colliders, and impact presentation attachment. Preserve authoritative damage/armor rules and visual impact placement while removing unrelated visual/death collider work from the hit path.
+- **Acceptance criteria:** Disabled death colliders cannot participate in live hit raycasts; a projectile resolves the struck armor zone without scanning all visual meshes; the IA_L2 Colossus freeze path avoids the expensive visual-surface resolver; focused static/compile validation is recorded; unrelated working-tree changes remain untouched.
+- **Progress:** The runtime capture showed `265–332 ms` frame spikes, with `Projectile.ImpactSurface.Resolve.IA_L2_Colossus` reaching `318.572 ms`; particles and projectors were not dominant. The previous visual-surface sync optimization did not remove the bottleneck.
+- **Findings:** `Projectile` was treating any `Default` collider under a `VehicleRoot` as a live vehicle hit, while both predicted and authoritative impact presentation called the full visual mesh-surface resolver. `DeathLogic` registers detached visual mesh colliders for cosmetic death handling, so that resolver could activate and raycast colliders that should never participate in combat.
+- **Changes:** Live projectile candidate selection now accepts only `VehicleColliderRegistry` armor entries and non-vehicle world blockers; robot non-armor colliders are skipped in both embedded overlap and segment ray paths. Robot impact attachment uses the exact struck armor collider, `PooledImpactFx` and authoritative RPC attachment no longer resolve robot visual meshes, and non-armor `ServerHitResolver` results cannot produce robot damage.
+- **Documentation:** Updated `docs/codex-game/weapons-damage.md` to record that visual mesh correction is reserved for explicit non-robot proxy surfaces and is not part of robot hit resolution.
+- **Validation:** `git diff --check`, focused brace/symbol checks, and robot-impact resolver call checks passed. The open Unity Editor rebuilt `Assembly-CSharp.dll` successfully; the current `Editor.log` contains no `CS` compile errors. Existing FishNet and URP warnings are unrelated.
+- **Runtime limitation:** The post-change `IA_L2_Colossus` reproduction has not yet been run; the next game run should confirm the frame hitch is gone and that impacts still follow the struck armor collider. If a hitch remains, diagnostics should now point to a different subsystem because robot hits no longer enter `Projectile.ImpactSurface.Resolve`.
+- **Result:** The confirmed freeze path was removed from robot hit processing. Disabled death/destruction colliders are no longer re-enabled or mesh-raycast, and damage is resolved only from the armor collider returned by the projectile ray.
+- **Completed:** 2026-11-10.
+- **Status:** COMPLETED

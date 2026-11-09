@@ -70,7 +70,6 @@ namespace Game.Scripts.Diagnostics
             DiagnosticsConfig config = DiagnosticsConfig.LoadRuntime();
             if (!config.IsEnabled)
             {
-                UnityEngine.Debug.Log("[Diagnostics] Disabled: " + config.StateReason);
                 return;
             }
 
@@ -141,8 +140,6 @@ namespace Game.Scripts.Diagnostics
         {
             if (config == null || !config.IsEnabled)
             {
-                string reason = config != null ? config.StateReason : "missing config";
-                UnityEngine.Debug.Log("[Diagnostics] Disabled: " + reason);
                 enabled = false;
                 return;
             }
@@ -164,16 +161,12 @@ namespace Game.Scripts.Diagnostics
                 _jsonlWriter = new DiagnosticsJsonlWriter(_sessionId);
             }
 
-            bool httpStarted = false;
             if (_config.EnableHttpServer)
             {
                 _httpServer = new DiagnosticsHttpServer(this, _config);
-                httpStarted = _httpServer.Start();
+                _httpServer.Start();
             }
 
-            string httpStatus = _config.EnableHttpServer ? (httpStarted && _httpServer != null ? _httpServer.Url : "unavailable") : "disabled";
-            string logPath = _jsonlWriter != null ? _jsonlWriter.FilePath : "disabled";
-            UnityEngine.Debug.Log("[Diagnostics] Enabled: " + _config.StateReason + ". HTTP " + httpStatus + ". JSONL " + logPath);
         }
 
         private void Update()
@@ -657,16 +650,6 @@ namespace Game.Scripts.Diagnostics
 
             if (!_loggedEditorClientFramePacing)
             {
-                UnityEngine.Debug.Log("[Diagnostics] Editor frame pacing guard (" + GetMode(_networkManager) + "): targetFrameRate="
-                                      + Application.targetFrameRate
-                                      + ", configuredTargetFrameRate="
-                                      + configuredTargetFrameRate
-                                      + ", renderFrameInterval="
-                                      + OnDemandRendering.renderFrameInterval
-                                      + ", vSyncCount="
-                                      + QualitySettings.vSyncCount
-                                      + ", runInBackground="
-                                      + Application.runInBackground);
                 _loggedEditorClientFramePacing = true;
             }
 #endif
@@ -851,10 +834,6 @@ namespace Game.Scripts.Diagnostics
 
             if (!_loggedEditorBackgroundPlayerLoopKeepAlive)
             {
-                UnityEngine.Debug.Log("[Diagnostics] Editor background PlayerLoop keepalive (" + GetMode(_networkManager) + "): keepAliveFrameRate="
-                                      + keepAliveFrameRate
-                                      + ", configuredTargetFrameRate="
-                                      + configuredFrameRate);
                 _loggedEditorBackgroundPlayerLoopKeepAlive = true;
             }
         }
@@ -884,7 +863,6 @@ namespace Game.Scripts.Diagnostics
             UnityEngine.Scripting.GarbageCollector.CollectIncremental((ulong)budgetNanoseconds);
             if (!_loggedEditorGcSmoothing)
             {
-                UnityEngine.Debug.Log("[Diagnostics] Editor incremental GC smoothing: budgetNs=" + budgetNanoseconds);
                 _loggedEditorGcSmoothing = true;
             }
 #endif

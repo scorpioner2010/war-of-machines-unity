@@ -73,7 +73,6 @@ namespace Game.Scripts.Diagnostics
                     Name = "DiagnosticsHttpServer"
                 };
                 _thread.Start();
-                UnityEngine.Debug.Log("[Diagnostics] HTTP server listening on " + Url);
                 return true;
             }
             catch (Exception ex)
@@ -192,6 +191,16 @@ namespace Game.Scripts.Diagnostics
             if (path == "/diagnostics/top/server")
             {
                 return _manager.BuildTopScopesJson(DiagnosticsCategories.Server, seconds);
+            }
+
+            if (path == "/diagnostics/top/physics")
+            {
+                return _manager.BuildTopScopesJson(DiagnosticsCategories.Physics, seconds);
+            }
+
+            if (path == "/diagnostics/top/render")
+            {
+                return _manager.BuildTopScopesJson(DiagnosticsCategories.Render, seconds);
             }
 
             if (path == "/diagnostics/top/editor")
