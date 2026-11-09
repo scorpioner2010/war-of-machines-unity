@@ -10,14 +10,14 @@ namespace Game.Editor.Tests
     {
         private static readonly string[] ProductionPrefabPaths =
         {
-            "Assets/Game/Content/Robots/IA/IA_L1_Starter/IA_L1_Starter.prefab",
-            "Assets/Game/Content/Robots/IA/IA_L2_Colossus/IA_L2_Colossus.prefab",
-            "Assets/Game/Content/Robots/IA/IA_L2_Guardian/IA_L2_Guardian.prefab",
-            "Assets/Game/Content/Robots/IA/IA_L2_Scout/IA_L2_Scout.prefab",
-            "Assets/Game/Content/Robots/NV/NV_L1_Starter/NV_L1_Starter.prefab",
-            "Assets/Game/Content/Robots/NV/NV_L2_Colossus/NV_L2_Colossus.prefab",
-            "Assets/Game/Content/Robots/NV/NV_L2_Guardian/NV_L2_Guardian.prefab",
-            "Assets/Game/Content/Robots/NV/NV_L2_Scout/NV_L2_Scout.prefab"
+            "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/IA_L1_Starter.prefab",
+            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Colossus/IA_L2_Colossus.prefab",
+            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Guardian/IA_L2_Guardian.prefab",
+            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Scout/IA_L2_Scout.prefab",
+            "Assets/Game/Content/Robots/NovaSyndicate/NV_L1_Starter/NV_L1_Starter.prefab",
+            "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Colossus/NV_L2_Colossus.prefab",
+            "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Guardian/NV_L2_Guardian.prefab",
+            "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Scout/NV_L2_Scout.prefab"
         };
 
         [Test]
