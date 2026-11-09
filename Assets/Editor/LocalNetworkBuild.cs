@@ -15,8 +15,10 @@ namespace Game.Editor
         private const string ClientExecutableName = "WarOfMachinesClient.exe";
         private const string ServerBuildRequestFileName = "server-build-request.txt";
         private const string ServerBuildResultFileName = "server-build-result.txt";
+        private const string ClientBuildRequestFileName = "client-build-request.txt";
+        private const string ClientBuildResultFileName = "client-build-result.txt";
 
-        private static bool externalServerBuildInProgress;
+        private static bool externalBuildInProgress;
 
         private static readonly string[] ServerScenes =
         {
@@ -34,6 +36,8 @@ namespace Game.Editor
         {
             EditorApplication.update -= PollExternalServerBuildRequest;
             EditorApplication.update += PollExternalServerBuildRequest;
+            EditorApplication.update -= PollExternalClientBuildRequest;
+            EditorApplication.update += PollExternalClientBuildRequest;
         }
 
         [MenuItem("War Of Machines/Local Build/Windows Server")]
@@ -57,7 +61,7 @@ namespace Game.Editor
 
         private static void PollExternalServerBuildRequest()
         {
-            if (externalServerBuildInProgress || EditorApplication.isCompiling || EditorApplication.isUpdating)
+            if (externalBuildInProgress || EditorApplication.isCompiling || EditorApplication.isUpdating)
             {
                 return;
             }
@@ -95,7 +99,7 @@ namespace Game.Editor
                 return;
             }
 
-            externalServerBuildInProgress = true;
+            externalBuildInProgress = true;
             try
             {
                 BuildLocalServer();
@@ -115,16 +119,85 @@ namespace Game.Editor
             }
             finally
             {
-                externalServerBuildInProgress = false;
+                externalBuildInProgress = false;
+            }
+        }
+
+        private static void PollExternalClientBuildRequest()
+        {
+            if (externalBuildInProgress || EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                return;
+            }
+
+            string requestPath = Path.Combine(GetBuildsDirectory(), ClientBuildRequestFileName);
+            if (File.Exists(requestPath) == false)
+            {
+                return;
+            }
+
+            string buildToken;
+            try
+            {
+                buildToken = File.ReadAllText(requestPath).Trim();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Could not read the external client build request: {exception.Message}");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(buildToken))
+            {
+                TryDeleteFile(requestPath);
+                return;
+            }
+
+            try
+            {
+                File.Delete(requestPath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Could not claim the external client build request: {exception.Message}");
+                return;
+            }
+
+            externalBuildInProgress = true;
+            try
+            {
+                BuildLocalClient();
+                WriteExternalBuildResult(ClientBuildResultFileName, buildToken, "SUCCESS", string.Empty);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                try
+                {
+                    WriteExternalBuildResult(ClientBuildResultFileName, buildToken, "FAILURE", exception.Message);
+                }
+                catch (Exception resultException)
+                {
+                    Debug.LogException(resultException);
+                }
+            }
+            finally
+            {
+                externalBuildInProgress = false;
             }
         }
 
         private static void WriteExternalServerBuildResult(string buildToken, string status, string message)
         {
+            WriteExternalBuildResult(ServerBuildResultFileName, buildToken, status, message);
+        }
+
+        private static void WriteExternalBuildResult(string resultFileName, string buildToken, string status, string message)
+        {
             string buildsDirectory = GetBuildsDirectory();
             Directory.CreateDirectory(buildsDirectory);
 
-            string resultPath = Path.Combine(buildsDirectory, ServerBuildResultFileName);
+            string resultPath = Path.Combine(buildsDirectory, resultFileName);
             string temporaryResultPath = resultPath + ".tmp";
             string safeMessage = (message ?? string.Empty)
                 .Replace('\r', ' ')
