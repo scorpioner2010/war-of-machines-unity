@@ -3097,7 +3097,7 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Acceptance criteria:** Identify existing tools, explain what they can measure, and note any important gaps or usage limitations.
 - **Progress:** Global memory, project journal, and journal-recovery workflow read. No dedicated performance-diagnostics workflow exists in the archive.
 
-### Completion checkpoint � 2026-11-06
+### Completion checkpoint — 2026-11-06
 
 - **Discovery:** The project contains the Live Diagnostics Bridge under `Assets/Game/Scripts/Diagnostics`, configured in both `Assets/Game/Scenes/Client.unity` and `Assets/Game/Scenes/Server.unity`, plus the F9 runtime overlay and `game-diag.cmd` CLI.
 - **Capabilities:** It samples client FPS/frame time and frame p95/max, profiler scope timings, server tick p95/max, entities/projectiles/bots/players, memory/GC counters, ping/jitter/loss, network throughput, RPC/event summaries, and writes JSONL sessions under `diagnostics/logs`.
@@ -3106,4 +3106,244 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** Documentation, runtime code, scene wiring, CLI, and existing logs inspected. `game-diag.cmd health` was attempted but timed out because no diagnostics HTTP listener was available at the time; no implementation files were changed.
 - **Result:** Confirmed that the game has an in-game and external diagnostics system for investigating lag; usage instructions are in `docs/diagnostics.md`.
 - **Remaining limitation:** Live CLI queries require the game/diagnostics bridge to be running; saved JSONL logs remain available for offline analysis.
+- **Status:** COMPLETED
+
+## Task: Deep runtime code performance optimization audit
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-07
+- **User request:** Inventory the game's scripts, prioritize real-time systems such as robots, aiming, combat, movement, networking, and HUD, then optimize the code deeply without changing functionality or breaking existing behavior.
+- **Scope:** Build a complete ordered script inventory; inspect ownership, hot paths, allocations, update loops, physics, networking, AI, aiming, projectile, UI, and supporting systems; apply only evidence-based, behavior-preserving optimizations; add or update focused regression coverage where needed.
+- **Acceptance criteria:** The inventory is recorded; high-impact safe optimizations are implemented in focused batches; existing public/serialized behavior and network authority remain unchanged; each batch has targeted validation; Unity/runtime limitations are explicitly recorded.
+- **Progress:** Global instructions, the project journal, task-journal recovery, gameplay-logic separation, and background Unity-testing workflows were read. No dedicated performance-optimization workflow exists in the shared archive. The repository contains 1,472 C# files: 254 under `Assets/Game` (241 runtime, 11 tests, 2 editor, and 1 scene script) plus 1,218 third-party/demo scripts that will be inventoried but not rewritten without a separate owner request. Saved diagnostics show historical `Client.Projectile.Update` spikes up to 641.454 ms with 5–7 projectile updates, making projectile collision and impact presentation the first evidence-based optimization target.
+- **Discovery:** `Projectile.Update` performs ballistic math, per-frame `Physics.RaycastNonAlloc`, and on impact can call the registered vehicle impact-surface resolver; that resolver may raycast detachable mesh colliders and call `Physics.SyncTransforms`. The code is pooled and currently reports zero allocations in the saved spike samples, so the first changes must target repeated CPU/physics work rather than allocation-only micro-optimizations.
+- **Implementation checkpoint:** Added a frame-local cache for repeated robot impact-surface resolution in `VehicleColliderRegistry` and reused `BallisticProjectileMath.TravelSegment.Distance` in `Projectile.Update` instead of calculating the same vector magnitude a second time. Hit selection, surface fallback, projectile pooling, and network callbacks remain unchanged.
+- **Implementation checkpoint:** Added configuration-aware precomputed ground-ray offsets to `VehicleGroundAlignmentController`, removing per-frame `Mathf.Sin`/`Mathf.Cos` work for every alignment target while preserving ray order, radius, count, and serialized behavior.
+- **Implementation checkpoint:** Replaced impact-surface candidate distance comparisons with squared distances in `VehicleColliderRegistry`; no selected collider, renderer, normal, or position is changed because square-root is monotonic for non-negative distances.
+- **Implementation checkpoint:** Prevented `VehicleColliderRegistry` from raycasting a mesh collider twice when it is present in both the registered `ImpactVisualPart` list and the fallback mesh-collider list; separately registered colliders still use the fallback pass, and registration invalidates the frame cache.
+- **Changed files:** `docs/codex-game/script-performance-inventory.md`, `Assets/Game/Scripts/Gameplay/Projectiles/Projectile.cs`, `Assets/Game/Scripts/Gameplay/Robots/VehicleColliderRegistry.cs`, and `Assets/Game/Scripts/Gameplay/Robots/VehicleGroundAlignmentController.cs`.
+- **Validation checkpoint:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo` and `dotnet build Game.PlayMode.Tests.csproj --no-restore --nologo` passed with 0 errors; the same 4 existing dependency/obsolete-API warnings remain in the main assembly.
+- **Validation checkpoint:** Focused Unity runs passed: `CloseRangeProjectilePlayModeTests` 5/5 and `CombatParticleEffectsPlayModeTests` 9/9. The full PlayMode run passed 67 tests, with 7 unrelated existing/environment failures in 10v9 readiness, camera color, legacy dispersion UI, and match battle-end setup.
+- **Result:** The complete ordered inventory is recorded, and the first safe runtime optimization batch is complete across projectile distance reuse, robot impact-surface caching/deduplication, squared-distance selection, and ground-ray offset precomputation. No third-party/demo scripts were rewritten.
+- **Remaining limitation:** No sustained post-change in-match profiler capture was available in this CLI pass; the historical diagnostics baseline predates the changes. The full-suite failures remain outside the touched code and require a separate runtime/environment investigation.
+- **Status:** COMPLETED — 2026-11-07
+
+## Task: Audit runtime component lookup and LINQ usage
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-07
+- **User request:** Check whether the game uses `GetComponent`, `FindObject`, related scene/component lookup methods, or LINQ.
+- **Scope:** Search the repository, separate owned runtime code from tests/editor/third-party code, identify exact files and call sites, and report optimization-relevant findings without modifying implementation files.
+- **Acceptance criteria:** All relevant lookup and LINQ patterns are inventoried with file references and categorized by risk/frequency; no code changes are made unless explicitly requested.
+- **Progress:** Global instructions, workflow index/history, and the existing task journal were read. No dedicated lookup/LINQ audit workflow exists.
+- **Discovery:** Across 1,472 C# files there are 244 component-lookup matching lines in 92 files. In owned `Assets/Game/Scripts` production code, there are 18 matching lines in 11 files; the remaining owned matches are in tests or editor tooling. The production calls are mainly `Awake`, startup, pooling, destruction, UI wiring, or dynamic icon creation rather than the robot movement/aim `Update` loops.
+- **Discovery:** Production scene/object lookup is limited to `FindFirstObjectByType<Camera>()` in `Assets/Game/Scripts/Rendering/DecalWindowsSmokeCapture.cs` and `Resources.FindObjectsOfTypeAll<GameObject>()` in `Assets/Game/Scripts/UI/Lobby/GameResultUI.cs`. Test controllers contain additional `FindAnyObjectByType`, `FindObjectsByType`, and `Camera.main` calls.
+- **Discovery:** `Assets/Game` contains no `using System.Linq` or `System.Linq.` references. LINQ is present in third-party/runtime dependencies, including FishNet and UniRx, plus editor tooling; apparent `.Max`, `.Min`, `.Contains`, `.ToArray`, and `.Join` calls in game code are math, collection, array, or string APIs rather than confirmed LINQ operators.
+- **Discovery:** Two owned runtime `AddComponent` calls remain: `GameResultUI` creates its scene UI component when absent, and `GunCrosshair` creates a `CanvasGroup` while resolving reticle groups. Both are setup paths, not per-frame loops, but they conflict with the project rule preferring serialized/configured components.
+- **Result:** Yes, the repository uses `GetComponent`/`GetComponents`, limited `Find...`/`Resources.Find...`, and runtime `AddComponent`; owned gameplay code does not use LINQ. No implementation files were changed because this request was an audit only.
+- **Remaining limitation:** This pass inventories call sites and context but does not replace the setup lookups or third-party LINQ; any conversion should be a separate focused change with Unity regression validation.
+- **Status:** COMPLETED — 2026-11-07
+
+## Task: Full War of Machines performance audit and safe optimization
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-07
+- **User request:** Perform a repository-wide Senior Unity Performance Engineer audit and safe optimization of the War of Machines game without changing functionality, networking, balance, robot behavior, aiming, weapons, AI, HUD, or scenes.
+- **Scope:** Inspect every C# script; inventory lifecycle methods, physics/network/component lookup patterns, searches, allocations, LINQ, pooling risks, and optimization priority; establish only verifiable baseline metrics; optimize justified owned runtime hot paths in focused batches; validate compilation and available tests; produce complete inventory, audit report, before/after measurements, changed-file list, unresolved risks, and third-party limitations.
+- **Acceptance criteria:** Every repository C# script is categorized and audit-statused; no invented profiler or test results; changes preserve serialized behavior, authority, ordering, precision, and scene/prefab contracts; focused and broad validation is attempted where tooling permits; journal records discoveries, decisions, changes, validation, and limitations.
+- **Discovery:** The working tree already contained unrelated-to-this-entry changes in `Projectile.cs`, `VehicleColliderRegistry.cs`, `VehicleGroundAlignmentController.cs`, and `TASK.md`; they are preserved as pre-existing state. No destination Unity Editor process was confirmed, but the diagnostics bridge was unavailable and `game-diag.cmd health` timed out after reporting no live API at `127.0.0.1:8765-8774`; no FPS, CPU, GC, physics, network, entity-count, or profiler-scope baseline is available from this CLI pass.
+- **Discovery:** Generated `Assets/Game/Scripts`/third-party static inventory now covers all 1,472 `Assets/**/*.cs` files; `Library` contains 6,659 generated C# files and is excluded from source ownership. Categories are production 240, tests 15, editor 15, owned support/demo 37, and third-party 1,165. Static totals are 245 component-lookup matches, 50 Find/search matches, 131 AddComponent matches, and 70 confirmed LINQ import/Enumerable matches.
+- **Change:** Added reproducible `tools/GenerateScriptPerformanceInventory.ps1` and regenerated `docs/codex-game/script-performance-inventory.md` with the requested lifecycle, physics, networking/RPC, lookup, search, AddComponent, LINQ, allocation-flag, priority, and audit-status columns for all source scripts.
+- **Change:** In `GameplayMapHud.cs`, added object-ID indexing for tracked map markers and reused inactive mini/full marker instances instead of destroying/reinstantiating them on visibility snapshots; active marker lookup remains identity- and order-equivalent.
+- **Change:** In `SpectatorVehicleHudPresenter.cs`, gated unchanged HP/name TMP writes and their interpolated string creation while preserving target rebinding and displayed values.
+- **Change:** In `VehicleColliderRegistry.cs`, reused the main-thread activation buffer for temporary inactive-parent activation during mesh raycasts; activation order, `SyncTransforms`, collider state, and finally restoration remain unchanged.
+- **Next steps:** Audit owned P0/P1 runtime hot paths by focused domain, distinguish safe cache/allocation changes from behavior-sensitive code, then validate each justified batch with builds/tests and update this entry.
+
+### Completion checkpoint — 2026-11-07
+
+- **Audit result:** Completed static inventory and ownership review for all 1,472 `Assets/**/*.cs` files. Third-party/demo source remains classified but unchanged; the full report is `docs/codex-game/performance-audit-report.md` and the complete table is `docs/codex-game/script-performance-inventory.md`.
+- **Safe changes:** Completed the map marker object-ID index and marker reuse pool, spectator HP/name write gating, and reusable inactive-parent activation buffer. No `GetComponent*`, `Find*`, LINQ, network/RPC, scene, prefab, authority, balance, AI, aiming, weapon, or HUD behavior contract was mechanically changed.
+- **Measured baseline:** Live diagnostics remained unavailable at `127.0.0.1:8765-8774`; no FPS, CPU, GC, physics, network, entity-count, or matched before/after profiler numbers are claimed. Historical logs are documented as context only.
+- **Compilation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `Game.PlayMode.Tests.csproj` all build with 0 errors. Existing `System.Net.Http` conflict and editor/dependency obsolete-API warnings remain.
+- **Unity validation:** Focused PlayMode passed projectile 5/5, combat particles 9/9, and spectator visibility 2/2. Full EditMode passed 21/21. Full PlayMode passed 67 and failed 7 pre-existing/environment cases. Focused 10v9 reproduced 1 host/client-readiness failure. `git diff --check` passed.
+- **Deliverables:** Added the reproducible inventory generator and performance audit report; updated HUD ownership documentation with the new marker-pooling and text-write contracts.
+- **Remaining limitations:** No runtime A/B profiler capture, no resolved 10v9 host/client readiness, no safe basis to migrate setup-time lookup fallbacks, and no third-party modifications.
+- **Result:** COMPLETED — 2026-11-07.
+
+## Task: Count current component lookups
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-07
+- **Scope:** Count current `GetComponent*` and `TryGetComponent` occurrences across source, owned scripts, and owned production runtime.
+- **Validation:** Static regex count over all 1,472 `Assets/**/*.cs` source files; no implementation files changed.
+- **Result:** 246 occurrences on 245 matching lines in 92 source files; owned `Assets/Game/Scripts` contains 39 occurrences, while owned production excluding tests/editor/testing contains 18 occurrences in 11 files.
+
+## Task: Full heavy-method audit
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-07
+- **User request:** Analyze the entire project and provide a complete list of methods that may be heavy for CPU, physics, GC, rendering, UI, networking, startup, or scaling.
+- **Scope:** Statistically scan all 1,472 `Assets/**/*.cs` files, inspect owned production candidates in context, classify third-party/test/editor candidates separately, rank methods by likely runtime cost and call frequency, and distinguish static evidence from profiler-confirmed facts.
+- **Acceptance criteria:** The result includes path, line, method, cost mechanism, likely frequency, risk, ownership, recommended next action, and unresolved profiler requirements; no performance numbers are invented and no implementation changes are made unless explicitly requested.
+
+### Completion checkpoint — 2026-11-07
+
+- **Coverage:** Scanned all 1,472 `Assets/**/*.cs` files and generated 4,983 method-level heavy-operation candidates with path, line, method, ownership, static evidence, frequency candidate, risk, and next action.
+- **Owned result:** 917 production candidates and 31 owned support/demo candidates were separated from test/editor/third-party code. The ranked list contains 30 owned P0 and 137 owned P1 static candidates; these are review priorities, not profiler measurements.
+- **Highest-risk production areas:** projectile per-frame collision, camera collision, visibility LOS, server hit resolution, robot ground alignment, hover target raycast, weapon aim raycast, UI list/map construction, and diagnostics/UI logging allocations.
+- **Physics qualification:** `RaycastNonAlloc` paths avoid result-array GC but remain CPU/physics candidates. `Physics.SyncTransforms`, multiple raycasts per robot/projectile, and mesh-collider activation/raycast paths require matched profiling before refactor.
+- **Deliverable:** Added `tools/GenerateHeavyMethodAudit.ps1`, ranked owned report `docs/codex-game/heavy-method-audit.md`, complete all-source table `docs/codex-game/heavy-method-audit-all.md`, and linked both from `docs/codex-game/performance-audit-report.md`.
+- **Validation:** Generator completed successfully over all 1,472 files. No gameplay implementation files were changed and no FPS/CPU/GC/physics/network numbers are claimed.
+-
+## Task: Heavy-method remediation options
+- **Status:** COMPLETED
+- **Remediation deliverable:** Added `docs/codex-game/heavy-method-remediation-options.md` with Tier A/B/C decisions, method-by-method safe/conditional/forbidden options, rollout batches, invariants, and focused validation matrix.
+- **Implementation status:** No gameplay, networking, prefab, scene, or third-party implementation files were changed in this options task; recommendations remain ready for measured domain batches.
+- **Validation:** Static source-context review completed; no FPS, CPU, GC, physics, network, or frame-time improvement is claimed.
+- **Started:** 2026-11-07
+- **User request:** Розписати, що саме і як можна безпечно виправити у важких методах усього проєкту без зміни логіки, мережевої поведінки, балансу, AI, HUD та сцен.
+- **Scope:** Підготувати план remediation для всіх категорій зі статичного аудиту: projectile/combat, robots/movement, aiming/turrets, AI, networking, visibility, HUD/UI, audio/VFX, bootstrap та diagnostics/editor.
+- **Acceptance criteria:** Для кожної значущої групи визначити безпечні, умовні та заборонені зміни; вказати інваріанти поведінки, порядок rollout і focused validation. У цьому етапі код гри не змінюється.
+- **Result:** COMPLETED — the project-wide static list is available with production ownership and profiler limitations separated.
+
+## Task: Implement behavior-preserving heavy-method remediation
+- **Status:** COMPLETED
+- **Implementation checkpoint:** Applied Tier A changes to `CameraCollision`, `FloatingDamageText`, `RobotEngineAudio`, `BotLineOfFireChecker`, `MatchVisibilityService`, and `GameplayPlayerListHud` without changing physics query parameters, hit selection, network scheduling, authority, or serialized scene values.
+- **Optimization result:** Added stable transform/anchor caching, one-origin reuse for multi-probe bot LOS, geometric visibility snapshot growth, participant/entry pre-sizing, and O(1) player-list indexes with duplicate/stale fallback behavior.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `Game.PlayMode.Tests.csproj` build with 0 errors; `git diff --check` passes. Unity batch imported/compiled scripts but emitted no test-results XML because another Unity process already has the project open; no PlayMode pass is claimed.
+- **Remaining limitations:** No live CPU/GC/physics/network/frame-time measurements are available. Physics scheduling/query changes, pooling, `Physics.SyncTransforms`, RPC/tick changes, and third-party changes remain intentionally deferred.
+- **Started:** 2026-11-07
+- **User request:** Implement the documented heavy-method remediation options without changing gameplay, networking, authority, balance, AI, aim, weapon, HUD, scene, or third-party behavior.
+- **Scope:** Apply only measured Tier A changes first: stable-reference caching, reusable buffers/collections, diagnostics gating, unchanged-value write gating, and safe setup pre-sizing. Defer physics scheduling, query semantics, pooling, and network behavior changes until focused validation proves equivalence.
+- **Acceptance criteria:** Each changed domain has a focused audit, implementation, compilation/test validation, and a journal checkpoint. No profiler numbers are claimed without runtime captures.
+
+## Task: Runtime profiling and autobattle optimization
+- **Status:** COMPLETED
+- **Started:** 2026-11-07
+- **User request:** Запустити гру, увійти тестовим користувачем, увімкнути автобій і провести фактичне Unity runtime-профілювання під час тривалого бою.
+- **Scope:** Зібрати baseline і sustained-run метрики, використати наявну діагностику та Unity Profiler, знайти реальні CPU/GC/physics/network hotspots, внести лише поведінково-еквівалентні оптимізації та повторити вимірювання.
+- **Acceptance criteria:** Не вигадувати метрики; мати фактичні before/after дані або чітко зафіксувати блокування; перевірити компіляцію, focused/full PlayMode за доступності та `git diff --check`; оновити звіт і список обмежень.
+- **Runtime checkpoint:** Запущено наявний Client build з `-enableDiagnostics` на `8765` і локальний Server build з `-enableDiagnostics` на `8770`. Idle capture о `2026-11-07T20:07:14+08:00`: client `500.051 FPS`, `2.000 ms` frame, `2.002 ms` p95, `100.794 MB`; server tick `0.057 ms`, p95 `0.073 ms`, `0.096 ms` max, `0` active players, `6` active entities, `0` projectiles, `0` RPC/s. Це не є autobattle baseline.
+- **Current limitation:** Доступний сеанс не експонує Computer Use `node_repl`/`@oai/sky`; пароль і внутрішню login-форму не автоматизую через shell. Клієнт залишено відкритим і користувачу запропоновано вручну завершити login → robot → battle → autobattle, після чого знімається фактичний sustained capture.
+- **Runtime relaunch:** На запит користувача попередній client process зупинено, а новий Client build запущено о `2026-11-07T20:10:48+08:00` як PID `40060`, window `war-of-machines`, diagnostics session `20261107-121048` на `8765`. Server process і diagnostics на `8770` не перезапускалися.
+- **Failure analysis:** Ручний smoke test був недійсним через stale Client: `WarOfMachinesClient.exe`/`Assembly-CSharp.dll` мали timestamp `2026-10-30`, тоді як runtime source/scene були змінені `2026-11-07`, а server був перебудований окремо. API log підтвердив успішний login і запити `Players`, `UserVehicles`, `UserVehicleResearches`, але FishNet connection зупинився. Client diagnostics зафіксували `activeEntities 6 → 9` при `activeVisibleEntities 0`; це пояснює порожню сцену, але не є підставою для runtime-оптимізацій.
+- **Recovery:** Додано editor-only request bridge для client build у `Assets/Editor/LocalNetworkBuild.cs`. Через відкритий Editor Client успішно перебудовано о `2026-11-07T20:18:19+08:00`; нову пару запущено о `2026-11-07T20:19:10+08:00`: Client PID `34840`, Server PID `40188`, diagnostics sessions на `8765`/`8770` відповідають. Потрібен повторний ручний smoke test на свіжому build.
+- **Autobattle capture:** Користувач вручну увійшов, обрав робота, зайшов у бій і ввімкнув автопілот. Client session `20261107-121923` та Server session `20261107-121911` зняті у 60-секундному та 90-секундному вікнах (`Temp/autobattle-profile-20261107.json`, `Temp/autobattle-profile-20261107-followup.json`). Перший window: client average `260.437 FPS` / `3.955 ms`, server tick average `0.176 ms`, `1` player, `19` bots, `0–1` projectiles, `0%` packet loss. Follow-up: client average `486.020 FPS` / `2.068 ms`, server tick average `0.150 ms`, memory stable around `259.961 MB`, diagnostics spikes `[]` on both processes.
+- **Measured hotspot:** Єдиний періодично дорогий scope — `Client.Projectile.Update` (`13` samples, average `20.725 ms`) та `Server.Projectile.Update` (`18` samples, average `24.413 ms`) у першому вікні; у follow-up server scope з'явився лише `5` разів. `Camera.Controller.Update` мав average `0.604 ms` і нижчий за пороги. Це не sustained per-frame навантаження; impact path потребує окремого capture під активною стрільбою.
+- **Optimization decision:** Не знижував cadence projectile/AI/network, не міняв layer masks, hit ordering, authority, `Physics.SyncTransforms` або collision semantics. Поточні captures не підтверджують sustained lag, а ці зміни могли б зламати поведінку. Залишений кандидат для наступного matched capture — `VehicleColliderRegistry.TryRaycastMeshCollider` та impact-surface resolution.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj` і `Game.PlayMode.Tests.csproj` зібрані з `0` errors; `git diff --check` пройшов. Unity runtime compilation/build використано для свіжого client build до capture; повний matched PlayMode/A-B profiler comparison не заявляється.
+- **Result:** COMPLETED — фактичний autobattle capture виконано, sustained CPU/network lag signature не підтверджено, безпечні попередні оптимізації залишено, а behavior-sensitive projectile impact path не змінено без доказу еквівалентності.
+
+## Task: Complete heavy-method inventory refresh
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-07
+- **User request:** Пройтися по всьому коду і написати всі важкі методи, зокрема `GetComponent`, які є у скриптах гри.
+- **Scope:** Оновити повний статичний аудит усіх `Assets/**/*.cs`, відокремити production/test/editor/third-party, перелічити важкі Unity API, physics, networking, allocation, LINQ, search, UI та lifecycle-методи з шляхом, рядком, частотою/ризиком і статусом.
+- **Acceptance criteria:** Не вигадувати runtime-метрики; показати фактичні source-pattern counts, дати повний deliverable або посилання на нього, окремо позначити вже усунені, behavior-sensitive та third-party кандидати.
+- **Inventory result:** Оновлено скан усіх `1,472` C#-файлів. Повний список містить `4,984` static heavy-method candidates: `917` production, `31` owned support/demo, `189` test, `109` editor і `3,738` third-party; priorities: `30` P0, `137` P1, `781` P2, `4,036` N/A.
+- **Lookup result:** Загалом source-pattern inventory: `227` component lookup matches, `49` Find/search matches, `129` AddComponent matches і `70` confirmed LINQ import/Enumerable matches. У production runtime (`Assets/Game/Scripts` без Tests/Testing/Editor) актуально `0` `GetComponent*`, `TryGetComponent`, global `Find*`, `Camera.main`, runtime `AddComponent` або `Shader.Find`; залишені lookup-и належать test/editor harness.
+- **Deliverables:** Оновлено `docs/codex-game/heavy-method-audit.md`, `docs/codex-game/heavy-method-audit-all.md` і `docs/codex-game/script-performance-inventory.md`. Повний методний список із path/line/category/priority/evidence/frequency/risk знаходиться в `heavy-method-audit-all.md`; ranked production shortlist — у `heavy-method-audit.md`.
+- **Validation:** `tools/GenerateHeavyMethodAudit.ps1` і `tools/GenerateScriptPerformanceInventory.ps1` виконані успішно через Windows PowerShell з `ExecutionPolicy Bypass`; `git diff --check` пройшов. Runtime code не змінювався в цьому inventory task; static candidates не є profiler measurements.
+- **Remaining limitations:** `RaycastNonAlloc`, mesh-collider raycast/`Physics.SyncTransforms`, loops, UI rebuilds, allocations і networking calls залишаються кандидатами до профілювання; third-party/test/editor code не можна механічно змінювати.
+- **Result:** COMPLETED — повний актуальний static список важких методів сформований і розділений за ownership та runtime-ризиком.
+
+## Task: Plan safe rewrites for heavy methods
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-07
+- **User request:** Визначити, які важкі методи можна замінити на легші без поломки логіки, і описати конкретні скрипти та спосіб переписування.
+- **Scope:** Зіставити production P0/P1 methods із безпечними Tier A/B/C remediation options; окремо позначити Inspector/cache/buffer/UI pooling/physics/network зміни, які потребують доказу еквівалентності.
+- **Acceptance criteria:** Для кожної групи вказати файл/метод, запропоновану заміну, що саме не можна змінювати, ризик і focused validation; не робити implementation changes у design-only відповіді.
+- **Decision:** Production `GetComponent*`/`Find*`/runtime `AddComponent` уже мають `0` matches; test/editor lookup-и залишаються generic harness code. Безпечний rewrite-план — Tier A caches/reused buffers/unchanged-value UI writes, потім окремі профільовані physics/visibility/pooling експерименти.
+- **Safe rewrite groups:** `Projectile`, `VehicleColliderRegistry`, camera/aim/LOS, ground/suspension, HUD rows/map/tree, audio/VFX і diagnostics отримали конкретні cache/buffer/pooling варіанти з invariants. Запропоновано не змінювати raycast order/masks, tick/RPC cadence, authority, AI timing, `Physics.SyncTransforms`, material instance semantics або pooling reset contracts.
+- **Validation plan:** Кожен батч має окремо пройти compile, focused PlayMode, exact hit/target/order checks, scene reload/despawn, spectator/HUD checks, AI battle, network authority і 10v9; design-only task не запускав runtime tests.
+- **Result:** COMPLETED — підготовлено behavior-preserving rewrite map із безпечними, умовними та забороненими змінами; implementation не виконувався.
+
+## Task: Remove owned runtime component lookups and heavy searches
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-07
+- **User request:** Fix the remaining component lookups and other heavy methods across the project, using Inspector references or focused registries/caches where appropriate.
+- **Scope:** Re-audit every C# source file; remove or safely relocate owned production `GetComponent*`, `TryGetComponent`, `Find*`, `Camera.main`, runtime `AddComponent`, LINQ, and other avoidable hot-path work without changing gameplay, networking, scenes, prefabs, authority, balance, AI, weapons, aiming, HUD behavior, or third-party ownership.
+- **Acceptance criteria:** Every owned production lookup has a documented disposition; stable UI/prefab references are Inspector-wired where safe; dynamic references use lifecycle caches/registries; compilation and focused tests validate each batch; third-party and behavior-sensitive calls are explicitly documented rather than mechanically changed.
+
+### Completion checkpoint — 2026-11-07
+
+- **Inventory:** Regenerated the complete 1,472-row source inventory. Current static totals are 227 component-lookup call matches, 49 Find/search matches, 129 `AddComponent` matches, and 70 confirmed LINQ import/`Enumerable` matches across all `Assets/**/*.cs`.
+- **Lookup result:** Owned production runtime now has 0 `GetComponent*`, `TryGetComponent`, global Unity-object search, runtime `AddComponent`, or `Shader.Find` calls. The remaining 21 owned lookup calls are limited to editor/test harnesses that inspect arbitrary or dynamically created objects; third-party/library calls were not modified.
+- **Inspector wiring:** Stable references were serialized and wired for HUD graphics/groups, countdown components, timer authority, Game Result presenter, robot roots, destruction/debris visuals, pooled particle arrays, smoke capture camera, and URP outline shaders/material fallback references.
+- **Other optimizations:** Preserved and documented map marker indexing/pooling, spectator text-write gating, reusable collider activation buffers, ballistic distance reuse, ground-ray offset precomputation, squared-distance impact selection, duplicate collider suppression, and removal of repeated debris/particle child scans.
+- **Changed production scripts:** 18 owned C# scripts were changed in this lookup-refactor batch; scene/prefab/renderer asset wiring was updated only for stable authored references.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `Game.PlayMode.Tests.csproj` each build with 0 errors. Inventory regeneration completed with 1,472 rows. `git diff --check` passed. Unity batch invocation returned exit code 0 but emitted no focused test XML, so it is not counted as a test pass.
+- **Measured metrics:** No live matched profiler session was available; FPS, CPU, GC, physics, network, entity-count, and frame-time improvements remain unmeasured and are not fabricated.
+- **Deliverables:** Updated `docs/codex-game/script-performance-inventory.md`, `docs/codex-game/performance-audit-report.md`, and `docs/codex-game/ui-hud.md`; the full task result and limitations are recorded in the performance report.
+- **Remaining limitations:** Test/editor dynamic lookups, third-party code, behavior-sensitive `Physics.SyncTransforms`, death-only effect instantiation, and setup-time collection copies remain documented rather than mechanically changed. A matched runtime A/B capture is still required for factual performance deltas.
+- **Result:** COMPLETED — all safe owned production component/search fallbacks requested in this batch are removed or Inspector-wired without changing gameplay/network/authority contracts.
+
+## Task: Organize game files into a clear Unity folder structure
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-09
+- **User request:** Sort all files used by the game into clear folders with clear names, and move files unrelated to the project outside the `Game` folder.
+- **Scope:** Inventory the Unity project, determine which assets/scripts/scenes are game-owned versus third-party, editor/tooling, generated, or documentation content, then reorganize only safe project-owned files while preserving Unity GUIDs, serialized references, package/configuration behavior, and existing user changes.
+- **Acceptance criteria:** Game-owned content is grouped clearly under `Assets/Game`; unrelated project content is moved outside `Assets/Game` into purpose-named folders; Unity `.meta` files move with their assets; no duplicate GUIDs or broken local references are introduced; the final structure, changed files, validation, and limitations are recorded.
+- **Progress:** Global instructions, project instructions, existing journal, and task-journal recovery workflow were read. No dedicated archive workflow for Unity folder organization exists; applying safe Unity asset relocation and journal rules.
+- **Next steps:** Inspect repository status and asset tree, classify ownership and references, propose/execute a minimal safe folder map, validate GUID/reference integrity, and close this entry.
+
+### Organization checkpoint — 2026-11-09
+
+- **Inventory:** `Assets` contains the project-owned `Game` tree plus external packages, editor tooling, imported source packs, diagnostics artifacts, and generated Unity folders. Existing working-tree changes are extensive and pre-date this task; they remain untouched.
+- **Dependency findings:** Active game content outside `Assets/Game` is present in `PartDone\Etallon` (12 combat-effect prefabs), `Resources\GameAudio` (game audio referenced by `AudioManager`), `TransportAudioDemo\Audio\Engine` (30 engine clips referenced by `AudioManager`), 20 assets under `Unused` (UI assets referenced by game scenes/prefabs), and active render/build settings under `Settings` (referenced by `ProjectSettings`). FishNet, Layer Lab, TextMesh Pro, JMO, Plugins, and other vendor/demo folders remain external dependencies and will stay outside `Game`.
+- **Internal cleanup candidates:** Move unreferenced `Assets/Game\1.png`–`6.png` outside `Game`; move `room.mat` into environment materials; rename `IndustrialMap_v100_v200` to `IndustrialMap`; rename robot faction folders `IA`/`NV` to `IronAlliance`/`NovaSyndicate`; move editor-only scripts under `Assets/Editor/Game`.
+- **Safety decisions:** Preserve every Unity `.meta` file and GUID during moves/renames. Update only path-based test constants and documentation where required; do not alter serialized object data, gameplay logic, scene content, or existing unrelated changes.
+- **Next steps:** Apply the approved moves in small groups, then validate GUID uniqueness, local reference resolution, path-string references, and the working-tree diff.
+
+### Implementation checkpoint — 2026-11-09
+
+- Moved the active combat-effect package from `Assets/PartDone/Etallon` to `Assets/Game/Content/Combat/Effects`, including its folder metadata and nested dependencies.
+- Moved active audio from `Assets/Resources/GameAudio` to `Assets/Game/Content/Audio/Clips` and engine recordings from `Assets/TransportAudioDemo/Audio/Engine` to `Assets/Game/Content/Audio/Engine`; the transport demo scene/scripts remain outside `Game`.
+- Moved Unity render/build settings from `Assets/Settings` to `Assets/Game/Content/Configuration/UnitySettings` and renamed `Build Profiles` to `BuildProfiles`.
+- Renamed `IndustrialMap_v100_v200` to `IndustrialMap`, `Robots/IA` to `Robots/IronAlliance`, and `Robots/NV` to `Robots/NovaSyndicate`; moved `room.mat` to `Environment/Map/Materials/IndustrialRoom.mat`.
+- Moved editor-only game scripts to `Assets/Editor/Game` and moved six unreferenced root images from `Assets/Game` into `Assets/Unused/Backgrounds` with legacy names.
+- Moved 20 confirmed game-used UI assets out of `Assets/Unused` into semantic UI folders and names.
+- Updated path-based test constants and current asset/gameplay documentation. No gameplay, serialized component, scene object, or GUID content was intentionally edited.
+
+### Completion checkpoint — 2026-11-09
+
+- **Result:** Game-owned runtime content is consolidated under `Assets/Game` with clear `Content`, `Scenes`, `Scripts`, and `Tests` roots. Active combat effects, audio clips, engine recordings, UI assets, Unity settings, map content, and robot faction content now live in purpose-named folders. Editor-only game tools are under `Assets/Editor/Game`.
+- **Naming:** Renamed `IndustrialMap_v100_v200` to `IndustrialMap`, `IA` to `IronAlliance`, `NV` to `NovaSyndicate`, `room.mat` to `IndustrialRoom.mat`, and ambiguous active UI asset names to semantic names. Six unreferenced root images were moved outside `Game`.
+- **External content:** FishNet, plugins, vendor packs, demo scenes/scripts, unreferenced imported effects, legacy shaders, and remaining unused assets stay outside `Assets/Game` in their existing top-level folders; active resources extracted from those buckets were moved into `Game`.
+- **Validation:** Expected target paths exist; all old source directories are absent; 0 assets lack adjacent `.meta`; 9,255 local GUID entries were scanned with 0 duplicate GUID groups; 0 active old-path references remain outside historical journal/handoff records; `git diff --check` passed.
+- **Validation limitation:** Unity Editor reimport/PlayMode was not run in this CLI pass. Unity should reimport the moved assets before the next runtime test; serialized references were preserved by moving every `.meta` with its asset.
+- **Pre-existing changes:** Existing user modifications and unrelated untracked audit files remain preserved; no reset, revert, or commit was performed.
+- **Status:** COMPLETED
+
+## Task: Optimize and recolor ExplosionProjectileRobot particle effect
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-09
+- **User request:** Optimize `ExplosionProjectileRobot` without breaking its behavior, find the cause of its green tint, and change the effect to a fiery orange-yellow palette.
+- **Scope:** Inspect the prefab's particle systems, materials, gradients, modules, and referenced assets; apply only safe visual/performance changes to the effect; preserve prefab structure, component references, timing intent, spawn behavior, and existing Unity GUIDs.
+- **Acceptance criteria:** The green tint cause is identified and corrected; the effect reads as orange-yellow fire; safe optimization reduces avoidable particle cost without removing required visual layers; prefab serialization remains valid and focused validation passes.
+- **Progress:** Global instructions, project journal, workflow index/history, and task-journal process were read. No dedicated particle-effect workflow exists in the archive. The active prefab has four particle systems with bounded caps and disabled heavy modules; its warm gradients contain no green values. The visible tint source is the shared scene-dependent `WFX_S Smoke Scroll` path used by the smoke layers, while the additive glow textures are alpha-only.
+- **Decision:** Keep the shared vendor material unchanged. Add a prefab-local orange fire-tint smoke material, saturate the active fire gradients, and force no motion vectors on the four one-shot particle renderers. Preserve burst counts, timings, particle caps, component IDs, and existing asset GUIDs.
+- **Result:** Added `ExplosionProjectileRobotFireSmoke.mat` under the effect's own `Materials` folder and assigned it only to the two smoke renderers. The local material keeps the existing smoke shader/texture but uses a fire-orange tint; the root and child fire gradients were saturated toward yellow-orange. All four active particle renderers now use `m_MotionVectors: 2` (`ForceNoMotion`) without changing particle caps, burst counts, lifetimes, spawn order, or serialized component IDs.
+- **Validation:** Static prefab audit passed: 4 `ParticleSystemRenderer` blocks found, all use ForceNoMotion; both smoke references resolve to the new material; shader, texture, and material GUIDs resolve; 0 green-dominant serialized color lines; particle caps remain `90, 40, 11, 40`; burst modules remain `0, 3, 1, 4`; no new material trailing whitespace; `git diff --check` passed for the journal.
+- **Limitation:** Unity Editor reimport/PlayMode visual verification was not run in this CLI pass. The existing URP `DecalProjector` script GUID remains package-provided and unchanged.
+- **Status:** COMPLETED
+
+## Task: Remove green tint from Explosion child particle
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-09
+- **User request:** The remaining green tint comes from the inner `Explosion` object in `ExplosionProjectileRobot`; find the cause and make it white or yellow, never green.
+- **Scope:** Inspect only the nested `Explosion` particle system, its renderer/material/shader/texture/colors, and apply a local visual fix without changing burst behavior or unrelated shared assets.
+- **Acceptance criteria:** Identify the actual green source; ensure the inner `Explosion` renders white/yellow; preserve component references, timing, particle counts, and prefab serialization; run focused static validation.
+- **Progress:** Global memory instructions, workflow index/history, the task-journal recovery workflow, and the existing journal were read. No dedicated particle workflow exists. Previous task is closed; this is a separate focused follow-up. The nested `Explosion` object uses the smoke material/shader path; its serialized particle gradients contain no green-dominant values, and its smoke texture is grayscale/alpha-only.
+- **Finding:** The remaining tint source is the nested `Explosion` renderer's `WFX_S Smoke Scroll` shader, whose `Blend DstColor SrcAlpha` path multiplies the smoke RGB by the destination/background. This allows a green scene/background to leak into the effect even when the particle colors are warm.
+- **Decision:** Keep the parent's smoke layer unchanged. Give only the nested `Explosion` renderer a local alpha-additive material using the existing smoke alpha texture and the existing `WFX_S Particle Add A8` shader, with a white/yellow tint. Preserve its bursts, lifetime, particle cap, transform, and renderer settings otherwise.
+- **Result:** Added `ExplosionProjectileRobotFireExplosion.mat` and assigned it only to the nested `Explosion` renderer. The new material uses the existing smoke alpha texture with `WFX_S Particle Add A8` and a white/yellow tint, removing the destination-color multiplication that allowed green background tinting. The parent `Smoke` layer remains on its own local fire-smoke material.
+- **Validation:** Nested `Explosion` renderer resolves to the new material GUID; the material resolves to the additive particle shader and existing smoke texture; `lengthInSec: 6`, `simulationSpeed: 10`, `maxNumParticles: 40`, and `m_BurstCount: 4` remain unchanged; 0 green-dominant serialized color lines; 0 missing local GUID references; no trailing whitespace in the new material; `git diff --check` passed for the journal.
+- **Limitation:** Unity Editor reimport/PlayMode visual verification was not run in this CLI pass.
 - **Status:** COMPLETED
