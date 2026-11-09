@@ -3347,3 +3347,32 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** Nested `Explosion` renderer resolves to the new material GUID; the material resolves to the additive particle shader and existing smoke texture; `lengthInSec: 6`, `simulationSpeed: 10`, `maxNumParticles: 40`, and `m_BurstCount: 4` remain unchanged; 0 green-dominant serialized color lines; 0 missing local GUID references; no trailing whitespace in the new material; `git diff --check` passed for the journal.
 - **Limitation:** Unity Editor reimport/PlayMode visual verification was not run in this CLI pass.
 - **Status:** COMPLETED
+
+## Task: Fix GitHub push rejection for oversized audio file
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-09
+- **User request:** Help push the current commit after GitHub rejected the push.
+- **Scope:** Inspect the push error, repository state, commit history, and Git LFS configuration; prepare the smallest safe correction without deleting or resetting user changes.
+- **Acceptance criteria:** Identify the exact oversized-file cause, preserve the audio asset and existing work, configure an appropriate tracked-file strategy, and validate the resulting Git state and push readiness.
+- **Progress:** The screenshot shows GitHub rejecting `Assets/Game/Content/Audio/Clips/Music/Garage_DevelopmentTree_Music.wav` at approximately 199 MB because it exceeds GitHub's 100 MB per-file limit; the remote also reports `GH001: Large files detected`. Git LFS is installed. The existing commit was amended so the file is now a 134-byte LFS pointer, `.gitattributes` tracks its new path, and `git lfs fsck` passes.
+- **Resolution:** The existing `~/.ssh/scorpioner2010` key successfully authenticated to GitHub. The amended commit was pushed through `GIT_SSH_COMMAND` without changing the repository's configured remote URL.
+- **Validation:** `git lfs fsck` passed; the oversized audio is stored as a 134-byte LFS pointer in commit `8bf3a2e4`; `git push origin main` uploaded 1 LFS object (209 MB) and advanced GitHub `main` successfully.
+- **Remaining limitation:** SourceTree may still need its SSH client/key configured to use `~/.ssh/scorpioner2010`; the repository remote remains `git@github.com:scorpioner2010/war-of-machines-unity.git`.
+- **Result:** COMPLETED â€” the original 199 MB GitHub rejection was fixed without deleting the audio or resetting project changes, and the corrected commit is now on `origin/main`.
+
+## Task: Reorient and recolor GunShoot muzzle effect
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-09
+- **User request:** `GunShoot` is aimed at the robot instead of along the shot direction; rotate it to the opposite side and remove its slight green tint.
+- **Scope:** Inspect the `GunShoot` prefab, its transforms, particle renderers, materials, shaders, textures, and active color gradients; make a focused prefab/effect-only fix without changing weapon gameplay or shared vendor assets.
+- **Acceptance criteria:** The effect's authored forward direction is reversed safely; the green source is identified and corrected to white/yellow/fire; component references, timing, burst behavior, and serialization remain valid; focused static validation passes.
+- **Progress:** Global instructions, the task-journal recovery workflow, and the existing journal were read. No dedicated particle workflow exists. Prior particle tasks are closed; this is a new focused follow-up. `GunShoot` has an identity root rotation; its active hemisphere shapes are rotated `+90°` on X and the nested `Explosion` also adds local `VelocityModule.z = +4`, so the authored forward direction is local `+Z`.
+- **Finding:** The green tint is not present in serialized particle gradients (0 green-dominant lines). Both `Smoke` and `Explosion` use the shared `WFX_M_ExplosiveSmoke` / `WFX_S Smoke Scroll` path with destination-color blending, which can inherit a green scene/background.
+- **Decision:** Rotate only the `GunShoot` root by 180° around Y, reversing all child particle motion from local `+Z` to `-Z` without editing each module. Assign both smoke renderers a prefab-local additive material using the existing grayscale smoke alpha texture and a white/yellow tint; do not modify vendor materials or gameplay references.
+- **Result:** Added `GunShootFireSmoke.mat` under `Assets/Game/Content/Combat/Effects/GunShoot/Materials` and assigned it only to the `Smoke` and `Explosion` particle renderers. The material uses the existing grayscale smoke alpha texture, `WFX_S Particle Add A8`, and a white/yellow tint, removing the shared destination-color smoke blend that caused the green cast. Rotated the `GunShoot` root to 180° around Y so all child layers and the nested `Explosion` velocity reverse from local `+Z` to `-Z` together.
+- **Validation:** Root quaternion/euler hint resolve to Y=180; both smoke renderers resolve to the new material; 0 old shared smoke references; 0 green-dominant serialized color lines; 0 missing local GUID references; new material has no trailing whitespace; existing particle component structure and timing fields were not edited; `git diff --check` passed for the journal.
+- **Limitation:** Unity Editor reimport/PlayMode visual verification was not run in this CLI pass.
+- **Status:** COMPLETED
+- **Result:** COMPLETED — the original 199 MB GitHub rejection was fixed without deleting the audio or resetting project changes, and the corrected commit is now on `origin/main`.

@@ -479,7 +479,7 @@ Transform:
   m_GameObject: {fileID: 677300579693285468}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.001, y: 0.028, z: 0.585}
+  m_LocalPosition: {x: 0.001, y: 0.035, z: 0.444}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1366,7 +1366,7 @@ MonoBehaviour:
   - {fileID: 6655559585601033798}
   - {fileID: 2234496612675365817}
   additionalVehicleColliders: []
-  highlightArmorInPrefab: 1
+  highlightArmorInPrefab: 0
   serverEditorArmorRenderers:
   - {fileID: 652418190835455130}
   - {fileID: 3548548254584163796}
