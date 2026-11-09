@@ -146,14 +146,12 @@ public class Projectile : MonoBehaviour
     private const float PredictedWorldImpactDedupDistance = 2f;
     private const int NoNetworkObjectId = -1;
     private const string DefaultLayerName = "Default";
-    private const string ArmorLayerName = "Armor";
     private const string GroundLayerName = "Ground";
     private const string ObstacleLayerName = "Obstacle";
 
     private static readonly RaycastHit[] CollisionBuffer = new RaycastHit[CollisionBufferSize];
     private static readonly Collider[] EmbeddedCollisionBuffer = new Collider[EmbeddedCollisionBufferSize];
     private static int _defaultLayer = -1;
-    private static int _armorLayer = -1;
     private static int _groundLayer = -1;
     private static int _obstacleLayer = -1;
     private static bool _layersInitialized;
@@ -995,6 +993,16 @@ public class Projectile : MonoBehaviour
 
     private void HandleLiveHit(RaycastHit hit, Vector3 travelDirection)
     {
+        using (ProfileScope.Measure(
+            _authoritative ? "Server.Projectile.HandleLiveHit" : "Client.Projectile.HandleLiveHit",
+            _authoritative ? DiagnosticsCategories.Server : DiagnosticsCategories.Client))
+        {
+            HandleLiveHitInternal(hit, travelDirection);
+        }
+    }
+
+    private void HandleLiveHitInternal(RaycastHit hit, Vector3 travelDirection)
+    {
         _hasLastHitPoint = true;
         _lastHitPoint = hit.point;
         _lastHitNormal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal.normalized : Vector3.up;
@@ -1010,7 +1018,7 @@ public class Projectile : MonoBehaviour
             Explode(
                 hit.point,
                 _lastHitNormal,
-                GetImpactAttachmentParent(hit.collider, hit.point, _lastHitNormal),
+                GetImpactAttachmentParent(hit.collider),
                 impactTarget,
                 hit.collider);
             StopClientVisualAtCollision();
@@ -1027,7 +1035,7 @@ public class Projectile : MonoBehaviour
         Explode(
             hit.point,
             _lastHitNormal,
-            GetImpactAttachmentParent(hit.collider, hit.point, _lastHitNormal),
+            GetImpactAttachmentParent(hit.collider),
             GetImpactTargetRoot(hit.collider),
             hit.collider);
         CompleteFlight();
@@ -1087,27 +1095,16 @@ public class Projectile : MonoBehaviour
             : null;
     }
 
-    private static Transform GetImpactAttachmentParent(
-        Collider hitCollider,
-        Vector3 impactPoint,
-        Vector3 impactNormal)
+    private static Transform GetImpactAttachmentParent(Collider hitCollider)
     {
-        if (!VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot targetRoot)
+        if (!VehicleColliderRegistry.TryGetArmor(
+                hitCollider,
+                out _,
+                out _,
+                out VehicleRoot targetRoot)
             || targetRoot == null)
         {
             return null;
-        }
-
-        if (VehicleColliderRegistry.TryGetImpactVisualSurface(
-                targetRoot,
-                impactPoint,
-                impactNormal,
-                out _,
-                out _,
-                out Renderer surfaceRenderer)
-            && surfaceRenderer != null)
-        {
-            return surfaceRenderer.transform;
         }
 
         return hitCollider.transform;
@@ -1172,7 +1169,7 @@ public class Projectile : MonoBehaviour
             Collider collider = EmbeddedCollisionBuffer[i];
             if (collider == null
                 || IsUnderRoot(collider.transform, _ignoredRoot)
-                || !IsCollidableLayer(collider.gameObject.layer))
+                || !IsProjectileCollisionCandidate(collider))
             {
                 continue;
             }
@@ -1243,24 +1240,36 @@ public class Projectile : MonoBehaviour
             }
 
             float hitDistance = CollisionBuffer[i].distance;
-            if (IsBlockingLayer(hitCollider.gameObject.layer))
+            if (VehicleColliderRegistry.TryGetArmor(
+                    hitCollider,
+                    out _,
+                    out _,
+                    out _))
             {
-                if (hitDistance < bestBlockerDistance)
+                if (hitDistance < bestArmorDistance)
                 {
-                    bestBlockerDistance = hitDistance;
-                    bestBlockerIndex = i;
+                    bestArmorDistance = hitDistance;
+                    bestArmorIndex = i;
                 }
                 continue;
             }
 
-            if (IsArmorLayer(hitCollider.gameObject.layer) && hitDistance < bestArmorDistance)
+            if (!IsBlockingLayer(hitCollider.gameObject.layer)
+                || (VehicleColliderRegistry.TryGetRoot(hitCollider, out VehicleRoot vehicleRoot)
+                    && vehicleRoot != null))
             {
-                bestArmorDistance = hitDistance;
-                bestArmorIndex = i;
+                continue;
+            }
+
+            if (hitDistance < bestBlockerDistance)
+            {
+                bestBlockerDistance = hitDistance;
+                bestBlockerIndex = i;
             }
         }
 
-        if (bestBlockerIndex >= 0 && (bestArmorIndex < 0 || bestBlockerDistance <= bestArmorDistance))
+        if (bestBlockerIndex >= 0
+            && (bestArmorIndex < 0 || bestBlockerDistance <= bestArmorDistance))
         {
             bestHit = CollisionBuffer[bestBlockerIndex];
             return true;
@@ -1276,11 +1285,6 @@ public class Projectile : MonoBehaviour
         return false;
     }
 
-    private static bool IsArmorLayer(int layer)
-    {
-        return _armorLayer >= 0 && layer == _armorLayer;
-    }
-
     private static bool IsBlockingLayer(int layer)
     {
         return (_defaultLayer >= 0 && layer == _defaultLayer)
@@ -1288,9 +1292,29 @@ public class Projectile : MonoBehaviour
                || (_obstacleLayer >= 0 && layer == _obstacleLayer);
     }
 
-    private static bool IsCollidableLayer(int layer)
+    private static bool IsProjectileCollisionCandidate(Collider collider)
     {
-        return IsArmorLayer(layer) || IsBlockingLayer(layer);
+        if (collider == null)
+        {
+            return false;
+        }
+
+        if (VehicleColliderRegistry.TryGetArmor(
+                collider,
+                out _,
+                out _,
+                out _))
+        {
+            return true;
+        }
+
+        if (!IsBlockingLayer(collider.gameObject.layer))
+        {
+            return false;
+        }
+
+        return !VehicleColliderRegistry.TryGetRoot(collider, out VehicleRoot vehicleRoot)
+               || vehicleRoot == null;
     }
 
     private static void EnsureCollisionLayers()
@@ -1301,7 +1325,6 @@ public class Projectile : MonoBehaviour
         }
 
         _defaultLayer = LayerMask.NameToLayer(DefaultLayerName);
-        _armorLayer = LayerMask.NameToLayer(ArmorLayerName);
         _groundLayer = LayerMask.NameToLayer(GroundLayerName);
         _obstacleLayer = LayerMask.NameToLayer(ObstacleLayerName);
         _layersInitialized = true;
@@ -1347,13 +1370,16 @@ public class Projectile : MonoBehaviour
         if (_visualsEnabled && impactFxPrefab != null)
         {
             Vector3 safeNormal = normal.sqrMagnitude > 0.000001f ? normal.normalized : Vector3.up;
-            ProjectileRuntimePool.SpawnImpactFx(
-                impactFxPrefab,
-                position,
-                CreateSurfaceRotation(safeNormal),
-                attachmentParent,
-                impactTarget,
-                impactCollider);
+            using (ProfileScope.Measure("Client.Projectile.ImpactFx.Spawn", DiagnosticsCategories.Client))
+            {
+                ProjectileRuntimePool.SpawnImpactFx(
+                    impactFxPrefab,
+                    position,
+                    CreateSurfaceRotation(safeNormal),
+                    attachmentParent,
+                    impactTarget,
+                    impactCollider);
+            }
         }
     }
 

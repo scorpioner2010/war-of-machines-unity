@@ -296,6 +296,9 @@ namespace Game.Scripts.Gameplay.Robots
             public int TargetObjectId;
             public ShotHudStatus HudStatus;
             public ImpactAudioCode ImpactAudio;
+            public float BaseArmorMm;
+            public float EffectiveArmorMm;
+            public bool Penetrated;
         }
 
         private struct ObservedShotResolution
@@ -1096,7 +1099,11 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
-                ResolvedShot shot = ResolveProjectileHit(hit, shotDirection);
+                ResolvedShot shot = ResolveProjectileHit(
+                    hit,
+                    shotDirection,
+                    out ServerHitResolver.HitResult hitResult);
+                LogAuthoritativeHit(shot, hitResult);
                 AuthoritativeProjectileHit?.Invoke(hit.point, hit.normal);
                 if (shooterConnection != null)
                 {
@@ -1134,6 +1141,9 @@ namespace Game.Scripts.Gameplay.Robots
                     return;
                 }
 
+                Debug.Log(
+                    $"[CombatHit] status=Miss target=none collider=none armorZone=None armorMm=0 effectiveArmorMm=0 penetrationMm={shellPenetrationMm:0.##} damage=0");
+
                 if (shooterConnection != null)
                 {
                     ProfileScope.RecordEvent("RPC.ResolveOwnerProjectileTarget", DiagnosticsCategories.Rpc);
@@ -1163,10 +1173,13 @@ namespace Game.Scripts.Gameplay.Robots
             }
         }
 
-        private ResolvedShot ResolveProjectileHit(RaycastHit hit, Vector3 shotDirection)
+        private ResolvedShot ResolveProjectileHit(
+            RaycastHit hit,
+            Vector3 shotDirection,
+            out ServerHitResolver.HitResult hitResult)
         {
             float damage = RollDamage();
-            ServerHitResolver.HitResult hr = ServerHitResolver.ResolveHit(
+            hitResult = ServerHitResolver.ResolveHit(
                 hit,
                 shotDirection,
                 shellPenetrationMm,
@@ -1174,7 +1187,7 @@ namespace Game.Scripts.Gameplay.Robots
                 damage
             );
 
-            return BuildResolvedShot(hr, hit.point, hit.normal);
+            return BuildResolvedShot(hitResult, hit.point, hit.normal);
         }
 
         private float RollDamage()
@@ -1199,10 +1212,6 @@ namespace Game.Scripts.Gameplay.Robots
                 {
                     targetRoot = hr.armor.VehicleRoot;
                 }
-                else
-                {
-                    VehicleColliderRegistry.TryGetRoot(hr.collider, out targetRoot);
-                }
 
                 if (targetRoot != null)
                 {
@@ -1226,7 +1235,31 @@ namespace Game.Scripts.Gameplay.Robots
                     ? targetRoot.networkObject.ObjectId
                     : NO_NETWORK_OBJECT_ID,
                 HudStatus = status,
-                ImpactAudio = GetImpactAudioCode(targetRoot, hr, hr.penetrated)
+                ImpactAudio = GetImpactAudioCode(targetRoot, hr, hr.penetrated),
+                BaseArmorMm = hr.baseMm,
+                EffectiveArmorMm = hr.losMm,
+                Penetrated = hr.penetrated
+            };
+        }
+
+        private void LogAuthoritativeHit(
+            ResolvedShot shot,
+            ServerHitResolver.HitResult hitResult)
+        {
+            string target = shot.TargetRoot != null ? shot.TargetRoot.name : "none";
+            string collider = hitResult.collider != null ? hitResult.collider.name : "none";
+            string armorZone = hitResult.armor != null ? hitResult.armorZone.ToString() : "None";
+            Debug.Log(
+                $"[CombatHit] status={GetShotStatusLabel(shot.HudStatus)} target={target} collider={collider} armorZone={armorZone} armorMm={shot.BaseArmorMm:0.##} effectiveArmorMm={shot.EffectiveArmorMm:0.##} penetrationMm={shellPenetrationMm:0.##} penetrated={shot.Penetrated} damage={shot.Damage:0.##}");
+        }
+
+        private static string GetShotStatusLabel(ShotHudStatus status)
+        {
+            return status switch
+            {
+                ShotHudStatus.Penetrated => "Penetrated",
+                ShotHudStatus.NotPenetrated => "NoPenetration",
+                _ => "Miss"
             };
         }
 
@@ -1616,18 +1649,6 @@ namespace Game.Scripts.Gameplay.Robots
             if (targetRoot == null)
             {
                 return null;
-            }
-
-            if (VehicleColliderRegistry.TryGetImpactVisualSurface(
-                    targetRoot,
-                    impactPoint,
-                    impactNormal,
-                    out _,
-                    out _,
-                    out Renderer surfaceRenderer)
-                && surfaceRenderer != null)
-            {
-                return surfaceRenderer.transform;
             }
 
             return targetRoot.transform;

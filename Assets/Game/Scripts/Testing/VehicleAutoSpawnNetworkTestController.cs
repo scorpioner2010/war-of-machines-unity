@@ -123,7 +123,6 @@ namespace Game.Scripts.Testing
             _serverStartedByThis = true;
             EnsureTestRoom(gameObject.scene);
             _status = "Server started on port " + port + ".";
-            Debug.Log(_status);
         }
 
         private void StartClient()
@@ -151,7 +150,6 @@ namespace Game.Scripts.Testing
 
             _clientStartedByThis = true;
             _status = "Client connecting to " + serverAddress + ":" + port + ".";
-            Debug.Log(_status);
         }
 
         private void ResolveNetworkManager()
@@ -361,7 +359,6 @@ namespace Game.Scripts.Testing
 
             _spawnedByClientId[connection.ClientId] = vehicleRoot;
             _status = "Spawned " + vehicleRoot.name + " for client " + connection.ClientId + ".";
-            Debug.Log(_status);
         }
 
         private VehicleRoot GetFirstVehiclePrefab(out string vehicleCode)

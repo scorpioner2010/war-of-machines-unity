@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Game.Scripts.Diagnostics;
 
 namespace Game.Scripts.Gameplay.Robots
 {
@@ -109,13 +110,21 @@ namespace Game.Scripts.Gameplay.Robots
         public static bool TryGetRoot(Collider collider, out VehicleRoot root)
         {
             root = null;
-            if (collider == null
-                || !DataByCollider.TryGetValue(collider, out VehicleColliderData data))
+            if (collider == null)
             {
                 return false;
             }
 
-            root = data.Root;
+            if (DataByCollider.TryGetValue(collider, out VehicleColliderData data))
+            {
+                root = data.Root;
+            }
+
+            if (root == null)
+            {
+                root = collider.GetComponentInParent<VehicleRoot>(true);
+            }
+
             return root != null;
         }
 
@@ -309,6 +318,27 @@ namespace Game.Scripts.Gameplay.Robots
             out Vector3 surfaceNormal,
             out Renderer surfaceRenderer)
         {
+            string targetName = root != null ? root.name : "Unknown";
+            using (ProfileScope.Measure("Projectile.ImpactSurface.Resolve." + targetName, DiagnosticsCategories.Client))
+            {
+                return TryGetImpactVisualSurfaceCore(
+                    root,
+                    impactPoint,
+                    impactNormal,
+                    out surfacePosition,
+                    out surfaceNormal,
+                    out surfaceRenderer);
+            }
+        }
+
+        private static bool TryGetImpactVisualSurfaceCore(
+            VehicleRoot root,
+            Vector3 impactPoint,
+            Vector3 impactNormal,
+            out Vector3 surfacePosition,
+            out Vector3 surfaceNormal,
+            out Renderer surfaceRenderer)
+        {
             Vector3 safeNormal = impactNormal.sqrMagnitude > 0.000001f
                 ? impactNormal.normalized
                 : Vector3.up;
@@ -355,6 +385,30 @@ namespace Game.Scripts.Gameplay.Robots
         }
 
         private static bool TryResolveImpactVisualSurface(
+            List<MeshCollider> meshColliders,
+            List<Renderer> renderers,
+            List<ImpactVisualPart> visualParts,
+            Vector3 impactPoint,
+            Vector3 safeNormal,
+            out Vector3 surfacePosition,
+            out Vector3 surfaceNormal,
+            out Renderer surfaceRenderer)
+        {
+            using (ProfileScope.Measure("Projectile.ImpactSurface.Resolve", DiagnosticsCategories.Physics))
+            {
+                return TryResolveImpactVisualSurfaceCore(
+                    meshColliders,
+                    renderers,
+                    visualParts,
+                    impactPoint,
+                    safeNormal,
+                    out surfacePosition,
+                    out surfaceNormal,
+                    out surfaceRenderer);
+            }
+        }
+
+        private static bool TryResolveImpactVisualSurfaceCore(
             List<MeshCollider> meshColliders,
             List<Renderer> renderers,
             List<ImpactVisualPart> visualParts,
@@ -561,6 +615,7 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             bool wasEnabled = meshCollider.enabled;
+            bool requiresSync = ActivatedObjectBuffer.Count > 0 || !wasEnabled;
             if (!wasEnabled)
             {
                 meshCollider.enabled = true;
@@ -568,8 +623,18 @@ namespace Game.Scripts.Gameplay.Robots
 
             try
             {
-                Physics.SyncTransforms();
-                return meshCollider.Raycast(ray, out hit, Mathf.Max(ImpactSurfaceDistanceEpsilon, distance));
+                if (requiresSync)
+                {
+                    using (ProfileScope.Measure("Projectile.ImpactSurface.Physics.SyncTransforms", DiagnosticsCategories.Physics))
+                    {
+                        Physics.SyncTransforms();
+                    }
+                }
+
+                using (ProfileScope.Measure("Projectile.ImpactSurface.MeshCollider.Raycast", DiagnosticsCategories.Physics))
+                {
+                    return meshCollider.Raycast(ray, out hit, Mathf.Max(ImpactSurfaceDistanceEpsilon, distance));
+                }
             }
             finally
             {

@@ -5,6 +5,7 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
+using Game.Scripts.Audio;
 using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Diagnostics;
@@ -151,6 +152,7 @@ namespace Game.Scripts.Networking.Lobby
             {
                 if (IsRoomLoadedScene(serverRoom, scene))
                 {
+                    AudioListenerRoot.TrySetGameplayTarget(scene);
                     RegisterRoomScene(serverRoom, scene);
                     return;
                 }
@@ -302,6 +304,7 @@ namespace Game.Scripts.Networking.Lobby
                 
                 MapScopedObjectRegistry.RegisterMapScene(scene);
                 _sceneOffsetService.ApplyOffset(scene, offset);
+                AudioListenerRoot.TrySetGameplayTarget(scene);
             }
         }
 

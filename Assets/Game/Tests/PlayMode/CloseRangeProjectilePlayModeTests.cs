@@ -211,6 +211,80 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ProjectilePrefersVehicleArmorOverDefaultVehicleCollider()
+        {
+            Type projectileType = FindGameType("Projectile");
+            GameObject shooterObject = new GameObject("CloseRangeShooter");
+            GameObject targetObject = new GameObject("VehicleTarget");
+            GameObject armorObject = new GameObject("VehicleArmor");
+            GameObject projectileObject = new GameObject("Projectile");
+            Collider resolvedCollider = null;
+            bool hitCalled = false;
+
+            try
+            {
+                targetObject.transform.position = new Vector3(0f, 0f, 3f);
+                targetObject.AddComponent(FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot"));
+                BoxCollider defaultCollider = targetObject.AddComponent<BoxCollider>();
+                defaultCollider.size = new Vector3(3f, 3f, 2f);
+
+                armorObject.transform.SetParent(targetObject.transform);
+                armorObject.transform.localPosition = Vector3.zero;
+                armorObject.layer = LayerMask.NameToLayer("Armor");
+                BoxCollider armorCollider = armorObject.AddComponent<BoxCollider>();
+                armorCollider.size = new Vector3(2f, 2f, 1.8f);
+
+                Component projectile = projectileObject.AddComponent(projectileType);
+                MethodInfo init = projectileType.GetMethod("Init", BindingFlags.Instance | BindingFlags.Public);
+                MethodInfo configure = projectileType.GetMethod(
+                    "ConfigureLiveCollision",
+                    BindingFlags.Instance | BindingFlags.Public);
+                Assert.IsNotNull(init);
+                Assert.IsNotNull(configure);
+
+                init.Invoke(
+                    projectile,
+                    new object[]
+                    {
+                        Vector3.zero,
+                        Vector3.forward * 100f,
+                        Vector3.zero,
+                        3f,
+                        100f,
+                        0.05f,
+                        0f,
+                        true
+                    });
+                configure.Invoke(
+                    projectile,
+                    new object[]
+                    {
+                        shooterObject.transform,
+                        new Action<RaycastHit, Vector3>((hit, direction) =>
+                        {
+                            hitCalled = true;
+                            resolvedCollider = hit.collider;
+                        }),
+                        new Action(() => { }),
+                        100f
+                    });
+
+                Physics.SyncTransforms();
+                yield return null;
+
+                Assert.IsTrue(hitCalled);
+                Assert.AreSame(armorCollider, resolvedCollider);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(projectileObject);
+                UnityEngine.Object.DestroyImmediate(armorObject);
+                UnityEngine.Object.DestroyImmediate(targetObject);
+                UnityEngine.Object.DestroyImmediate(shooterObject);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator RemoteImpactWaitsForMinimumVisibleFlight()
         {
             Type projectileType = FindGameType("Projectile");

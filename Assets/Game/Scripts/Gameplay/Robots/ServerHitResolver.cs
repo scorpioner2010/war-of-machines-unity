@@ -155,8 +155,14 @@ namespace Game.Scripts.Gameplay.Robots
                                 out armor,
                                 out zone,
                                 out _);
-            if (hasArmor
-                && armor.TryGetArmorLoS(hit, zone, dir, normDeg, out float baseMm, out float losMm))
+            if (!hasArmor || armor == null)
+            {
+                hr.penetrated = false;
+                hr.damage = 0f;
+                return hr;
+            }
+
+            if (armor.TryGetArmorLoS(hit, zone, dir, normDeg, out float baseMm, out float losMm))
             {
                 hr.armor = armor;
                 hr.armorZone = zone;
@@ -167,9 +173,8 @@ namespace Game.Scripts.Gameplay.Robots
             }
             else
             {
-                // No configured armor surface: treat it as a thin surface with full penetration.
-                hr.penetrated = true;
-                hr.damage = Mathf.Max(0f, shellDamage);
+                hr.penetrated = false;
+                hr.damage = 0f;
             }
 
             return hr;

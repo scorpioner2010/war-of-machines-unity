@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CartoonFX;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.UI.Settings;
 using UnityEngine;
@@ -176,6 +177,19 @@ public sealed class PooledImpactFx : MonoBehaviour
         VehicleRoot impactTarget = null,
         Collider impactCollider = null)
     {
+        string targetName = impactTarget != null ? impactTarget.name : "World";
+        using (ProfileScope.Measure("Projectile.ImpactFx.Play." + targetName, DiagnosticsCategories.Client))
+        {
+            PlayImpactInternal(impactPoint, impactNormal, impactTarget, impactCollider);
+        }
+    }
+
+    private void PlayImpactInternal(
+        Vector3 impactPoint,
+        Vector3 impactNormal,
+        VehicleRoot impactTarget,
+        Collider impactCollider)
+    {
         ImpactFxProfile profile = GetImpactProfile();
         PlayInternal(profile);
         if (profile.impactDecal == null
@@ -189,26 +203,13 @@ public sealed class PooledImpactFx : MonoBehaviour
             ? impactNormal.normalized
             : Vector3.up;
         _impactRenderingLayerMask = 0u;
-        Renderer visualSurfaceRenderer = null;
-        if (impactTarget != null
-            && VehicleColliderRegistry.TryGetImpactVisualSurface(
-                impactTarget,
-                impactPoint,
-                safeNormal,
-                out Vector3 visualSurfacePosition,
-                out Vector3 visualSurfaceNormal,
-                out visualSurfaceRenderer))
-        {
-            impactPoint = visualSurfacePosition;
-            safeNormal = visualSurfaceNormal;
-        }
-        else if (impactTarget == null
+        if (impactTarget == null
             && VehicleColliderRegistry.TryGetImpactVisualSurface(
                 impactCollider,
                 impactPoint,
                 safeNormal,
-                out visualSurfacePosition,
-                out visualSurfaceNormal))
+                out Vector3 visualSurfacePosition,
+                out Vector3 visualSurfaceNormal))
         {
             impactPoint = visualSurfacePosition;
             safeNormal = visualSurfaceNormal;
@@ -216,13 +217,7 @@ public sealed class PooledImpactFx : MonoBehaviour
 
         if (impactTarget != null)
         {
-            if (visualSurfaceRenderer != null)
-            {
-                TryAcquireImpactLayer(impactTarget, visualSurfaceRenderer);
-            }
-
-            if (_impactRenderingLayerMask == 0u
-                && VehicleColliderRegistry.TryGetImpactRenderers(
+            if (VehicleColliderRegistry.TryGetImpactRenderers(
                     impactTarget,
                     out List<Renderer> targetRenderers))
             {
@@ -251,25 +246,28 @@ public sealed class PooledImpactFx : MonoBehaviour
         uint renderingLayerMask = _impactRenderingLayerMask != 0
             ? _impactRenderingLayerMask
             : WorldImpactRenderingLayerMask;
-        EnsureImpactGlowMaterial();
-        EnsureImpactGlowHaloMaterial();
-        ApplyImpactGlowStrength();
-        ConfigureImpactDecal(
-            profile.impactDecal,
-            surfacePosition,
-            rotation,
-            projectionDepth,
-            renderingLayerMask);
-        ConfigureImpactDecal(
-            profile.impactGlowDecal,
-            surfacePosition,
-            rotation,
-            projectionDepth,
-            renderingLayerMask);
-        ConfigureImpactGlowHalo(surfacePosition, rotation, renderingLayerMask);
-        if (profile.impactGlowDecal != null)
+        using (ProfileScope.Measure("Projectile.ImpactFx.Projectors", DiagnosticsCategories.Client))
         {
-            profile.impactGlowDecal.fadeFactor = profile.impactGlowStrength > 0f ? 1f : 0f;
+            EnsureImpactGlowMaterial();
+            EnsureImpactGlowHaloMaterial();
+            ApplyImpactGlowStrength();
+            ConfigureImpactDecal(
+                profile.impactDecal,
+                surfacePosition,
+                rotation,
+                projectionDepth,
+                renderingLayerMask);
+            ConfigureImpactDecal(
+                profile.impactGlowDecal,
+                surfacePosition,
+                rotation,
+                projectionDepth,
+                renderingLayerMask);
+            ConfigureImpactGlowHalo(surfacePosition, rotation, renderingLayerMask);
+            if (profile.impactGlowDecal != null)
+            {
+                profile.impactGlowDecal.fadeFactor = profile.impactGlowStrength > 0f ? 1f : 0f;
+            }
         }
 
         float now = Time.unscaledTime;
@@ -311,18 +309,21 @@ public sealed class PooledImpactFx : MonoBehaviour
             impactParticles = System.Array.Empty<ParticleSystem>();
         }
 
-        for (int i = 0; i < impactParticles.Length; i++)
+        using (ProfileScope.Measure("Projectile.ImpactFx.Particles", DiagnosticsCategories.Client))
         {
-            ParticleSystem particle = impactParticles[i];
-            if (particle == null)
+            for (int i = 0; i < impactParticles.Length; i++)
             {
-                continue;
-            }
+                ParticleSystem particle = impactParticles[i];
+                if (particle == null)
+                {
+                    continue;
+                }
 
-            ParticleSystem.MainModule main = particle.main;
-            lifetime = Mathf.Max(lifetime, main.duration + main.startLifetime.constantMax);
-            particle.Clear(true);
-            particle.Play(true);
+                ParticleSystem.MainModule main = particle.main;
+                lifetime = Mathf.Max(lifetime, main.duration + main.startLifetime.constantMax);
+                particle.Clear(true);
+                particle.Play(true);
+            }
         }
 
         CFXR_Effect[] impactCartoonFxEffects = _activeProfile.cartoonFxEffects;
