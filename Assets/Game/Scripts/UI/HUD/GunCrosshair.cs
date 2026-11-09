@@ -37,6 +37,7 @@ namespace Game.Scripts.UI.HUD
         [SerializeField] private RectTransform ironAllianceServerReticle;
         [SerializeField] private RectTransform novaSyndicateServerReticle;
         [SerializeField] private CanvasGroup[] reticleOpacityGroups = System.Array.Empty<CanvasGroup>();
+        [SerializeField] private CanvasGroup[] battleCountdownReticleGroups = System.Array.Empty<CanvasGroup>();
 
         [Header("Faction Weapon Parameters")]
         [SerializeField] private Image ironAllianceFillImage;
@@ -115,7 +116,6 @@ namespace Game.Scripts.UI.HUD
             _ironAllianceAimStatusFallback = aimStatusText;
             _ironAlliancePenetrationStatusFallback = penetrationStatusText;
             ResolveCanvasReference();
-            ResolveReticleOpacityGroups();
             ResolveBattleCountdownReticleGroups();
             ApplyReticleOpacity(ClientGameplaySettings.ReticleOpacity);
             ApplyPenetrationStatusToActiveTarget();
@@ -949,12 +949,14 @@ namespace Game.Scripts.UI.HUD
         {
             _battleCountdownReticleGroups.Clear();
             _battleCountdownReticleOpacityGroups.Clear();
-            ResolveReticleOpacityGroups();
-            AddBattleCountdownReticleGroup(ironAllianceReticle);
-            AddBattleCountdownReticleGroup(novaSyndicateReticle);
-            AddBattleCountdownReticleGroup(ironAllianceServerReticle);
-            AddBattleCountdownReticleGroup(novaSyndicateServerReticle);
-            AddBattleCountdownReticleGroup(sniperReticleOnlyRoot != null ? sniperReticleOnlyRoot.transform : null);
+
+            if (battleCountdownReticleGroups != null)
+            {
+                for (int i = 0; i < battleCountdownReticleGroups.Length; i++)
+                {
+                    AddBattleCountdownReticleGroup(battleCountdownReticleGroups[i]);
+                }
+            }
 
             if (reticleOpacityGroups == null)
             {
@@ -967,18 +969,11 @@ namespace Game.Scripts.UI.HUD
             }
         }
 
-        private void AddBattleCountdownReticleGroup(Transform reticle)
+        private void AddBattleCountdownReticleGroup(CanvasGroup group)
         {
-            if (reticle == null)
-            {
-                return;
-            }
-
-            Transform groupTransform = reticle.parent != null ? reticle.parent : reticle;
-            CanvasGroup group = groupTransform.GetComponent<CanvasGroup>();
             if (group == null)
             {
-                group = groupTransform.gameObject.AddComponent<CanvasGroup>();
+                return;
             }
 
             if (!_battleCountdownReticleGroups.Contains(group))
@@ -1037,45 +1032,8 @@ namespace Game.Scripts.UI.HUD
             return deathSpectatorActive;
         }
 
-        private void ResolveReticleOpacityGroups()
-        {
-            if (reticleOpacityGroups != null && reticleOpacityGroups.Length > 0)
-            {
-                return;
-            }
-
-            List<CanvasGroup> groups = new List<CanvasGroup>();
-            AddReticleOpacityGroups(ironAllianceCrosshairRoot, groups);
-            AddReticleOpacityGroups(novaSyndicateCrosshairRoot, groups);
-            reticleOpacityGroups = groups.ToArray();
-        }
-
-        private static void AddReticleOpacityGroups(GameObject root, List<CanvasGroup> groups)
-        {
-            if (root == null || groups == null)
-            {
-                return;
-            }
-
-            CanvasGroup[] candidates = root.GetComponentsInChildren<CanvasGroup>(true);
-            for (int i = 0; i < candidates.Length; i++)
-            {
-                CanvasGroup candidate = candidates[i];
-                if (candidate == null || (candidate.name != "Back" && candidate.name != "Back2"))
-                {
-                    continue;
-                }
-
-                if (!groups.Contains(candidate))
-                {
-                    groups.Add(candidate);
-                }
-            }
-        }
-
         private void ApplyReticleOpacity(float value)
         {
-            ResolveReticleOpacityGroups();
             _reticleOpacity = ClientGameplaySettings.ClampReticleOpacity(value);
             ApplyBattleCountdownReticleAlpha();
         }

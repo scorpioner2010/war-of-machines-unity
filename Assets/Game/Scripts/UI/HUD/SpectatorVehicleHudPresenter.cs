@@ -2,6 +2,7 @@ using Game.Scripts.Client;
 using Game.Scripts.Core.Services;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.UI.Robots;
+using TMPro;
 using UnityEngine;
 
 namespace Game.Scripts.UI.HUD
@@ -21,6 +22,11 @@ namespace Game.Scripts.UI.HUD
         private float _targetDisplaySpeed;
         private float _smoothedDisplaySpeed;
         private int _lastShownSpeed = int.MinValue;
+        private TMP_Text _lastHealthLabel;
+        private TMP_Text _lastVehicleNameLabel;
+        private int _lastHealthLabelCurrent = int.MinValue;
+        private int _lastHealthLabelMax = int.MinValue;
+        private string _lastVehicleName;
 
         private void OnEnable()
         {
@@ -106,6 +112,11 @@ namespace Game.Scripts.UI.HUD
             _targetDisplaySpeed = 0f;
             _smoothedDisplaySpeed = 0f;
             _lastShownSpeed = int.MinValue;
+            _lastHealthLabel = null;
+            _lastVehicleNameLabel = null;
+            _lastHealthLabelCurrent = int.MinValue;
+            _lastHealthLabelMax = int.MinValue;
+            _lastVehicleName = null;
             SpeedHud.SetText(0);
             RefreshHealthDisplay();
         }
@@ -146,12 +157,27 @@ namespace Game.Scripts.UI.HUD
             {
                 int current = _displayHealth != null ? Mathf.RoundToInt(_displayHealth.Current) : 0;
                 int max = _displayHealth != null ? Mathf.RoundToInt(_displayHealth.MaxHealth) : 0;
-                _healthBar.label.text = $"{current} / {max}";
+                if (_lastHealthLabel != _healthBar.label
+                    || _lastHealthLabelCurrent != current
+                    || _lastHealthLabelMax != max)
+                {
+                    _healthBar.label.text = $"{current} / {max}";
+                    _lastHealthLabel = _healthBar.label;
+                    _lastHealthLabelCurrent = current;
+                    _lastHealthLabelMax = max;
+                }
             }
 
             if (_healthBar.vehicleNameLabel != null)
             {
-                _healthBar.vehicleNameLabel.text = ResolveVehicleName();
+                string vehicleName = ResolveVehicleName();
+                if (_lastVehicleNameLabel != _healthBar.vehicleNameLabel
+                    || _lastVehicleName != vehicleName)
+                {
+                    _healthBar.vehicleNameLabel.text = vehicleName;
+                    _lastVehicleNameLabel = _healthBar.vehicleNameLabel;
+                    _lastVehicleName = vehicleName;
+                }
             }
         }
 

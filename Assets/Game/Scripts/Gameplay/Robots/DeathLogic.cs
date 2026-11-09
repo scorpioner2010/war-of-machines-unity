@@ -32,6 +32,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
 
     private readonly List<GameObject> _detachedDebrisObjects = new List<GameObject>(32);
     private readonly List<Collider> _detachedDebrisColliders = new List<Collider>(32);
+    private readonly List<Vector3> _detachedDebrisCenters = new List<Vector3>(32);
     private readonly List<Renderer> _impactRenderers = new List<Renderer>(32);
     private readonly List<MeshCollider> _impactMeshColliders = new List<MeshCollider>(32);
     private bool _deathHandled;
@@ -40,11 +41,6 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
 
     private void Awake()
     {
-        if (destructionParticleController == null)
-        {
-            destructionParticleController = GetComponent<RobotDestructionParticleController>();
-        }
-
         RegisterImpactMeshColliders();
     }
 
@@ -130,7 +126,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             }
         }
 
-        VehicleColliderRegistry.RegisterRenderers(vehicleRoot, _impactRenderers.ToArray());
+        VehicleColliderRegistry.RegisterRenderers(vehicleRoot, _impactRenderers);
         VehicleColliderRegistry.RegisterImpactMeshColliders(vehicleRoot, _impactMeshColliders);
     }
 
@@ -205,7 +201,10 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             DetachLegacyDebris(mapScene, debrisLayer, renderDebris);
         }
 
-        destructionParticleController?.PlayDestruction(destructionCenter, _detachedDebrisObjects);
+        destructionParticleController?.PlayDestruction(
+            destructionCenter,
+            _detachedDebrisObjects,
+            _detachedDebrisCenters);
 
         if (forTurnOff != null)
         {
@@ -264,7 +263,10 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             MapScopedObjectRegistry.MoveRootToScene(mapScene, visual.root);
             SetLayerRecursively(visual.root.transform, debrisLayer);
 
-            RegisterDetachedDebris(visual.root, visual.collider);
+            Vector3 debrisCenter = visual.renderer != null
+                ? visual.renderer.bounds.center
+                : visual.collider.bounds.center;
+            RegisterDetachedDebris(visual.root, visual.collider, debrisCenter);
 
             DisableConfiguredBehaviours(visual.behavioursToDisable);
             visual.rigidbody.isKinematic = false;
@@ -352,7 +354,8 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
             Renderer obj = debrisRenderers != null && i < debrisRenderers.Length
                 ? debrisRenderers[i]
                 : null;
-            RegisterDetachedDebris(debrisObject, coll);
+            Vector3 debrisCenter = obj != null ? obj.bounds.center : coll.bounds.center;
+            RegisterDetachedDebris(debrisObject, coll, debrisCenter);
 
             if (obj != null)
             {
@@ -362,11 +365,12 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
         }
     }
 
-    private void RegisterDetachedDebris(GameObject debrisObject, Collider debrisCollider)
+    private void RegisterDetachedDebris(GameObject debrisObject, Collider debrisCollider, Vector3 debrisCenter)
     {
         if (debrisObject != null && !_detachedDebrisObjects.Contains(debrisObject))
         {
             _detachedDebrisObjects.Add(debrisObject);
+            _detachedDebrisCenters.Add(debrisCenter);
         }
 
         if (debrisCollider != null && !_detachedDebrisColliders.Contains(debrisCollider))
@@ -401,28 +405,6 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
                     else
                     {
                         bounds.Encapsulate(visual.renderer.bounds);
-                    }
-                }
-                else if (visual.root != null)
-                {
-                    Renderer[] renderers = visual.root.GetComponentsInChildren<Renderer>(true);
-                    for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
-                    {
-                        Renderer renderer = renderers[rendererIndex];
-                        if (renderer == null)
-                        {
-                            continue;
-                        }
-
-                        if (!hasBounds)
-                        {
-                            bounds = renderer.bounds;
-                            hasBounds = true;
-                        }
-                        else
-                        {
-                            bounds.Encapsulate(renderer.bounds);
-                        }
                     }
                 }
             }
@@ -462,6 +444,7 @@ public class DeathLogic : MonoBehaviour, IVehicleRootAware
 
         _detachedDebrisObjects.Clear();
         _detachedDebrisColliders.Clear();
+        _detachedDebrisCenters.Clear();
     }
 
     private Scene GetOwningScene()

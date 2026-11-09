@@ -370,7 +370,7 @@ public sealed class PooledImpactFx : MonoBehaviour
         ImpactFxProfile profile = GetImpactProfile();
         if (profile.particles == null || profile.particles.Length == 0)
         {
-            profile.particles = GetComponentsInChildren<ParticleSystem>(true);
+            profile.particles = System.Array.Empty<ParticleSystem>();
         }
 
         if (profile.cartoonFxEffects == null)

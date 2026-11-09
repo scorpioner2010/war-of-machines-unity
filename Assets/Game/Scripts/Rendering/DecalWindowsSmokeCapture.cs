@@ -8,6 +8,7 @@ namespace Game.Rendering
     public sealed class DecalWindowsSmokeCapture : MonoBehaviour
     {
         [SerializeField] private float captureDelay = 2f;
+        [SerializeField] private Camera captureCamera;
 
         private IEnumerator Start()
         {
@@ -19,7 +20,7 @@ namespace Game.Rendering
 
         private void CaptureFrame()
         {
-            Camera camera = FindFirstObjectByType<Camera>();
+            Camera camera = captureCamera;
             if (camera == null)
                 throw new InvalidOperationException("Decal smoke capture requires a camera.");
 

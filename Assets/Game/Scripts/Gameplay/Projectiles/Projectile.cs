@@ -948,7 +948,7 @@ public class Projectile : MonoBehaviour
             _currentVelocity = segment.CurrentVelocity;
 
             Vector3 travel = newPosition - previousPosition;
-            float segmentDistance = travel.magnitude;
+            float segmentDistance = segment.Distance;
             Vector3 travelDirection = segmentDistance > 0.000001f
                 ? travel / segmentDistance
                 : GetSafeVelocityDirection();

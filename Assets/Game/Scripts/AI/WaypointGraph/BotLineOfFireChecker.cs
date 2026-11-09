@@ -29,7 +29,8 @@ namespace Game.Scripts.AI.WaypointGraph
                 return false;
             }
 
-            if (HasClearShot(shooterRoot, targetPoint, expectedTarget, settings))
+            Vector3 origin = BotCombatUtility.GetAimOrigin(shooterRoot);
+            if (HasClearShot(origin, shooterRoot, targetPoint, expectedTarget, settings))
             {
                 return true;
             }
@@ -76,7 +77,7 @@ namespace Game.Scripts.AI.WaypointGraph
                     candidate -= Vector3.up * AimProbeHeight;
                 }
 
-                if (!HasClearShot(shooterRoot, candidate, expectedTarget, settings))
+                if (!HasClearShot(origin, shooterRoot, candidate, expectedTarget, settings))
                 {
                     continue;
                 }
@@ -88,9 +89,13 @@ namespace Game.Scripts.AI.WaypointGraph
             return false;
         }
 
-        private bool HasClearShot(VehicleRoot shooterRoot, Vector3 targetPoint, VehicleRoot expectedTarget, BotCombatSettings settings)
+        private bool HasClearShot(
+            Vector3 origin,
+            VehicleRoot shooterRoot,
+            Vector3 targetPoint,
+            VehicleRoot expectedTarget,
+            BotCombatSettings settings)
         {
-            Vector3 origin = BotCombatUtility.GetAimOrigin(shooterRoot);
             Vector3 direction = targetPoint - origin;
             float distance = direction.magnitude;
             if (!BotCombatUtility.IsFinite(direction) || float.IsNaN(distance) || float.IsInfinity(distance) || distance <= 0.001f)

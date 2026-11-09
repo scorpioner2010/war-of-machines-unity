@@ -232,35 +232,6 @@ namespace Game.Scripts.Audio
         public void ConfigureForEditor(Button sourceButton)
         {
             button = sourceButton;
-
-            Graphic[] graphics = GetComponentsInChildren<Graphic>(true);
-            int childGraphicCount = 0;
-
-            for (int index = 0; index < graphics.Length; index++)
-            {
-                Graphic graphic = graphics[index];
-                if (graphic.transform == transform || graphic == button.targetGraphic)
-                {
-                    continue;
-                }
-
-                childGraphicCount++;
-            }
-
-            childGraphics = new Graphic[childGraphicCount];
-            int childGraphicIndex = 0;
-
-            for (int index = 0; index < graphics.Length; index++)
-            {
-                Graphic graphic = graphics[index];
-                if (graphic.transform == transform || graphic == button.targetGraphic)
-                {
-                    continue;
-                }
-
-                childGraphics[childGraphicIndex] = graphic;
-                childGraphicIndex++;
-            }
         }
 #endif
     }

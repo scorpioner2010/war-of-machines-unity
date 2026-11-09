@@ -21,8 +21,11 @@ namespace Game.Scripts.Gameplay.Robots
             new Dictionary<VehicleRoot, List<ImpactVisualPart>>(64);
         private static readonly Dictionary<Collider, ImpactVisualSurfaceData> ImpactSurfacesByCollider =
             new Dictionary<Collider, ImpactVisualSurfaceData>(256);
+        private static readonly Dictionary<VehicleRoot, CachedImpactVisualSurface> ImpactSurfaceCacheByRoot =
+            new Dictionary<VehicleRoot, CachedImpactVisualSurface>(64);
+        private static readonly List<GameObject> ActivatedObjectBuffer = new List<GameObject>(4);
 
-        public static void RegisterRenderers(VehicleRoot root, Renderer[] renderers)
+        public static void RegisterRenderers(VehicleRoot root, IList<Renderer> renderers)
         {
             if (root == null || renderers == null)
             {
@@ -31,11 +34,13 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (!ImpactRenderersByRoot.TryGetValue(root, out List<Renderer> registeredRenderers))
             {
-                registeredRenderers = new List<Renderer>(renderers.Length);
+                registeredRenderers = new List<Renderer>(renderers.Count);
                 ImpactRenderersByRoot.Add(root, registeredRenderers);
             }
 
-            for (int i = 0; i < renderers.Length; i++)
+            ImpactSurfaceCacheByRoot.Remove(root);
+
+            for (int i = 0; i < renderers.Count; i++)
             {
                 Renderer renderer = renderers[i];
                 if (renderer == null)
@@ -174,6 +179,8 @@ namespace Game.Scripts.Gameplay.Robots
                 ImpactMeshCollidersByRoot.Add(root, registeredColliders);
             }
 
+            ImpactSurfaceCacheByRoot.Remove(root);
+
             for (int i = 0; i < meshColliders.Count; i++)
             {
                 MeshCollider meshCollider = meshColliders[i];
@@ -199,6 +206,8 @@ namespace Game.Scripts.Gameplay.Robots
                 visualParts = new List<ImpactVisualPart>(16);
                 ImpactVisualPartsByRoot.Add(root, visualParts);
             }
+
+            ImpactSurfaceCacheByRoot.Remove(root);
 
             for (int i = 0; i < visualParts.Count; i++)
             {
@@ -311,10 +320,21 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
+            if (ImpactSurfaceCacheByRoot.TryGetValue(root, out CachedImpactVisualSurface cachedSurface)
+                && cachedSurface.Frame == Time.frameCount
+                && (cachedSurface.ImpactPoint - impactPoint).sqrMagnitude <= 0.0000001f
+                && (cachedSurface.ImpactNormal - safeNormal).sqrMagnitude <= 0.0000001f)
+            {
+                surfacePosition = cachedSurface.SurfacePosition;
+                surfaceNormal = cachedSurface.SurfaceNormal;
+                surfaceRenderer = cachedSurface.SurfaceRenderer;
+                return cachedSurface.Found;
+            }
+
             ImpactMeshCollidersByRoot.TryGetValue(root, out List<MeshCollider> meshColliders);
             ImpactRenderersByRoot.TryGetValue(root, out List<Renderer> renderers);
             ImpactVisualPartsByRoot.TryGetValue(root, out List<ImpactVisualPart> visualParts);
-            return TryResolveImpactVisualSurface(
+            bool foundSurface = TryResolveImpactVisualSurface(
                 meshColliders,
                 renderers,
                 visualParts,
@@ -323,6 +343,15 @@ namespace Game.Scripts.Gameplay.Robots
                 out surfacePosition,
                 out surfaceNormal,
                 out surfaceRenderer);
+            ImpactSurfaceCacheByRoot[root] = new CachedImpactVisualSurface(
+                Time.frameCount,
+                impactPoint,
+                safeNormal,
+                foundSurface,
+                surfacePosition,
+                surfaceNormal,
+                surfaceRenderer);
+            return foundSurface;
         }
 
         private static bool TryResolveImpactVisualSurface(
@@ -339,7 +368,7 @@ namespace Game.Scripts.Gameplay.Robots
             Ray surfaceRay = new Ray(
                 impactPoint + safeNormal * ImpactSurfaceDistanceEpsilon,
                 rayDirection);
-            float closestDistance = float.PositiveInfinity;
+            float closestDistanceSqr = float.PositiveInfinity;
             surfacePosition = impactPoint;
             surfaceNormal = safeNormal;
             surfaceRenderer = null;
@@ -363,10 +392,10 @@ namespace Game.Scripts.Gameplay.Robots
                         surfaceRay,
                         out RaycastHit meshHit))
                     {
-                        float distance = (meshHit.point - impactPoint).magnitude;
-                        if (distance < closestDistance)
+                        float distanceSqr = (meshHit.point - impactPoint).sqrMagnitude;
+                        if (distanceSqr < closestDistanceSqr)
                         {
-                            closestDistance = distance;
+                            closestDistanceSqr = distanceSqr;
                             surfacePosition = meshHit.point;
                             surfaceNormal = meshHit.normal.sqrMagnitude > 0.000001f
                                 ? meshHit.normal.normalized
@@ -388,7 +417,9 @@ namespace Game.Scripts.Gameplay.Robots
                 for (int i = 0; i < meshColliders.Count; i++)
                 {
                     MeshCollider meshCollider = meshColliders[i];
-                    if (meshCollider == null || meshCollider.sharedMesh == null)
+                    if (meshCollider == null
+                        || meshCollider.sharedMesh == null
+                        || ContainsVisualPartMeshCollider(visualParts, meshCollider))
                     {
                         continue;
                     }
@@ -400,10 +431,10 @@ namespace Game.Scripts.Gameplay.Robots
                         surfaceRay,
                         out RaycastHit meshHit))
                     {
-                        float distance = (meshHit.point - impactPoint).magnitude;
-                        if (distance < closestDistance)
+                        float distanceSqr = (meshHit.point - impactPoint).sqrMagnitude;
+                        if (distanceSqr < closestDistanceSqr)
                         {
-                            closestDistance = distance;
+                            closestDistanceSqr = distanceSqr;
                             surfacePosition = meshHit.point;
                             surfaceNormal = meshHit.normal.sqrMagnitude > 0.000001f
                                 ? meshHit.normal.normalized
@@ -432,6 +463,26 @@ namespace Game.Scripts.Gameplay.Robots
                     safeNormal,
                     out surfacePosition,
                     out surfaceRenderer);
+        }
+
+        private static bool ContainsVisualPartMeshCollider(
+            List<ImpactVisualPart> visualParts,
+            MeshCollider meshCollider)
+        {
+            if (visualParts == null || meshCollider == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < visualParts.Count; i++)
+            {
+                if (visualParts[i].MeshCollider == meshCollider)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool TryGetMeshColliderSurface(
@@ -492,29 +543,21 @@ namespace Game.Scripts.Gameplay.Robots
             float distance,
             out RaycastHit hit)
         {
-            List<GameObject> activatedObjects = null;
+            ActivatedObjectBuffer.Clear();
             Transform currentTransform = meshCollider.transform;
             while (currentTransform != null)
             {
                 if (!currentTransform.gameObject.activeSelf)
                 {
-                    if (activatedObjects == null)
-                    {
-                        activatedObjects = new List<GameObject>(4);
-                    }
-
-                    activatedObjects.Add(currentTransform.gameObject);
+                    ActivatedObjectBuffer.Add(currentTransform.gameObject);
                 }
 
                 currentTransform = currentTransform.parent;
             }
 
-            if (activatedObjects != null)
+            for (int i = ActivatedObjectBuffer.Count - 1; i >= 0; i--)
             {
-                for (int i = activatedObjects.Count - 1; i >= 0; i--)
-                {
-                    activatedObjects[i].SetActive(true);
-                }
+                ActivatedObjectBuffer[i].SetActive(true);
             }
 
             bool wasEnabled = meshCollider.enabled;
@@ -535,16 +578,15 @@ namespace Game.Scripts.Gameplay.Robots
                     meshCollider.enabled = false;
                 }
 
-                if (activatedObjects != null)
+                for (int i = 0; i < ActivatedObjectBuffer.Count; i++)
                 {
-                    for (int i = 0; i < activatedObjects.Count; i++)
+                    if (ActivatedObjectBuffer[i] != null)
                     {
-                        if (activatedObjects[i] != null)
-                        {
-                            activatedObjects[i].SetActive(false);
-                        }
+                        ActivatedObjectBuffer[i].SetActive(false);
                     }
                 }
+
+                ActivatedObjectBuffer.Clear();
             }
         }
 
@@ -617,6 +659,7 @@ namespace Game.Scripts.Gameplay.Robots
             ImpactRenderersByRoot.Remove(root);
             ImpactMeshCollidersByRoot.Remove(root);
             ImpactVisualPartsByRoot.Remove(root);
+            ImpactSurfaceCacheByRoot.Remove(root);
         }
 
         private static bool TryGetRendererBoundsSurface(
@@ -633,7 +676,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return false;
             }
 
-            float closestDistance = float.PositiveInfinity;
+            float closestDistanceSqr = float.PositiveInfinity;
             bool foundSurface = false;
             for (int i = 0; i < renderers.Count; i++)
             {
@@ -645,12 +688,13 @@ namespace Game.Scripts.Gameplay.Robots
 
                 Bounds bounds = renderer.bounds;
                 Vector3 towardCenter = bounds.center - impactPoint;
-                float centerDistance = towardCenter.magnitude;
-                if (centerDistance <= ImpactSurfaceDistanceEpsilon)
+                float centerDistanceSqr = towardCenter.sqrMagnitude;
+                if (centerDistanceSqr <= ImpactSurfaceDistanceEpsilon * ImpactSurfaceDistanceEpsilon)
                 {
                     continue;
                 }
 
+                float centerDistance = Mathf.Sqrt(centerDistanceSqr);
                 Vector3 direction = towardCenter / centerDistance;
                 Ray boundsRay = new Ray(
                     impactPoint + direction * ImpactSurfaceDistanceEpsilon,
@@ -661,13 +705,13 @@ namespace Game.Scripts.Gameplay.Robots
                 }
 
                 distance = Mathf.Max(0f, distance);
-                if (distance >= closestDistance)
+                if (distance * distance >= closestDistanceSqr)
                 {
                     continue;
                 }
 
                 Vector3 candidate = boundsRay.origin + boundsRay.direction * distance;
-                closestDistance = distance;
+                closestDistanceSqr = distance * distance;
                 surfacePosition = candidate;
                 surfaceRenderer = renderer;
                 foundSurface = true;
@@ -703,6 +747,35 @@ namespace Game.Scripts.Gameplay.Robots
                         destination.Add(item);
                     }
                 }
+            }
+        }
+
+        private readonly struct CachedImpactVisualSurface
+        {
+            public readonly int Frame;
+            public readonly Vector3 ImpactPoint;
+            public readonly Vector3 ImpactNormal;
+            public readonly bool Found;
+            public readonly Vector3 SurfacePosition;
+            public readonly Vector3 SurfaceNormal;
+            public readonly Renderer SurfaceRenderer;
+
+            public CachedImpactVisualSurface(
+                int frame,
+                Vector3 impactPoint,
+                Vector3 impactNormal,
+                bool found,
+                Vector3 surfacePosition,
+                Vector3 surfaceNormal,
+                Renderer surfaceRenderer)
+            {
+                Frame = frame;
+                ImpactPoint = impactPoint;
+                ImpactNormal = impactNormal;
+                Found = found;
+                SurfacePosition = surfacePosition;
+                SurfaceNormal = surfaceNormal;
+                SurfaceRenderer = surfaceRenderer;
             }
         }
 

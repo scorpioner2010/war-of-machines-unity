@@ -118,21 +118,8 @@ namespace Game.Scripts.UI.Lobby
                 return _in;
             }
 
-            GameObject[] objects = Resources.FindObjectsOfTypeAll<GameObject>();
-            for (int i = 0; i < objects.Length; i++)
+            if (MenuManager.TryGetMenuPresenter(MenuType.GameResult, out GameResultUI ui))
             {
-                GameObject obj = objects[i];
-                if (obj == null || obj.name != "GameResult" || !obj.scene.IsValid())
-                {
-                    continue;
-                }
-
-                GameResultUI ui = obj.GetComponent<GameResultUI>();
-                if (ui == null)
-                {
-                    ui = obj.AddComponent<GameResultUI>();
-                }
-
                 _in = ui;
                 ui.EnsureWired();
                 return ui;
@@ -153,24 +140,6 @@ namespace Game.Scripts.UI.Lobby
             if (_wired)
             {
                 return;
-            }
-
-            if (summaryText == null)
-            {
-                TMP_Text[] texts = GetComponentsInChildren<TMP_Text>(true);
-                if (texts.Length > 0)
-                {
-                    summaryText = texts[0];
-                }
-            }
-
-            if (okButton == null)
-            {
-                Button[] buttons = GetComponentsInChildren<Button>(true);
-                if (buttons.Length > 0)
-                {
-                    okButton = buttons[0];
-                }
             }
 
             if (okButton != null)

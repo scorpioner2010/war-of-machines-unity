@@ -13,9 +13,38 @@ namespace Game.Scripts.Gameplay.Robots
             public float raycastLength = 2f;
             public float surfaceCheckRadius = 1f;
             public int raysCount = 8;
-            public float alignmentPercentage = 50f;
+        public float alignmentPercentage = 50f;
             public LayerMask surfaceLayer;
             public float lerpSpeed = 10f;
+
+            [System.NonSerialized] private Vector3[] _rayOffsets = System.Array.Empty<Vector3>();
+            [System.NonSerialized] private int _cachedRaysCount = -1;
+            [System.NonSerialized] private float _cachedSurfaceCheckRadius = float.NaN;
+
+            public void EnsureRayOffsets()
+            {
+                if (_cachedRaysCount == raysCount
+                    && _cachedSurfaceCheckRadius == surfaceCheckRadius
+                    && _rayOffsets.Length == raysCount)
+                {
+                    return;
+                }
+
+                _cachedRaysCount = raysCount;
+                _cachedSurfaceCheckRadius = surfaceCheckRadius;
+                _rayOffsets = new Vector3[raysCount];
+                for (int i = 0; i < raysCount; i++)
+                {
+                    float angle = i / (float)raysCount * Mathf.PI * 2f;
+                    _rayOffsets[i] = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle))
+                                     * surfaceCheckRadius;
+                }
+            }
+
+            public Vector3 GetRayOffset(int index)
+            {
+                return _rayOffsets[index];
+            }
         }
 
         public VehicleRoot vehicleRoot;
@@ -52,12 +81,10 @@ namespace Game.Scripts.Gameplay.Robots
             Vector3 averageNormal = Vector3.zero;
             float averageGroundDistance = 0f;
             int validHits = 0;
+            target.EnsureRayOffsets();
             for (int i = 0; i < target.raysCount; i++)
             {
-                float angle = i / (float)target.raysCount * Mathf.PI * 2f;
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle))
-                                 * target.surfaceCheckRadius;
-                Vector3 rayOrigin = targetTransform.position + offset;
+                Vector3 rayOrigin = targetTransform.position + target.GetRayOffset(i);
                 if (Physics.Raycast(
                         rayOrigin,
                         Vector3.down,

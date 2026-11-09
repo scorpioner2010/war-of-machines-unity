@@ -14,12 +14,14 @@ namespace Game.Scripts.Gameplay.Robots
         [SerializeField] private float volumeFadeSpeed = 3.5f;
         [SerializeField] private float pitchSmoothing = 4.5f;
 
-        private VehicleRoot _vehicleRoot;
+        [SerializeField] private VehicleRoot _vehicleRoot;
         private AudioEngineProfile _profile;
         private string _resolvedRobotCode;
         private AudioPreset _idleAudio;
         private AudioPreset _runAudio;
         private AudioPreset _highAudio;
+        private Transform _cachedObjectMover;
+        private Transform _cachedAudioAnchor;
         private float _activityWeight;
         private float _rpm01;
         private float _previousThrottle;
@@ -32,14 +34,8 @@ namespace Game.Scripts.Gameplay.Robots
         public void SetVehicleRoot(VehicleRoot vehicleRoot)
         {
             _vehicleRoot = vehicleRoot;
-        }
-
-        private void Awake()
-        {
-            if (_vehicleRoot == null)
-            {
-                _vehicleRoot = GetComponent<VehicleRoot>();
-            }
+            _cachedObjectMover = null;
+            _cachedAudioAnchor = null;
         }
 
         private void Update()
@@ -282,9 +278,16 @@ namespace Game.Scripts.Gameplay.Robots
 
         private Transform GetAudioAnchor()
         {
-            return _vehicleRoot != null && _vehicleRoot.objectMover != null
+            Transform objectMover = _vehicleRoot != null && _vehicleRoot.objectMover != null
                 ? _vehicleRoot.objectMover.transform
-                : transform;
+                : null;
+            if (_cachedAudioAnchor == null || objectMover != _cachedObjectMover)
+            {
+                _cachedObjectMover = objectMover;
+                _cachedAudioAnchor = objectMover != null ? objectMover : transform;
+            }
+
+            return _cachedAudioAnchor;
         }
 
         private void AttachToAudioAnchor(AudioPreset audio)

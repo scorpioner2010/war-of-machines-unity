@@ -19,7 +19,6 @@ namespace Game.Scripts.UI.HUD
 
         private void Awake()
         {
-            canvasGroup ??= GetComponent<CanvasGroup>();
             animatedRoot ??= transform as RectTransform;
             Hide();
         }
