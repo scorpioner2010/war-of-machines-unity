@@ -9,7 +9,7 @@ Owner file:
   - Server uses `Server.unity` and `Map.unity` with `StandaloneBuildSubtarget.Server`.
   - Client uses `Client.unity` and `Map.unity` with `StandaloneBuildSubtarget.Player`.
   - Each build clears only its own generated output directory first, preventing a stale executable or data folder from being reused.
-  - The `[InitializeOnLoad]` Editor watcher consumes `D:\Programing\UnityProjects\war-of-machines-local-builds\server-build-request.txt`, builds the server through the already open Editor, and writes a matching `server-build-result.txt` response.
+  - The `[InitializeOnLoad]` Editor watcher consumes `D:\Programing\UnityProjects\war-of-machines-local-builds\server-build-request.txt` or `client-build-request.txt`, builds the requested target through the already open Editor, and writes the matching `server-build-result.txt` or `client-build-result.txt` response.
 
 Desktop launcher bridge:
 - `C:\Users\TorasPC\Desktop\Start War of Machines.bat` builds the API, writes a unique token to the request file, and waits up to 30 minutes for the same token in the result file.

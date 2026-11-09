@@ -58,7 +58,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Gameplay/Projectiles/ImpactVisualSurface.cs`
   - Serialized adapter for non-robot proxy colliders. It registers one physics collider with its visible `MeshCollider` and `Renderer` references without scene-wide runtime searches.
   - The five `Concrete_fence_v1` prefabs use a disabled non-convex visual `MeshCollider` for this mapping, including `Concrete_fence_v1_wall_set_v2`.
-- `Assets/Game/Scripts/Editor/ArmorPrefabHighlighter.cs`
+- `Assets/Editor/Game/ArmorPrefabHighlighter.cs`
   - In Prefab Mode, draws the red overlay for active objects referenced by the root `VehicleArmorController` turret/hull arrays; an object disabled with `GameObject.SetActive(false)` is not highlighted.
   - Respects the prefab-owned `highlightArmorInPrefab` checkbox.
 - `Assets/Game/Scripts/Gameplay/Robots/Shared/DispersionConeProjection.cs`
@@ -134,7 +134,7 @@ Fire flow:
 - Local damage feedback is client-side UI only: `VehicleHealth.OnDamaged` drives `DamageScreen` without affecting damage calculation.
 
 T2 armor and destruction prefab contract:
-- Registered IA robot prefabs under `Assets/Game/Content/Robots/IA` register only colliders below objects named `Armor` as armor damage surfaces.
+- Registered Iron Alliance robot prefabs under `Assets/Game/Content/Robots/IronAlliance` register only colliders below objects named `Armor` as armor damage surfaces.
 - Its single root `VehicleArmorController` contains six hull colliders and seven turret/gun colliders. `ChassisT2` is the one registry-only non-armor collider.
 - `CabineReal`, `WeaponReal`, `MeshReal`, and wheel holders are transform/animation parents only. Each non-armor `MeshRenderer` child owns the matching disabled convex `MeshCollider` and kinematic `Rigidbody`, using that object's `MeshFilter.sharedMesh`. Armor mesh objects remain editor-only and keep their armor-controller collider setup.
 - On death, all configured mesh-renderer objects detach, move recursively to the `Chassis` layer, enable their mesh colliders, and become non-kinematic. Wheel and body presentation behaviours are disabled before physics starts.
@@ -142,7 +142,7 @@ T2 armor and destruction prefab contract:
 - `VehicleClientVisibility` releases the death renderers from future spotting changes while preserving whether the vehicle was visible at the death moment. Visible debris stays visible until map unload; already-hidden enemies do not reveal debris.
 
 T1 Hunter destruction prefab contract:
-- Registered NV robot prefabs under `Assets/Game/Content/Robots/NV` currently use eight armor damage surfaces. The root armor controller assigns the three cubes below `Body` to its turret array and the central hull cube plus four leg-section cubes below `Chassis/ChassisMain` to its hull array.
+- Registered Nova Syndicate robot prefabs under `Assets/Game/Content/Robots/NovaSyndicate` currently use eight armor damage surfaces. The root armor controller assigns the three cubes below `Body` to its turret array and the central hull cube plus four leg-section cubes below `Chassis/ChassisMain` to its hull array.
 - The root `VehicleArmorController` contains three turret/gun colliders and five hull/leg colliders. Child armor objects contain only Unity collider/renderer components.
 - Their local position, rotation, and scale are authored independently. Adding or duplicating an armor cube requires adding its collider to the matching root armor array and the health collider list.
 - On death, `DeathLogic` asks the centralized armor controller to disable all configured armor surfaces.

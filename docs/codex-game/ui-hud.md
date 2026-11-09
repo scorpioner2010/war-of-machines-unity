@@ -39,6 +39,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/UI/HUD/SpectatorVehicleHudPresenter.cs`
   - Owns screen-space HP, vehicle-name, and speed presentation during death spectator mode from the scene-owned HUD hierarchy.
   - Subscribes to `CameraController.DeathSpectatorCameraChanged` and the active controller's `SpectatorTargetChanged`, so it remains alive after the local network vehicle despawns and follows each selected robot.
+  - Keeps the smooth health-bar value update continuous, but gates unchanged HP/name TMP assignments and interpolation-string creation until the displayed value, resolved name, or label reference changes.
   - Samples the selected target's client-visible movement transform with the configured speed interval, multiplier, smoothing, and stop-snap settings; changing targets resets the speed display to zero.
   - Writes the selected target's current/max HP and runtime name to `VehicleStatusPanel` without changing normal owner HUD or sniper presentation.
 - `Assets/Game/Scripts/UI/HUD/DamageScreen.cs`
@@ -91,6 +92,7 @@ Current owner scripts:
   - When the test controller spawns the test player or a bot, it directly binds the prefab's `VehicleHUD` to the test camera, vehicle root, and nickname so the standard in-world HP bar is visible and scales/rotates correctly.
 - `Assets/Game/Scripts/UI/HUD/GameplayMapHud.cs`
   - Gameplay map HUD for `MiniMapRoot` and `FullMapRoot`.
+  - Uses an object-ID index for tracked vehicle markers and reuses inactive mini/full marker instances across visibility snapshots; the first allocation and all authored local-player marker references remain unchanged.
   - Keeps `MiniMapImage` and the independent `MiniMapRobotCanvas` as separate presentation layers: image scale/X/Y/offset changes do not scale or move the robot marker coordinate canvas.
   - Keeps `FullMapImage` and the independent `FullMapRobotCanvas` as separate presentation layers as well, so full-map alignment is not affected by mini-map tuning.
   - Reads separate full-map and mini-map image scale/X/Y/offset, robot-canvas scale/X/Y/offset, marker X/Y scale, and marker offset from `ClientSettings.gameplayRuntime` every frame, so both map views can be tuned during Play Mode without changing the scene hierarchy.
@@ -121,9 +123,10 @@ Current owner scripts:
   - Suppresses normal gameplay pause handling whenever the `VehicleTest` scene is loaded, not only when it is the active scene, so additive test maps do not open centered pause UI or hide `GameplayHUD`.
 - `Assets/Game/Scripts/MenuController/MenuManager.cs`
   - Global menu state; also affects gameplay input blocking.
-  - Registers only inspector-wired scene menus during `Awake`; it does not instantiate menu prefabs at runtime.
+  - Registers only inspector-wired scene menus and optional presenter components during `Awake`; it does not instantiate menu prefabs or discover presenters globally at runtime.
   - `Client.unity/Canvas/GameplayHUD` is the inspector-wired `MenuType.GameplayHUD` route and owns the live gameplay crosshair, map, player list, damage screen, and local HP display.
   - `GameplayPauseController` registers the separate `GameplayPausePopup` route, so opening pause does not require nesting the popup under the gameplay HUD presentation root.
+  - The `MenuType.GameResult` entry stores the scene-owned `GameResultUI` presenter, so pending match results do not use `Resources.FindObjectsOfTypeAll`, `GetComponent`, or runtime `AddComponent`.
 - `Assets/Game/Scripts/MenuController/Menu.cs`
   - Menu presentation controller used by HUD/pause/settings menus. It fades its inspector-wired `CanvasGroup` alpha without moving the UI layout; each component's `fadeDuration` controls both directions and defaults to `0.5` seconds.
   - Provides `CloseImmediate()` for VehicleTest to hide `GameplayHUD` instantly without a fade animation fighting the test overlay visibility.
@@ -132,6 +135,7 @@ Rules when editing HUD/UI:
 - Keep gameplay input blocking behavior in sync with `VehicleInputController.IsGameplayInputBlockedByUi`.
 - Do not let client-only UI state drive authoritative gameplay.
 - Prefer inspector-wired references for UI components.
+- Keep stable UI component references serialized on the owning scene/prefab; do not reintroduce `GetComponent*`, child scans, or runtime `AddComponent` fallback paths for authored HUD elements.
 - Keep map markers and `NameCanvas` activation on the authoritative snapshot, but do not equate a memory marker with a visible 3D enemy: `Enemy` renders the model, while `EnemyLastKnown` is map-only. Rendering through walls applies only while direct spotting still contains the robot.
 - Keep `NameCanvas` fade visual-only: alpha `0` must not disable the root `VehicleHUD`, because it still owns HP/name binding and may be the selected spectating target. The fade distance is measured against the shared gameplay orbit camera, not a per-robot camera.
 - For local hit feedback, use `DamageScreen` and `VehicleHealth.OnDamaged`; do not poll health or search for the local vehicle from the scene.
