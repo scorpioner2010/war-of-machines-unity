@@ -26,6 +26,54 @@ This file is the durable handoff point between Codex sessions. Keep entries appe
 - **Completed:** 2026-11-03.
 - **Status:** COMPLETED
 
+## Task: Estimate simple two-player platoon MVP
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-18
+- **User request:** Estimate the effort to implement a simple two-player platoon MVP with friend messaging, invitations, custom UI, and working matchmaking logic.
+- **Scope:** Provide a realistic implementation estimate based on the inspected Unity/FishNet and ASP.NET API architecture; do not change implementation files.
+- **Progress:** Existing auth, player profiles, MMR, server rooms, team assignment, and match-result persistence are available. Party, friendship, messaging, and invitation systems are not implemented.
+- **Result:** The current foundation makes this a medium-complexity MVP rather than a from-scratch system. A rough estimate is 18–34 active development hours, or 2–4 working days for one experienced developer, assuming a simple direct-message model and one match-server topology.
+- **Validation:** Estimate based on the previous repository/API inspection; no implementation or runtime changes made.
+- **Limitations:** The estimate excludes polished art/UI, moderation, push notifications, multi-server queueing, voice chat, and production-scale reconnect/failover.
+- **Completed:** 2026-11-18.
+- **Status:** COMPLETED
+
+## Task: Analyze platoon feature feasibility
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-18
+- **User request:** Analyze the project API and determine how difficult it would be to add World of Tanks-style platoons.
+- **Scope:** Inspect Unity lobby/networking flows, backend API/domain models, matchmaking, team assignment, persistence, and relevant documentation without changing implementation files.
+- **Acceptance criteria:** Identify existing reusable foundations and missing capabilities; distinguish a minimal party queue from a complete WoT-style platoon system; estimate complexity, risks, and implementation phases.
+- **Progress:** Global instructions, task-journal recovery workflow, and existing journal were read. No implementation files have been changed for this analysis.
+- **Findings:** `LobbyManager.FindMatchServerRpc` creates or joins a server-side `ServerRoom` one player at a time; `LobbyRooms.GetNotFullAutoRoom` does not filter by party, map, or MMR. `ServerRoom.AssignTeams` sorts and assigns individual players, so a future platoon would currently be split across Team A/Team B. The active server prefab targets 20 total participants and fills missing slots with bots.
+- **API findings:** The ASP.NET API has JWT players, MMR, vehicle ownership, match start/end, and persisted `MatchParticipant.Team` data, but no friend search, invitations, party entity, party membership, presence, queue, or ready-state endpoints. `POST /matches/start` accepts only a map; match participants and rewards are submitted later. `EndMatch` trusts participant `UserId` values from the request body, which should be secured before production social/matchmaking features.
+- **Decision:** Recommend a dedicated `PartyManager`/party service separate from `LobbyManager`. For an MVP, keep online party state in the FishNet Unity server, add party-aware queue capacity and group-preserving team assignment, and add only a player lookup/invite contract if needed. Add PostgreSQL party/friend persistence only for reconnects, cross-server operation, history, and a full social system.
+- **Effort estimate:** A 2–3 player same-server MVP is medium complexity, roughly 1–2 weeks for one experienced developer including UI and QA. A robust World of Tanks-style feature with friends, invites, leader transfer, reconnects, atomic queueing, MMR expansion, multi-server routing, persistence, anti-cheat validation, and tests is high complexity, roughly 4–8+ weeks depending on the intended product depth.
+- **Inspected:** `LobbyManager`, `ServerRoom`, `LobbyRooms`, `MatchTeam`, `GameplaySpawner`, `ServerSettings`, Unity match API client, backend `Player`, `Match`, `MatchParticipant`, `MatchesController`, `PlayersController`, EF mappings, API docs, and server settings prefab. No implementation files were changed for this analysis.
+- **Validation:** Static repository inspection and route/model searches completed. No runtime matchmaking, API, or database migration tests were run because the request was analysis-only. Backend working-tree `bin/obj/log` changes were observed and left untouched.
+- **Result:** Platoons are feasible without rewriting the combat system. The fastest safe path is a server-authoritative in-memory party MVP followed by a separate persistent social/matchmaking layer for the full WoT version.
+- **Limitations:** The estimate assumes the current single Unity match-server topology; a central multi-server queue or dedicated backend realtime service would increase scope.
+- **Completed:** 2026-11-18.
+- **Status:** COMPLETED
+
+## Task: Repair broken Transform reference in Client scene
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-18
+- **User request:** Fix the repeated Unity scene-opening warning for `Assets/Game/Scenes/Client.unity`: `Component (Transform) has a broken GameObject reference. Fixing.`
+- **Scope:** Identify the invalid serialized scene reference, repair only the affected scene/prefab data, and validate that no dangling Transform-to-GameObject references remain.
+- **Acceptance criteria:** The source of the warning is identified or narrowed to a concrete serialized object; the minimal safe repair is applied; scene-reference checks and diff validation pass; unrelated working-tree changes remain untouched.
+- **Progress:** Global instructions, task-journal recovery workflow, and existing journal were read. No repository-specific search or scene edit has been performed for this repair task yet.
+- **Findings:** `Editor.log` reproduces the warning during both scene restore and direct AssetDatabase opening. The concrete malformed block is `Client.unity`'s unstripped `AudioListenerRoot` Transform (`&2200100000001`): it lacked `m_GameObject`, while its owner is GameObject `2200100000000` and its AudioListener/AudioListenerRoot components already reference that owner.
+- **Changes:** Added `m_GameObject: {fileID: 2200100000000}` to the `AudioListenerRoot` Transform in `Assets/Game/Scenes/Client.unity`.
+- **Validation:** The scene now has 53 Transform blocks, 2 expected stripped prefab Transforms, and zero missing or zero-valued owner references on unstripped Transforms. `git diff --check` passed. Unity Editor is open on this project, so no concurrent batch validation was started; the existing log entries are from before this repair.
+- **Result:** The serialized `AudioListenerRoot` Transform now correctly points to its owning GameObject, removing the concrete source of Unity's broken-reference warning.
+- **Limitations:** A fresh open of the scene in the already-running Editor is still needed to confirm a new log entry is clean; no automatic Unity reload was observed after the external YAML edit.
+- **Completed:** 2026-11-18.
+- **Status:** COMPLETED
+
 ## Task: Investigate hit-induced freeze and particle effects
 
 - **Status:** IN_PROGRESS
@@ -3500,4 +3548,36 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Runtime limitation:** The post-change `IA_L2_Colossus` reproduction has not yet been run; the next game run should confirm the frame hitch is gone and that impacts still follow the struck armor collider. If a hitch remains, diagnostics should now point to a different subsystem because robot hits no longer enter `Projectile.ImpactSurface.Resolve`.
 - **Result:** The confirmed freeze path was removed from robot hit processing. Disabled death/destruction colliders are no longer re-enabled or mesh-raycast, and damage is resolved only from the armor collider returned by the projectile ray.
 - **Completed:** 2026-11-10.
+- **Status:** COMPLETED
+
+## Task: Analyze game and API for investor summary
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-17
+- **User request:** Analyze the Unity game and its API, identify the game type, and prepare a short investor-facing description.
+- **Scope:** Inspect repository structure, gameplay systems, scenes, networking/API endpoints, and existing project documentation without changing implementation files.
+- **Acceptance criteria:** Ground the classification and concise investor summary in verified repository evidence; distinguish implemented capabilities from planned or inferred features; record findings and validation in this journal.
+- **Progress:** Global instructions, workflow index, history, and task-journal recovery guidance were read. No dedicated investor-analysis workflow exists.
+- **Findings:** The product is an online third-person team robot/vehicle combat game: FishNet carries real-time multiplayer, the server authoritatively owns movement, visibility, bots, hit resolution, teams, and battle end, and the current rule is a two-team elimination/team-battle result with a five-minute draw timeout. Matchmaking is configured for up to 20 participants and can backfill missing slots with server bots. The client includes robot selection, faction-based development tree, vehicle stats, match HUD, spectator flow, rewards, and profile statistics.
+- **API findings:** The Unity client/server integration uses endpoint managers for auth, player profiles/statistics, vehicle catalog and graph, owned vehicles, research, purchase/sell, XP conversion, maps, matches/rewards, leaderboards, and Unity-server status. The separate backend is a .NET 8 ASP.NET Core API backed by PostgreSQL/EF Core with JWT authentication; match results persist XP, Bolts, Free XP, and MMR changes. The catalog currently contains 21 seeded robot records: 8 visible entries and 13 hidden development-tree nodes across Iron Alliance and Nova Syndicate.
+- **Investor positioning:** Best concise classification: "session-based online multiplayer vehicular action shooter with RPG-style robot collection and progression." Avoid claiming a finished live-service economy or full PvP scale: the repository shows a strong playable/server/backend foundation, while the current build exposes one active map enum and the backend has no automated test project.
+- **Inspected:** Unity docs/source under `docs/codex-game`, `Assets/Game/Scripts/API`, `Assets/Game/Scripts/Networking/Lobby`, `Assets/Game/Scripts/Server`, and the backend project `D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI`, including its API/domain docs and controllers. No implementation files were changed.
+- **Validation:** `git diff --check` passed. `git status --short` shows only the required `TASK.md` journal modification. Runtime gameplay, Unity PlayMode, backend build, and live API smoke tests were not run because the request was analysis-only.
+- **Result:** COMPLETED — prepared a short Ukrainian investor-facing game classification and description grounded in the verified Unity and backend architecture.
+- **Completed:** 2026-11-17.
+- **Status:** COMPLETED
+
+## Task: Explain Client scene broken Transform warning
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-18
+- **User request:** Explain the Unity messages reported while opening `Assets/Game/Scenes/Client.unity`.
+- **Scope:** Interpret the scene-loading and broken `Transform` reference messages without changing scene or implementation files.
+- **Acceptance criteria:** Explain severity, likely cause, effect, and safe recovery steps; record validation and limitations.
+- **Progress:** Archive instructions and journal recovery workflow read. The Client scene contains serialized `Transform` and GameObject references; no implementation files were changed.
+- **Findings:** `Problem detected while opening the Scene file` is Unity's scene-restore wrapper message. `Component (Transform) has a broken GameObject reference. Fixing.` means Unity found a serialized Transform whose owning GameObject reference was invalid and repaired it in memory. The current scene YAML scan found 651 GameObjects, 53 Transforms, and no direct dangling Transform-to-GameObject references, so the original issue may already have been repaired, may belong to a prefab, or may have been transient during scene restore.
+- **Validation:** `git diff --check` passed. Only the required `TASK.md` journal file changed; no scene or implementation files were edited.
+- **Result:** Explained that this is usually a scene-serialization warning rather than a script/runtime error, with safe next steps to save a backup copy after Unity repairs the scene and inspect the Console for repeated warnings.
+- **Limitations:** Without the full Editor log and the exact object/path Unity repaired, the specific damaged object cannot be identified from these two messages alone.
+- **Completed:** 2026-11-18.
 - **Status:** COMPLETED
