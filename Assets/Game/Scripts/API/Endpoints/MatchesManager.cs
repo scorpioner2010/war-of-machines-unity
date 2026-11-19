@@ -9,20 +9,30 @@ namespace Game.Scripts.API.Endpoints
 {
     public abstract class MatchesManager
     {
-        public static async UniTask<(bool isSuccess, string message, int matchId)> StartMatch(string map, string token)
+        public static async UniTask<(bool isSuccess, string message, int matchId)> StartMatchAsDedicatedServer(
+            string map,
+            MatchRosterInput[] participants)
         {
-            string url = HttpLink.APIBase + "/matches/start";
-            var payload = new StartMatchRequest { map = string.IsNullOrWhiteSpace(map) ? "default_map" : map };
+            if (!TryGetServerCredentials(out string serverId, out string credential))
+            {
+                return (false, "Dedicated server credentials are not configured.", 0);
+            }
+
+            string url = GetApiBase() + "/matches/start";
+            var payload = new StartMatchRequest
+            {
+                map = string.IsNullOrWhiteSpace(map) ? "default_map" : map,
+                participants = participants ?? Array.Empty<MatchRosterInput>()
+            };
             string json = JsonUtility.ToJson(payload);
 
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Content-Type", "application/json");
-            req.SetRequestHeader("Authorization", "Bearer " + token);
+            SetServerHeaders(req, serverId, credential);
 
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
@@ -37,9 +47,16 @@ namespace Game.Scripts.API.Endpoints
             return (false, resp, 0);
         }
 
-        public static async UniTask<(bool isSuccess, string message, EndMatchResponse response)> EndMatch(int matchId, ParticipantInput[] participants, string token)
+        public static async UniTask<(bool isSuccess, string message, EndMatchResponse response)> EndMatchAsDedicatedServer(
+            int matchId,
+            ParticipantInput[] participants)
         {
-            string url = HttpLink.APIBase + "/matches/" + matchId + "/end";
+            if (!TryGetServerCredentials(out string serverId, out string credential))
+            {
+                return (false, "Dedicated server credentials are not configured.", null);
+            }
+
+            string url = GetApiBase() + "/matches/" + matchId + "/end";
 
             var body = new EndMatchRequest { participants = participants ?? Array.Empty<ParticipantInput>() };
             string json = JsonUtility.ToJson(body);
@@ -48,10 +65,9 @@ namespace Game.Scripts.API.Endpoints
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Content-Type", "application/json");
-            req.SetRequestHeader("Authorization", "Bearer " + token);
+            SetServerHeaders(req, serverId, credential);
 
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
@@ -78,7 +94,6 @@ namespace Game.Scripts.API.Endpoints
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Authorization", "Bearer " + token);
 
@@ -94,12 +109,41 @@ namespace Game.Scripts.API.Endpoints
 
             return (false, resp, Array.Empty<MatchParticipantView>());
         }
+
+        private static string GetApiBase()
+        {
+            string[] candidates = HttpLink.GetBaseCandidates();
+            return candidates.Length > 0 ? candidates[0] : HttpLink.APIBase;
+        }
+
+        private static bool TryGetServerCredentials(out string serverId, out string credential)
+        {
+            serverId = Environment.GetEnvironmentVariable("WOM_SERVER_ID") ?? string.Empty;
+            credential = Environment.GetEnvironmentVariable("WOM_SERVER_CREDENTIAL") ?? string.Empty;
+            return string.IsNullOrWhiteSpace(serverId) == false
+                   && string.IsNullOrWhiteSpace(credential) == false;
+        }
+
+        private static void SetServerHeaders(UnityWebRequest request, string serverId, string credential)
+        {
+            request.SetRequestHeader("X-Server-Id", serverId);
+            request.SetRequestHeader("X-Server-Credential", credential);
+        }
     }
 
     [Serializable]
     public class StartMatchRequest
     {
         public string map;
+        public MatchRosterInput[] participants;
+    }
+
+    [Serializable]
+    public class MatchRosterInput
+    {
+        public int userId;
+        public int vehicleId;
+        public int team;
     }
 
     [Serializable]

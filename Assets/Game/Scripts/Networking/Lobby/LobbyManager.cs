@@ -7,6 +7,7 @@ using FishNet.Object;
 using Game.Scripts.API.Endpoints;
 using Game.Scripts.API.Models;
 using Game.Scripts.Audio;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
@@ -25,6 +26,7 @@ namespace Game.Scripts.Networking.Lobby
         public override void OnStartClient()
         {
             base.OnStartClient();
+            GameplayRuntimeDiagnostics.Record("lobby_client_started", "object", name);
 
 #if UNITY_EDITOR
             if (ClientVehicleTestMode.IsEnabled)
@@ -39,14 +41,32 @@ namespace Game.Scripts.Networking.Lobby
         [ServerRpc(RequireOwnership = false)]
         public void FindMatchServerRpc(string selectedLocation, NetworkConnection sender = null)
         {
-            if (sender == null)
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "match_request_rejected",
+                    "reason", "session_not_authenticated",
+                    "client_id", sender != null ? sender.ClientId : -1);
+                return;
+            }
+
+            if (session.Profile == null)
+            {
+                GameplayRuntimeDiagnostics.Record(
+                    "match_request_rejected",
+                    "reason", "profile_not_loaded",
+                    "client_id", sender.ClientId,
+                    "user_id", session.UserId);
                 return;
             }
 
             Player player = CreatePlayer(sender);
-            if (player.Connection == null)
+            if (player == null || player.Connection == null || player.userId <= 0)
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "match_request_rejected",
+                    "reason", "player_creation_failed",
+                    "client_id", sender != null ? sender.ClientId : -1);
                 return;
             }
 
@@ -60,6 +80,14 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             room.AddPlayer(player);
+            GameplayRuntimeDiagnostics.Record(
+                "match_request_accepted",
+                "room_id", room.roomId,
+                "client_id", sender.ClientId,
+                "user_id", player.userId,
+                "username", player.loginName,
+                "vehicle_code", player.activeVehicleCode,
+                "room_players", room.GetPlayers().Count);
 
             if (room.IsFull())
             {
@@ -70,6 +98,11 @@ namespace Game.Scripts.Networking.Lobby
         [ServerRpc(RequireOwnership = false)]
         private void RequestServerSettingsServerRpc(NetworkConnection sender = null)
         {
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
+            {
+                return;
+            }
+
             SendServerSettings(sender);
         }
 
@@ -246,7 +279,7 @@ namespace Game.Scripts.Networking.Lobby
         [ServerRpc(RequireOwnership = false)]
         public void CancelFindRoomServerRpc(NetworkConnection sender = null)
         {
-            if (sender == null)
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
                 return;
             }
@@ -278,12 +311,23 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
+            GameplayRuntimeDiagnostics.Record(
+                "match_starting",
+                "room_id", room.roomId,
+                "map", room.selectedLocation,
+                "real_players", connections.Count,
+                "target_players", room.maxPlayers);
             if (ServerSettings.AreBotsEnabled())
             {
-                _botPopulationService.FillToTarget(
+                int botsAdded = _botPopulationService.FillToTarget(
                     room,
                     room.maxPlayers,
                     ServerSettings.GetDefaultBotVehicleCode());
+                GameplayRuntimeDiagnostics.Record(
+                    "bots_added_to_match",
+                    "room_id", room.roomId,
+                    "count", botsAdded,
+                    "total_players", room.GetPlayers().Count);
             }
 
             room.isInGame = true;
@@ -294,17 +338,43 @@ namespace Game.Scripts.Networking.Lobby
 
         private async UniTask StartApiMatch(ServerRoom room)
         {
-            string token = room.GetApiToken();
-            if (string.IsNullOrEmpty(token))
+            MatchRosterInput[] roster = BuildMatchRoster(room);
+            if (roster.Length == 0)
             {
                 return;
             }
 
-            (bool isSuccess, _, int matchId) = await MatchesManager.StartMatch(room.selectedLocation, token);
+            (bool isSuccess, _, int matchId) = await MatchesManager.StartMatchAsDedicatedServer(room.selectedLocation, roster);
             if (isSuccess)
             {
                 room.matchId = matchId;
             }
+        }
+
+        private static MatchRosterInput[] BuildMatchRoster(ServerRoom room)
+        {
+            List<MatchRosterInput> roster = new List<MatchRosterInput>();
+            if (room == null)
+            {
+                return roster.ToArray();
+            }
+
+            foreach (Player player in room.GetPlayers())
+            {
+                if (player == null || player.isBot || player.userId <= 0 || player.activeVehicleId <= 0 || player.team == MatchTeam.None)
+                {
+                    continue;
+                }
+
+                roster.Add(new MatchRosterInput
+                {
+                    userId = player.userId,
+                    vehicleId = player.activeVehicleId,
+                    team = (int)player.team
+                });
+            }
+
+            return roster.ToArray();
         }
 
         private void LoadScene(ServerRoom room, List<NetworkConnection> connections)
@@ -341,6 +411,12 @@ namespace Game.Scripts.Networking.Lobby
                 TargetStartGameResponseRpc(connections[i]);
             }
 
+            GameplayRuntimeDiagnostics.Record(
+                "match_scene_load_requested",
+                "room_id", room.roomId,
+                "map", room.selectedLocation,
+                "offset", offset,
+                "connection_count", connections.Count);
             SceneManager.LoadConnectionScenes(connections.ToArray(), sceneLoadData);
         }
 
@@ -353,6 +429,9 @@ namespace Game.Scripts.Networking.Lobby
         [TargetRpc]
         private void TargetStartGameResponseRpc(NetworkConnection target)
         {
+            GameplayRuntimeDiagnostics.Record(
+                "match_found_client",
+                "client_id", target != null ? target.ClientId : -1);
             SoundCaller.PlayUi(AudioEventNames.UiMatchFound);
             SoundCaller.StartBattleAudio();
             MenuManager.CloseMenu(MenuType.Matchmaking);
@@ -375,14 +454,19 @@ namespace Game.Scripts.Networking.Lobby
 
         private Player CreatePlayer(NetworkConnection sender)
         {
-            PlayerProfile profile = ServerPlayerSessions.GetProfile(sender.ClientId);
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+            {
+                return null;
+            }
+
+            PlayerProfile profile = session.Profile;
 
             return new Player
             {
                 loginName = profile != null ? profile.username : string.Empty,
                 Connection = sender,
-                token = ServerPlayerSessions.GetToken(sender.ClientId),
-                userId = profile != null ? profile.id : 0,
+                token = session.Token,
+                userId = session.UserId,
                 mmr = profile != null ? profile.mmr : 1000,
                 activeVehicleId = profile != null ? profile.activeVehicleId : 0,
                 activeVehicleCode = profile != null ? profile.activeVehicleCode : string.Empty,

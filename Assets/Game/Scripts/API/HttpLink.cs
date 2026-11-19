@@ -9,11 +9,9 @@ namespace Game.Scripts.API
         private const string ApiBaseFallbackEnvironmentVariable = "API_BASE";
         public const string LocalAPIBase = "https://localhost:7216";
         public const string LocalIisHttpsAPIBase = "https://localhost:44377";
-        public const string LocalKestrelHttpAPIBase = "http://localhost:5220";
-        public const string LocalIisHttpAPIBase = "http://localhost:43606";
         public const string RenderAPIBase = "https://war-of-machines-api.onrender.com";
 
-        public static string APIBase = LocalAPIBase;
+        public static string APIBase = GetDefaultApiBase();
 
         private static bool _runtimeConfigApplied;
 
@@ -29,7 +27,7 @@ namespace Game.Scripts.API
         public static void SetResolvedBase(string apiBase)
         {
             string normalizedBase = NormalizeBase(apiBase);
-            if (string.IsNullOrWhiteSpace(normalizedBase))
+            if (string.IsNullOrWhiteSpace(normalizedBase) || IsAllowedBase(normalizedBase) == false)
             {
                 return;
             }
@@ -41,11 +39,15 @@ namespace Game.Scripts.API
         {
             ApplyRuntimeConfig();
 
-            if (IsLocalBase(APIBase) == false)
+            if (IsDevelopmentConfiguration == false)
             {
-                List<string> remoteCandidates = new List<string>(2);
-                AddUnique(remoteCandidates, APIBase);
-                AddUnique(remoteCandidates, RenderAPIBase);
+                List<string> remoteCandidates = new List<string>(1);
+                AddAllowedUnique(remoteCandidates, APIBase);
+                if (remoteCandidates.Count == 0)
+                {
+                    AddAllowedUnique(remoteCandidates, RenderAPIBase);
+                }
+
                 return remoteCandidates.ToArray();
             }
 
@@ -53,20 +55,15 @@ namespace Game.Scripts.API
             {
                 APIBase,
                 LocalAPIBase,
-                LocalKestrelHttpAPIBase,
                 LocalIisHttpsAPIBase,
-                LocalIisHttpAPIBase,
                 "https://127.0.0.1:7216",
-                "http://127.0.0.1:5220",
-                "https://127.0.0.1:44377",
-                "http://127.0.0.1:43606",
                 RenderAPIBase
             };
 
             List<string> uniqueCandidates = new List<string>(candidates.Length);
             for (int i = 0; i < candidates.Length; i++)
             {
-                AddUnique(uniqueCandidates, candidates[i]);
+                AddAllowedUnique(uniqueCandidates, candidates[i]);
             }
 
             return uniqueCandidates.ToArray();
@@ -77,19 +74,14 @@ namespace Game.Scripts.API
             string[] candidates =
             {
                 LocalAPIBase,
-                LocalKestrelHttpAPIBase,
                 LocalIisHttpsAPIBase,
-                LocalIisHttpAPIBase,
-                "https://127.0.0.1:7216",
-                "http://127.0.0.1:5220",
-                "https://127.0.0.1:44377",
-                "http://127.0.0.1:43606"
+                "https://127.0.0.1:7216"
             };
 
             List<string> uniqueCandidates = new List<string>(candidates.Length);
             for (int i = 0; i < candidates.Length; i++)
             {
-                AddUnique(uniqueCandidates, candidates[i]);
+                AddAllowedUnique(uniqueCandidates, candidates[i]);
             }
 
             return uniqueCandidates.ToArray();
@@ -160,10 +152,10 @@ namespace Game.Scripts.API
             return string.Empty;
         }
 
-        private static void AddUnique(List<string> values, string value)
+        private static void AddAllowedUnique(List<string> values, string value)
         {
             string normalizedValue = NormalizeBase(value);
-            if (string.IsNullOrWhiteSpace(normalizedValue))
+            if (string.IsNullOrWhiteSpace(normalizedValue) || IsAllowedBase(normalizedValue) == false)
             {
                 return;
             }
@@ -199,7 +191,55 @@ namespace Game.Scripts.API
                 return string.Empty;
             }
 
-            return apiBase.Trim().TrimEnd('/');
+            string value = apiBase.Trim().TrimEnd('/');
+            if (Uri.TryCreate(value, UriKind.Absolute, out Uri uri) == false)
+            {
+                return string.Empty;
+            }
+
+            if ((uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
+                || string.IsNullOrWhiteSpace(uri.Host)
+                || !string.IsNullOrWhiteSpace(uri.AbsolutePath.Trim('/'))
+                || string.IsNullOrWhiteSpace(uri.Query) == false
+                || string.IsNullOrWhiteSpace(uri.Fragment) == false)
+            {
+                return string.Empty;
+            }
+
+            return uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
+        }
+
+        public static bool IsDevelopmentConfiguration
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
+
+        private static string GetDefaultApiBase()
+        {
+            return IsDevelopmentConfiguration ? LocalAPIBase : RenderAPIBase;
+        }
+
+        private static bool IsAllowedBase(string apiBase)
+        {
+            if (Uri.TryCreate(apiBase, UriKind.Absolute, out Uri uri) == false
+                || uri.Scheme != Uri.UriSchemeHttps)
+            {
+                return false;
+            }
+
+            if (IsDevelopmentConfiguration && IsLocalBase(apiBase))
+            {
+                return true;
+            }
+
+            return string.Equals(uri.Host, "war-of-machines-api.onrender.com", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

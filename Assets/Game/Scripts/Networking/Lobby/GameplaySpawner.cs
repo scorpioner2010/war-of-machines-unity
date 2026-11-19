@@ -50,6 +50,7 @@ namespace Game.Scripts.Networking.Lobby
         public override void OnStartServer()
         {
             base.OnStartServer();
+            GameplayRuntimeDiagnostics.Record("gameplay_spawner_server_started", "object", name);
             _sceneSlotAllocator = new MatchSceneSlotAllocator(GetSceneSlotSpacing());
             SceneManager.OnLoadEnd += HandleServerLoadEnd;
             SceneManager.OnUnloadEnd += SceneManagerOnUnloadEnd;
@@ -58,6 +59,7 @@ namespace Game.Scripts.Networking.Lobby
 
         public override void OnStopServer()
         {
+            GameplayRuntimeDiagnostics.Record("gameplay_spawner_server_stopped", "object", name);
             base.OnStopServer();
             SceneManager.OnLoadEnd -= HandleServerLoadEnd;
             SceneManager.OnUnloadEnd -= SceneManagerOnUnloadEnd;
@@ -110,6 +112,10 @@ namespace Game.Scripts.Networking.Lobby
 
         private void OnRemoteConnectionState(NetworkConnection conn, RemoteConnectionStateArgs args)
         {
+            GameplayRuntimeDiagnostics.Record(
+                "remote_connection_state",
+                "client_id", conn != null ? conn.ClientId : -1,
+                "state", args.ConnectionState);
             if (args.ConnectionState == RemoteConnectionState.Stopped)
             {
                 List<ServerRoom> rooms = LobbyRooms.GetRoomsByConnection(conn);
@@ -145,6 +151,7 @@ namespace Game.Scripts.Networking.Lobby
             ServerRoom serverRoom = GetLoadedServerRoom(args);
             if (serverRoom == null)
             {
+                GameplayRuntimeDiagnostics.Record("server_scene_load_ignored", "reason", "room_missing");
                 return;
             }
 
@@ -152,6 +159,12 @@ namespace Game.Scripts.Networking.Lobby
             {
                 if (IsRoomLoadedScene(serverRoom, scene))
                 {
+                    GameplayRuntimeDiagnostics.Record(
+                        "server_scene_loaded",
+                        "room_id", serverRoom.roomId,
+                        "scene", scene.name,
+                        "handle", scene.handle,
+                        "player_count", serverRoom.GetPlayers().Count);
                     AudioListenerRoot.TrySetGameplayTarget(scene);
                     RegisterRoomScene(serverRoom, scene);
                     return;
@@ -279,8 +292,8 @@ namespace Game.Scripts.Networking.Lobby
             {
                 return;
             }
-            
-            NotifyServerSceneLoaded(ClientManager.Connection.ClientId);
+            GameplayRuntimeDiagnostics.Record("client_scene_loaded", "scene", scene.name, "mode", mode);
+            NotifyServerSceneLoaded();
         }
         
         private void HandleClientLoadEnd(SceneLoadEndEventArgs args)
@@ -305,6 +318,11 @@ namespace Game.Scripts.Networking.Lobby
                 MapScopedObjectRegistry.RegisterMapScene(scene);
                 _sceneOffsetService.ApplyOffset(scene, offset);
                 AudioListenerRoot.TrySetGameplayTarget(scene);
+                GameplayRuntimeDiagnostics.Record(
+                    "client_scene_load_completed",
+                    "scene", scene.name,
+                    "handle", scene.handle,
+                    "offset", offset);
             }
         }
 
@@ -334,7 +352,7 @@ namespace Game.Scripts.Networking.Lobby
             MenuManager.CloseMenu(MenuType.GameplayHUD);
             MenuManager.CloseMenu(MenuType.GameplayPause);
             
-            RequestPlayerDisconnectServerRpc(ClientManager.Connection.ClientId);
+            RequestPlayerDisconnectServerRpc();
             EnsureMainMenuAfterDisconnect().Forget();
         }
 
@@ -417,20 +435,20 @@ namespace Game.Scripts.Networking.Lobby
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void RequestPlayerDisconnectServerRpc(int clientId)
+        public void RequestPlayerDisconnectServerRpc(NetworkConnection sender = null)
         {
             using (ProfileScope.Measure("RPC.RequestPlayerDisconnect", DiagnosticsCategories.Rpc))
             {
-                if (ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn) == false)
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
                 {
                     return;
                 }
 
-            ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(conn);
+                ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(sender);
 
                 if (serverRoom != null)
                 {
-                    Player player = serverRoom.GetPlayerByConnection(conn);
+                    Player player = serverRoom.GetPlayerByConnection(sender);
 
                     if (player != null)
                     {
@@ -438,12 +456,12 @@ namespace Game.Scripts.Networking.Lobby
                         {
                             AbandonPlayer(serverRoom, player);
                             player.Connection = null;
-                            UnloadRoomSceneForConnection(conn, serverRoom);
+                            UnloadRoomSceneForConnection(sender, serverRoom);
                             CleanupRoomWithoutConnectedPlayers(serverRoom);
                             return;
                         }
 
-                        UnloadRoomSceneForConnection(conn, serverRoom);
+                        UnloadRoomSceneForConnection(sender, serverRoom);
 
                         LobbyRooms.RemovePlayerFromRoom(serverRoom.roomId, player.loginName);
 
@@ -580,30 +598,47 @@ namespace Game.Scripts.Networking.Lobby
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void NotifyServerSceneLoaded(int clientId)
+        private void NotifyServerSceneLoaded(NetworkConnection sender = null)
         {
             using (ProfileScope.Measure("RPC.NotifyServerSceneLoaded", DiagnosticsCategories.Rpc))
             {
-                if (!ServerManager.Clients.TryGetValue(clientId, out NetworkConnection conn))
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
                 {
-                    return;
-                }
-            
-                ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(conn);
-                if (serverRoom == null)
-                {
+                    GameplayRuntimeDiagnostics.Record(
+                        "scene_loaded_ack_rejected",
+                        "reason", "session_not_authenticated",
+                        "client_id", sender != null ? sender.ClientId : -1);
                     return;
                 }
 
-                Player playerByConnection = serverRoom.GetPlayerByConnection(conn);
+                ServerRoom serverRoom = LobbyRooms.GetRoomByConnection(sender);
+                if (serverRoom == null)
+                {
+                    GameplayRuntimeDiagnostics.Record(
+                        "scene_loaded_ack_rejected",
+                        "reason", "room_missing",
+                        "client_id", sender.ClientId);
+                    return;
+                }
+
+                Player playerByConnection = serverRoom.GetPlayerByConnection(sender);
                 if (playerByConnection == null)
                 {
+                    GameplayRuntimeDiagnostics.Record(
+                        "scene_loaded_ack_rejected",
+                        "reason", "room_player_missing",
+                        "client_id", sender.ClientId,
+                        "room_id", serverRoom.roomId);
                     return;
                 }
 
                 playerByConnection.randomPlayerConnected = true;
                 bool allLoaded = serverRoom.AreAllRealPlayersLoaded();
-            
+                GameplayRuntimeDiagnostics.Record(
+                    "scene_loaded_ack_accepted",
+                    "client_id", sender.ClientId,
+                    "room_id", serverRoom.roomId,
+                    "all_real_players_loaded", allLoaded);
                 if (allLoaded)
                 {
                     SpawnBattleVehiclesAsync(serverRoom).Forget();
@@ -618,6 +653,11 @@ namespace Game.Scripts.Networking.Lobby
                 return;
             }
 
+            GameplayRuntimeDiagnostics.Record(
+                "battle_spawn_started",
+                "room_id", serverRoom.roomId,
+                "scene", serverRoom.GetLoadedScene().IsValid() ? serverRoom.GetLoadedScene().name : serverRoom.loadedSceneName,
+                "player_count", serverRoom.GetPlayers().Count);
             serverRoom.spawnStarted = true;
             BattleCountdownGate.BeginServer(serverRoom.roomId);
             await VehicleStatsProvider.PreloadAsync();
@@ -643,6 +683,10 @@ namespace Game.Scripts.Networking.Lobby
             serverRoom.Visibility.Start(serverRoom);
             LobbyRooms.UpdateRoomStatusInGame(serverRoom.roomId);
             SpawnTimer(serverRoom);
+            GameplayRuntimeDiagnostics.Record(
+                "battle_spawn_completed",
+                "room_id", serverRoom.roomId,
+                "active_vehicle_count", VehicleRoot.ActiveVehicleCount);
         }
 
         private void SpawnTimer(ServerRoom serverRoom)
@@ -658,6 +702,11 @@ namespace Game.Scripts.Networking.Lobby
             timer.serverRoom = serverRoom;
             ServerManager.Spawn(timer.networkObject, LocalConnection, roomScene);
             serverRoom.gameplayTimer =  timer;
+            GameplayRuntimeDiagnostics.Record(
+                "battle_timer_spawned",
+                "room_id", serverRoom.roomId,
+                "scene", roomScene.name,
+                "object_id", timer.networkObject != null ? timer.networkObject.ObjectId : -1);
         }
 
 #if UNITY_EDITOR
@@ -760,6 +809,12 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             serverRoom.isGameFinished = true;
+            GameplayRuntimeDiagnostics.Record(
+                "battle_finished",
+                "room_id", serverRoom.roomId,
+                "winner_team", winnerTeam,
+                "draw", isDraw,
+                "player_count", serverRoom.GetPlayers().Count);
             serverRoom.Visibility.Stop();
             string mapName = GetEndGameMapName(serverRoom);
             int durationSeconds = GetEndGameDurationSeconds(serverRoom);
@@ -835,7 +890,16 @@ namespace Game.Scripts.Networking.Lobby
                     return;
                 }
 
-                int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                {
+                    return;
+                }
+
+                int userId = session.UserId;
+                if (userId <= 0)
+                {
+                    return;
+                }
                 Player player = serverRoom.GetPlayerByUserId(userId);
                 if (player == null)
                 {
@@ -856,7 +920,16 @@ namespace Game.Scripts.Networking.Lobby
                     return;
                 }
 
-                int userId = ServerPlayerSessions.GetUserId(sender.ClientId);
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                {
+                    return;
+                }
+
+                int userId = session.UserId;
+                if (userId <= 0)
+                {
+                    return;
+                }
                 List<PlayerBattleResult> pendingResults = new List<PlayerBattleResult>();
                 if (!PendingBattleResults.TryTakeAll(userId, pendingResults))
                 {

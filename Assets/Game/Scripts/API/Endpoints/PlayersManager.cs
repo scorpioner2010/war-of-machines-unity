@@ -1,7 +1,6 @@
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Game.Scripts.API;
-using Game.Scripts.API.Helpers;
 using Game.Scripts.API.Models;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -19,7 +18,6 @@ namespace Game.Scripts
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
 
             req.SetRequestHeader("Authorization", "Bearer " + token);
@@ -45,7 +43,6 @@ namespace Game.Scripts
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
 
             req.SetRequestHeader("Authorization", "Bearer " + token);
@@ -76,7 +73,6 @@ namespace Game.Scripts
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes("{}")),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
 
             req.SetRequestHeader("Content-Type", "application/json");

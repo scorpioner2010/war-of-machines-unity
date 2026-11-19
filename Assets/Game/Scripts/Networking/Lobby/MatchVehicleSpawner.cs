@@ -4,6 +4,7 @@ using FishNet.Connection;
 using FishNet.Managing.Server;
 using Game.Scripts.API.Models;
 using Game.Scripts.Core.Resources;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.Networking.Sessions;
 using Game.Scripts.World.Spawns;
@@ -22,6 +23,18 @@ namespace Game.Scripts.Networking.Lobby
             ServerManager serverManager,
             Action<VehicleRoot> onVehicleSpawned)
         {
+            int clientId = connection != null ? connection.ClientId : -1;
+            GameplayRuntimeDiagnostics.Record(
+                "player_spawn_requested",
+                "client_id", clientId,
+                "scene", additiveServerScene.IsValid() ? additiveServerScene.name : "invalid");
+
+            if (connection == null)
+            {
+                GameplayRuntimeDiagnostics.Record("player_spawn_failed", "reason", "connection_missing", "client_id", clientId);
+                return null;
+            }
+
             float elapsedTime = 0f;
 
             while (!additiveServerScene.IsValid() && elapsedTime < sceneValidationTimeout)
@@ -32,24 +45,42 @@ namespace Game.Scripts.Networking.Lobby
 
             if (!additiveServerScene.IsValid())
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "player_spawn_failed",
+                    "reason", "scene_invalid_or_timeout",
+                    "client_id", clientId,
+                    "wait_seconds", elapsedTime);
                 return null;
             }
 
             Player player = serverRoom.GetPlayerByConnection(connection);
             if (player == null)
             {
+                GameplayRuntimeDiagnostics.Record("player_spawn_failed", "reason", "room_player_missing", "client_id", clientId);
                 return null;
             }
 
             SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(additiveServerScene, player.team);
             if (spawnPoint == null)
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "player_spawn_failed",
+                    "reason", "spawn_point_missing",
+                    "client_id", clientId,
+                    "username", player.loginName,
+                    "team", player.team);
                 return null;
             }
 
             PlayerProfile profile = ServerPlayerSessions.GetProfile(connection.ClientId);
             if (profile == null)
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "player_spawn_failed",
+                    "reason", "server_profile_missing",
+                    "client_id", clientId,
+                    "username", player.loginName,
+                    "team", player.team);
                 return null;
             }
 
@@ -60,9 +91,24 @@ namespace Game.Scripts.Networking.Lobby
             VehicleRoot vehicle = GameResourceManager.GetPrefab(vehicleCode);
             if (vehicle == null)
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "player_spawn_failed",
+                    "reason", "vehicle_prefab_missing",
+                    "client_id", clientId,
+                    "username", player.loginName,
+                    "vehicle_code", vehicleCode);
                 return null;
             }
 
+            GameplayRuntimeDiagnostics.Record(
+                "player_spawn_instantiating",
+                "client_id", clientId,
+                "user_id", player.userId,
+                "username", player.loginName,
+                "team", player.team,
+                "vehicle_code", vehicleCode,
+                "scene", additiveServerScene.name,
+                "position", spawnPoint.transform.position);
             VehicleRoot vehicleRoot = UnityEngine.Object.Instantiate(vehicle, spawnPoint.transform.position, spawnPoint.transform.rotation);
             VehicleRuntimeStats stats = await VehicleStatsProvider.GetAsync(player.activeVehicleId, vehicleCode);
             if (stats != null)
@@ -83,6 +129,16 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, player.team, additiveServerScene);
+            GameplayRuntimeDiagnostics.Record(
+                "player_spawn_completed",
+                "client_id", clientId,
+                "user_id", player.userId,
+                "username", player.loginName,
+                "team", player.team,
+                "vehicle_code", vehicleCode,
+                "object_id", vehicleRoot.networkObject != null ? vehicleRoot.networkObject.ObjectId : -1,
+                "position", vehicleRoot.transform.position,
+                "scene", additiveServerScene.name);
             return vehicleRoot;
         }
 
@@ -94,6 +150,12 @@ namespace Game.Scripts.Networking.Lobby
             ServerManager serverManager,
             Action<VehicleRoot> onVehicleSpawned)
         {
+            GameplayRuntimeDiagnostics.Record(
+                "bot_spawn_requested",
+                "username", player != null ? player.loginName : string.Empty,
+                "team", player != null ? player.team : MatchTeam.None,
+                "scene", additiveServerScene.IsValid() ? additiveServerScene.name : "invalid");
+
             float elapsedTime = 0f;
 
             while (!additiveServerScene.IsValid() && elapsedTime < sceneValidationTimeout)
@@ -104,17 +166,28 @@ namespace Game.Scripts.Networking.Lobby
 
             if (!additiveServerScene.IsValid())
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "bot_spawn_failed",
+                    "reason", "scene_invalid_or_timeout",
+                    "username", player != null ? player.loginName : string.Empty,
+                    "wait_seconds", elapsedTime);
                 return null;
             }
 
             if (serverRoom == null || player == null || !player.isBot)
             {
+                GameplayRuntimeDiagnostics.Record("bot_spawn_failed", "reason", "invalid_bot_player");
                 return null;
             }
 
             SpawnPoint spawnPoint = SpawnPoint.GetFreePoint(additiveServerScene, player.team);
             if (spawnPoint == null)
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "bot_spawn_failed",
+                    "reason", "spawn_point_missing",
+                    "username", player.loginName,
+                    "team", player.team);
                 return null;
             }
 
@@ -124,6 +197,7 @@ namespace Game.Scripts.Networking.Lobby
 
             if (string.IsNullOrEmpty(vehicleCode))
             {
+                GameplayRuntimeDiagnostics.Record("bot_spawn_failed", "reason", "vehicle_code_missing", "username", player.loginName);
                 Debug.LogWarning("Cannot spawn bot: vehicle code is empty.");
                 return null;
             }
@@ -131,10 +205,22 @@ namespace Game.Scripts.Networking.Lobby
             VehicleRoot vehicle = GameResourceManager.GetPrefab(vehicleCode);
             if (vehicle == null)
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "bot_spawn_failed",
+                    "reason", "vehicle_prefab_missing",
+                    "username", player.loginName,
+                    "vehicle_code", vehicleCode);
                 Debug.LogWarning("Cannot spawn bot: vehicle prefab was not found. code=" + vehicleCode);
                 return null;
             }
 
+            GameplayRuntimeDiagnostics.Record(
+                "bot_spawn_instantiating",
+                "username", player.loginName,
+                "team", player.team,
+                "vehicle_code", vehicleCode,
+                "scene", additiveServerScene.name,
+                "position", spawnPoint.transform.position);
             VehicleRoot vehicleRoot = UnityEngine.Object.Instantiate(vehicle, spawnPoint.transform.position, spawnPoint.transform.rotation);
             VehicleRuntimeStats stats = await VehicleStatsProvider.GetAsync(player.activeVehicleId, vehicleCode);
             if (stats != null)
@@ -164,6 +250,15 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             brain.StartBrain(vehicleRoot, serverRoom);
+            GameplayRuntimeDiagnostics.Record(
+                "bot_spawn_completed",
+                "username", player.loginName,
+                "team", player.team,
+                "vehicle_code", vehicleCode,
+                "object_id", vehicleRoot.networkObject != null ? vehicleRoot.networkObject.ObjectId : -1,
+                "brain_running", brain.IsRunning,
+                "position", vehicleRoot.transform.position,
+                "scene", additiveServerScene.name);
             return vehicleRoot;
         }
     }

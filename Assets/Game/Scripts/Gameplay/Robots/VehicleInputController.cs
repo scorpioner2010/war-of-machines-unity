@@ -6,6 +6,7 @@ using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Battle;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
 using UnityEngine;
 
@@ -89,9 +90,13 @@ namespace Game.Scripts.Gameplay.Robots
             SetAutonomousControlServerRpc(enabled);
         }
 
-        [Server]
         public void ApplyBotInput(float forward, float turn)
         {
+            if (!IsServerInitialized)
+            {
+                return;
+            }
+
             VehicleServerInput input = VehicleServerInput.Movement(new Vector2(turn, forward));
             input.Shoot = _shootServer;
             input.Action = _actionServer;
@@ -398,7 +403,9 @@ namespace Game.Scripts.Gameplay.Robots
         [ServerRpc(RequireOwnership = true, RunLocally = false)]
         private void SetAutonomousControlServerRpc(bool enabled, NetworkConnection sender = null)
         {
-            if (sender == null || sender != base.Owner || vehicleRoot == null)
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _)
+                || sender != base.Owner
+                || vehicleRoot == null)
             {
                 return;
             }
@@ -462,7 +469,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             using (ProfileScope.Measure("RPC.SendControls", DiagnosticsCategories.Rpc))
             {
-                if (sender == null)
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
                 {
                     return;
                 }

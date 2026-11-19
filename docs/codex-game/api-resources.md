@@ -15,6 +15,8 @@ Current owner scripts:
   - `MatchesManager` maps the match reward response fields `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated`. The boolean is required because JSON's omitted numeric fields deserialize as zero in Unity; only a `true` value makes a per-match reward displayable as authoritative.
 - `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs`
   - Profile loading/update flow used by menu and player data.
+  - Queues the profile RPC until the FishNet client object is initialized and the authenticated connection is started, then retries transient server-session races instead of dropping the first request.
+  - Records profile request/response and menu-application milestones through `GameplayRuntimeDiagnostics` without logging credentials.
   - Proxies `GET /players/me/statistics` through the owning player's server session and forwards the live result to `ProfileStatisticsPopup`.
   - `PlayerStatisticsDto.vehicles` remains the source for the popup's selectable robot rows; the selected row's `VehicleStatisticsDto.wins` and `losses` drive only that robot's record percentages and bar.
   - The selected vehicle details panel reads that vehicle's `battles`, `kills`, `winRate`, and `averageDamage` directly from its `VehicleStatisticsDto`; the kills card is not derived from wins or overall player totals.

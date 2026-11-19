@@ -42,6 +42,11 @@ namespace Game.Scripts.MenuController
 
         }
 
+        private void Start()
+        {
+            OpenMenu(MenuType.Auth);
+        }
+
         public static bool TryGetMenuPresenter<T>(MenuType type, out T presenter) where T : Component
         {
             presenter = null;

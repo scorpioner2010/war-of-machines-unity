@@ -112,7 +112,6 @@ namespace Game.Scripts.API
                 using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET))
                 {
                     request.downloadHandler = new DownloadHandlerBuffer();
-                    request.certificateHandler = new AcceptAllCertificates();
                     request.timeout = GetRequestTimeoutSeconds(apiBase);
 
                     try

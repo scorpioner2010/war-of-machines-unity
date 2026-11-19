@@ -1,6 +1,5 @@
 using System.Text;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API.Helpers;
 using Game.Scripts.API.Models;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -24,7 +23,7 @@ namespace Game.Scripts.API.Endpoints
             return (result.success, result.response);
         }
 
-        public static async UniTask<(bool isSuccess, string message, string token)> SendLoginRequest(string username, string password)
+        public static async UniTask<(bool isSuccess, string message, string token, string refreshToken, string expiresAtUtc)> SendLoginRequest(string username, string password)
         {
             string json = JsonUtility.ToJson(new AuthRequest
             {
@@ -37,10 +36,10 @@ namespace Game.Scripts.API.Endpoints
             if (result.success)
             {
                 TokenResponse tokenResponse = JsonUtility.FromJson<TokenResponse>(result.response);
-                return (true, result.response, tokenResponse.token);
+                return (true, result.response, tokenResponse.token, tokenResponse.refreshToken, tokenResponse.expiresAtUtc);
             }
 
-            return (false, result.response, string.Empty);
+            return (false, result.response, string.Empty, string.Empty, string.Empty);
         }
 
         private static async UniTask<(bool completed, bool success, string response)> SendAuthPostRequest(string endpoint, string json)
@@ -57,7 +56,6 @@ namespace Game.Scripts.API.Endpoints
                 {
                     request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
                     request.downloadHandler = new DownloadHandlerBuffer();
-                    request.certificateHandler = new AcceptAllCertificates();
                     request.timeout = GetRequestTimeoutSeconds(apiBase);
                     request.SetRequestHeader("Content-Type", "application/json");
 

@@ -242,7 +242,7 @@ namespace Game.Editor
                 locationPathName = Path.Combine(outputDirectory, executableName),
                 target = BuildTarget.StandaloneWindows64,
                 subtarget = (int)subtarget,
-                options = BuildOptions.None
+                options = BuildOptions.Development
             };
 
             BuildReport report = BuildPipeline.BuildPlayer(buildOptions);

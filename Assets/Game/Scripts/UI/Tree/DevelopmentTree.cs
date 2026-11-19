@@ -774,7 +774,7 @@ namespace Game.Scripts.UI.Tree
         [ServerRpc(RequireOwnership = false)]
         private void BuyVehicleServerRpc(string code, NetworkConnection sender = null)
         {
-            if (sender != null)
+            if (ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
                 BuyVehicleAsync(sender, code).Forget();
             }
@@ -782,7 +782,13 @@ namespace Game.Scripts.UI.Tree
 
         private async UniTask BuyVehicleAsync(NetworkConnection sender, string code)
         {
-            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+            {
+                TargetRpcBuy(sender, false, "Not logged in.");
+                return;
+            }
+
+            string token = session.Token;
             if (string.IsNullOrEmpty(token))
             {
                 TargetRpcBuy(sender, false, "Not logged in.");
@@ -803,7 +809,7 @@ namespace Game.Scripts.UI.Tree
         [ServerRpc(RequireOwnership = false)]
         private void ResearchVehicleServerRpc(int vehicleId, int predecessorVehicleId, NetworkConnection sender = null)
         {
-            if (sender != null)
+            if (ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
                 ResearchVehicleAsync(sender, vehicleId, predecessorVehicleId).Forget();
             }
@@ -811,7 +817,13 @@ namespace Game.Scripts.UI.Tree
 
         private async UniTask ResearchVehicleAsync(NetworkConnection sender, int vehicleId, int predecessorVehicleId)
         {
-            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+            {
+                TargetRpcResearch(sender, false, "Not logged in.");
+                return;
+            }
+
+            string token = session.Token;
             if (string.IsNullOrEmpty(token))
             {
                 TargetRpcResearch(sender, false, "Not logged in.");

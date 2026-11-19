@@ -6,6 +6,10 @@ Read this file before changing diagnostics code or responding to lag, freezes, s
 
 Current owner scripts:
 - `Assets/Game/Scripts/Diagnostics/DiagnosticsManager.cs`
+- `Assets/Game/Scripts/Diagnostics/GameplayRuntimeDiagnostics.cs`
+  - Writes append-only lifecycle events to `Logs/GameplayRuntimeDiagnostics.log` beside the Unity executable/project data directory.
+  - Events include login/profile readiness, FishNet connection state, additive scene load/acknowledgement, player/bot spawn failures and completion, owner-camera binding, bot brain lifecycle, authoritative shot validation/resolution, and battle completion.
+  - It records identifiers, codes, positions, counts, and failure reasons only; access tokens and passwords must never be passed to it.
 - `Assets/Game/Scripts/Diagnostics/ClientDiagnosticsCollector.cs`
 - `Assets/Game/Scripts/Diagnostics/ServerDiagnosticsCollector.cs`
 - `Assets/Game/Scripts/Diagnostics/NetworkDiagnosticsCollector.cs`
@@ -40,3 +44,4 @@ Rules when editing diagnostics:
 - Do not remove diagnostics code unless explicitly asked.
 - Keep diagnostic categories and profile scopes meaningful.
 - If performance-related gameplay code changes, consider adding/updating `ProfileScope` only when it gives actionable data.
+- Use `GameplayRuntimeDiagnostics` for event-oriented runtime investigations instead of adding per-frame logs. Keep high-volume events bounded to meaningful requests, hits, failures, and state transitions.

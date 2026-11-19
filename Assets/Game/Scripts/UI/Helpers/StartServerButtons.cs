@@ -1,8 +1,9 @@
 using FishNet.Managing;
 using FishNet.Transporting;
 using Game.Scripts.API;
-using Game.Scripts.API.Helpers;
+using Game.Scripts.API.Endpoints;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Networking.Lobby;
 using Game.Scripts.Player.Data;
 using Game.Scripts.Server;
@@ -29,6 +30,10 @@ namespace Game.Scripts.UI.Helpers
     public class StartServerButtons : MonoBehaviour
     {
         private const string UnityServerStatusEndpoint = "/unity-server/status";
+        private const string UnityServerRegisterEndpoint = "/unity-server/register";
+        private const string UnityServerHeartbeatEndpoint = "/unity-server/{0}/heartbeat";
+        private const string UnityServerUnregisterEndpoint = "/unity-server/{0}/unregister";
+        private const string ServerIdArgument = "-serverId";
         private const string ServerAddressArgument = "-serverAddress";
         private const string AdvertiseAddressArgument = "-advertiseAddress";
         private const string ServerPortArgument = "-serverPort";
@@ -60,6 +65,7 @@ namespace Game.Scripts.UI.Helpers
         private bool _isStoppingConnections;
         private Coroutine _clientConnectCoroutine;
         private Coroutine _serverHeartbeatCoroutine;
+        private bool _serverRegistered;
 
         private void Awake()
         {
@@ -172,6 +178,13 @@ namespace Game.Scripts.UI.Helpers
 
         private IEnumerator AutoStartClient()
         {
+            WaitForSeconds authenticationWait = new WaitForSeconds(Mathf.Max(0.1f, clientRetryDelaySeconds));
+            while (ClientAuthenticationState.IsAuthenticated == false)
+            {
+                MenuLoadingScreenManager.SetConnectionStatus("Login required before multiplayer connection");
+                yield return authenticationWait;
+            }
+
             int attempts = 0;
             int maxAttempts = Mathf.Max(1, clientMaxStartAttempts);
             WaitForSeconds retryDelay = new WaitForSeconds(Mathf.Max(0.1f, clientRetryDelaySeconds));
@@ -223,17 +236,29 @@ namespace Game.Scripts.UI.Helpers
                 return;
             }
 
+            if (ClientAuthenticationState.IsAuthenticated == false)
+            {
+                LastServerStatus = "Client connection requires an authenticated HTTPS session.";
+                Popup.ShowText("Log in before connecting to the battle server.", Color.red);
+                return;
+            }
+
             _clientConnectCoroutine = StartCoroutine(StartClientConnection());
         }
 
         private IEnumerator StartClientConnection()
         {
+            GameplayRuntimeDiagnostics.Record(
+                "client_connection_start_requested",
+                "api_discovery", requestClientServerAddressFromApi,
+                "auto_start_mode", autoStartMode);
             if (connect != null)
             {
                 connect.interactable = false;
             }
 
             _clientStartRequested = true;
+            ClientAuthenticationState.ClearConnectionTicket();
             MenuLoadingScreenManager.ShowConnectionLoading("Preparing multiplayer connection");
 
             bool started;
@@ -253,12 +278,29 @@ namespace Game.Scripts.UI.Helpers
 
                 if (hasConnectionInfo == false)
                 {
+                    GameplayRuntimeDiagnostics.Record("client_connection_failed", "reason", lookupError);
                     FailClientStart("Connection failed. " + lookupError);
                     _clientConnectCoroutine = null;
                     yield break;
                 }
 
                 MenuLoadingScreenManager.SetConnectionStatus("API: server address received " + connectionInfo.Address + ":" + connectionInfo.Port);
+                bool ticketIssued = false;
+                string ticketError = string.Empty;
+                yield return RequestConnectionTicket(connectionInfo.ServerId, (success, message) =>
+                {
+                    ticketIssued = success;
+                    ticketError = message;
+                });
+
+                if (ticketIssued == false)
+                {
+                    GameplayRuntimeDiagnostics.Record("client_connection_failed", "reason", "ticket_request", "message", ticketError);
+                    FailClientStart("Connection ticket request failed. " + ticketError);
+                    _clientConnectCoroutine = null;
+                    yield break;
+                }
+
                 MenuLoadingScreenManager.SetConnectionStatus("Dedicated server: connecting to " + connectionInfo.Address + ":" + connectionInfo.Port);
                 started = networkManager.ClientManager.StartConnection(connectionInfo.Address, connectionInfo.Port);
             }
@@ -270,10 +312,62 @@ namespace Game.Scripts.UI.Helpers
 
             if (started == false)
             {
+                GameplayRuntimeDiagnostics.Record("client_connection_failed", "reason", "fishnet_start_returned_false");
                 FailClientStart("Connection failed. Client could not start");
+            }
+            else
+            {
+                GameplayRuntimeDiagnostics.Record("client_connection_start_called", "started", true);
             }
 
             _clientConnectCoroutine = null;
+        }
+
+        private IEnumerator RequestConnectionTicket(string serverId, System.Action<bool, string> onComplete)
+        {
+            if (string.IsNullOrWhiteSpace(serverId) || ClientAuthenticationState.IsAuthenticated == false)
+            {
+                onComplete(false, "Authenticated session or server ID is missing.");
+                yield break;
+            }
+
+            var payload = new ConnectionTicketRequest { serverId = serverId };
+            byte[] body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(payload));
+            string lastError = "Connection ticket endpoint is not available.";
+            string[] apiBases = HttpLink.GetBaseCandidates();
+
+            for (int i = 0; i < apiBases.Length; i++)
+            {
+                string apiBase = apiBases[i];
+                using (UnityWebRequest request = new UnityWebRequest(apiBase + "/connection-tickets", UnityWebRequest.kHttpVerbPOST))
+                {
+                    request.uploadHandler = new UploadHandlerRaw(body);
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.timeout = GetApiRequestTimeoutSeconds(apiBase);
+                    request.SetRequestHeader("Content-Type", "application/json");
+                    request.SetRequestHeader("Authorization", "Bearer " + ClientAuthenticationState.AccessToken);
+
+                    yield return request.SendWebRequest();
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        ConnectionTicketResponse response = JsonUtility.FromJson<ConnectionTicketResponse>(request.downloadHandler.text);
+                        if (response == null || string.IsNullOrWhiteSpace(response.ticket))
+                        {
+                            lastError = "Backend returned an invalid connection ticket.";
+                            continue;
+                        }
+
+                        ClientAuthenticationState.SetConnectionTicket(response.serverId, response.ticket);
+                        HttpLink.SetResolvedBase(apiBase);
+                        onComplete(true, string.Empty);
+                        yield break;
+                    }
+
+                    lastError = FormatApiRequestError(apiBase, request);
+                }
+            }
+
+            onComplete(false, lastError);
         }
 
         private IEnumerator RequestActiveServerConnectionInfo(System.Action<bool, ServerConnectionInfo, string> onComplete)
@@ -289,7 +383,6 @@ namespace Game.Scripts.UI.Helpers
                 using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET))
                 {
                     request.downloadHandler = new DownloadHandlerBuffer();
-                    request.certificateHandler = new AcceptAllCertificates();
                     request.timeout = GetApiRequestTimeoutSeconds(apiBase);
 
                     yield return request.SendWebRequest();
@@ -324,26 +417,7 @@ namespace Game.Scripts.UI.Helpers
 
         private static string[] GetServerLookupApiBases()
         {
-            string[] primaryBases = HttpLink.GetBaseCandidates();
-            if (HttpLink.IsLocal)
-            {
-                return primaryBases;
-            }
-
-            string[] localBases = HttpLink.GetLocalBaseCandidates();
-            List<string> apiBases = new List<string>(primaryBases.Length + localBases.Length);
-
-            for (int i = 0; i < localBases.Length; i++)
-            {
-                AddUniqueApiBase(apiBases, localBases[i]);
-            }
-
-            for (int i = 0; i < primaryBases.Length; i++)
-            {
-                AddUniqueApiBase(apiBases, primaryBases[i]);
-            }
-
-            return apiBases.ToArray();
+            return HttpLink.GetBaseCandidates();
         }
 
         private static void AddUniqueApiBase(List<string> apiBases, string apiBase)
@@ -380,6 +454,11 @@ namespace Game.Scripts.UI.Helpers
             }
 
             ushort fallbackPort = GetConfiguredClientPort();
+            if (response.servers != null && response.servers.Length > 0)
+            {
+                return TryGetServerConnectionInfo(response.servers[0], fallbackPort, out connectionInfo, out error);
+            }
+
             return TryGetServerConnectionInfo(response, fallbackPort, out connectionInfo, out error);
         }
 
@@ -441,6 +520,37 @@ namespace Game.Scripts.UI.Helpers
                 Port = (ushort)port
             };
 
+            return true;
+        }
+
+        private static bool TryGetServerConnectionInfo(UnityServerStatusItem response, ushort fallbackPort, out ServerConnectionInfo connectionInfo, out string error)
+        {
+            connectionInfo = default;
+            error = string.Empty;
+
+            if (response == null || response.isOnline == false)
+            {
+                error = "Battle server is offline";
+                return false;
+            }
+
+            string address = NormalizeConnectionAddress(response.address);
+            int port = response.port > 0 ? response.port : fallbackPort;
+            if (string.IsNullOrWhiteSpace(response.serverId)
+                || string.IsNullOrWhiteSpace(address)
+                || port <= 0
+                || port > ushort.MaxValue)
+            {
+                error = "Server API returned invalid battle server connection data";
+                return false;
+            }
+
+            connectionInfo = new ServerConnectionInfo
+            {
+                ServerId = response.serverId,
+                Address = address,
+                Port = (ushort)port
+            };
             return true;
         }
 
@@ -610,6 +720,11 @@ namespace Game.Scripts.UI.Helpers
         private void OnClientConnectionState(ClientConnectionStateArgs args)
         {
             _clientState = args.ConnectionState;
+            GameplayRuntimeDiagnostics.Record(
+                "client_connection_state",
+                "state", args.ConnectionState,
+                "authenticated", ClientAuthenticationState.IsAuthenticated,
+                "fishnet_client_started", networkManager != null && networkManager.IsClientStarted);
 
             if (_clientState == LocalConnectionState.Started)
             {
@@ -662,6 +777,10 @@ namespace Game.Scripts.UI.Helpers
             {
                 LastServerStatus = "Server stopped.";
                 StopServerHeartbeat();
+                if (_serverRegistered)
+                {
+                    StartCoroutine(UnregisterDedicatedServer());
+                }
                 if (server != null)
                 {
                     server.interactable = true;
@@ -699,7 +818,16 @@ namespace Game.Scripts.UI.Helpers
 
             while (networkManager != null && networkManager.IsServerStarted)
             {
-                yield return SendServerHeartbeat();
+                if (_serverRegistered == false)
+                {
+                    yield return RegisterDedicatedServer();
+                }
+
+                if (_serverRegistered)
+                {
+                    yield return SendServerHeartbeat();
+                }
+
                 yield return wait;
             }
 
@@ -708,21 +836,21 @@ namespace Game.Scripts.UI.Helpers
 
         private IEnumerator SendServerHeartbeat()
         {
+            if (TryGetDedicatedServerCredentials(out string serverId, out string credential) == false)
+            {
+                yield break;
+            }
+
             string address = GetAdvertisedServerAddress();
             ushort port = GetServerPort();
             UnityServerStatusPayload payload = new UnityServerStatusPayload
             {
-                isOnline = true,
                 status = "ready",
                 playersOnline = GetPlayersOnline(),
                 maxPlayers = GetMaxPlayers(),
                 activeMatches = GetActiveMatches(),
                 address = address,
-                publicIp = address,
-                ipAddress = address,
                 port = port,
-                gamePort = port,
-                serverPort = port,
                 message = "Unity server running"
             };
 
@@ -734,15 +862,15 @@ namespace Game.Scripts.UI.Helpers
             for (int i = 0; i < apiBases.Length; i++)
             {
                 string apiBase = apiBases[i];
-                string url = apiBase + UnityServerStatusEndpoint;
+                string url = apiBase + string.Format(UnityServerHeartbeatEndpoint, UnityWebRequest.EscapeURL(serverId));
 
-                using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
+                using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPUT))
                 {
                     request.uploadHandler = new UploadHandlerRaw(body);
                     request.downloadHandler = new DownloadHandlerBuffer();
-                    request.certificateHandler = new AcceptAllCertificates();
                     request.timeout = GetApiRequestTimeoutSeconds(apiBase);
                     request.SetRequestHeader("Content-Type", "application/json");
+                    SetDedicatedServerHeaders(request, serverId, credential);
 
                     yield return request.SendWebRequest();
 
@@ -757,6 +885,120 @@ namespace Game.Scripts.UI.Helpers
             }
 
             Debug.LogWarning("Unity server heartbeat failed: " + lastError);
+        }
+
+        private IEnumerator UnregisterDedicatedServer()
+        {
+            if (TryGetDedicatedServerCredentials(out string serverId, out string credential) == false)
+            {
+                _serverRegistered = false;
+                yield break;
+            }
+
+            string[] apiBases = HttpLink.GetBaseCandidates();
+            for (int i = 0; i < apiBases.Length; i++)
+            {
+                string apiBase = apiBases[i];
+                string url = apiBase + string.Format(UnityServerUnregisterEndpoint, UnityWebRequest.EscapeURL(serverId));
+
+                using (UnityWebRequest request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
+                {
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.timeout = GetApiRequestTimeoutSeconds(apiBase);
+                    SetDedicatedServerHeaders(request, serverId, credential);
+
+                    yield return request.SendWebRequest();
+                    if (request.result == UnityWebRequest.Result.Success || request.responseCode == 404)
+                    {
+                        HttpLink.SetResolvedBase(apiBase);
+                        break;
+                    }
+                }
+            }
+
+            _serverRegistered = false;
+        }
+
+        private IEnumerator RegisterDedicatedServer()
+        {
+            if (TryGetDedicatedServerCredentials(out string serverId, out string credential) == false)
+            {
+                LastServerStatus = "Dedicated server registration requires WOM_SERVER_ID and WOM_SERVER_CREDENTIAL.";
+                yield break;
+            }
+
+            string address = GetAdvertisedServerAddress();
+            ushort port = GetServerPort();
+            if (string.IsNullOrWhiteSpace(address) || port == 0)
+            {
+                LastServerStatus = "Dedicated server registration requires a valid advertised address and port.";
+                yield break;
+            }
+
+            var payload = new UnityServerRegistrationPayload
+            {
+                region = GetServerRegion(),
+                address = address,
+                port = port,
+                maxPlayers = GetMaxPlayers()
+            };
+
+            byte[] body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(payload));
+            string[] apiBases = HttpLink.GetBaseCandidates();
+            string lastError = string.Empty;
+
+            for (int i = 0; i < apiBases.Length; i++)
+            {
+                string apiBase = apiBases[i];
+                using (UnityWebRequest request = new UnityWebRequest(apiBase + UnityServerRegisterEndpoint, UnityWebRequest.kHttpVerbPOST))
+                {
+                    request.uploadHandler = new UploadHandlerRaw(body);
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.timeout = GetApiRequestTimeoutSeconds(apiBase);
+                    request.SetRequestHeader("Content-Type", "application/json");
+                    SetDedicatedServerHeaders(request, serverId, credential);
+
+                    yield return request.SendWebRequest();
+
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        _serverRegistered = true;
+                        LastServerStatus = "Dedicated server registered.";
+                        HttpLink.SetResolvedBase(apiBase);
+                        yield break;
+                    }
+
+                    lastError = FormatApiRequestError(apiBase, request);
+                }
+            }
+
+            _serverRegistered = false;
+            Debug.LogWarning("Dedicated server registration failed: " + lastError);
+        }
+
+        private static void SetDedicatedServerHeaders(UnityWebRequest request, string serverId, string credential)
+        {
+            request.SetRequestHeader("X-Server-Id", serverId);
+            request.SetRequestHeader("X-Server-Credential", credential);
+        }
+
+        private static bool TryGetDedicatedServerCredentials(out string serverId, out string credential)
+        {
+            serverId = GetCommandLineValue(ServerIdArgument);
+            if (string.IsNullOrWhiteSpace(serverId))
+            {
+                serverId = GetEnvironmentValue("WOM_SERVER_ID");
+            }
+
+            credential = GetEnvironmentValue("WOM_SERVER_CREDENTIAL");
+            return string.IsNullOrWhiteSpace(serverId) == false
+                   && string.IsNullOrWhiteSpace(credential) == false;
+        }
+
+        private static string GetServerRegion()
+        {
+            string region = GetEnvironmentValue("WOM_SERVER_REGION");
+            return string.IsNullOrWhiteSpace(region) ? "default" : region.Trim();
         }
 
         private int GetPlayersOnline()
@@ -1119,18 +1361,22 @@ namespace Game.Scripts.UI.Helpers
         [System.Serializable]
         private class UnityServerStatusPayload
         {
-            public bool isOnline;
             public string status;
             public int playersOnline;
             public int maxPlayers;
             public int activeMatches;
             public string address;
-            public string publicIp;
-            public string ipAddress;
             public int port;
-            public int gamePort;
-            public int serverPort;
             public string message;
+        }
+
+        [System.Serializable]
+        private class UnityServerRegistrationPayload
+        {
+            public string region;
+            public string address;
+            public int port;
+            public int maxPlayers;
         }
 
         [System.Serializable]
@@ -1145,10 +1391,42 @@ namespace Game.Scripts.UI.Helpers
             public int gamePort;
             public int serverPort;
             public string message;
+            public UnityServerStatusItem[] servers;
+        }
+
+        [System.Serializable]
+        private class UnityServerStatusItem
+        {
+            public string serverId;
+            public string region;
+            public bool isOnline;
+            public string status;
+            public string address;
+            public int port;
+            public int playersOnline;
+            public int maxPlayers;
+            public int activeMatches;
+            public string lastHeartbeatUtc;
+            public string message;
+        }
+
+        [System.Serializable]
+        private class ConnectionTicketRequest
+        {
+            public string serverId;
+        }
+
+        [System.Serializable]
+        private class ConnectionTicketResponse
+        {
+            public string ticket;
+            public string serverId;
+            public string expiresAtUtc;
         }
 
         private struct ServerConnectionInfo
         {
+            public string ServerId;
             public string Address;
             public ushort Port;
         }

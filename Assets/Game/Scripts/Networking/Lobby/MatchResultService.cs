@@ -21,21 +21,22 @@ namespace Game.Scripts.Networking.Lobby
             serverRoom.matchEndSubmitted = true;
 
             ParticipantInput[] participants = BuildParticipantInputs(serverRoom);
-            string token = serverRoom.GetApiToken();
             MatchParticipantView[] rewardItems = Array.Empty<MatchParticipantView>();
 
-            if (serverRoom.matchId <= 0 && !string.IsNullOrEmpty(token))
+            if (serverRoom.matchId <= 0)
             {
-                (bool started, _, int matchId) = await MatchesManager.StartMatch(serverRoom.selectedLocation, token);
+                (bool started, _, int matchId) = await MatchesManager.StartMatchAsDedicatedServer(
+                    serverRoom.selectedLocation,
+                    BuildMatchRoster(serverRoom));
                 if (started)
                 {
                     serverRoom.matchId = matchId;
                 }
             }
 
-            if (serverRoom.matchId > 0 && !string.IsNullOrEmpty(token) && participants.Length > 0)
+            if (serverRoom.matchId > 0 && participants.Length > 0)
             {
-                rewardItems = await LoadRewards(serverRoom.matchId, participants, token);
+                rewardItems = await LoadRewards(serverRoom.matchId, participants, serverRoom.GetApiToken());
             }
 
             foreach (Player player in serverRoom.GetPlayers())
@@ -59,7 +60,7 @@ namespace Game.Scripts.Networking.Lobby
 
         private static async UniTask<MatchParticipantView[]> LoadRewards(int matchId, ParticipantInput[] participants, string token)
         {
-            (bool isSuccess, _, EndMatchResponse response) = await MatchesManager.EndMatch(matchId, participants, token);
+            (bool isSuccess, _, EndMatchResponse response) = await MatchesManager.EndMatchAsDedicatedServer(matchId, participants);
 
             if (isSuccess && response != null && HasAuthoritativeRewards(response.participants, participants))
             {
@@ -73,6 +74,27 @@ namespace Game.Scripts.Networking.Lobby
             }
 
             return Array.Empty<MatchParticipantView>();
+        }
+
+        private static MatchRosterInput[] BuildMatchRoster(ServerRoom serverRoom)
+        {
+            List<MatchRosterInput> roster = new List<MatchRosterInput>();
+            foreach (Player player in serverRoom.GetPlayers())
+            {
+                if (player == null || player.isBot || player.userId <= 0 || player.activeVehicleId <= 0 || player.team == MatchTeam.None)
+                {
+                    continue;
+                }
+
+                roster.Add(new MatchRosterInput
+                {
+                    userId = player.userId,
+                    vehicleId = player.activeVehicleId,
+                    team = (int)player.team
+                });
+            }
+
+            return roster.ToArray();
         }
 
         private static PlayerBattleResult BuildPlayerResult(string roomId, Player player, MatchParticipantView[] rewardItems)

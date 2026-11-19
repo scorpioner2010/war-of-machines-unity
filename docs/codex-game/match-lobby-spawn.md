@@ -41,6 +41,9 @@ Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/MatchVehicleSpawner.cs`
   - Spawns player and bot vehicles in loaded match scenes.
   - Applies runtime stats, assigns `player.playerRoot`, initializes teams/identity, and starts bot brain.
+  - Refuses player matchmaking/spawn when the authenticated server session has no loaded profile; this prevents a broken empty-profile match from reaching gameplay.
+- `Assets/Game/Scripts/Diagnostics/GameplayRuntimeDiagnostics.cs`
+  - Records the profile-to-match-to-spawn lifecycle and every player/bot spawn failure reason in the local persistent gameplay log.
 - `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`
   - FishNet spawnable-prefab collection assigned to `Assets/Game/Content/Networking/Prefabs/NetworkManager.prefab`.
   - Every vehicle prefab referenced by `RobotRegistry` and spawned in a match must also be present here.
@@ -91,6 +94,7 @@ Post-battle result flow:
 
 Rules when editing match/spawn:
 - Keep room state authoritative on server.
+- A client must queue profile refresh until the FishNet client/object is initialized and authenticated. Do not issue profile RPCs during the HTTP-login-to-FishNet startup gap.
 - Do not use global scene searches for runtime player/bot lookup; use room/player references.
 - Preserve additive scene slot/offset behavior for multiple concurrent matches.
 - Keep direct spotting and spotted memory as separate relations for map-position semantics. The client vehicle presenter renders only direct `Enemy`; `EnemyLastKnown` remains a map marker. Preserve direct spotter links across visibility refreshes when a pair was not evaluated because of the raycast budget, and cache the assigned local team before owner despawn so allied models remain visible while the death spectator camera is active.

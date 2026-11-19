@@ -92,6 +92,12 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             vehicleRoot = root;
+            GameplayRuntimeDiagnostics.Record(
+                "camera_vehicle_assigned",
+                "camera", name,
+                "vehicle", root != null ? root.name : string.Empty,
+                "owner", root != null && root.IsOwner,
+                "position", root != null ? root.transform.position : Vector3.zero);
             CacheSpectatorTeam();
             if (vehicleRoot != null && vehicleRoot.health != null)
             {
@@ -102,6 +108,13 @@ namespace Game.Scripts.Gameplay.Robots
         public void OnVehicleInitialized(VehicleInitializationContext context)
         {
             vehicleRoot = context.Root;
+            GameplayRuntimeDiagnostics.Record(
+                "camera_vehicle_initialized",
+                "camera", name,
+                "vehicle", context.Root != null ? context.Root.name : string.Empty,
+                "owner", context.IsOwner,
+                "menu", context.IsMenu,
+                "position", context.Root != null ? context.Root.transform.position : Vector3.zero);
             CacheSpectatorTeam();
             if (context.IsOwner && !context.IsMenu)
             {
@@ -135,6 +148,13 @@ namespace Game.Scripts.Gameplay.Robots
             ApplyRuntimeZoomOverride(true);
             ApplyCameraTransform(true);
             SyncGameplayCameraTransform();
+            GameplayRuntimeDiagnostics.Record(
+                "camera_owner_initialized",
+                "camera", name,
+                "vehicle", vehicleRoot != null ? vehicleRoot.name : string.Empty,
+                "vehicle_position", vehicleRoot != null ? vehicleRoot.transform.position : Vector3.zero,
+                "camera_position", transform.position,
+                "sync_target", _cameraSync != null && _cameraSync.target != null ? _cameraSync.target.name : string.Empty);
             LogCameraDiagnostics("INIT_COMPLETE");
         }
 

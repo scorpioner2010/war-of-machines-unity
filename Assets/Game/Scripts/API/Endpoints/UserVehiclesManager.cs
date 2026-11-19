@@ -1,7 +1,6 @@
 using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API.Helpers;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -18,7 +17,6 @@ namespace Game.Scripts.API.Endpoints
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Authorization", "Bearer " + token);
 
@@ -45,7 +43,6 @@ namespace Game.Scripts.API.Endpoints
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes("{}")),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Content-Type", "application/json");
             req.SetRequestHeader("Authorization", "Bearer " + token);
@@ -63,7 +60,6 @@ namespace Game.Scripts.API.Endpoints
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbDELETE)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Authorization", "Bearer " + token);
 
@@ -82,7 +78,6 @@ namespace Game.Scripts.API.Endpoints
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Content-Type", "application/json");
             req.SetRequestHeader("Authorization", "Bearer " + token);
@@ -102,7 +97,6 @@ namespace Game.Scripts.API.Endpoints
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Content-Type", "application/json");
             req.SetRequestHeader("Authorization", "Bearer " + token);
@@ -127,7 +121,6 @@ namespace Game.Scripts.API.Endpoints
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Authorization", "Bearer " + token);
 
@@ -153,7 +146,6 @@ namespace Game.Scripts.API.Endpoints
             {
                 uploadHandler = new UploadHandlerRaw(new byte[0]),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Authorization", "Bearer " + token);
 
@@ -178,7 +170,6 @@ namespace Game.Scripts.API.Endpoints
             {
                 uploadHandler = new UploadHandlerRaw(new byte[0]),
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
             req.SetRequestHeader("Authorization", "Bearer " + token);
 

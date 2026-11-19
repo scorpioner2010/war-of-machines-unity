@@ -4,7 +4,7 @@ This file is the durable handoff point between Codex sessions. Keep entries appe
 
 ## Task: Transfer TEST transport audio demo
 
-- **Status:** IN_PROGRESS
+- **Status:** COMPLETED
 - **Started:** 2026-11-03
 - **User request:** Move the completed `TEST` primitive transport/audio demo from `C:\Users\TorasPC\Documents\Codex\2026-11-01\new-chat-3\work\UnityAssetScratch\Assets` into this project's `Assets` folder.
 - **Scope:** Copy the isolated demo scene, TestTransport scripts, engine profiles, source engine recordings, and Unity `.meta` files into a dedicated destination folder while preserving existing project changes and avoiding unrelated assets.
@@ -26,6 +26,108 @@ This file is the durable handoff point between Codex sessions. Keep entries appe
 - **Completed:** 2026-11-03.
 - **Status:** COMPLETED
 
+## Task: Repair declined friend request resend in two built clients
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** When account 1 sends a friend request to account 2, account 2 declines it, and account 1 sends the request again, the second notification does not arrive. Reproduce the exact two-client launcher scenario, fix the bug, test it in the built clients, and add useful persistent logs for future build testing.
+- **Scope:** Inspect the API friendship lifecycle, Unity client request/notification state, launcher/build logging, and the existing social regression harness. Preserve the completed social/platoon work and unrelated working-tree changes.
+- **Acceptance criteria:** The exact `1/1` to `2/2` send/decline/resend flow delivers the second notification; declined requests can be sent again without stale duplicate state; both API and Unity layers log request IDs, sender/recipient, lifecycle action, result, and errors to files; focused automated validation passes; the built-client flow is tested as far as the local environment permits.
+- **Initial state:** Previous task history reports API decline/resend coverage, but no manual authenticated two-client UI playtest. The user now reports the failure in the launcher-built clients, so existing confidence must be rechecked against the actual runtime path.
+- **Discovery:** The API `SocialController` reopens the canonical friendship row for both `Declined` and `Cancelled`, and the existing API smoke test already covers decline/resend. The Unity panel currently polls social snapshots only while its panel is open, every six seconds, and `SocialServer` only sends the friend-request action response to the sender; the recipient has no server-pushed request notification. The desktop client executable predates this task and the launcher has no dedicated social lifecycle log.
+- **Implementation checkpoint:** Added API lifecycle logging and authoritative send-response metadata, server-routed `TargetIncomingFriendRequestRpc` delivery by online profile user ID, immediate client snapshot refresh, panel notification/open behavior, and a persistent Unity `social-lifecycle.log` under `Application.persistentDataPath`. Extended `tools/Test-SocialApi.ps1` to validate request endpoint metadata.
+- **Launcher checkpoint:** Updated `Start War of Machines.bat` to preserve a stable `D:\Programing\war-of-machines-local-builds\ServerRuntime` copy before the client build, preventing the running dedicated server from losing its executable during the second build step. The launcher now prints the client, API, server, and social log paths.
+- **Validation checkpoint:** API build passed with 0 errors; Unity batch import regenerated the project files and `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and existing dependency warnings. The launcher completed successfully, produced the desktop Windows client, started the local API and dedicated server, and the live social smoke test passed all decline/resend, cancel/resend, duplicate, permission, friend, and message assertions.
+- **Runtime checkpoint:** The built client connected to the launcher-built dedicated server on port `7770`; its Unity log records `social_server_client_started`, and the server log records a remote connection. The CUA session could not type into the client because a system `PickerHost.exe` overlay intercepted all mouse/keyboard input, so the exact two-client authenticated UI sequence was not completed.
+- **Account checkpoint:** The live API scenario using the supplied `1/1` and `2/2` accounts declined the existing request, resent the same friendship row, verified the request in account 2's incoming list, and cleaned up by declining it again. API logs show the matching `declined` and `pending` transitions for friendship `5`.
+- **Result:** Declined requests now reopen the canonical friendship row and deliver a targeted notification to the online recipient, with immediate recipient refresh and persistent diagnostics for future builds.
+- **Limitations:** Automated API and compiled Unity/network validation passed; the final manual two-client UI confirmation remains blocked by the local CUA `PickerHost` overlay rather than by an application error.
+- **Completed:** 2026-11-19.
+
+## Task: Summarize current Git implementation in API and Unity
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Детально описати, що саме зараз реалізовано в поточних незакомічених змінах Git для Backend API та Unity Client/Dedicated Server.
+- **Scope:** Лише аудит і пояснення поточного diff, без редагування implementation files, без reset/revert/commit і без зміни робочого коду.
+- **Acceptance criteria:** Перевірити статус і diff обох репозиторіїв, згрупувати зміни за функціональними блоками, відокремити поточну реалізацію від документації/конфігурації та зафіксувати перевірені обмеження.
+- **Findings:** Unity HEAD `b705d688` і API HEAD `f24f966` мають незакомічені security hardening, local launcher та gameplay diagnostics changes. API додає sessions, connection tickets, dedicated-server registry/auth, server-only match contracts, JWT validation, rate limiting, ProblemDetails, CORS/forwarded-header controls та additive EF migration. Unity додає HTTPS allowlist, FishNet ticket authenticator/DTLS configuration, authenticated session gates, server discovery/heartbeat, secure match flow, profile readiness retry, spawn/camera/bot/weapon diagnostics та local development build wiring.
+- **Findings:** Поточний live-validated path для акаунта `1/1` включає API login/profile, 8 menu robots, server discovery, ticket admission, additive scene acknowledgement, player spawn, owner camera binding, 19 bot brains, authoritative shots та battle completion. API/Unity docs і `SECURITY_HARDENING_REPORT.md` описують контракти, environment variables, migration та deployment checklist.
+- **Scope note:** Generated API `bin/obj` files, task journals, docs and local build-support files are present in the working tree; they are not additional runtime features. No commit, reset or revert was performed.
+- **Validation:** Previous task validation recorded API build 0 warnings/0 errors, Unity `Assembly-CSharp.csproj` and `Game.PlayMode.Tests.csproj` builds with 0 errors, API `1/1` login/profile HTTP 200, and live built-client/server runtime diagnostics. Current task performed read-only diff/status/source/documentation inspection.
+- **Result:** Detailed Ukrainian implementation summary is ready; current working-tree changes remain intact for the user’s review and commit decision.
+- **Limitations:** This summary does not claim production secret rotation, production migration/deployment, staging DTLS verification, full automated Unity batch PlayMode, or a two-client/reconnect regression beyond the previously captured local single-client live scenario.
+- **Completed:** 2026-11-20.
+- **Status:** COMPLETED
+
+## Task: Fix login error and verify entering the game
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Виправити помилку, показану на скриншоті під час логіну, протестувати логін і вхід у гру на локальному акаунті 1.
+- **Scope:** Діагностувати поточний Unity client/API/Dedicated Server login flow, внести мінімальне виправлення першопричини, перевірити авторизацію та перехід у гру без зміни сторонніх систем.
+- **Acceptance criteria:** Причина помилки підтверджена; login flow виправлений; локальний акаунт 1 успішно входить; клієнт проходить до ігрового/lobby стану або зафіксовано точний зовнішній блокер; перевірки й обмеження записані.
+- **Next step:** Оглянути прикріплений скриншот, робоче дерево, launcher/API/client logs та login-related code.
+- **Finding:** Скриншот містить HTTP 400 validation problem: `Username` must be 3–32 characters. `RegisterServer` передає поле після trim без локальної валідації, а API `AuthController.LoginRequest.Username` має `[StringLength(32, MinimumLength = 3)]`; тому введення username `1` ніколи не доходить до перевірки акаунта.
+- **Finding:** Local PostgreSQL contains `Players.Id=2, Username=1` and `Players.Id=3, Username=2`; the earlier task journal records the supplied local credentials as `1/1` and `2/2`. The current API validation rejects both legacy accounts before password verification.
+- **Decision:** Preserve registration minimums (`username >= 3`, `password >= 8`) and change only login username validation to accept existing 1–32 character accounts; this restores compatibility without creating new weak accounts.
+- **Change:** Updated API `AuthController.LoginRequest.Username` minimum length from 3 to 1; registration validation remains unchanged. Documented the split contract in `docs/codex-app/authentication-authorization.md`, `api-endpoints.md`, and `validation-and-error-handling.md`.
+- **Validation checkpoint:** First API build attempt reached compilation but failed copying the locked `WarOfMachines.exe` because the old local API process was still running; no source compilation error was reported. The stale process must be stopped before rebuilding.
+- **Next step:** Build/restart the local API, verify `1/1` login and profile access, then exercise the built Unity client through the lobby/game-entry path.
+- **User clarification:** The user manually entered `1/1` after the client was launched. The observed runtime regressions are: the Main Menu is empty, the robot/robot list does not load, entering a match leaves the camera far from the spawn point, and the robot is not spawned.
+- **Expanded acceptance criteria:** Restore local testing after the current security-hardening changes without regressing the implemented auth/server/session/social behavior; make profile/robot loading, lobby-to-game spawn, camera target, bots, firing, and match lifecycle observable through persistent logs; perform deep local runtime and focused automated validation.
+- **Next step:** Inspect the current uncommitted security diff and runtime logs, then trace profile loading, lobby/gameplay spawn, camera ownership, bot population, and weapon events before editing.
+- **Continuation checkpoint:** The runtime log confirms `ProfileServer.UpdateProfile()` called the RPC before the FishNet client was active. The server then had no cached profile, so `MatchVehicleSpawner.SpawnPlayerAsync()` returned before creating the owner robot; the missing owner target explains the distant camera.
+- **Continuation decision:** Queue and retry profile loading only after the authenticated FishNet client/object are initialized, and add a focused persistent gameplay event log for profile, scene, spawn, camera, bot, shot, and match lifecycle events.
+- **Change:** Added queued/retried profile loading in `ProfileServer`, profile-required matchmaking rejection, and lifecycle logging across login, server discovery, lobby, additive scene loading, player/bot spawn, owner-camera binding, bot brain, firing/hits, and battle completion.
+- **Change:** Added `GameplayRuntimeDiagnostics` with append-only `Logs/GameplayRuntimeDiagnostics.log` output beside each local client/server executable and documented the ownership/format in the gameplay docs.
+- **Continuation next step:** Compile the Unity/API changes, rebuild the local runtime, and rerun login-to-match while inspecting the new event log.
+- **Status:** COMPLETED
+- **Continuation validation:** API build passed with 0 errors; direct `1/1` login returned HTTP 200 and `GET /players/me` returned HTTP 200 for user id 2 with 8 owned vehicles. Unity `Assembly-CSharp.csproj` and `Game.PlayMode.Tests.csproj` both built with 0 errors; `git diff --check` passed apart from existing line-ending warnings.
+- **Continuation runtime validation:** Fresh rebuilt client/server logs show profile request after `client_initialized=True client_started=True`, 8 menu slots, accepted matchmaking, server scene load and client acknowledgement, player spawn at `(-6.40, 1.88, 16.64)`, owner camera target binding, 19 bot brains, and 20 active vehicles.
+- **Continuation gameplay validation:** The authoritative server recorded 44 shot resolutions, including player no-penetration and penetration damage, bot shots/hits, bot brain shutdown, and a clean draw/battle completion followed by profile refreshes. No new server exception or FishNet inactive-client warning appeared in the captured runtime diagnostics.
+- **Continuation result:** Local account `1/1` now loads the Main Menu robot roster, enters a match with the selected robot spawned at a valid team spawn, and follows it with the gameplay camera while the existing authentication/session/security/social changes remain in place.
+- **Continuation limitation:** Computer Use was stopped by the user’s physical Escape key before the final gameplay screenshot; the runtime and persistent logs still captured the complete spawn, camera, bot, weapon, and battle-end path. Full Unity batch PlayMode execution was not run because the project Editor remained open; test assembly compilation and the live built-client scenario passed.
+- **Continuation completed:** 2026-11-20.
+
+## Task: Audit authentication, FishNet, server discovery, and Steam integration
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** Analyze the project with access to the Unity Client, Dedicated Server, and Backend API; describe the current authorization/token-validation path from login through game-server entry, FishNet behavior, server registration, ping measurement, transport, security, and a minimal-change Steam integration plan.
+- **Scope:** Read-only audit of client, dedicated-server, backend, configuration, deployment, and documentation paths. Do not modify implementation code, Unity assets, scenes, or runtime configuration.
+- **Acceptance criteria:** Produce a detailed Ukrainian report with concrete file and line references, distinguish observed behavior from inference, identify security gaps and operational dependencies, and propose a low-cost Steamworks Auth Ticket/Friends/invite/optional Steam Networking integration without an architectural rewrite.
+- **Progress:** Global instructions, repository journal, and task-journal recovery workflow were read. No implementation files have been changed for this analysis.
+- **Discoveries:** FishNet has no configured authenticator; login/password are sent through unauthenticated `ServerRpc` calls to the dedicated server, which calls the backend and stores the JWT by FishNet client ID. Matchmaking normally requires a cached profile, while the public in-memory server status endpoint has no registration credential and is last-writer-wins. The active Fishy Unity Transport is direct UDP with encryption disabled; UI ping is FishNet RTT adjusted by tick duration, and the diagnostics packet-loss value remains the transport default. No Steam integration/package references were found.
+- **Decisions:** Recommend preserving the current dedicated-server/JWT contract and adding optional Steam ticket login/linking through the backend; keep existing Friends/party ownership in `PartyManager`; defer Steam Networking/SDR until direct UDP/NAT requirements justify a transport change.
+- **Validation:** Static source/config/documentation audit completed across the Unity client, dedicated-server paths, backend API, FishNet/FishyUnityTransport package, and official Steamworks documentation. No build, runtime, deployment, or network penetration test was run; no implementation files, scenes, assets, or runtime configuration were changed.
+- **Result:** Delivered the requested Ukrainian read-only audit covering client discovery, FishNet connection and RPC flow, backend JWT validation, server heartbeat registration, ping/diagnostics, transport encryption, security gaps, and a phased Steamworks integration plan.
+- **Validation:** Reconciled source/configuration references across the Unity project and backend, checked FishNet/FishyUnityTransport implementation settings, searched for existing Steam integration, and consulted official Steamworks authentication, Friends, Steam Networking, and SDR documentation. No build, runtime, deployment, or network penetration test was run.
+- **Limitations:** Runtime behavior, production secrets, firewall/NAT behavior, live backend deployment, Steam partner configuration, and actual server/API logs were not independently exercised during this read-only audit.
+
+## Task: Repair social refresh, first-message flow, and button text layout
+- **Status:** COMPLETED
+- **Started:** 2026-11-19
+- **User request:** After accepting a friend request, the requester’s friend list stays stale until the client restarts; the first message has a bug; button text is not centered; add background coverage for every social button/action and repeat it with Latin and Cyrillic accounts.
+- **Scope:** Inspect the current Unity social client lifecycle, API/server/client logs, the attached UI screenshot, and existing smoke coverage. Fix authoritative refresh and first-message behavior at the responsible owners, correct button text alignment without regressing responsive layout, extend repeatable background tests to all social actions and Unicode usernames/messages, and validate several runs.
+- **Acceptance criteria:** Both clients refresh friends immediately after accept; the first message sends and appears on the recipient without a restart; all button labels are centered; automated coverage exercises search, request, decline/resend, accept, remove/re-add, cancel/resend, messages/read state, and platoon actions where the current API/server contract supports them; repeated Latin/Cyrillic runs pass and logs explain failures.
+- **Initial state:** The previous task added targeted friend-request notifications and persistent diagnostics but did not cover friend-list refresh after accept, first-message UI timing, or automated button/layout assertions.
+- **Findings:** The old accept/decline/cancel path refreshed only the actor client. The prior first-message runtime log showed `POST /social/friends/3/messages` returning HTTP 200, then FishNet kicking a client for unhandled packet `46288`; the client logged `messageSent` but never logged `messages_received`. The button label had centered TMP alignment but no explicit full-rect offsets, making visual centering dependent on the generated layout.
+- **Implementation checkpoint:** API transition responses now include both participant IDs and status. `SocialServer` routes transition refreshes to the other online participant, returns a persisted message immediately to the sender, and logs message/transition/receive diagnostics. `PlatoonSocialPanel` keeps failed messages available for retry and gives every button label a full centered RectTransform. Added `tools/Test-SocialUiContracts.ps1` and expanded `tools/Test-SocialApi.ps1` to cover all supported social actions with Latin/Cyrillic UTF-8 accounts/messages.
+- **Validation checkpoint:** API build passed with 0 warnings and 0 errors. Unity `Assembly-CSharp.csproj` build passed with 0 errors; remaining output is existing Unity/dependency warnings plus the obsolete TMP wrapping warnings removed from the button path. UI contract checks passed. The expanded API lifecycle smoke passed 3 iterations before and 3 iterations after the fresh launcher rebuild. The launcher rebuilt API, dedicated server, and Desktop Windows client successfully; server status reports `ready`, `127.0.0.1:7770`, and a live heartbeat.
+- **Runtime limitation:** The Computer Use native pipe was unavailable on two attempts, so a fresh two-window mouse/keyboard replay could not be driven from this environment. The built client and server were produced from the same launcher run, and the runtime logs are available for the user's manual two-client replay.
+- **Result:** Fixed stale requester-side friend state by routing friendship transitions to both online participants, fixed first-message completion/diagnostics, and made button labels explicitly centered and full-rect. Added repeatable API and UI-contract background tests.
+- **Remaining limitation:** A literal two-window authenticated UI replay could not be completed because the native UI automation helper was unavailable; API lifecycle, source contracts, Unity compilation, fresh launcher build, and runtime server readiness were validated.
+- **Completed:** 2026-11-19.
+
+## Task: Debug Start War of Machines launcher and platoon MVP
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-18
+- **User request:** The user launched `Start War of Machines.bat`, but the newly implemented platoon/social system does not work; identify and fix the actual startup/runtime failure.
+- **Scope:** Inspect the launcher location and commands, Unity/API/server logs, current working-tree state, scene/network registration, and runtime configuration. Preserve the completed platoon implementation and all existing user changes.
+- **Acceptance criteria:** Determine the failure cause from logs or reproducible behavior, patch the smallest root cause, validate the launcher/API/Unity path as far as the environment allows, and record an interruption-safe checkpoint.
+- **Progress:** Previous platoon MVP task is closed and compiled successfully. The expected `.bat` file was not present under the Unity repository root; launcher discovery is the next step.
+- **Recovery next step:** Locate `Start War of Machines.bat`, capture its exact commands/output, then inspect each launched process and API/Unity log before editing implementation files.
+
 ## Task: Estimate simple two-player platoon MVP
 
 - **Status:** IN_PROGRESS
@@ -38,6 +140,18 @@ This file is the durable handoff point between Codex sessions. Keep entries appe
 - **Limitations:** The estimate excludes polished art/UI, moderation, push notifications, multi-server queueing, voice chat, and production-scale reconnect/failover.
 - **Completed:** 2026-11-18.
 - **Status:** COMPLETED
+
+## Task: Debug Start War of Machines launcher and platoon MVP
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-18
+- **User request:** The user launched `Start War of Machines.bat`, but the newly implemented platoon/social system does not work; identify and fix the actual startup/runtime failure.
+- **Scope:** Inspect the launcher location and commands, Unity/API/server logs, current working-tree state, scene/network registration, and runtime configuration. Preserve the completed platoon implementation and all existing user changes.
+- **Acceptance criteria:** Determine the failure cause from logs or reproducible behavior, patch the smallest root cause, validate the launcher/API/Unity path as far as the environment allows, and record an interruption-safe checkpoint.
+- **Progress:** Located the launcher at `C:\Users\TorasPC\Desktop\Start War of Machines.bat`. Reproduced the failure: it exits with code `1` before Docker/API startup because no Unity Editor process is open for this project. Existing local API/server logs are stale artifacts from an earlier run.
+- **Decision:** Make the launcher start the installed Unity Editor for this project automatically, wait until that project-specific process is visible, and retain a clear timeout/error path instead of requiring a manual pre-step.
+- **Files to change:** Desktop `Start War of Machines.bat`; keep the Unity build-request handler unchanged unless full startup validation exposes a separate issue.
+- **Change made:** Replaced the hard failure on a missing Unity Editor with automatic discovery under the Unity Hub Editor folders, project launch via `-projectPath`, and a five-minute readiness timeout.
+- **Recovery next step:** Run the launcher end-to-end, inspect API/server logs, then update this entry with validation and any remaining limitation.
 
 ## Task: Analyze platoon feature feasibility
 
@@ -3581,3 +3695,196 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Limitations:** Without the full Editor log and the exact object/path Unity repaired, the specific damaged object cannot be identified from these two messages alone.
 - **Completed:** 2026-11-18.
 - **Status:** COMPLETED
+
+## Task: Implement two-player platoon MVP
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-18
+- **User request:** Implement a simple two-player platoon MVP with friend requests, direct messaging, invitations, a custom UI, and party matchmaking.
+- **Scope:** Add the minimum end-to-end backend social contracts and Unity/FishNet party flow while preserving server authority, current match behavior, and existing working-tree changes. The party limit is two players; direct messaging is persisted REST/polling rather than voice or push chat.
+- **Acceptance criteria:** A player can find another player, send/accept a friend request, exchange text messages, invite the friend to a two-player party, accept/leave the party, and queue together without being split across teams. The work must be checkpointed, documented, statically validated, and tested as far as the open Unity/API environment permits.
+- **Progress:** Global instructions, task-journal recovery, gameplay-logic separation, backend rules, current match/lobby documentation, and API endpoint documentation were read. Implementation has not started yet.
+- **Ownership decision:** Keep party membership, invitations, queue grouping, and party-preserving team assignment in a dedicated `PartyManager`; keep authenticated backend calls behind a dedicated `SocialServer`/`SocialApiClient`; keep friend/chat/party controls in a dedicated `PlatoonSocialPanel`. `LobbyManager` will only orchestrate queue entry/exit through explicit party outputs.
+- **Scene wiring discovery:** The scene-owned `LobbyManager` NetworkObject is at `Assets/Game/Scenes/Client.unity` and is the safe registration point for the two new NetworkBehaviours. `RoomController` remains the existing match search UI coordinator.
+- **Backend checkpoint:** Added `Friendship` and `DirectMessage` EF entities, `SocialController` routes for player search, friend requests/accept/decline/removal, message polling/sending/read state, DbContext mappings, and migration `20261118145753_AddSocialAndDirectMessaging`. Backend build passes with seven pre-existing warnings and no new social warnings/errors.
+- **Unity checkpoint:** Added `SocialApiClient` and authenticated `SocialServer` RPC proxy, `PartyManager` with server-authoritative two-player invites/accept/leave/queue state, runtime `PlatoonSocialPanel`, `partyId` room data, location/capacity-aware matchmaking, and party-preserving team assignment. Registered all three components on the scene-owned `LobbyManager` NetworkObject.
+- **Validation checkpoint:** Unity batch script compilation succeeded after fixing namespace/JSON imports. Remaining Unity output is warning-only (`TMP_Text.enableWordWrapping`, FishNet upgrade helpers). `git diff --check` passes.
+- **Recovery next step:** Finish API/gameplay documentation, run backend build again after docs-only changes if needed, inspect final diff for unrelated edits, and mark this entry `COMPLETED` with limitations. Runtime two-client flow still needs manual playtest against a running API and authenticated server.
+- **Final changes:** Documented the ownership boundary and MVP flow in `docs/codex-game/social-platoon.md` and `docs/codex-game/match-lobby-spawn.md`; updated the backend endpoint contract documentation. Corrected solo queue cancellation, party leave semantics, disconnect cleanup cache, and invalid queue-menu behavior.
+- **Final validation:** `dotnet build WarOfMachinesAPI.csproj --no-restore` passed with 0 warnings and 0 errors; `dotnet test WarOfMachinesAPI.csproj --no-restore --no-build` completed; Unity `6000.3.13f1` batch compilation passed with `Tundra build success`, no C# errors, and `git diff --check` passed.
+- **Result:** The two-player platoon MVP is implemented across backend social persistence, Unity/FishNet party state, custom UI, matchmaking grouping, and same-team assignment.
+- **Limitations:** No automated API tests exist; no live two-client authenticated playtest was run, so API database migration/startup, account credentials, network topology, and final UI appearance still need manual verification.
+- **Completed:** 2026-11-18.
+- **Status:** COMPLETED
+
+## Task: Stabilize launcher and social/platoon UI
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** The social/platoon UI is drifting on different screens, finding a friend and adding them to a platoon is difficult, and the user needs a separate button that opens the friend search/platoon UI. Verify and fix the complete friend, messaging, invitation, ready, and same-team matchmaking flow.
+- **Scope:** Inspect the existing social UI, its scene wiring, Canvas/layout assumptions, PartyManager flow, API calls, and launcher state. Preserve the completed platoon implementation and existing user changes; make the smallest focused fixes needed for responsive UI and discoverability.
+- **Acceptance criteria:** The main menu exposes a stable dedicated social/platoon button; the social panel scales without overlap or off-screen controls; a player can search/add a friend, send/read messages, invite/accept a platoon, both players can ready up, and the ready party enters matchmaking together on one team. Validation must include Unity compilation and static/runtime checks possible in this environment.
+- **Prior state:** The previous launcher-debug attempt was interrupted after patching `C:\Users\TorasPC\Desktop\Start War of Machines.bat` to auto-open Unity. That launcher change must be preserved and revalidated separately.
+- **Findings:** `PlatoonSocialPanel` creates a second fixed `620x900` overlay with absolute offsets, no close/open control, no scrollable result lists, and it is shown automatically over the main menu. Its canvas uses width-only scaling, so small/tall aspect ratios can clip the bottom controls. The panel currently has no ready button or automatic transition into matchmaking.
+- **Networking finding:** `Client.unity` contains `PartyManager`, `SocialServer`, and `PlatoonSocialPanel`, but the dedicated-server `Server.unity` LobbyManager object contains no `PartyManager`. The server therefore cannot own party invitations, membership, or queue grouping in the launcher-built server.
+- **Additional networking finding:** `SocialServer` is also a `NetworkBehaviour` and was absent from `Server.unity`; the client-side friend search and message RPCs therefore had no matching server-side behaviour. Both `PartyManager` and `SocialServer` must be registered in the same order on the server object.
+- **Ownership decision:** Keep layout, button visibility, chat, friend, invite, and ready presentation in `PlatoonSocialPanel`; keep ready state and the two-player all-ready gate in `PartyManager`; keep matchmaking invocation in `RoomController` through a small explicit entry point.
+- **Recovery next step:** Patch the panel to use anchored responsive layout plus scroll views and a dedicated toggle button, add party ready state and leader-only auto-queue, register `PartyManager` in `Server.unity`, then compile and inspect logs.
+- **Implementation checkpoint:** Rebuilt `PlatoonSocialPanel` around an anchored full-height panel, a modal toggle/close flow, a centered CanvasScaler match, a vertically scrollable main content area, scrollable friend/request/search lists, and stacked action buttons. Added `READY UP` presentation and all-ready auto-queue callback. Added PartyManager readiness snapshots/RPCs and registered `PartyManager` plus `SocialServer` in `Server.unity` in the matching network-behaviour order.
+- **Validation checkpoint:** Unity 6000.3.13f1 batch script compilation passed with exit code `0` and no C# errors. `Game.Editor.LocalNetworkBuild.BuildLocalServer` completed with `Build Finished, Result: Success` and produced `D:\Programing\UnityProjects\war-of-machines-local-builds\Server\WarOfMachinesServer.exe`.
+- **Runtime checkpoint:** The patched launcher opened the project Unity Editor, waited for Docker/PostgreSQL, built the API with 0 warnings and 0 errors, started the API on HTTPS 7216, built and started the dedicated server, and produced a successful server-build result. Swagger returned HTTP 200, the social tables exist in PostgreSQL, and the server log reports UnityTransport listening on port 7770 without Party/Social errors.
+- **Visual checkpoint:** Unity Play Mode reached the login UI at 16:9 without layout errors. An authenticated two-client UI flow was not automated because no user credentials were supplied; server-side ready gating and same-team grouping were validated by code inspection and compilation.
+- **Documentation checkpoint:** Updated `docs/codex-game/social-platoon.md` and `docs/codex-game/match-lobby-spawn.md` with the dedicated button, responsive layout behavior, ready gate, and explicit matchmaking entry point.
+- **Result:** The launcher and social/platoon MVP are operational in the local runtime path, with responsive discoverability and server-authoritative two-player ready matchmaking wired end to end.
+- **Limitations:** A manual two-client authenticated playtest remains the only unverified step; party state is intentionally in-memory and single-server for this MVP.
+- **Completed:** 2026-11-19.
+- **Status:** COMPLETED
+
+## Task: Audit and fix social request lifecycle bugs
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** A friend request was cancelled and could not be sent again; audit the complete social system for similar lifecycle bugs and fix them.
+- **Scope:** Reproduce request cancel/resend behavior against the live local API, inspect API entities/controllers and Unity social UI/RPC state handling, add regression coverage for every request transition, and preserve the running server where possible.
+- **Acceptance criteria:** Cancelled requests can be sent again, request state transitions are consistent for both users, stale UI/network state is refreshed, duplicate/conflicting actions are handled safely, and focused automated tests cover the repaired lifecycle plus related friend/message/invite flows.
+- **Findings:** Direct API decline/resend already reopened the canonical friendship row, but the client exposed no relationship status, allowed stale `ADD` actions, refreshed only successful actions, and accepted snapshot responses without ordering. The database has a unique canonical pair index and no duplicate/self-link rows in the live local database.
+- **Implementation checkpoint:** Added `cancelled` lifecycle state, outgoing-request and cancel endpoints, search relationship metadata, explicit client-side snapshot/search request ordering, refresh-after-failure behavior for friend actions, and state-specific search result actions. Extended `tools/Test-SocialApi.ps1` across duplicate, permission, decline/resend, remove/re-add, cancel/resend, and message flows.
+- **Validation checkpoint:** API build passed with 0 warnings and 0 errors after stopping only the API process. The expanded live API smoke test passed every lifecycle assertion. `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and existing Unity/dependency warnings. The full launcher completed with exit code `0`; the Windows client executable was copied to the desktop, API status was `ready`, and the dedicated server was running. The final live smoke test passed all 28 lifecycle assertions, including decline/resend, cancel/resend, remove/re-add, duplicate rejection, permission checks, and messaging.
+- **Result:** Fixed the request lifecycle at API and client layers: cancelled/declined rows reopen safely, outgoing requests are exposed, stale/out-of-order snapshot and search responses are ignored, all friend actions refresh state even after errors, and search results no longer present pending relationships as `ADD`. Added regression coverage for related friend and message flows.
+- **Limitations:** Automated validation covers the authenticated API lifecycle and compiled Unity/network code; it does not drive mouse/keyboard through two simultaneous Unity UI clients. The existing Unity/dependency build warnings remain unrelated to this fix.
+- **Completed:** 2026-11-19.
+- **Status:** COMPLETED
+
+## Task: Add desktop Windows client build to launcher
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** Extend `Start War of Machines.bat` so the startup process also creates a Windows client build on the desktop.
+- **Scope:** Reuse the existing Unity `LocalNetworkBuild` client request watcher, wait for a matching build result, and copy the complete client build to a dedicated desktop folder without changing the server/API startup flow.
+- **Acceptance criteria:** The launcher requests and validates a Windows client build, copies all required files to the desktop, reports the output path, and fails clearly if the build or copy is unsuccessful.
+- **Implementation checkpoint:** Added client build request/result handling to `C:\Users\TorasPC\Desktop\Start War of Machines.bat`; after Unity creates `WarOfMachinesClient.exe`, the launcher copies the complete `Client` output to `C:\Users\TorasPC\Desktop\War of Machines Windows Build`. Updated `docs/codex-game/local-network-builds.md` with the new desktop output.
+- **Validation checkpoint:** `git diff --check` passed. The launcher completed end to end with exit code `0`, Unity produced `client-build-result.txt` with `SUCCESS`, and the desktop output contains 214 files matching the local client build. The source and desktop `WarOfMachinesClient.exe` files have matching SHA-256 hashes.
+- **Runtime checkpoint:** The same launcher run rebuilt and restarted the API and dedicated server; `GET http://127.0.0.1:5220/unity-server/status` returned `isOnline=true`, `status=ready`, and game port `7770`.
+- **Result:** `Start War of Machines.bat` now builds the Windows client through the existing Unity watcher, copies the complete build to `C:\Users\TorasPC\Desktop\War of Machines Windows Build`, verifies the executable, and then starts the local API and dedicated server.
+- **Limitations:** The client build is placed in a dedicated desktop folder so Unity's companion files stay together; the launcher does not automatically start the client executable.
+- **Completed:** 2026-11-19.
+- **Status:** COMPLETED
+
+## Task: Repair social UI layout and player search
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** The social/platoon UI is broken, buttons are misplaced, player search finds nobody, and the user requested background tests to verify the complete flow. The local server should remain running.
+- **Scope:** Reproduce the reported UI and search failures without stopping the user's server, inspect the attached screenshot and `WaypointPointSpawner.cs` context, repair layout and API/search integration at the root cause, and add or run focused automated tests for the social flow.
+- **Acceptance criteria:** The social panel has correctly anchored buttons across supported aspect ratios; player search returns matching existing players through the live API; friend request, messaging, invite/accept, ready, and party matchmaking paths remain wired; automated/background validation records pass/fail results and does not conflict with the open Unity Editor or running server.
+- **Initial state:** The previous task marked the MVP as build-validated but explicitly left authenticated two-client testing unverified. The user reports that the actual runtime UI and search behavior fail, so the prior confidence must be rechecked rather than assumed.
+- **Findings:** The attached portrait screenshot shows the stretch-anchored search/message input extending underneath the inline buttons. `CreateInput` used `sizeDelta` with stretch anchors while `SEARCH`/`SEND` were right-anchored, so their hitboxes and visuals overlapped. `UpdateResponsiveLayout` also forced a 280-unit minimum panel width, which can overflow very narrow canvases.
+- **Search findings:** The live API responds correctly with JWTs and player records. The controller returned an empty list for every query shorter than two characters, which made one-character/numeric usernames impossible to find. The old smoke harness also exposed a PowerShell array-unwrapping issue and was corrected before treating results as valid.
+- **Implementation checkpoint:** Updated `PlatoonSocialPanel` to use explicit input/list offsets, aligned inline buttons to the right safe margin, clamp panel width to available canvas width, reject empty searches visibly, and report empty/non-empty search results. Updated `SocialController` to reject only blank queries. Added `tools/Test-SocialApi.ps1` for repeatable two-user authenticated smoke coverage.
+- **API checkpoint:** Restarted only the API after rebuilding it; the dedicated `WarOfMachinesServer.exe` remained running with PID 37988. The API build completed with 0 warnings and 0 errors.
+- **Runtime discovery:** The running dedicated server was still using the remote API fallback and logged heartbeat timeouts at `https://war-of-machines-api.onrender.com`. The launcher now passes the local API explicitly with `-apiBase http://127.0.0.1:5220`; the current server will be restarted once with the same argument so social RPCs use the live local API.
+- **Validation checkpoint:** Background social smoke test passed all checks: JWT login, empty search, one-character search, exact search, self-exclusion, friend request, accept, friend list, direct message delivery, and read-state. Unity 6000.3.13f1 batch compilation exited 0 with no C# errors. Test logs are at `D:\Programing\war-of-machines-local-builds\social-api-smoke.stdout.log` and `D:\Programing\war-of-machines-local-builds\social-api-smoke.stderr.log`.
+- **Documentation checkpoint:** Updated `docs/codex-game/social-platoon.md` and the API `docs/codex-app/api-endpoints.md` with the corrected layout/search behavior and the smoke-test command.
+- **Runtime fix checkpoint:** The launcher now starts `WarOfMachinesServer.exe` with `-apiBase http://127.0.0.1:5220`. The running server was restarted once with that argument and remains alive as PID 26444; `GET /unity-server/status` reports `isOnline=true`, `status=ready`, address `127.0.0.1`, port `7770`, and a current heartbeat. The new server log has no API timeout or heartbeat errors.
+- **Final validation:** `dotnet build WarOfMachinesAPI.csproj --configuration Debug --no-restore` passed with 0 warnings and 0 errors after restarting only the API to release its executable lock. `dotnet test --no-build` completed successfully with no test project cases. Unity 6000.3.13f1 batch compilation exited 0 with no C# errors. The background social smoke test passed all 10 assertions. `git diff --check` passed for both repositories.
+- **Result:** The reported overlap was fixed at the RectTransform offset root, one-character/numeric player search now works, empty/no-result states are visible, the repeatable social API test is checked in, and the live game server now uses the local API instead of the remote fallback.
+- **Limitations:** The test creates temporary `codex_social_*` local accounts and does not automate mouse/keyboard or an authenticated two-client Unity UI session. Party invite/ready/team grouping remains covered by existing compiled code and server wiring, not a live two-client playthrough.
+- **Completed:** 2026-11-19.
+- **Status:** COMPLETED
+
+## Task: Discard latest API and Unity social work
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** Discard the latest work implemented in the API and Unity projects and briefly summarize what was implemented there.
+- **Scope:** Identify the API and Unity repositories and their latest task-related changes, record the summary, then revert only the requested latest uncommitted implementation changes without deleting unrelated user work or committed history.
+- **Acceptance criteria:** The requested latest API/Unity changes are discarded safely; the final response briefly lists what had been implemented; the journal records the exact files, validation, and any remaining ambiguity.
+- **Findings:** Unity has uncommitted social/platoon code, lobby/scene wiring, docs, and test scripts relative to `b705d688`; the root `TASK.md` is also modified. API has uncommitted social models/controller/migration, schema/docs, generated build artifacts, and social logs relative to `f24f966`; its own task journal already records the completed platoon MVP.
+- **Decision:** Treat “latest work” as all current uncommitted implementation/documentation/artifact changes in both repositories, while preserving both task journals and committed history. Do not touch the separate desktop launcher or local-build output because they are outside the API/Unity repositories.
+- **Implemented summary:** API added friendship/direct-message EF models and migration, authenticated social endpoints, search, request lifecycle, messaging/read state, and related docs. Unity added social API/server bridge, persistent diagnostics, social/platoon UI, friend notifications/refresh, messages, party invites/ready/matchmaking, lobby/team/scene wiring, and background contract tests.
+- **Changed files:** Restored all listed uncommitted API/Unity code, scenes, docs, tests, logs, and generated build artifacts; preserved only `TASK.md` journals and committed history.
+- **Validation:** `git status --short` and `git ls-files --others --exclude-standard` show only `TASK.md` modified in each repository; no untracked API/Unity implementation files remain.
+- **Result:** The latest uncommitted API and Unity implementation work was discarded as requested.
+- **Limitations:** The separate desktop launcher and `D:\Programing\war-of-machines-local-builds` output were intentionally not changed.
+- **Completed:** 2026-11-19.
+- **Status:** COMPLETED
+
+## Task: Phase 1 security audit and hardening plan
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **User request:** Провести Phase 1 аудиту безпеки War of Machines для Unity Client, FishNet Dedicated Server та ASP.NET Core Backend API; перевірити актуальний стан TLS, authentication, FishNet RPC, server identity/heartbeat, match results, JWT/secrets та API security; підготувати детальний технічний план із конкретними файлами, API-контрактами, міграціями, ризиками й порядком реалізації; не редагувати код до підтвердження.
+- **Scope:** Лише read-only аудит і планування на цьому етапі. Не змінювати gameplay, physics, synchronization, matchmaking, platoons/social systems, Steam integration, production configuration, secrets або database data.
+- **Acceptance criteria:** Перевірити всі доступні компоненти та залежності, відокремити підтверджені факти від припущень, перевірити попередні знахідки, визначити breaking changes, потрібні migrations/environment variables/tests, і надати український Phase 1 план перед будь-якими implementation changes.
+- **Initial state:** Обов’язкові глобальні правила, `TASK.md`, task-journal recovery workflow та gameplay/network ownership workflow прочитані. До implementation files змін не внесено.
+- **Next step:** Інвентаризувати Unity client, dedicated-server, backend API, database/configuration/deployment paths та зібрати трасування security-контрактів.
+- Оновлення аудиту: підтверджено небезпечні TLS bypass у `Assets/Game/Scripts/API/**` і `StartServerButtons.cs`; `HttpLink` та server lookup мають production HTTP/local fallback і приймають довільний runtime base. FishyUnityTransport має `m_UseEncryption: 0`; у prefab `_authenticator` не налаштований, тому віддалені клієнти проходять FishNet auto-auth. Логін/пароль передаються через `RegisterServer` RPC.
+- Підтверджено RPC-ризики: `ServerPlayerSessions.GetUserId` повертає `0` як fallback; matchmaking допускає профіль без автентифікації; `GameplaySpawner` довіряє client-provided `clientId` для disconnect/scene-loaded; server-side матч API використовує JWT гравця; fire/input RPC мають часткові server checks, але потребують централізованого auth/state/rate-limit та finite/range validation.
+- Підтверджено API-ризики: публічний `/unity-server/status` з in-memory last-writer-wins registry і довірою до forwarded headers; `/matches/start` і `/matches/end` захищені лише user `[Authorize]`; немає server-only policy/ownership/idempotency; JWT без issuer/audience, 7-денний lifetime, `RequireHttpsMetadata=false`, hardcoded key/fallback; password logging у register; CORS/Swagger/admin/public catalog mutations/rate limiting/forwarded-header hardening відсутні.
+- Підтверджено hardcoded JWT key у `appsettings.json` та Git history; підготовлено план ротації без виконання. Поточна перевірка є статичною: runtime, build, database та multiplayer tests не запускалися.
+- Рішення Phase 1: реалізацію розділити на TLS/API, server identity/registry/match ownership, ticket admission/FishNet Authenticator/DTLS, RPC/session hardening і regression/security tests. Сумісне оновлення Client + Dedicated Server + API потрібне; production deployment, secret rotation і DB migration не виконувати без підтвердження.
+
+## Task: Implement security hardening Phases 2-5
+
+- Status: IN_PROGRESS
+- Started: 2026-11-19
+- User request: Реалізувати затверджений Phase 1 план: TLS/API security, Dedicated Server identity/registry, match protection, HTTPS session/ticket admission, FishNet Authenticator/transport encryption, RPC hardening, tests та фінальний SECURITY_HARDENING_REPORT.md.
+- Scope: локальні зміни Unity Client/Dedicated Server і Backend API; без production deployment, ротації реальних секретів, production DB migration, Steam/social/gameplay redesign.
+- Initial state: only this journal is modified in Unity; API implementation files are unchanged relative to current working tree and API TASK journal is already modified. Phase 1 audit findings are recorded above.
+- Acceptance criteria: implement safe local changes incrementally, preserve gameplay/network sync, run available builds/tests after each phase, record exact limitations and manual configuration in final report.
+- Next step: implement Phase 2 TLS/API protections after targeted contract inspection.
+
+### Phase 2-5 implementation checkpoint
+- **Phase 2:** TLS bypass видалено; Unity HTTPS allowlist, API JWT validation, rate limiting, DTO/body limits, ProblemDetails, CORS, trusted proxy та admin policies реалізовано.
+- **Phase 3:** PostgreSQL-backed Dedicated Server identity/heartbeat registry, server-only credentials/policies, match ownership, roster validation та idempotent transactional finalization реалізовано.
+- **Phase 4:** HTTPS sessions, refresh rotation/revocation, hashed one-time connection tickets, FishNet Authenticator, DTLS configuration та authenticated RPC gates реалізовано; production host bypass вимкнено.
+- **Phase 5 validation:** Unity current-source Roslyn compile exit 0; API build 0 warnings/0 errors; local PostgreSQL additive migration applied; API security smoke та auth rate-limit smoke passed.
+- **Changed files:** Unity networking/API/gameplay security files and NetworkManager prefab; API controllers, models, infrastructure, EF migration/config/docs; `SECURITY_HARDENING_REPORT.md`.
+- **Limitations:** production deployment, real secret rotation, production DB migration, full Unity runtime/two-client multiplayer regression and DTLS staging verification were not performed. Another Unity Editor held the project lock, so it was not forcibly closed.
+- **Result:** local code hardening Phases 2-5 complete; public testing remains gated by the deployment checklist in `SECURITY_HARDENING_REPORT.md`.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-19.
+
+## Task: Fix local security-hardened launcher
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **Request:** Налаштувати `Start War of Machines.bat` для локального тестування після security hardening без HTTP fallback, з локальним HTTPS API, server credentials і DTLS secrets.
+- **Scope:** локальний launcher, Unity local build options/configuration, API local environment example/docs; без production config, deployment, production secrets або gameplay changes.
+- **Acceptance criteria:** local launcher builds Development-only client/server, starts API on HTTPS 7216, passes safe `WOM_API_BASE`, propagates local server identity/credential and DTLS variables without logging secret values, and validates prerequisites before start.
+- **Next step:** inspect local env keys, launcher/build integration and patch only local paths.
+
+## Task: Fix local security-hardened launcher
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-19
+- **Request:** Налаштувати `Start War of Machines.bat` для локального тестування після security hardening без HTTP fallback, з локальним HTTPS API, server credentials і DTLS secrets.
+- **Changes:** `Assets/Editor/LocalNetworkBuild.cs` тепер створює Development-only локальні Client/Server builds; `SecureFishNetTransportConfiguration` читає public client transport config з build directory лише в Development Build; API `tools/Initialize-LocalSecurityEnvironment.ps1` генерує process-scoped credential і PEM certificate/key через стандартні .NET APIs; Desktop launcher запускає тільки `https://localhost:7216`, передає credentials/DTLS env і копіює client transport config.
+- **Validation:** full `C:\Users\TorasPC\Desktop\Start War of Machines.bat` завершився з exit code 0; API HTTPS слухав `7216`, Dedicated Server UDP слухав `7770`, `/unity-server/status` показав `local-server-1` online, Client executable і `client-transport.env` були створені/скопійовані; stop script прибрав локальні процеси.
+- **Additional checks:** local initializer passed; API local HTTPS returned 200; generated server credential register/heartbeat returned 200/200; API build completed with only three pre-existing warnings; Unity current-source Roslyn compile exit 0 with two pre-existing FishNet obsolete warnings.
+- **Limitations:** full two-client login, ticket admission, reconnect and gameplay regression не виконувалися; реальні production secrets/DB/deployment не змінювалися. Локальні generated secrets зберігаються поза репозиторіями в `war-of-machines-local-builds\LocalSecurity`.
+- **Result:** `Start War of Machines.bat` тепер придатний для локального security-hardened API + Dedicated Server запуску без HTTP downgrade.
+- **Completed:** 2026-11-19.
+
+## Task: Diagnose black client window after local launcher
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-19
+- **Request:** Користувач повідомив, що локальна гра не працює; на скріншоті Unity-клієнт має чорне вікно, поруч Dedicated Server друкує стартовий UnityMemory-конфіг.
+- **Scope:** Діагностувати й виправити локальний запуск `Start War of Machines.bat` та клієнта без змін production, gameplay або security bypass; не видаляти незакомічені зміни.
+- **Acceptance criteria:** Визначити причину чорного вікна, внести мінімальне виправлення локального запуску/конфігурації за потреби, перевірити API/server/client startup і зафіксувати обмеження runtime-перевірки.
+- **Initial state:** Попередній smoke запуск BAT завершувався з exit code 0, API слухав HTTPS 7216, Dedicated Server — UDP 7770; повний двоклієнтний gameplay не перевірявся. Поточний скріншот показує чорне клієнтське вікно.
+- **Next step:** Перевірити поточні процеси, BAT, client/server logs і Unity Player settings/scenes, не припускаючи, що exit code launcher означає працездатність клієнта.
+
+### Diagnostic checkpoint
+- **Finding:** The client process stays responsive but its Player.log stops after URP initialization; the server and API are running. `RegisterServer.Awake()` called `MenuManager.OpenMenu(MenuType.Auth)` before `MenuManager.Awake()` reliably initialized its menu map, leaving all menu controllers inactive and producing the black screen.
+- **Change:** Moved the initial Auth menu open to `RegisterServer.Start()`, which runs after all scene `Awake()` methods.
+- **Next step:** Build the client through the existing Unity Editor request path and launch it with a dedicated log to verify that the Auth UI becomes visible.
+
+### Root-cause checkpoint
+- **Finding:** `Client.unity` root Canvas (`fileID 8541441300250802456`) had a zero local scale, so the entire Screen Space Overlay UI was rendered at zero size. The first `RegisterServer` timing fix alone did not change the captured black window.
+- **Change:** Restored the Canvas `m_LocalScale` to `{x: 1, y: 1, z: 1}`.
+- **Validation pending:** Rebuild the client and capture the actual window after the scene fix.
+
+### Final validation checkpoint
+- **Finding:** The Auth UI was still not visible until the initial menu selection was owned by `MenuManager`; `RegisterServer` is a networked prefab and was not a reliable scene-start lifecycle owner for this UI.
+- **Changes:** `MenuManager.Start()` now opens `MenuType.Auth`; the Client Canvas scale is restored to one; the local start script launches the Windows client with D3D11 after API/server startup; the stop script terminates the client before build replacement.
+- **Validation:** The client Development build completed successfully; a captured runtime frame showed the Auth screen; the launcher completed with exit code `0`; API HTTPS listened on `127.0.0.1:7216`, Dedicated Server UDP listened on `0.0.0.0:7770`, the client/API/server processes remained responsive, and no client log errors were found.
+- **Limitations:** Login, two-client matchmaking/gameplay, reconnect, and ticket admission were not exercised in this diagnostic run. Production deployment, secret rotation, and production database changes were not performed.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-19.

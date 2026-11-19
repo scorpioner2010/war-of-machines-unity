@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using Game.Scripts.Networking.Lobby;
+using Game.Scripts.Networking.Sessions;
 using UnityEngine;
 using LobbyPlayer = Game.Scripts.Networking.Lobby.Player;
 
@@ -82,7 +83,7 @@ namespace Game.Scripts.Gameplay.Battle
         [ServerRpc(RequireOwnership = false)]
         private void NotifyClientCountdownFinishedServerRpc(NetworkConnection sender = null)
         {
-            if (!_serverLockStarted || _serverRoom == null || sender == null)
+            if (!_serverLockStarted || _serverRoom == null || !ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
                 return;
             }
