@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 6741285400773246127}
   - component: {fileID: 7906509426840605445}
   - component: {fileID: 3451912067597259211}
+  - component: {fileID: 9012345678901234567}
+  - component: {fileID: 9012345678901234566}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -89,7 +91,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   m_ProtocolType: 0
   m_UseWebSockets: 0
-  m_UseEncryption: 0
+  m_UseEncryption: 1
   m_MaxPacketQueueSize: 128
   m_MaxPayloadSize: 8192
   m_HeartbeatTimeoutMS: 300
@@ -117,7 +119,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68828c85278210948b9d50a8db3aab74, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  _authenticator: {fileID: 0}
+  _authenticator: {fileID: 9012345678901234567}
   _remoteClientTimeout: 2
   _remoteClientTimeoutDuration: 60
   _allowPredictedSpawning: 1
@@ -141,5 +143,31 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 001a8cbb62557d44e90ffa0b071297ed, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+
+--- !u!114 &9012345678901234567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2253888701579178645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1a4e3d8b0b54a1d9b7f0b59f5f6a7c8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+
+--- !u!114 &9012345678901234566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2253888701579178645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2b5f4e9c1c65b2eac801c6af6a7b8d9, type: 3}
   m_Name:
   m_EditorClassIdentifier:

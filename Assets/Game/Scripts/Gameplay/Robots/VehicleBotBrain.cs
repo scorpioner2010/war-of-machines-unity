@@ -1,4 +1,5 @@
 using Game.Scripts.AI.WaypointGraph;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Networking.Lobby;
 using UnityEngine;
 
@@ -24,10 +25,16 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (_isRunning)
             {
+                GameplayRuntimeDiagnostics.Record("bot_brain_start_skipped", "reason", "already_running", "vehicle", root != null ? root.name : string.Empty);
                 return;
             }
 
             SetVehicleRoot(root);
+            GameplayRuntimeDiagnostics.Record(
+                "bot_brain_start_requested",
+                "vehicle", root != null ? root.name : string.Empty,
+                "room_id", room != null ? room.roomId : string.Empty,
+                "position", root != null ? root.transform.position : Vector3.zero);
 
             WaypointGraphRuntime graph = root != null
                 ? WaypointGraphRuntime.FindOrCreateForScene(root.gameObject.scene)
@@ -35,6 +42,7 @@ namespace Game.Scripts.Gameplay.Robots
 
             if (navigator == null)
             {
+                GameplayRuntimeDiagnostics.Record("bot_brain_start_failed", "reason", "navigator_missing", "vehicle", root != null ? root.name : string.Empty);
                 Debug.LogError("[VehicleBotBrain] BotNavigator reference is not assigned on vehicle prefab.", this);
                 return;
             }
@@ -42,6 +50,11 @@ namespace Game.Scripts.Gameplay.Robots
             navigator.Initialize(root, room, graph);
             _combatController.Initialize(root, room, navigator);
             _isRunning = true;
+            GameplayRuntimeDiagnostics.Record(
+                "bot_brain_started",
+                "vehicle", root != null ? root.name : string.Empty,
+                "room_id", room != null ? room.roomId : string.Empty,
+                "position", root != null ? root.transform.position : Vector3.zero);
         }
 
         public void StopBrain()
@@ -51,6 +64,10 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            GameplayRuntimeDiagnostics.Record(
+                "bot_brain_stopped",
+                "vehicle", vehicleRoot != null ? vehicleRoot.name : string.Empty,
+                "position", vehicleRoot != null ? vehicleRoot.transform.position : Vector3.zero);
             _combatController.Stop();
             _isRunning = false;
 

@@ -1,5 +1,6 @@
 using FishNet;
 using FishNet.Object;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots.t1;
 using Game.Scripts.Gameplay.Robots.t2;
 using Game.Scripts.UI.HUD;
@@ -85,6 +86,11 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartServer()
         {
+            GameplayRuntimeDiagnostics.Record(
+                "vehicle_network_server_started",
+                "vehicle", name,
+                "object_id", networkObject != null ? networkObject.ObjectId : -1,
+                "position", transform.position);
             CacheComponents();
             InitializeComponents(VehicleInitializationPhase.Server);
             VehicleColliderRegistry.RegisterNetworkRoot(this);
@@ -97,6 +103,12 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartClient()
         {
+            GameplayRuntimeDiagnostics.Record(
+                "vehicle_network_client_started",
+                "vehicle", name,
+                "object_id", networkObject != null ? networkObject.ObjectId : -1,
+                "owner", IsOwner,
+                "position", transform.position);
             VehicleColliderRegistry.RegisterNetworkRoot(this);
             if (clientVisibility != null)
             {
@@ -107,6 +119,13 @@ namespace Game.Scripts.Gameplay.Robots
         public void Init(bool isMenu = false)
         {
             IsMenu = isMenu;
+            GameplayRuntimeDiagnostics.Record(
+                "vehicle_initialized",
+                "vehicle", name,
+                "object_id", networkObject != null ? networkObject.ObjectId : -1,
+                "owner", IsOwner,
+                "menu", isMenu,
+                "position", transform.position);
             CacheComponents();
             if (vehicleHUD != null)
             {
@@ -174,6 +193,11 @@ namespace Game.Scripts.Gameplay.Robots
             }
 
             LocalPlayerVehicle = vehicleRoot;
+            GameplayRuntimeDiagnostics.Record(
+                vehicleRoot != null ? "local_vehicle_bound" : "local_vehicle_cleared",
+                "vehicle", vehicleRoot != null ? vehicleRoot.name : string.Empty,
+                "object_id", vehicleRoot != null && vehicleRoot.networkObject != null ? vehicleRoot.networkObject.ObjectId : -1,
+                "position", vehicleRoot != null ? vehicleRoot.transform.position : Vector3.zero);
             LocalPlayerVehicleChanged?.Invoke(vehicleRoot);
         }
 

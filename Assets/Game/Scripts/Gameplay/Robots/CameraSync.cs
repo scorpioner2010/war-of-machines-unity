@@ -9,21 +9,26 @@ namespace Game.Scripts.Gameplay.Robots
         public static CameraSync In;
         public Transform target;
         public Camera gameplayCamera;
+
+        private Transform _lastLoggedTarget;
         
         private void Awake()
         {
             In = this;
+            GameplayRuntimeDiagnostics.Record("camera_sync_awake", "sync", name, "position", transform.position);
             LogDiagnostics("AWAKE");
         }
 
         private void OnEnable()
         {
             In = this;
+            GameplayRuntimeDiagnostics.Record("camera_sync_enabled", "sync", name, "position", transform.position);
             LogDiagnostics("ENABLE");
         }
 
         private void OnDisable()
         {
+            GameplayRuntimeDiagnostics.Record("camera_sync_disabled", "sync", name, "target", target != null ? target.name : string.Empty);
             LogDiagnostics("DISABLE_BEFORE_CLEAR");
             if (In == this)
             {
@@ -63,6 +68,16 @@ namespace Game.Scripts.Gameplay.Robots
 
         public void SyncToTarget()
         {
+            if (_lastLoggedTarget != target)
+            {
+                _lastLoggedTarget = target;
+                GameplayRuntimeDiagnostics.Record(
+                    "camera_sync_target_changed",
+                    "sync", name,
+                    "target", target != null ? target.name : string.Empty,
+                    "target_position", target != null ? target.position : Vector3.zero);
+            }
+
             if (target != null)
             {
                 transform.SetPositionAndRotation(target.position, target.rotation);

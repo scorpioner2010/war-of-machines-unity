@@ -7,6 +7,7 @@ using Game.Scripts.Core.Services;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Audio;
 using Game.Scripts.Gameplay.Battle;
+using Game.Scripts.Networking.Sessions;
 using Game.Scripts.Server;
 using Game.Scripts.UI.HUD;
 using UnityEngine;
@@ -643,18 +644,28 @@ namespace Game.Scripts.Gameplay.Robots
         {
             using (ProfileScope.Measure("RPC.FireRequest", DiagnosticsCategories.Rpc))
             {
-                if (!IsServerInitialized || sender == null)
+                GameplayRuntimeDiagnostics.Record(
+                    "shot_request_received",
+                    "shot_id", shotId,
+                    "object_id", NetworkObject != null ? NetworkObject.ObjectId : -1,
+                    "client_id", sender != null ? sender.ClientId : -1,
+                    "start_position", startPos,
+                    "aim_point", aimPoint);
+                if (!IsServerInitialized || !ServerPlayerSessions.TryGetAuthenticated(sender, out _))
                 {
+                    GameplayRuntimeDiagnostics.Record("shot_request_rejected", "reason", "server_session_invalid", "shot_id", shotId);
                     return;
                 }
 
                 if (sender != base.Owner)
                 {
+                    GameplayRuntimeDiagnostics.Record("shot_request_rejected", "reason", "owner_mismatch", "shot_id", shotId);
                     return;
                 }
 
                 if (BattleCountdownGate.IsServerMovementAndFiringBlocked(vehicleRoot))
                 {
+                    GameplayRuntimeDiagnostics.Record("shot_request_rejected", "reason", "battle_countdown", "shot_id", shotId);
                     RejectOwnerShot(sender, shotId);
                     return;
                 }
@@ -666,6 +677,7 @@ namespace Game.Scripts.Gameplay.Robots
 
                 if (!TryValidateOwnerShotRequest(startPos, aimPoint))
                 {
+                    GameplayRuntimeDiagnostics.Record("shot_request_rejected", "reason", "invalid_geometry", "shot_id", shotId);
                     RejectOwnerShot(sender, shotId);
                     return;
                 }
@@ -675,11 +687,13 @@ namespace Game.Scripts.Gameplay.Robots
                     : null;
                 if (reloadController == null || !reloadController.ServerTryApproveOwnerShot(sender))
                 {
+                    GameplayRuntimeDiagnostics.Record("shot_request_rejected", "reason", "reload_blocked", "shot_id", shotId);
                     RejectOwnerShot(sender, shotId);
                     return;
                 }
 
                 _processedShots.Add(shotId);
+                GameplayRuntimeDiagnostics.Record("shot_request_approved", "shot_id", shotId, "client_id", sender.ClientId);
 
                 float passed = (float)base.TimeManager.TimePassed(clientTick, allowNegative: false);
                 passed = Mathf.Min(MAX_PASSED_TIME, passed);
@@ -717,6 +731,11 @@ namespace Game.Scripts.Gameplay.Robots
             float serverReloadRemain = vehicleRoot != null && vehicleRoot.weaponReloadController != null
                 ? vehicleRoot.weaponReloadController.ServerReloadRemain
                 : 0f;
+            GameplayRuntimeDiagnostics.Record(
+                "shot_rejected",
+                "shot_id", shotId,
+                "client_id", sender.ClientId,
+                "reload_remaining", serverReloadRemain);
             ProfileScope.RecordEvent("RPC.RejectOwnerShot", DiagnosticsCategories.Rpc);
             DiagnosticsManager.RecordOutgoing("RPC.RejectOwnerShot", 16, sender.ClientId);
             RejectOwnerShotTargetRpc(sender, shotId, serverReloadRemain);
@@ -783,6 +802,16 @@ namespace Game.Scripts.Gameplay.Robots
                     GetMaxShotDistance()
                 );
             }
+
+            GameplayRuntimeDiagnostics.Record(
+                "shot_authoritative_fired",
+                "shot_id", shotId,
+                "object_id", NetworkObject != null ? NetworkObject.ObjectId : -1,
+                "client_id", sender != null ? sender.ClientId : -1,
+                "projectile_created", serverProjectile != null,
+                "start_position", startPos,
+                "target_point", dispersedRay.TargetPoint,
+                "dispersion_degrees", currentDispersionDeg);
 
             ProfileScope.RecordEvent("RPC.FireObservers", DiagnosticsCategories.Rpc);
             DiagnosticsManager.RecordOutgoing("RPC.FireObservers", 64);
@@ -1104,6 +1133,17 @@ namespace Game.Scripts.Gameplay.Robots
                     shotDirection,
                     out ServerHitResolver.HitResult hitResult);
                 LogAuthoritativeHit(shot, hitResult);
+                GameplayRuntimeDiagnostics.Record(
+                    "shot_authoritative_resolved",
+                    "shot_id", shotId,
+                    "object_id", NetworkObject != null ? NetworkObject.ObjectId : -1,
+                    "client_id", shooterConnection != null ? shooterConnection.ClientId : -1,
+                    "target", shot.TargetRoot != null ? shot.TargetRoot.name : string.Empty,
+                    "hit", shot.Hit,
+                    "penetrated", shot.Penetrated,
+                    "damage", shot.Damage,
+                    "hud_status", shot.HudStatus,
+                    "target_object_id", shot.TargetObjectId);
                 AuthoritativeProjectileHit?.Invoke(hit.point, hit.normal);
                 if (shooterConnection != null)
                 {
@@ -1143,6 +1183,12 @@ namespace Game.Scripts.Gameplay.Robots
 
                 Debug.Log(
                     $"[CombatHit] status=Miss target=none collider=none armorZone=None armorMm=0 effectiveArmorMm=0 penetrationMm={shellPenetrationMm:0.##} damage=0");
+                GameplayRuntimeDiagnostics.Record(
+                    "shot_authoritative_miss",
+                    "shot_id", shotId,
+                    "object_id", NetworkObject != null ? NetworkObject.ObjectId : -1,
+                    "client_id", shooterConnection != null ? shooterConnection.ClientId : -1,
+                    "position", missPoint);
 
                 if (shooterConnection != null)
                 {
@@ -1251,6 +1297,15 @@ namespace Game.Scripts.Gameplay.Robots
             string armorZone = hitResult.armor != null ? hitResult.armorZone.ToString() : "None";
             Debug.Log(
                 $"[CombatHit] status={GetShotStatusLabel(shot.HudStatus)} target={target} collider={collider} armorZone={armorZone} armorMm={shot.BaseArmorMm:0.##} effectiveArmorMm={shot.EffectiveArmorMm:0.##} penetrationMm={shellPenetrationMm:0.##} penetrated={shot.Penetrated} damage={shot.Damage:0.##}");
+            GameplayRuntimeDiagnostics.Record(
+                "shot_hit_logged",
+                "object_id", NetworkObject != null ? NetworkObject.ObjectId : -1,
+                "target", target,
+                "collider", collider,
+                "armor_zone", armorZone,
+                "penetrated", shot.Penetrated,
+                "damage", shot.Damage,
+                "status", GetShotStatusLabel(shot.HudStatus));
         }
 
         private static string GetShotStatusLabel(ShotHudStatus status)

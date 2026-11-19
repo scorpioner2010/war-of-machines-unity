@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Networking.Lobby;
 using UnityEngine;
 using UEScene = UnityEngine.SceneManagement.Scene;
@@ -44,6 +45,15 @@ namespace Game.Scripts.Gameplay.Robots
             LoginName.Value = loginName;
             Team.Value = team;
             Kills.Value = 0;
+            GameplayRuntimeDiagnostics.Record(
+                "vehicle_server_initialized",
+                "vehicle", playerRoot != null ? playerRoot.name : name,
+                "object_id", NetworkObject != null ? NetworkObject.ObjectId : -1,
+                "player_type", playerType,
+                "username", loginName,
+                "team", team,
+                "scene", scene.name,
+                "room_size", amountPlayersInRoom);
         }
 
         [Server]
@@ -58,6 +68,12 @@ namespace Game.Scripts.Gameplay.Robots
 
         public override void OnStartClient()
         {
+            GameplayRuntimeDiagnostics.Record(
+                "vehicle_identity_received",
+                "vehicle", playerRoot != null ? playerRoot.name : name,
+                "object_id", NetworkObject != null ? NetworkObject.ObjectId : -1,
+                "owner", IsOwner,
+                "position", transform.position);
             Team.OnChange += HandleTeamChanged;
 
             if (IsOwner)

@@ -7,11 +7,13 @@ namespace Game.Scripts.Networking.Sessions
     {
         public int ClientId { get; }
         public NetworkConnection Connection { get; private set; }
+        public int UserId { get; private set; }
         public string Token { get; private set; } = string.Empty;
         public PlayerProfile Profile { get; private set; }
 
         public bool IsConnected => Connection != null;
-        public bool IsLoggedIn => !string.IsNullOrEmpty(Token);
+        public bool IsAuthenticated => UserId > 0;
+        public bool IsLoggedIn => IsAuthenticated && !string.IsNullOrEmpty(Token);
         public bool HasProfile => Profile != null;
 
         public ServerPlayerSession(NetworkConnection connection)
@@ -25,9 +27,16 @@ namespace Game.Scripts.Networking.Sessions
             Connection = connection;
         }
 
-        public void SetToken(string token)
+        public void SetAuthenticated(int userId, string delegatedToken)
         {
-            Token = token ?? string.Empty;
+            if (userId <= 0)
+            {
+                ClearAuth();
+                return;
+            }
+
+            UserId = userId;
+            Token = delegatedToken ?? string.Empty;
         }
 
         public void SetProfile(PlayerProfile profile)
@@ -37,6 +46,7 @@ namespace Game.Scripts.Networking.Sessions
 
         public void ClearAuth()
         {
+            UserId = 0;
             Token = string.Empty;
             Profile = null;
         }

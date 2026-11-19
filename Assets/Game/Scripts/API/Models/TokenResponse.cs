@@ -4,5 +4,7 @@ namespace Game.Scripts.API.Models
     public class TokenResponse
     {
         public string token;
+        public string refreshToken;
+        public string expiresAtUtc;
     }
 }

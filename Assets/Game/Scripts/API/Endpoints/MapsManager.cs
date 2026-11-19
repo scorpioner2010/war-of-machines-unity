@@ -14,7 +14,6 @@ namespace Game.Scripts.API.Endpoints
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
-                certificateHandler = new AcceptAllCertificates()
             };
 
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }

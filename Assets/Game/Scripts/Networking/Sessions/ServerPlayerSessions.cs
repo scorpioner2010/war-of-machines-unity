@@ -43,12 +43,23 @@ namespace Game.Scripts.Networking.Sessions
             return TryGet(connection.ClientId, out session);
         }
 
-        public static void SetToken(NetworkConnection connection, string token)
+        public static bool TryGetAuthenticated(NetworkConnection connection, out ServerPlayerSession session)
+        {
+            if (connection == null || !connection.IsAuthenticated || !TryGet(connection, out session))
+            {
+                session = null;
+                return false;
+            }
+
+            return session.IsAuthenticated;
+        }
+
+        public static void SetAuthenticated(NetworkConnection connection, int userId, string delegatedToken)
         {
             ServerPlayerSession session = UpsertConnection(connection);
             if (session != null)
             {
-                session.SetToken(token);
+                session.SetAuthenticated(userId, delegatedToken);
             }
         }
 
@@ -59,11 +70,6 @@ namespace Game.Scripts.Networking.Sessions
             {
                 session.SetProfile(profile);
             }
-        }
-
-        public static string GetToken(int clientId)
-        {
-            return TryGet(clientId, out ServerPlayerSession session) ? session.Token : string.Empty;
         }
 
         public static PlayerProfile GetProfile(int clientId)
@@ -85,12 +91,6 @@ namespace Game.Scripts.Networking.Sessions
             }
 
             return null;
-        }
-
-        public static int GetUserId(int clientId)
-        {
-            PlayerProfile profile = GetProfile(clientId);
-            return profile != null ? profile.id : 0;
         }
 
         public static void ClearAuth(int clientId)

@@ -10,6 +10,7 @@ using Game.Scripts.API.ServerManagers;
 using Game.Scripts.Core.Helpers;
 using Game.Scripts.Core.Resources;
 using Game.Scripts.Core.Services;
+using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Robots;
 using Game.Scripts.MenuController;
 using Game.Scripts.Networking.Sessions;
@@ -63,6 +64,7 @@ namespace Game.Scripts.UI.MainMenu
             RobotView view = _in;
             if (view == null)
             {
+                GameplayRuntimeDiagnostics.Record("robot_menu_refresh_skipped", "reason", "view_missing");
                 return;
             }
 
@@ -72,9 +74,17 @@ namespace Game.Scripts.UI.MainMenu
             IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
             if (clientInfo?.Profile == null)
             {
+                GameplayRuntimeDiagnostics.Record("robot_menu_refresh_failed", "reason", "profile_missing");
                 view.ClearVehicleSlots();
                 return;
             }
+
+            GameplayRuntimeDiagnostics.Record(
+                "robot_menu_refresh_started",
+                "user_id", clientInfo.Profile.id,
+                "username", clientInfo.Profile.username,
+                "owned_count", clientInfo.Profile.ownedVehicles?.Length ?? 0,
+                "active_vehicle_code", clientInfo.Profile.activeVehicleCode);
 
             if (ClientMenuTestMode.TryCreateVehicles(out VehicleLite[] localTestVehicles))
             {
@@ -93,6 +103,11 @@ namespace Game.Scripts.UI.MainMenu
             VehicleLite[] vehicleStats = vehicleStatsResult.isSuccess && vehicleStatsResult.items != null
                 ? vehicleStatsResult.items
                 : Array.Empty<VehicleLite>();
+            GameplayRuntimeDiagnostics.Record(
+                vehicleStatsResult.isSuccess ? "robot_catalog_loaded" : "robot_catalog_failed",
+                "success", vehicleStatsResult.isSuccess,
+                "count", vehicleStats.Length,
+                "message", vehicleStatsResult.isSuccess ? "ok" : vehicleStatsResult.message);
 
             if (clientInfo.Profile.ownedVehicles != null)
             {
@@ -118,6 +133,10 @@ namespace Game.Scripts.UI.MainMenu
             vehicles.Sort(CompareByName);
 
             BuildVehicleSlots(view, vehicles);
+            GameplayRuntimeDiagnostics.Record(
+                "robot_menu_slots_built",
+                "count", vehicles.Count,
+                "visible_slots", view.GetVisibleSlotCount(vehicles.Count));
             if (!IsBuildCurrent(view, buildVersion))
             {
                 return;
@@ -125,6 +144,7 @@ namespace Game.Scripts.UI.MainMenu
 
             if (selected == null)
             {
+                GameplayRuntimeDiagnostics.Record("robot_menu_preview_skipped", "reason", "selected_vehicle_missing");
                 await UpdateUIAsync(view, buildVersion);
                 return;
             }
@@ -132,10 +152,15 @@ namespace Game.Scripts.UI.MainMenu
             VehicleRoot vehicleRoot = GameResourceManager.GetPrefab(selected.code);
             if (vehicleRoot == null || !IsBuildCurrent(view, buildVersion))
             {
+                GameplayRuntimeDiagnostics.Record(
+                    "robot_menu_preview_failed",
+                    "reason", "selected_prefab_missing",
+                    "vehicle_code", selected.code);
                 return;
             }
 
             await SpawnAsync(vehicleRoot);
+            GameplayRuntimeDiagnostics.Record("robot_menu_preview_spawned", "vehicle_code", selected.code);
             await UpdateUIAsync(view, buildVersion);
         }
 
@@ -394,7 +419,7 @@ namespace Game.Scripts.UI.MainMenu
         [ServerRpc(RequireOwnership = false)]
         private void SelectVehicleServerRpc(int code, NetworkConnection sender = null)
         {
-            if (sender == null)
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
                 return;
             }
@@ -404,7 +429,13 @@ namespace Game.Scripts.UI.MainMenu
 
         private async UniTask SelectVehicleAsync(NetworkConnection sender, int id)
         {
-            string token = ServerPlayerSessions.GetToken(sender.ClientId);
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+            {
+                TargetRpcSelect(sender, false, "Not logged in.");
+                return;
+            }
+
+            string token = session.Token;
             if (string.IsNullOrEmpty(token))
             {
                 TargetRpcSelect(sender, false, "Not logged in.");
