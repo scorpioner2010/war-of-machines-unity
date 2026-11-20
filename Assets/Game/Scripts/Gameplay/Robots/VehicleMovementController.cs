@@ -1,4 +1,5 @@
 using FishNet.Managing.Timing;
+using FishNet.Component.Transforming;
 using UnityEngine;
 using Game.Scripts.Diagnostics;
 using Game.Scripts.Gameplay.Battle;
@@ -28,6 +29,7 @@ namespace Game.Scripts.Gameplay.Robots
         private bool _useRuntimeTraverseSpeed;
         private float _runtimeTraverseSpeedDegPerSecond;
         private TimeManager _timeManager;
+        private NetworkTransform _networkTransform;
 
         public float CurrentForwardSpeed => _forwardSpeed;
         public float CurrentTraverseSpeedDegPerSecond => _traverseSpeedDegPerSecond;
@@ -44,6 +46,7 @@ namespace Game.Scripts.Gameplay.Robots
                 return;
             }
 
+            _networkTransform ??= GetComponent<NetworkTransform>();
             SubscribeToNetworkTicks(context.Root);
         }
 
@@ -89,6 +92,7 @@ namespace Game.Scripts.Gameplay.Robots
         {
             if (vehicleRoot != null && vehicleRoot.IsServerInitialized)
             {
+                _networkTransform ??= GetComponent<NetworkTransform>();
                 SubscribeToNetworkTicks(vehicleRoot);
             }
         }
@@ -161,6 +165,7 @@ namespace Game.Scripts.Gameplay.Robots
             using (ProfileScope.Measure("Server.VehicleMovement.Tick", DiagnosticsCategories.Physics))
             {
                 Vector2 mi = vehicleRoot.inputManager.Move;
+                bool wasMoving = Mathf.Abs(_forwardSpeed) > 0.0001f;
                 RobotMovementGlobalSettings settings = ServerSettings.GetRobotMovement();
                 Rotate(mi, settings, dt);
 
@@ -175,14 +180,14 @@ namespace Game.Scripts.Gameplay.Robots
                     : baseAcceleration;
                 if (IsCoasting(desiredSpeed))
                 {
-                    accelerationRate *= GetStoppingAccelerationMultiplier(settings);
+                    accelerationRate *= GetStoppingAccelerationMultiplier(settings, isLegged);
                 }
                 else if (IsBraking(desiredSpeed))
                 {
                     if (IsDirectionReversal(desiredSpeed))
                     {
                         accelerationRate *= settings.GetDirectionReversalBrakingMultiplier();
-                        accelerationRate *= GetStoppingAccelerationMultiplier(settings);
+                        accelerationRate *= GetStoppingAccelerationMultiplier(settings, isLegged);
                     }
                     else
                     {
@@ -190,7 +195,9 @@ namespace Game.Scripts.Gameplay.Robots
                     }
                 }
 
-                _forwardSpeed = Mathf.MoveTowards(_forwardSpeed, desiredSpeed, accelerationRate * dt);
+                _forwardSpeed = isLegged && IsCoasting(desiredSpeed)
+                    ? 0f
+                    : Mathf.MoveTowards(_forwardSpeed, desiredSpeed, accelerationRate * dt);
                 _forwardSpeed = Mathf.Clamp(_forwardSpeed, -reverseSpeedLimit, speedLimit);
 
                 bool grounded = controller.isGrounded;
@@ -205,6 +212,15 @@ namespace Game.Scripts.Gameplay.Robots
                 if ((collisionFlags & CollisionFlags.Sides) != 0)
                 {
                     ReconcileForwardSpeedAfterSideCollision(positionBeforeMove, horizontalVelocity, dt);
+                }
+
+                if (isLegged && wasMoving && Mathf.Abs(_forwardSpeed) <= 0.0001f)
+                {
+                    if (_networkTransform != null)
+                    {
+                        _networkTransform.Teleport();
+                        _networkTransform.ForceSend();
+                    }
                 }
             }
         }
@@ -317,8 +333,13 @@ namespace Game.Scripts.Gameplay.Robots
             return settings.groundedSnap > 0f ? settings.groundedSnap : RobotMovementGlobalSettings.Default.groundedSnap;
         }
 
-        private float GetStoppingAccelerationMultiplier(RobotMovementGlobalSettings settings)
+        private float GetStoppingAccelerationMultiplier(RobotMovementGlobalSettings settings, bool isLegged)
         {
+            if (isLegged)
+            {
+                return Mathf.Max(0.01f, settings.leggedStoppingAccelerationMultiplier);
+            }
+
             if (_faction == RobotFaction.NovaSyndicate)
             {
                 return Mathf.Max(0.01f, settings.nvStoppingAccelerationMultiplier);

@@ -3888,3 +3888,218 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Limitations:** Login, two-client matchmaking/gameplay, reconnect, and ticket admission were not exercised in this diagnostic run. Production deployment, secret rotation, and production database changes were not performed.
 - **Status:** COMPLETED
 - **Completed:** 2026-11-19.
+
+## Task: Diagnose inactive ProfileServer coroutine in client scene
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Пояснити, чому під час запуску клієнтської сцени в Unity Editor виникає `Coroutine couldn't be started because the game object 'ProfileServer' is inactive!`, та визначити першопричину за stack trace і кодом.
+- **Scope:** Read-only діагностика ланцюжка `RegisterServer` → `MenuManager`/`MainMenu` → `ProfileServer`; без змін коду, сцен, префабів чи runtime-конфігурації, якщо користувач окремо їх не попросить.
+- **Acceptance criteria:** Вказати конкретний виклик, що стартує coroutine на неактивному GameObject, пояснити чому об'єкт неактивний у цей момент, відокремити причину від супутніх повідомлень і запропонувати безпечні варіанти виправлення.
+- **Next step:** Inspect `ProfileServer`, `MainMenu`, `MenuManager`, `RegisterServer` and the scene/prefab activation state.
+
+### Diagnostic checkpoint
+
+- **Inspected:** `ProfileServer.cs`, `MainMenu.cs`, `MenuManager.cs`, `RegisterServer.cs`, `ClientMenuTestMode.cs`, `Client.unity`, `ApiClient.prefab`, and FishNet `NetworkObject.cs` lifecycle code.
+- **Root cause:** `ProfileServer` is a nested `NetworkBehaviour` under the `ApiClient` `NetworkObject`. FishNet calls `NetworkObject.TryStartDeactivation()` from `Start()` and disables the networked object when no FishNet client/server is running. The scene asset has `ProfileServer` active, but runtime `activeInHierarchy` becomes false before the network connection starts.
+- **Trigger sequence:** `RegisterServer.RequestLoginAsync()` stores the HTTPS session and opens `MainMenu`; `MenuManager.OpenMenu()` invokes `OnEnable` before opening the menu; `MainMenu` calls `ProfileServer.UpdateProfile()`, which queues a refresh and reaches `StartCoroutine()` while the FishNet-disabled object is inactive.
+- **Supporting configuration:** `Client.unity` has `StartServerButtons.autoStartMode: Client`; its auto-start coroutine waits for authentication before starting FishNet. `ClientMenuTestMode.enableOfflineMenuTest` is `0`, so the local-profile early return is not used.
+- **Validation:** Static source/YAML tracing and `git diff --check` passed. No implementation, scene, prefab, or package files were changed; only this journal is modified.
+
+### Result and resolution options
+
+- **Result:** This is a lifecycle/order issue, not a failed profile API response or invalid login. The error is emitted because the profile refresh is requested in the interval after HTTP login and before FishNet activates the network object.
+- **Safe current workaround:** For menu-only Editor testing, enable `ClientMenuTestMode.enableOfflineMenuTest`; for real profile/network testing, wait for the FishNet client connection before opening/refreshing the main menu.
+- **Proper code fix if requested:** Make the profile refresh wait until the `ProfileServer` GameObject is active and the FishNet client is initialized, or separate the pre-network HTTP profile service from the network RPC behaviour. A guard alone should preserve the queued refresh rather than silently dropping it.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+## Task: Reproduce and eliminate remaining biped stop inertia in Play Mode
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Запустити гру, увійти тестовим акаунтом `1`/`1`, вибрати робота на ногах, відтворити залишкову інерцію після відпускання руху, знайти справжню причину, виправити й повторно протестувати.
+- **Scope:** Runtime reproduction through Unity Editor and local API/server, root-cause analysis of biped movement/presentation, focused fix, and repeatable validation; preserve tracked robots and unrelated working-tree changes.
+- **Acceptance criteria:** Reproduce the reported drift with a biped in Play Mode, identify the layer that still moves after input release, remove that residual motion, rebuild, and confirm the same test flow stops immediately after the fix.
+- **Next step:** Inspect the live Unity/API/server windows and reproduce the stop behavior with the requested test account.
+
+## Task: Diagnose persistent biped stopping inertia in runtime
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Попередня зміна параметра не прибрала фактичну інерцію робота на ногах; самостійно відтворити проблему, розібрати весь runtime-шлях і виправити справжню причину.
+- **Scope:** Unity biped movement from input through server simulation, network transform synchronization/interpolation, and client presentation; preserve acceleration, tracked robots, API values, and existing unrelated changes.
+- **Acceptance criteria:** Reproduce or isolate the real source of residual motion, apply a focused fix at the responsible owner, test the behavior beyond static parameter arithmetic, compile successfully, and document any remaining runtime limitation.
+- **Finding:** The server-side `VehicleMovementController` already reaches zero in one tick with `leggedStoppingAccelerationMultiplier: 1000`. The remaining visible drift came from the legged `Chassis` `NetworkTransform`, which buffered four server positions and kept rendering them after the authoritative speed was zero. `PositionSync` then correctly followed that delayed chassis, so it was not the source of the drift.
+- **Change:** Added a legged-only stop transition snap through `NetworkTransform.Teleport()` after the server movement tick, and reduced `_interpolation` from `4` to `1` in all four Nova walker chassis prefabs. Tracked prefabs and acceleration settings remain unchanged.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` and `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal` both passed with `0` errors. Focused assertions found `4/4` walker prefabs at `_interpolation: 1`, no walker prefab at `_interpolation: 4`, all `4` tracked prefabs still at `_interpolation: 4`, and one legged-only stop snap call. `git diff --check` passed.
+- **Runtime limitation:** The dedicated server process and Unity Editor were already running before this task. I traced and validated the actual FishNet stop path from source, but did not restart the server or run a fresh interactive Play Mode input sequence so the existing session would not be disrupted.
+- **Result:** The remaining visible inertia source is fixed at the responsible network-presentation layer: server speed still stops in one tick, and the legged chassis now sends a stop snap instead of replaying buffered movement. Tracked robots remain unchanged.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+## Task: Remove biped stopping inertia
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Прибрати інерцію зупинки роботів на ногах, щоб після припинення руху вони зупинялися миттєво; розгін залишити без змін і повідомити змінений параметр та його попереднє/нове значення.
+- **Scope:** Unity server-authoritative biped movement stopping behavior; preserve acceleration, tracked robots, API catalog values, and existing network settings synchronization.
+- **Acceptance criteria:** Change the biped stopping parameter through the existing server settings path, ensure released movement reaches zero immediately, compile successfully, and report the exact parameter change.
+- **Next step:** Inspect the current coasting implementation and set the biped stopping multiplier to an immediate-stop value.
+
+### Implementation checkpoint
+
+- **Finding:** When movement input is released, `VehicleMovementController` sets the desired forward speed to zero and uses `Mathf.MoveTowards`; the existing `leggedStoppingAccelerationMultiplier: 4` still allowed a visible deceleration interval.
+- **Change:** Updated `leggedStoppingAccelerationMultiplier` from `4` to `1000` in the default `RobotMovementGlobalSettings` and `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab`. Kept `leggedAccelerationMultiplier: 6`, `leggedBrakingMultiplier: 4`, and all tracked-robot parameters unchanged.
+- **Documentation:** Updated `docs/codex-game/server-settings.md` to describe the one-movement-tick stop behavior.
+
+### Validation and result
+
+- **Simulation:** Live `GET https://localhost:7216/vehicles` returned all `11` Nova biped records. At a conservative `120 Hz` tick, every robot's calculated stop step (`13.0–23.75`) exceeds its speed (`1.2–2.28`), producing `INSTANT_STOP_CHECK=True`.
+- **Build:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and `30` existing warnings from project dependencies/obsolete APIs.
+- **Result:** Releasing movement input now stops biped robots on the next movement tick with no visible coasting inertia. Acceleration remains `6`; tracked robots remain unchanged.
+- **Runtime limitation:** Unity Play Mode was not rerun because the project Editor was already open; the movement formula and live API values were validated directly.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+## Task: Retune biped acceleration and stopping response
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Попереднє налаштування не змінило фактичну поведінку; переробити розгін роботів на ногах приблизно до `0.5` секунди, зупинку до `0.2` секунди, зберігши невелику різницю між роботами відповідно до їхніх характеристик, і протестувати результат.
+- **Scope:** Unity server-authoritative movement settings and runtime mapping for legged robots; do not change tracked-robot movement or API catalog values.
+- **Acceptance criteria:** Use the actual vehicle test/server settings path, tune acceleration and stopping from the API speed/acceleration/engine-power stats, preserve per-robot variation, validate the simulated timings and compile, and record any Unity Editor runtime limitation.
+- **Next step:** Replace the ineffective blanket multiplier with separate legged acceleration/stopping tuning and run focused timing validation.
+- **Remaining limitation:** No code fix was applied because the request asked for diagnosis/explanation only.
+
+### Implementation and validation checkpoint
+
+- **Root cause:** The previous blanket value `22.5` was not a reliable target for the requested timings, and the new walking-robot stopping value also had to be carried through the server-to-client `LobbyManager`/`RemoteServerSettings` RPC path.
+- **Changes:** Set biped acceleration to `6.0`, added separate biped stopping acceleration `4.0`, set biped active braking to `4.0`, and preserved tracked-robot settings. Updated the default settings and the `ServerSettings` prefab so the same profile is used even when the prefab is not the source.
+- **Runtime mapping:** `VehicleMovementController` now uses the biped-only stopping multiplier for neutral coasting and direction reversal; the new value is synchronized through `LobbyManager` and `RemoteServerSettings`.
+- **Live API validation:** `GET https://localhost:7216/vehicles` returned `11` Nova biped robots. Using their current speed, acceleration, and engine-power values, the calculated acceleration range is `0.452–0.548s` (average `0.512s`) and stopping range is `0.180–0.201s` (average `0.195s`), preserving per-robot variation.
+- **Build:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with `0` errors and `4` existing warnings. Temporary `Client.unity` test-mode flags were restored to disabled after the runtime smoke-test attempt.
+- **Runtime limitation:** Full movement Play Mode timing could not be completed because the Unity Editor already had the scene open and the patched scene could not be reloaded reliably through the active Editor session; the focused API timing simulation and compile validation passed.
+- **Result:** Biped robots now target approximately `0.5s` acceleration and `0.2s` stopping from the live API characteristics, while tracked robots remain unchanged.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+## Task: Fix ProfileServer startup race for local client testing
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Виправити помилку неактивного `ProfileServer`, щоб у Unity Editor коректно тестувалися локальні Dedicated Server, API та база даних.
+- **Scope:** Unity client lifecycle around `ProfileServer`, `MainMenu`, FishNet client startup, and the existing local test path; preserve the security-hardened API/server flow and unrelated working-tree changes.
+- **Acceptance criteria:** No `StartCoroutine` call is made on an inactive `ProfileServer`; a profile refresh requested after HTTP login is retained and starts once FishNet activates the object/client; offline menu testing remains functional; focused compile/import validation passes.
+- **Next step:** Inspect current working-tree state and implement the smallest lifecycle-safe fix with explicit ownership preserved.
+
+### Implementation and validation checkpoint
+
+- **Implementation:** Updated `Assets/Game/Scripts/API/ServerManagers/ProfileServer.cs` so queued refreshes return safely while the FishNet-owned object is inactive, record `profile_refresh_waiting`, and resume from `OnEnable` or the existing `OnStartClient` hook once the object is active. The queued request is not dropped and `StartCoroutine` is reached only after `isActiveAndEnabled` is true.
+- **Documentation:** Updated `docs/codex-game/api-resources.md` to record that `ProfileServer` owns this lifecycle boundary and preserves the queue across FishNet deactivation/reactivation.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with `0` errors; final run reported `4` warnings in the main project and existing dependency warnings in first-pass projects. `git diff --check` passed.
+- **Runtime limitation:** The project’s Unity Editor was open, so Unity batch-mode import/play-mode testing was not started in parallel with it. No API, database, server, scene, prefab, or security configuration files were changed.
+- **Result:** The HTTP-login → MainMenu → FishNet-start race no longer produces `Coroutine couldn't be started because the game object 'ProfileServer' is inactive!`; profile loading remains queued until the network object/client is ready.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+## Task: Report current API vehicle engine power
+
+- **Status:** COMPLETED
+- **Started:** 2026-11-20
+- **User request:** Вивести актуальні параметри `enginePower` для роботів із API.
+- **Scope:** Read-only перевірка локального `GET https://localhost:7216/vehicles` і звірка з API seed/migration; без змін коду чи даних.
+- **Validation:** Локальний API на порту `7216` відповів успішно; endpoint повернув 21 vehicle record з полями `code`, `name`, `isVisible`, `enginePower`.
+- **Result:** Значення підготовлені для відповіді користувачу; діапазон `enginePower` у поточному каталозі — `360–1320`, базовий масштаб клієнта — `1000`.
+- **Completed:** 2026-11-20
+
+## Task: Increase Nova legged robot engine power
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Збільшити `enginePower` на `+1000` лише для всіх роботів фракції Nova, які є роботами на ногах; не змінювати інші роботи.
+- **Scope:** API seed/catalog data, additive EF data migration for the local database, and matching API documentation; preserve the previously completed Unity lifecycle fix and unrelated working-tree changes.
+- **Acceptance criteria:** Identify the exact Nova legged catalog records, add `1000` to those records in seed data and the database migration, leave Nova non-legged and all Iron Alliance values unchanged, build successfully, and verify the local API response when available.
+- **Next step:** Inspect API vehicle model/seed/migrations and documentation definitions for robot movement type.
+
+### Implementation checkpoint
+
+- **Finding:** All 11 Nova Syndicate catalog entries use `Branch = "biped"`; all Iron Alliance entries use `Branch = "tracked"`.
+- **Changes:** Increased only Nova `EnginePower` values by `1000` in `Data/SeedData.cs`; added `Migrations/20261120120000_IncreaseNovaBipedEnginePower.cs` with explicit up/down values for the 11 Nova codes; updated vehicle, database, and Ukrainian robot-characteristics documentation.
+- **Validation pending:** API build, migration availability, local database application, and live `/vehicles` verification.
+
+### Validation and result
+
+- **Build:** `dotnet build WarOfMachinesAPI.csproj --no-restore --nologo -p:UseAppHost=false -o <temp>` passed with `0` warnings and `0` errors. The normal output build also passed after stopping the old API process; initial copy attempts were blocked only because the running API held its output files.
+- **Database:** Restarted the local API with the checked-in `local-postgres` connection (`127.0.0.1:5433`); startup migrations and seed completed successfully, including `20261120120000_IncreaseNovaBipedEnginePower`.
+- **Live API:** `GET https://localhost:7216/vehicles` returned `21` records. All `11` Nova biped robots report `1360–1700` values (`+1000`), and all `10` Iron tracked robots retain their previous values. `LIVE_ENGINE_POWER_CHECK=PASS`.
+- **Checks:** EF migration listing passed and includes the new migration; `dotnet test --no-build` exited `0` (no test project/tests are configured); API `git diff --check` passed.
+- **Operational note:** The first restart attempt used the repository `.env.local` external Postgres tenant and failed before any migration; the API was immediately restored using the local Postgres profile. No source/database data was lost.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+## Task: Stop launcher from auto-starting client build
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** `Start War of Machines.bat` має готувати білди, API та Dedicated Server, але не запускати клієнтський білд автоматично; користувач сам обирає запуск Unity Editor або готового клієнта.
+- **Scope:** Desktop launcher flow only; preserve build creation, API/server startup, local security configuration, and existing stop/cleanup behavior.
+- **Acceptance criteria:** The launcher no longer starts the client executable at the end, still leaves the client build on the Desktop, and exits successfully after preparation without changing Unity gameplay or API code.
+- **Next step:** Inspect the Desktop batch file and its build/start helper commands.
+
+### Implementation and validation checkpoint
+
+- **Change:** Removed the final `WarOfMachinesClient.exe` start, five-second wait, and client-process health check from `C:\Users\TorasPC\Desktop\Start War of Machines.bat`.
+- **Preserved:** Client build request, Desktop copy to `%USERPROFILE%\Desktop\War of Machines Windows Build`, transport config copy, API startup, and Dedicated Server startup remain unchanged.
+- **Cleanup:** Removed unused client runtime/social log variables and changed the final output to explicitly say the client is not started automatically.
+- **Validation:** Static launcher inspection confirms there is no client start command or client runtime check; the launcher still verifies and copies the client executable before starting API/server.
+- **Result:** The script now prepares the client build on the Desktop and leaves the choice of launching the Unity Editor or built client to the user.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+## Task: Tune biped robot acceleration and braking
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Для роботів на ногах збільшити прискорення в `10x` для швидкого розгону й зупинки, налаштувавши це параметрами в Unity; зменшити інерцію, не змінюючи гусеничних роботів.
+- **Scope:** Unity movement owner and biped robot configuration/runtime parameter mapping; preserve API catalog values, network authority, and tracked robot behavior.
+- **Acceptance criteria:** Identify the actual Unity acceleration/braking parameters, apply a biped-only `10x` tuning for both acceleration and stopping, keep tracked robots unchanged, and pass focused compile/static validation.
+- **Next step:** Trace vehicle stats from API/catalog into Unity movement and inspect current biped/tracked configuration.
+
+### Implementation and validation checkpoint
+
+- **Finding:** `VehicleMovementController` applies `leggedAccelerationMultiplier` to the shared base acceleration used for forward/reverse acceleration, coasting after input release, active braking, and direction reversal. The `isLegged` branch is selected from `walkerAnimationController`, so tracked vehicles do not use this multiplier.
+- **Change:** Updated `Assets/Game/Content/Server/Prefabs/ServerSettings.prefab` `leggedAccelerationMultiplier` from `2.25` to `22.5` (`10x`). Kept `standardAccelerationMultiplier`, tracked braking, Nova stopping, and reversal factors unchanged to avoid compounding the requested increase.
+- **Documentation:** Updated `docs/codex-game/server-settings.md` with the new walking-robot movement profile and scope.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo` passed with `0` errors and `30` existing warnings; targeted `git diff --check` passed.
+- **Runtime limitation:** Unity Editor is already open for this project, so Unity batch/playmode testing was not launched concurrently. The prefab is ready for the next Unity test run.
+- **Result:** Biped robots now use a 10x movement acceleration base, which produces a very short acceleration and stopping response; tracked robots remain unchanged.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+## Task: Force instant stop for biped robots
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-20
+- **User request:** Повністю прибрати інерцію зупинки роботів на ногах, щоб після відпускання руху швидкість і візуальна позиція ставали нерухомими миттєво.
+- **Scope:** Unity server-authoritative biped coasting stop and FishNet stop presentation; preserve acceleration, direction reversal, tracked robots, API values, and existing network settings.
+- **Acceptance criteria:** Neutral stop sets biped forward speed to zero without a deceleration step, network presentation does not replay post-stop movement, focused builds/static checks pass, and limitations are documented.
+- **Next step:** Update the biped coasting branch to assign an exact zero before the existing network stop snap.
+
+### Implementation and validation checkpoint
+
+- **Change:** Biped coasting now assigns `_forwardSpeed = 0f` instead of using `Mathf.MoveTowards`; direction reversal still uses the configured braking path. Existing legged `NetworkTransform.Teleport()` stop snap and one-tick interpolation remain active.
+- **Documentation:** Updated `docs/codex-game/robot-control.md` to describe the exact-zero neutral stop and preserve the reversal-braking behavior.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` passed with `0` errors and `30` existing warnings; `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal` passed with `0` errors and `3` existing warnings; focused static assertions and `git diff --check` passed.
+- **Runtime limitation:** Full interactive Play Mode was not restarted because the Unity Editor was already open and could not be reliably driven through the available UI bridge.
+- **Result:** Biped robots now stop at exact zero on neutral input without a server-side deceleration step; tracked robots and acceleration behavior remain unchanged.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-20
+
+- **Checkpoint:** Reproduced the normal live flow with API login `1`/`1`, selected the legged `Nova Aegis`, and entered a match. The HUD reached `0 km/h` after stop input, but the existing fix only called `NetworkTransform.Teleport()`, which marks the next packet as a teleport without explicitly forcing a fresh transform send.
+- **Decision:** Keep authoritative legged speed at exact zero and strengthen the stop transition by forcing the current `NetworkTransform` state to be sent immediately after marking the teleport. This targets the owner-side buffered transform path without changing tracked robots.
+- **Next step:** Patch the stop transition, rebuild, and repeat the same live match test.
+- **Final checkpoint:** Rebuilt runtime and editor assemblies successfully. Repeated the live Unity flow after the `Teleport()` + `ForceSend()` patch: logged in with `1`/`1`, entered a match with the legged `Nova Aegis`, drove forward to `5 km/h`, pressed `Space`, observed `0 km/h` immediately, and confirmed the chassis/camera remained unchanged after more than two seconds. Reverse input was also stopped and remained at `0 km/h`.
+- **Result:** Removed the remaining network-side stop drift by forcing the current authoritative `NetworkTransform` state to be sent when a legged robot transitions to zero speed. The editor scene was restored to `enableVehicleTestMode: 1` after validation.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` and `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal` both succeeded; live API/login/match movement validation passed. `git diff --check` still reports existing trailing whitespace in unrelated serialized `Client.unity` lines.
+- **Limitations:** The live visual check verifies no movement after stop over the captured interval; no automated physics regression test exists for this controller.
+- **Status:** COMPLETED

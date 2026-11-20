@@ -35,6 +35,11 @@ namespace Game.Scripts.API.ServerManagers
 
         private void Awake() => _in = this;
 
+        private void OnEnable()
+        {
+            StartQueuedProfileRefresh();
+        }
+
         public override void OnStartClient()
         {
             base.OnStartClient();
@@ -96,10 +101,18 @@ namespace Game.Scripts.API.ServerManagers
 
         private void StartQueuedProfileRefresh()
         {
-            if (_profileRefreshCoroutine == null && _profileRefreshQueued)
+            if (_profileRefreshCoroutine != null || !_profileRefreshQueued)
             {
-                _profileRefreshCoroutine = StartCoroutine(ProfileRefreshLoop());
+                return;
             }
+
+            if (!isActiveAndEnabled)
+            {
+                GameplayRuntimeDiagnostics.Record("profile_refresh_waiting", "reason", "service_inactive");
+                return;
+            }
+
+            _profileRefreshCoroutine = StartCoroutine(ProfileRefreshLoop());
         }
 
         private void StopQueuedProfileRefresh()

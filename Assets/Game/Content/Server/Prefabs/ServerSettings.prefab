@@ -135,8 +135,9 @@ MonoBehaviour:
     iaStoppingAccelerationMultiplier: 2
     standardAccelerationMultiplier: 1
     standardBrakingMultiplier: 3
-    leggedAccelerationMultiplier: 2.25
-    leggedBrakingMultiplier: 2.75
+    leggedAccelerationMultiplier: 6
+    leggedStoppingAccelerationMultiplier: 1000
+    leggedBrakingMultiplier: 4
     directionReversalBrakingMultiplier: 2
     leggedAnimationReferenceSpeed: 10
     leggedAnimationMinSpeedMultiplier: 1.35

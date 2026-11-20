@@ -24,6 +24,7 @@ namespace Game.Scripts.Server
             float robotStandardAccelerationMultiplier,
             float robotStandardBrakingMultiplier,
             float robotLeggedAccelerationMultiplier,
+            float robotLeggedStoppingAccelerationMultiplier,
             float robotLeggedBrakingMultiplier,
             float robotLeggedAnimationReferenceSpeed,
             float robotLeggedAnimationMinSpeedMultiplier,
@@ -74,6 +75,7 @@ namespace Game.Scripts.Server
             RobotMovement.standardAccelerationMultiplier = robotStandardAccelerationMultiplier > 0f ? robotStandardAccelerationMultiplier : RobotMovementGlobalSettings.Default.standardAccelerationMultiplier;
             RobotMovement.standardBrakingMultiplier = robotStandardBrakingMultiplier > 0f ? robotStandardBrakingMultiplier : RobotMovementGlobalSettings.Default.standardBrakingMultiplier;
             RobotMovement.leggedAccelerationMultiplier = robotLeggedAccelerationMultiplier > 0f ? robotLeggedAccelerationMultiplier : RobotMovementGlobalSettings.Default.leggedAccelerationMultiplier;
+            RobotMovement.leggedStoppingAccelerationMultiplier = robotLeggedStoppingAccelerationMultiplier > 0f ? robotLeggedStoppingAccelerationMultiplier : RobotMovementGlobalSettings.Default.leggedStoppingAccelerationMultiplier;
             RobotMovement.leggedBrakingMultiplier = robotLeggedBrakingMultiplier > 0f ? robotLeggedBrakingMultiplier : RobotMovementGlobalSettings.Default.leggedBrakingMultiplier;
             RobotMovement.leggedAnimationReferenceSpeed = robotLeggedAnimationReferenceSpeed > 0f ? robotLeggedAnimationReferenceSpeed : RobotMovementGlobalSettings.Default.leggedAnimationReferenceSpeed;
             RobotMovement.leggedAnimationMinSpeedMultiplier = robotLeggedAnimationMinSpeedMultiplier > 0f ? robotLeggedAnimationMinSpeedMultiplier : RobotMovementGlobalSettings.Default.leggedAnimationMinSpeedMultiplier;

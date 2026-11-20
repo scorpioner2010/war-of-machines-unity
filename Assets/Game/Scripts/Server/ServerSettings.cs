@@ -25,10 +25,12 @@ namespace Game.Scripts.Server
         public float standardAccelerationMultiplier = 1f;
         [Tooltip("Braking multiplier for standard and tracked vehicles.")]
         public float standardBrakingMultiplier = 1f;
-        [Tooltip("Acceleration multiplier for walking vehicles.")]
-        public float leggedAccelerationMultiplier = 2.25f;
+        [Tooltip("Acceleration multiplier for walking vehicles. Tune against runtime speed and acceleration stats.")]
+        public float leggedAccelerationMultiplier = 6f;
+        [Tooltip("Stopping multiplier for walking vehicles after movement input is released.")]
+        public float leggedStoppingAccelerationMultiplier = 1000f;
         [Tooltip("Braking multiplier for walking vehicles.")]
-        public float leggedBrakingMultiplier = 2.75f;
+        public float leggedBrakingMultiplier = 4f;
         [Tooltip("Multiplier for braking when switching to the opposite direction.")]
         public float directionReversalBrakingMultiplier = 2f;
 
@@ -91,6 +93,7 @@ namespace Game.Scripts.Server
             standardAccelerationMultiplier = ClampFinite(standardAccelerationMultiplier, 0.01f, Default.standardAccelerationMultiplier);
             standardBrakingMultiplier = ClampFinite(standardBrakingMultiplier, 0.01f, Default.standardBrakingMultiplier);
             leggedAccelerationMultiplier = ClampFinite(leggedAccelerationMultiplier, 0.01f, Default.leggedAccelerationMultiplier);
+            leggedStoppingAccelerationMultiplier = ClampFinite(leggedStoppingAccelerationMultiplier, 0.01f, Default.leggedStoppingAccelerationMultiplier);
             leggedBrakingMultiplier = ClampFinite(leggedBrakingMultiplier, 0.01f, Default.leggedBrakingMultiplier);
             directionReversalBrakingMultiplier = ClampFinite(directionReversalBrakingMultiplier, 0.01f, Default.directionReversalBrakingMultiplier);
             leggedAnimationReferenceSpeed = ClampFinite(leggedAnimationReferenceSpeed, 0.01f, Default.leggedAnimationReferenceSpeed);
@@ -140,6 +143,7 @@ namespace Game.Scripts.Server
             standardAccelerationMultiplier = source.standardAccelerationMultiplier;
             standardBrakingMultiplier = source.standardBrakingMultiplier;
             leggedAccelerationMultiplier = source.leggedAccelerationMultiplier;
+            leggedStoppingAccelerationMultiplier = source.leggedStoppingAccelerationMultiplier;
             leggedBrakingMultiplier = source.leggedBrakingMultiplier;
             directionReversalBrakingMultiplier = source.directionReversalBrakingMultiplier;
             leggedAnimationReferenceSpeed = source.leggedAnimationReferenceSpeed;
