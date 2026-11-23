@@ -1,6 +1,6 @@
-using Game.Scripts.UI.Screens;
+using RAV.Scripts.UI.Screens;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class CameraCrosshair : UIScreenBase<CameraCrosshair>
     {

@@ -953,7 +953,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6efd9fc40ff734418b5afa91d6141c0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Diagnostics.DiagnosticsOverlay
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Diagnostics.DiagnosticsOverlay
 --- !u!4 &1735169783
 Transform:
   m_ObjectHideFlags: 0
@@ -980,7 +980,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 001a8cbb62557d44e90ffa0b071297ed, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Diagnostics.DiagnosticsManager
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Diagnostics.DiagnosticsManager
 --- !u!1 &1751021263
 GameObject:
   m_ObjectHideFlags: 0
@@ -1091,7 +1091,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5df7450cfc6145be8273614c59125d7b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Server.ServerDebugOverlay
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Server.ServerDebugOverlay
 --- !u!4 &2091271435
 Transform:
   m_ObjectHideFlags: 0

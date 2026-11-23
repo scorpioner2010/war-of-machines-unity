@@ -1,9 +1,9 @@
-using Game.Scripts.AI.WaypointGraph;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.AI.WaypointGraph;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Networking.Lobby;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class VehicleBotBrain : MonoBehaviour, IVehicleRootAware
     {

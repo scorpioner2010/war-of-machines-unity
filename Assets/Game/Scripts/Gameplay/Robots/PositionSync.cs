@@ -1,7 +1,7 @@
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Diagnostics;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class PositionSync : MonoBehaviour
     {

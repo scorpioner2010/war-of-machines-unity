@@ -5,7 +5,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public static class GameplayRuntimeDiagnostics
     {

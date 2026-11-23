@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     internal static class CameraZoomDiagnosticsWriter
     {

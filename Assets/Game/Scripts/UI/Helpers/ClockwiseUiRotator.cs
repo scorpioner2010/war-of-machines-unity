@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.UI.Helpers
+namespace RAV.Scripts.UI.Helpers
 {
     public class ClockwiseUiRotator : MonoBehaviour
     {

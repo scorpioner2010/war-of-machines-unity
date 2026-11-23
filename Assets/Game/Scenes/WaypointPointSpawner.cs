@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.World.Maps;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.World.Maps;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Serialization;

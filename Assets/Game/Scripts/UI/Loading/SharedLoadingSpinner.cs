@@ -4,7 +4,7 @@ using FishNet.Managing;
 using FishNet.Transporting;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Loading
+namespace RAV.Scripts.UI.Loading
 {
     public class SharedLoadingSpinner : MonoBehaviour
     {

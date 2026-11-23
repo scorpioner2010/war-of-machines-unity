@@ -1,7 +1,7 @@
 using FishNet.Object;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public enum VehicleInitializationPhase
     {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.Client
+namespace RAV.Scripts.Client
 {
     [System.Serializable]
     public class ClientButtonColorSettings

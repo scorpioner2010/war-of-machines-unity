@@ -1,9 +1,9 @@
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Client;
-using Game.Scripts.Audio;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Client;
+using RAV.Scripts.Audio;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class VehicleAutoAimController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {

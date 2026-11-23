@@ -1,7 +1,7 @@
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace Game.Scripts.World.Spawns
+namespace RAV.Scripts.World.Spawns
 {
     public class AutomaticPositionSpawnpoints : MonoBehaviour
     {

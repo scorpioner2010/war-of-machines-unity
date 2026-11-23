@@ -1,14 +1,14 @@
 using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing.Scened;
-using Game.Scripts.MenuController;
-using Game.Scripts.UI.MainMenu;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.UI.MainMenu;
 using System.Collections;
 using System;
 using UnityEngine;
-using StandardLoading = Game.Scripts.UI.Helpers.StandardLoadingOverlay;
+using StandardLoading = RAV.Scripts.UI.Helpers.StandardLoadingOverlay;
 
-namespace Game.Scripts.UI.Loading
+namespace RAV.Scripts.UI.Loading
 {
     public enum MenuLoadingScreenMode
     {

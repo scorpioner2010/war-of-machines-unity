@@ -4,18 +4,18 @@ using Cysharp.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
-using Game.Scripts.API.Endpoints;
-using Game.Scripts.API.Models;
-using Game.Scripts.Audio;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.MenuController;
-using Game.Scripts.Networking.Sessions;
-using Game.Scripts.Server;
-using Game.Scripts.Testing;
+using RAV.Scripts.API.Endpoints;
+using RAV.Scripts.API.Models;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.Networking.Sessions;
+using RAV.Scripts.Server;
+using RAV.Scripts.Testing;
 using UnityEngine;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public class LobbyManager : NetworkBehaviour
     {

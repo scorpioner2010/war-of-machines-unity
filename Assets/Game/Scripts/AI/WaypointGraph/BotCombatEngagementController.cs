@@ -1,7 +1,7 @@
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 using UnityEngine;
 
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     internal enum BotCombatEngagementPhase
     {

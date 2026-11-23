@@ -1,6 +1,6 @@
 {
-  "name": "Game.Gameplay.Shared",
-  "rootNamespace": "Game.Scripts.Gameplay.Robots",
+  "name": "RAV.Gameplay.Shared",
+  "rootNamespace": "RAV.Scripts.Gameplay.Robots",
   "references": [],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public static class ProfileScope
     {

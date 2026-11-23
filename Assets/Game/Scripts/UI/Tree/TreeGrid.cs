@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.UI.Tree
+namespace RAV.Scripts.UI.Tree
 {
     public class TreeGrid : MonoBehaviour
     {

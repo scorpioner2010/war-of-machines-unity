@@ -1,11 +1,11 @@
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 
-namespace Game.Scripts.Server
+namespace RAV.Scripts.Server
 {
     public static class RemoteServerSettings
     {
         public static int MaxPlayersForFindRoom { get; private set; } = 1;
-        public static int FindRoomSeconds { get; private set; } = 60;
+        public static int FindRoomSeconds { get; private set; } = 30;
         public static GunDispersionGlobalSettings GunDispersion { get; } = new GunDispersionGlobalSettings();
         public static RobotMovementGlobalSettings RobotMovement { get; } = new RobotMovementGlobalSettings();
         public static ProjectileBallisticsGlobalSettings ProjectileBallistics { get; } = new ProjectileBallisticsGlobalSettings();
@@ -65,7 +65,7 @@ namespace Game.Scripts.Server
             float matchDurationSeconds)
         {
             MaxPlayersForFindRoom = maxPlayersForFindRoom > 0 ? maxPlayersForFindRoom : 1;
-            FindRoomSeconds = findRoomSeconds > 0 ? findRoomSeconds : 60;
+            FindRoomSeconds = findRoomSeconds > 0 ? findRoomSeconds : 30;
 
             RobotMovement.fallbackMaxSpeed = robotFallbackMaxSpeed > 0f ? robotFallbackMaxSpeed : RobotMovementGlobalSettings.Default.fallbackMaxSpeed;
             RobotMovement.fallbackAcceleration = robotFallbackAcceleration > 0f ? robotFallbackAcceleration : RobotMovementGlobalSettings.Default.fallbackAcceleration;

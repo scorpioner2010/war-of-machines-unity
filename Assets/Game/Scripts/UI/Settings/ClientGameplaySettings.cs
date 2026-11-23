@@ -2,7 +2,7 @@ using System;
 using CartoonFX;
 using UnityEngine;
 
-namespace Game.Scripts.UI.Settings
+namespace RAV.Scripts.UI.Settings
 {
     public static class ClientGameplaySettings
     {

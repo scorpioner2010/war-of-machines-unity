@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Diagnostics;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public static class VehicleColliderRegistry
     {

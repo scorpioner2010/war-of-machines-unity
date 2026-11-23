@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class DiagnosticsAnalyzer
     {

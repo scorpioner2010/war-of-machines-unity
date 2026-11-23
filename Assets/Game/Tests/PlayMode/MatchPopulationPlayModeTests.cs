@@ -4,7 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class MatchPopulationPlayModeTests
     {
@@ -22,9 +22,9 @@ namespace Game.Tests.PlayMode
         [Test]
         public void MatchPopulationFillsTargetAndBalancesRealPlayersAndBots()
         {
-            Type roomType = FindGameType("Game.Scripts.Networking.Lobby.ServerRoom");
-            Type playerType = FindGameType("Game.Scripts.Networking.Lobby.Player");
-            Type populationServiceType = FindGameType("Game.Scripts.Networking.Lobby.MatchBotPopulationService");
+            Type roomType = FindGameType("RAV.Scripts.Networking.Lobby.ServerRoom");
+            Type playerType = FindGameType("RAV.Scripts.Networking.Lobby.Player");
+            Type populationServiceType = FindGameType("RAV.Scripts.Networking.Lobby.MatchBotPopulationService");
             Assert.IsNotNull(roomType);
             Assert.IsNotNull(playerType);
             Assert.IsNotNull(populationServiceType);

@@ -335,7 +335,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f93bd26245f75914889c9563f0a6eee4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Rendering.DecalWindowsSmokeCapture
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Rendering.DecalWindowsSmokeCapture
   captureDelay: 2
   captureCamera: {fileID: 1209291116}
 --- !u!4 &1276399956

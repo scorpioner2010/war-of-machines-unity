@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class SlotWeaponImage : MonoBehaviour
     {

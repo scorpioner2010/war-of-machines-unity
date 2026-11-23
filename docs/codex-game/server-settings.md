@@ -73,6 +73,8 @@ Rules when editing settings:
 
 Current bot settings added recently:
 - `ServerSettings.maxPlayersForFindRoom` is both the real-player threshold for an immediate start and the target total match population. The server waits up to `findRoomSeconds` for real players; when the timer expires, `botsEnabled` fills the difference between the real-player count and this target. The old fixed `botsPerMatch` setting was removed.
+- `ServerSettings.findRoomSeconds` is `30` in the C# default, runtime fallback, remote snapshot fallback, and `ServerSettings.prefab`. A room starts earlier if the real-player target is reached; otherwise it waits up to 30 seconds before optional bot fill.
+- `MatchSceneGlobalSettings.matchDurationSeconds` is `600` in the C# default and `ServerSettings.prefab`, giving each battle a ten-minute limit. `NetworkGameplayTimer` synchronizes this duration; the existing timeout result remains a draw.
 - `BotWanderSettings.turnInPlaceEnterAngle`
 - `BotWanderSettings.turnInPlaceExitAngle`
 - `BotWanderSettings.turnDeadZoneAngle` (default `4` degrees)

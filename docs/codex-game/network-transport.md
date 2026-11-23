@@ -10,7 +10,7 @@ Current transport:
 - The Windows `Server` target uses the Mono scripting backend. The current FishNet/Unity Transport combination corrupts the version handshake when the dedicated server is built with IL2CPP while the Windows client uses Mono.
 
 Local verification:
-1. Build both applications through `War Of Machines > Local Build > Windows Server and Client`.
-2. Start the local API, then `WarOfMachinesServer.exe`.
+1. Build both applications through `RAV > Local Build > Windows Server and Client`.
+2. Start the local API, then `RAVServer.exe`.
 3. Confirm `GET https://localhost:7216/unity-server/status` returns `isOnline: true`.
-4. Start `WarOfMachinesClient.exe` and check that neither log contains `Size of -6 is invalid` or `has been kicked for being on FishNet version`.
+4. Start `RAVClient.exe` and check that neither log contains `Size of -6 is invalid` or `has been kicked for being on FishNet version`.

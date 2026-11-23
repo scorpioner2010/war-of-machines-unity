@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.Audio;
-using Game.Scripts.API.ServerManagers;
-using Game.Scripts.MenuController;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Audio;
+using RAV.Scripts.API.ServerManagers;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.Networking.Lobby;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Lobby
+namespace RAV.Scripts.UI.Lobby
 {
     public class GameResultUI : MonoBehaviour
     {

@@ -1,4 +1,4 @@
-namespace Game.Scripts.Audio
+namespace RAV.Scripts.Audio
 {
     public static class AudioEventNames
     {

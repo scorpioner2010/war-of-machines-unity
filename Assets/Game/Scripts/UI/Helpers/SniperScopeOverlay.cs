@@ -1,9 +1,9 @@
 using UnityEngine;
-using Game.Scripts.Client;
-using Game.Scripts.Gameplay.Battle;
-using Game.Scripts.UI.Screens;
+using RAV.Scripts.Client;
+using RAV.Scripts.Gameplay.Battle;
+using RAV.Scripts.UI.Screens;
 
-namespace Game.Scripts.UI.Helpers
+namespace RAV.Scripts.UI.Helpers
 {
     public class SniperScopeOverlay : UIScreenBase<SniperScopeOverlay>
     {

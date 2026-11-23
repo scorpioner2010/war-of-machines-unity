@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using System.Globalization;
-using Game.Scripts.API.Models;
-using Game.Scripts.API.ServerManagers;
-using Game.Scripts.Core.Resources;
-using Game.Scripts.Audio;
+using RAV.Scripts.API.Models;
+using RAV.Scripts.API.ServerManagers;
+using RAV.Scripts.Core.Resources;
+using RAV.Scripts.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.MainMenu
+namespace RAV.Scripts.UI.MainMenu
 {
     public class ProfileStatisticsPopup : MonoBehaviour
     {

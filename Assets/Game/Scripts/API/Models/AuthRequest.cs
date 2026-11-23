@@ -1,6 +1,6 @@
 using System;
 
-namespace Game.Scripts.API.Models
+namespace RAV.Scripts.API.Models
 {
     [Serializable]
     public class AuthRequest

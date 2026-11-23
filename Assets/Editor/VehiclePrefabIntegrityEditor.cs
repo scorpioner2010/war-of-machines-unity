@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using FishNet.Object;
-using Game.Scripts.AI.WaypointGraph;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Gameplay.Robots.t1;
-using Game.Scripts.Gameplay.Robots.t2;
-using Game.Scripts.UI.HUD;
+using RAV.Scripts.AI.WaypointGraph;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots.t1;
+using RAV.Scripts.Gameplay.Robots.t2;
+using RAV.Scripts.UI.HUD;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 
-namespace Game.Scripts.Editor
+namespace RAV.Scripts.Editor
 {
     internal static class VehiclePrefabIntegrityEditor
     {
@@ -21,7 +21,7 @@ namespace Game.Scripts.Editor
         private static bool _repairQueued;
         private static bool _isRepairing;
 
-        [MenuItem("Tools/WOM/Robots/Validate Registered Prefabs")]
+        [MenuItem("Tools/RAV/Robots/Validate Registered Prefabs")]
         private static void ValidateRegisteredPrefabs()
         {
             IntegrityReport registryReport = new IntegrityReport();
@@ -31,7 +31,7 @@ namespace Game.Scripts.Editor
             registryReport.Log("validation");
         }
 
-        [MenuItem("Tools/WOM/Robots/Repair Registered Prefabs")]
+        [MenuItem("Tools/RAV/Robots/Repair Registered Prefabs")]
         private static void RepairRegisteredPrefabs()
         {
             RepairAllRegisteredPrefabs(true);

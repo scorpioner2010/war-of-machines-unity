@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     [DisallowMultipleComponent]
     public class GameplayHudRuntimeBinder : MonoBehaviour

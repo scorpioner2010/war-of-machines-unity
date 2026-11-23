@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     public sealed class WaypointGraphRuntime : MonoBehaviour
     {

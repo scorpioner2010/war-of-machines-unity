@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Networking.Sessions;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Networking.Sessions;
 using UnityEngine;
-using LobbyPlayer = Game.Scripts.Networking.Lobby.Player;
+using LobbyPlayer = RAV.Scripts.Networking.Lobby.Player;
 
-namespace Game.Scripts.Gameplay.Battle
+namespace RAV.Scripts.Gameplay.Battle
 {
     public class BattleCountdownAuthority : NetworkBehaviour
     {

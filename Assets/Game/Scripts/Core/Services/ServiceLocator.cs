@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Game.Scripts.Core.Services
+namespace RAV.Scripts.Core.Services
 {
     public static class ServiceLocator
     {

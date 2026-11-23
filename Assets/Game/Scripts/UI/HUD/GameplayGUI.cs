@@ -1,9 +1,9 @@
-using Game.Scripts.Core.Services;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Core.Services;
+using RAV.Scripts.Gameplay.Robots;
 using TMPro;
 using UnityEngine;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class GameplayGUI : MonoBehaviour
     {

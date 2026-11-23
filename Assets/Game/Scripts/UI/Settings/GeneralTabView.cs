@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Settings
+namespace RAV.Scripts.UI.Settings
 {
     public class GeneralTabView : MonoBehaviour
     {

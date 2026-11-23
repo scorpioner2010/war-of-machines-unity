@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Server;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Server;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public class ServerRoom : MonoBehaviour
     {

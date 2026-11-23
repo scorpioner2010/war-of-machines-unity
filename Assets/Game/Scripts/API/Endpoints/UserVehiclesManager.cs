@@ -4,7 +4,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Game.Scripts.API.Endpoints
+namespace RAV.Scripts.API.Endpoints
 {
     public abstract class UserVehiclesManager
     {

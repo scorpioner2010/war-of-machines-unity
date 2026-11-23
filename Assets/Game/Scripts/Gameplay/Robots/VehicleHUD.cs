@@ -1,12 +1,12 @@
-using Game.Scripts.Client;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.UI.HUD;
+using RAV.Scripts.Client;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.UI.HUD;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class VehicleHUD : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer
     {

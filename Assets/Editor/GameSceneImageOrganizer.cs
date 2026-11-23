@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace Game.Editor
+namespace RAV.Editor
 {
     public static class GameSceneImageOrganizer
     {

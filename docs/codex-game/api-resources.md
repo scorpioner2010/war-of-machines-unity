@@ -1,14 +1,14 @@
-﻿# API Resources And Vehicle Data
+# API Resources And Vehicle Data
 
 Read this file before changing backend API calls, profile loading, vehicle registry, vehicle resource lookup, or menu data fed by API models.
 
 Current owner scripts:
-- Backend API source: `D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI`
+- Backend API source: `D:\Programing\ServerProjects\rav-api\RavApi`
   - The vehicle JSON contract is defined by `Controllers/VehiclesController.cs`; its `VehicleDto.TraverseAcceleration` serializes as `traverseAcceleration`.
 - `Assets/Game/Scripts/API/HttpLink.cs`
   - Shared HTTP/API link configuration.
   - The default API base for Editor, client builds, and server builds is the local API at `https://localhost:7216`.
-  - `WOM_API_BASE`, `API_BASE`, or the `-apiBase`/`--api-base` command-line override can still point a process at another API when explicitly needed.
+  - `RAV_API_BASE` is the primary endpoint variable. `WOM_API_BASE` remains a compatibility fallback; `API_BASE` and the `-apiBase`/`--api-base` command-line override remain available for explicit local/test routing.
 - `Assets/Game/Scripts/API/Endpoints/*.cs`
   - Endpoint managers for leaderboard, maps, matches, players, register, user vehicles, vehicles.
   - `PlayersManager.GetMyStatistics` calls authenticated `GET /players/me/statistics` and deserializes the server's overall and per-played-vehicle aggregates.

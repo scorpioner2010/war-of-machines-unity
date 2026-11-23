@@ -1,4 +1,4 @@
-namespace Game.Scripts.MenuController
+namespace RAV.Scripts.MenuController
 {
     [System.Serializable]
     public struct MenuEntry

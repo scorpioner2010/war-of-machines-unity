@@ -8,14 +8,14 @@ using FishNet.Broadcast;
 using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Transporting;
-using Game.Scripts.API;
-using Game.Scripts.Networking.Sessions;
+using RAV.Scripts.API;
+using RAV.Scripts.Networking.Sessions;
 using UnityEngine;
 using UnityEngine.Networking;
 
 using FishNetChannel = FishNet.Transporting.Channel;
 
-namespace Game.Scripts.Networking.Authentication
+namespace RAV.Scripts.Networking.Authentication
 {
     public sealed class ConnectionTicketAuthenticator : Authenticator
     {
@@ -179,10 +179,16 @@ namespace Game.Scripts.Networking.Authentication
             }
         }
 
+        private static string GetEnvironmentValue(string primaryName, string legacyName)
+        {
+            string value = Environment.GetEnvironmentVariable(primaryName);
+            return string.IsNullOrWhiteSpace(value) ? Environment.GetEnvironmentVariable(legacyName) ?? string.Empty : value;
+        }
+
         private static bool TryGetServerCredentials(out string serverId, out string credential)
         {
-            serverId = Environment.GetEnvironmentVariable("WOM_SERVER_ID") ?? string.Empty;
-            credential = Environment.GetEnvironmentVariable("WOM_SERVER_CREDENTIAL") ?? string.Empty;
+            serverId = GetEnvironmentValue("RAV_SERVER_ID", "WOM_SERVER_ID");
+            credential = GetEnvironmentValue("RAV_SERVER_CREDENTIAL", "WOM_SERVER_CREDENTIAL");
             return string.IsNullOrWhiteSpace(serverId) == false
                    && string.IsNullOrWhiteSpace(credential) == false;
         }

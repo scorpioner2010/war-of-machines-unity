@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
-using Game.Scripts.Audio;
-using Game.Scripts.MenuController;
-using Game.Scripts.Testing;
-using Game.Scripts.UI.Lobby;
+using RAV.Scripts.Audio;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.Testing;
+using RAV.Scripts.UI.Lobby;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public class RoomController : NetworkBehaviour
     {

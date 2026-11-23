@@ -1,10 +1,10 @@
 using System;
-using Game.Scripts.Audio;
+using RAV.Scripts.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Screens
+namespace RAV.Scripts.UI.Screens
 {
     public class PopupScreen<T> : MonoBehaviour where T : PopupScreen<T>
     {

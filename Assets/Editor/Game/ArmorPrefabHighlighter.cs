@@ -1,19 +1,19 @@
 using System.Collections.Generic;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Game.Scripts.Editor
+namespace RAV.Scripts.Editor
 {
     [InitializeOnLoad]
     public static class ArmorPrefabHighlighter
     {
-        private const string EnabledPrefsKey = "WOM.ArmorPrefabHighlighter.Enabled";
-        private const string MenuEnabled = "Tools/WOM/Armor Prefab Highlighter/Enabled";
-        private const string MenuSelect = "Tools/WOM/Armor Prefab Highlighter/Select Armor Objects";
+        private const string EnabledPrefsKey = "WOM.ArmorPrefabHighlighter.Enabled"; // Retained to preserve existing EditorPrefs.
+        private const string MenuEnabled = "Tools/RAV/Armor Prefab Highlighter/Enabled";
+        private const string MenuSelect = "Tools/RAV/Armor Prefab Highlighter/Select Armor Objects";
 
         private static readonly List<Renderer> RendererBuffer = new List<Renderer>(64);
         private static readonly List<MeshCollider> MeshColliderBuffer = new List<MeshCollider>(64);

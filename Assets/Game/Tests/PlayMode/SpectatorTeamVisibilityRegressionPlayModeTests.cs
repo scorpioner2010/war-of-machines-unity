@@ -3,7 +3,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class SpectatorTeamVisibilityRegressionPlayModeTests
     {
@@ -13,13 +13,13 @@ namespace Game.Tests.PlayMode
             GameObject targetObject = new GameObject("SpectatorRelationTarget");
             try
             {
-                Type rootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type rootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
                 Type initializerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
-                Type contextType = GetType("Game.Scripts.Gameplay.Robots.SpectatorTeamContext, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
+                Type contextType = GetType("RAV.Scripts.Gameplay.Robots.SpectatorTeamContext, Assembly-CSharp");
                 Type resolverType = GetType(
-                    "Game.Scripts.Gameplay.Robots.VehicleTeamRelationResolver, Assembly-CSharp");
-                Type teamType = GetType("Game.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.VehicleTeamRelationResolver, Assembly-CSharp");
+                Type teamType = GetType("RAV.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
                 Component targetRoot = targetObject.AddComponent(rootType);
                 Component initializer = targetObject.AddComponent(initializerType);
                 SetField(targetRoot, "characterInit", initializer);
@@ -42,7 +42,7 @@ namespace Game.Tests.PlayMode
             finally
             {
                 Type contextType = Type.GetType(
-                    "Game.Scripts.Gameplay.Robots.SpectatorTeamContext, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.SpectatorTeamContext, Assembly-CSharp");
                 contextType?.GetMethod("Clear", BindingFlags.Public | BindingFlags.Static)?.Invoke(null, null);
                 UnityEngine.Object.DestroyImmediate(targetObject);
             }
@@ -52,11 +52,11 @@ namespace Game.Tests.PlayMode
         public void SnapshotRecipientsKeepDeadPlayerTeamWhenRootWasDespawned()
         {
             Type recipientsType = GetType(
-                "Game.Scripts.Networking.Lobby.MatchVisibilitySnapshotRecipients, Assembly-CSharp");
-            Type playerType = GetType("Game.Scripts.Networking.Lobby.Player, Assembly-CSharp");
+                "RAV.Scripts.Networking.Lobby.MatchVisibilitySnapshotRecipients, Assembly-CSharp");
+            Type playerType = GetType("RAV.Scripts.Networking.Lobby.Player, Assembly-CSharp");
             Type snapshotType = GetType(
-                "Game.Scripts.Networking.Lobby.MatchVisibilitySnapshot, Assembly-CSharp");
-            Type teamType = GetType("Game.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
+                "RAV.Scripts.Networking.Lobby.MatchVisibilitySnapshot, Assembly-CSharp");
+            Type teamType = GetType("RAV.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
             object recipients = Activator.CreateInstance(recipientsType);
             object deadPlayer = Activator.CreateInstance(playerType);
             object teamA = Enum.Parse(teamType, "TeamA");

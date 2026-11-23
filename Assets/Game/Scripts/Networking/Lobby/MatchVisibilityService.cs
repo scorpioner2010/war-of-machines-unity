@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using FishNet.Connection;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Server;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Server;
 using UnityEngine;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public enum MapVehicleVisibilityRelation : byte
     {

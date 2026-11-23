@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Game.Scripts.UI.MainMenu
+namespace RAV.Scripts.UI.MainMenu
 {
     public class UIOrbitDragArea : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {

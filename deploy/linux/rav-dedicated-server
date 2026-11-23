@@ -1,0 +1,11 @@
+/var/log/rav/rav-server.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+    su rav-server rav-server
+    create 0640 rav-server rav-server
+}

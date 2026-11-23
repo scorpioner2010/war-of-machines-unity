@@ -1,4 +1,4 @@
-namespace Game.Scripts.API
+namespace RAV.Scripts.API
 {
     public static class ClientAuthenticationState
     {

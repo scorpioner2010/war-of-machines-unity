@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Scripts.Audio
+namespace RAV.Scripts.Audio
 {
     [DefaultExecutionOrder(-10010)]
     [DisallowMultipleComponent]

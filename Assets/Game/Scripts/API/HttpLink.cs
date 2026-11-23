@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
-namespace Game.Scripts.API
+namespace RAV.Scripts.API
 {
     public abstract class HttpLink
     {
-        private const string ApiBaseEnvironmentVariable = "WOM_API_BASE";
+        private const string ApiBaseEnvironmentVariable = "RAV_API_BASE";
+        private const string LegacyApiBaseEnvironmentVariable = "WOM_API_BASE";
         private const string ApiBaseFallbackEnvironmentVariable = "API_BASE";
         public const string LocalAPIBase = "https://localhost:7216";
         public const string LocalIisHttpsAPIBase = "https://localhost:44377";
@@ -14,6 +16,7 @@ namespace Game.Scripts.API
         public static string APIBase = GetDefaultApiBase();
 
         private static bool _runtimeConfigApplied;
+        private static HashSet<string> _productionApiBases;
 
         public static bool IsLocal
         {
@@ -105,6 +108,11 @@ namespace Game.Scripts.API
             if (string.IsNullOrWhiteSpace(apiBase))
             {
                 apiBase = Environment.GetEnvironmentVariable(ApiBaseEnvironmentVariable);
+            }
+
+            if (string.IsNullOrWhiteSpace(apiBase))
+            {
+                apiBase = Environment.GetEnvironmentVariable(LegacyApiBaseEnvironmentVariable);
             }
 
             if (string.IsNullOrWhiteSpace(apiBase))
@@ -239,7 +247,75 @@ namespace Game.Scripts.API
                 return true;
             }
 
-            return string.Equals(uri.Host, "war-of-machines-api.onrender.com", StringComparison.OrdinalIgnoreCase);
+            string normalizedBase = NormalizeBase(apiBase);
+            if (GetProductionApiBases().Contains(normalizedBase))
+            {
+                return true;
+            }
+
+            return IsExplicitStagingBase(normalizedBase);
+        }
+
+        private static bool IsExplicitStagingBase(string normalizedBase)
+        {
+            string configuredStagingBase = NormalizeBase(Environment.GetEnvironmentVariable(ApiBaseEnvironmentVariable));
+            if (string.IsNullOrWhiteSpace(normalizedBase)
+                || !string.Equals(normalizedBase, configuredStagingBase, StringComparison.OrdinalIgnoreCase)
+                || !Uri.TryCreate(normalizedBase, UriKind.Absolute, out Uri uri))
+            {
+                return false;
+            }
+
+            string[] labels = uri.IdnHost.Split('.');
+            for (int i = 0; i < labels.Length; i++)
+            {
+                if (string.Equals(labels[i], "staging", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static HashSet<string> GetProductionApiBases()
+        {
+            if (_productionApiBases != null)
+            {
+                return _productionApiBases;
+            }
+
+            _productionApiBases = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                RenderAPIBase
+            };
+
+            TextAsset allowlist = Resources.Load<TextAsset>("production-api-hosts");
+            if (allowlist == null || string.IsNullOrWhiteSpace(allowlist.text))
+            {
+                return _productionApiBases;
+            }
+
+            string[] entries = allowlist.text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (string entry in entries)
+            {
+                string candidate = entry.Trim();
+                if (candidate.Length == 0 || candidate.StartsWith("#", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string normalized = NormalizeBase(candidate);
+                if (!string.IsNullOrWhiteSpace(normalized)
+                    && Uri.TryCreate(normalized, UriKind.Absolute, out Uri configuredUri)
+                    && configuredUri.Scheme == Uri.UriSchemeHttps
+                    && !IsLocalBase(normalized))
+                {
+                    _productionApiBases.Add(normalized);
+                }
+            }
+
+            return _productionApiBases;
         }
     }
 }

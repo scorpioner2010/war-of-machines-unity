@@ -3,7 +3,7 @@ using FishNet.Managing.Timing;
 using TMPro;
 using UnityEngine;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public sealed class PerformanceStatsHud : MonoBehaviour
     {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Loading
+namespace RAV.Scripts.UI.Loading
 {
     /// <summary>
     /// Displays map-loading progress with a fixed set of UI segments.

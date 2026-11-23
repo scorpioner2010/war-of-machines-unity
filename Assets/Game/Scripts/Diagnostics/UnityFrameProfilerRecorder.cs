@@ -3,7 +3,7 @@ using System;
 using Unity.Profiling;
 #endif
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class UnityFrameProfilerRecorder : IDisposable
     {

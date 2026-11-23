@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using UnityEngine;
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class DiagnosticsJsonlWriter : IDisposable
     {

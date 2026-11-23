@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     public sealed class WaypointAStarPathfinder
     {

@@ -1,11 +1,11 @@
 using System.Text;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API;
-using Game.Scripts.API.Models;
+using RAV.Scripts.API;
+using RAV.Scripts.API.Models;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Game.Scripts
+namespace RAV.Scripts
 {
     public abstract class PlayersManager
     {
@@ -141,7 +141,7 @@ namespace Game.Scripts
     }
 }
 
-namespace Game.Scripts.API.Models
+namespace RAV.Scripts.API.Models
 {
     [System.Serializable]
     public class PlayerProfile

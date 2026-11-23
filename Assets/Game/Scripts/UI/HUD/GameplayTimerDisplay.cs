@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class GameplayTimerDisplay : MonoBehaviour
     {

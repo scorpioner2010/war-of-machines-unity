@@ -1,12 +1,12 @@
 using System;
 using System.Globalization;
-using Game.Scripts.API.Models;
-using Game.Scripts.Core.Resources;
+using RAV.Scripts.API.Models;
+using RAV.Scripts.Core.Resources;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.MainMenu
+namespace RAV.Scripts.UI.MainMenu
 {
     public class ProfileVehicleRow : MonoBehaviour
     {

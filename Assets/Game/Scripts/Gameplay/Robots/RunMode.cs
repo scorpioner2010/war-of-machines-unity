@@ -1,4 +1,4 @@
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public enum RunMode
     {

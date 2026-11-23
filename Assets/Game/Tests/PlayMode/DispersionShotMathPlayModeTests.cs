@@ -1,8 +1,8 @@
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class DispersionShotMathPlayModeTests
     {

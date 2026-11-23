@@ -5,14 +5,14 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using System.Collections;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class BotAiRegressionPlayModeTests
     {
         [UnityTest]
         public IEnumerator MovingTargetLeadUsesInterceptTime()
         {
-            Type predictionType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotLeadPrediction, Assembly-CSharp");
+            Type predictionType = Type.GetType("RAV.Scripts.AI.WaypointGraph.BotLeadPrediction, Assembly-CSharp");
             Assert.IsNotNull(predictionType);
 
             MethodInfo solve = predictionType.GetMethod("Solve", BindingFlags.Public | BindingFlags.Static);
@@ -45,7 +45,7 @@ namespace Game.Tests.PlayMode
             GameObject wallObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
             try
             {
-                Type vehicleRootType = Type.GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type vehicleRootType = Type.GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
                 Assert.IsNotNull(vehicleRootType);
                 Component shooterRoot = shooterObject.AddComponent(vehicleRootType);
                 Component targetRoot = targetObject.AddComponent(vehicleRootType);
@@ -55,8 +55,8 @@ namespace Game.Tests.PlayMode
                 wallObject.transform.localScale = new Vector3(0.4f, 3f, 0.4f);
                 Physics.SyncTransforms();
 
-                Type checkerType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotLineOfFireChecker, Assembly-CSharp");
-                Type settingsType = Type.GetType("Game.Scripts.Server.BotCombatSettings, Assembly-CSharp");
+                Type checkerType = Type.GetType("RAV.Scripts.AI.WaypointGraph.BotLineOfFireChecker, Assembly-CSharp");
+                Type settingsType = Type.GetType("RAV.Scripts.Server.BotCombatSettings, Assembly-CSharp");
                 Assert.IsNotNull(checkerType);
                 Assert.IsNotNull(settingsType);
 
@@ -99,8 +99,8 @@ namespace Game.Tests.PlayMode
                 wallObject.transform.SetPositionAndRotation(new Vector3(0f, 1.4f, 2.5f), Quaternion.identity);
                 wallObject.transform.localScale = new Vector3(0.4f, 3f, 0.4f);
 
-                Type serviceType = Type.GetType("Game.Scripts.Networking.Lobby.MatchVisibilityService, Assembly-CSharp");
-                Type settingsType = Type.GetType("Game.Scripts.Server.MatchVisibilityGlobalSettings, Assembly-CSharp");
+                Type serviceType = Type.GetType("RAV.Scripts.Networking.Lobby.MatchVisibilityService, Assembly-CSharp");
+                Type settingsType = Type.GetType("RAV.Scripts.Server.MatchVisibilityGlobalSettings, Assembly-CSharp");
                 Assert.IsNotNull(serviceType);
                 Assert.IsNotNull(settingsType);
 
@@ -149,11 +149,11 @@ namespace Game.Tests.PlayMode
         public IEnumerator MatchVisibilityKeepsDirectSpottingUntilAllSourcesAreLost()
         {
             Type serviceType = Type.GetType(
-                "Game.Scripts.Networking.Lobby.MatchVisibilityService, Assembly-CSharp");
+                "RAV.Scripts.Networking.Lobby.MatchVisibilityService, Assembly-CSharp");
             Type teamStateType = serviceType?.GetNestedType(
                 "TeamVisibilityState",
                 BindingFlags.NonPublic);
-            Type teamType = Type.GetType("Game.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
+            Type teamType = Type.GetType("RAV.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
             Assert.IsNotNull(serviceType);
             Assert.IsNotNull(teamStateType);
             Assert.IsNotNull(teamType);
@@ -249,7 +249,7 @@ namespace Game.Tests.PlayMode
         [UnityTest]
         public IEnumerator BotGunPitchUsesSmoothFrameRateIndependentConvergence()
         {
-            Type aimType = Type.GetType("Game.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
+            Type aimType = Type.GetType("RAV.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
             Assert.IsNotNull(aimType);
 
             MethodInfo smoothAngle = aimType.GetMethod(
@@ -272,7 +272,7 @@ namespace Game.Tests.PlayMode
         [UnityTest]
         public IEnumerator BotSteeringSuppressesMicroOscillationAndSmoothsDirectionChanges()
         {
-            Type navigatorType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
+            Type navigatorType = Type.GetType("RAV.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
             Assert.IsNotNull(navigatorType);
 
             MethodInfo resolveTurn = navigatorType.GetMethod(
@@ -303,7 +303,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator BotTurretMovesInsideFormerMicroYawDeadZone()
         {
             Type turretType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleTurretRotationController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleTurretRotationController, Assembly-CSharp");
             Assert.IsNotNull(turretType);
 
             MethodInfo hasTargetYawError = turretType.GetMethod(
@@ -324,7 +324,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator BotCombatHoldsReadyDirectShotsAndReleasesDuringReload()
         {
             Type combatType = Type.GetType(
-                "Game.Scripts.AI.WaypointGraph.BotCombatController, Assembly-CSharp");
+                "RAV.Scripts.AI.WaypointGraph.BotCombatController, Assembly-CSharp");
             Assert.IsNotNull(combatType);
 
             MethodInfo shouldHold = combatType.GetMethod(
@@ -356,13 +356,13 @@ namespace Game.Tests.PlayMode
         public IEnumerator BotCombatRequiresStoppedSettleBeforeFiring()
         {
             Type engagementType = Type.GetType(
-                "Game.Scripts.AI.WaypointGraph.BotCombatEngagementController, Assembly-CSharp");
+                "RAV.Scripts.AI.WaypointGraph.BotCombatEngagementController, Assembly-CSharp");
             Type decisionType = Type.GetType(
-                "Game.Scripts.AI.WaypointGraph.BotCombatEngagementDecision, Assembly-CSharp");
+                "RAV.Scripts.AI.WaypointGraph.BotCombatEngagementDecision, Assembly-CSharp");
             Type vehicleRootType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
             Type movementType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleMovementController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleMovementController, Assembly-CSharp");
             Assert.IsNotNull(engagementType);
             Assert.IsNotNull(decisionType);
             Assert.IsNotNull(vehicleRootType);
@@ -440,11 +440,11 @@ namespace Game.Tests.PlayMode
         public IEnumerator AutonomousAimReplicatesServerTargetsToVehiclePresentation()
         {
             Type inputType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
             Type turretType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleTurretRotationController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleTurretRotationController, Assembly-CSharp");
             Type weaponAimType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
             Assert.IsNotNull(inputType);
             Assert.IsNotNull(turretType);
             Assert.IsNotNull(weaponAimType);
@@ -471,7 +471,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator AutonomousOwnerUsesReplicatedMovementForPresentation()
         {
             Type inputType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
             Assert.IsNotNull(inputType);
 
             MethodInfo resolveAnimationMove = inputType.GetMethod(
@@ -534,7 +534,7 @@ namespace Game.Tests.PlayMode
             gunObject.transform.SetParent(vehicleObject.transform, false);
 
             Type weaponAimType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.WeaponAimController, Assembly-CSharp");
             Assert.IsNotNull(weaponAimType);
             Component weaponAim = vehicleObject.AddComponent(weaponAimType);
             weaponAimType.GetField("gun").SetValue(weaponAim, gunObject.transform);
@@ -565,7 +565,7 @@ namespace Game.Tests.PlayMode
         [UnityTest]
         public IEnumerator BotPivotCountsOnlyRealYawProgressAsMovement()
         {
-            Type navigatorType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
+            Type navigatorType = Type.GetType("RAV.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
             Assert.IsNotNull(navigatorType);
 
             MethodInfo hasTurnProgress = navigatorType.GetMethod(
@@ -588,7 +588,7 @@ namespace Game.Tests.PlayMode
             int chassisLayer = LayerMask.NameToLayer("Chassis");
             Assert.That(chassisLayer, Is.GreaterThanOrEqualTo(0));
 
-            Type navigatorType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
+            Type navigatorType = Type.GetType("RAV.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
             Assert.IsNotNull(navigatorType);
             MethodInfo getMask = navigatorType.GetMethod(
                 "GetProximityMask",
@@ -611,7 +611,7 @@ namespace Game.Tests.PlayMode
             debrisObject.layer = chassisLayer;
             try
             {
-                Type navigatorType = Type.GetType("Game.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
+                Type navigatorType = Type.GetType("RAV.Scripts.AI.WaypointGraph.BotNavigator, Assembly-CSharp");
                 Assert.IsNotNull(navigatorType);
                 MethodInfo isDeathDebris = navigatorType.GetMethod(
                     "IsDeathDebrisCollider",

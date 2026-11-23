@@ -1,7 +1,7 @@
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Diagnostics;
 using UnityEngine;
 
-namespace Game.Scripts.Player.Camera
+namespace RAV.Scripts.Player.Camera
 {
     public class CameraCollision : MonoBehaviour
     {

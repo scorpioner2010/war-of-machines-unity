@@ -1,4 +1,4 @@
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     public interface IBotInputReceiver
     {

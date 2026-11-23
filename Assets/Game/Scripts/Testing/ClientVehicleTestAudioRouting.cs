@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Scripts.Testing
+namespace RAV.Scripts.Testing
 {
     [DefaultExecutionOrder(-9990)]
     [DisallowMultipleComponent]

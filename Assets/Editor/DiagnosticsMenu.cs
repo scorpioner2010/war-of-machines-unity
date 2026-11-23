@@ -1,4 +1,4 @@
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 

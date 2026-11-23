@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.MainMenu
+namespace RAV.Scripts.UI.MainMenu
 {
     public class VehicleItemView : MonoBehaviour
     {

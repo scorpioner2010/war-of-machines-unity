@@ -1,13 +1,13 @@
 using System.Text;
 using System.Collections.Generic;
 using FishNet.Managing;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.UI.Helpers;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.UI.Helpers;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Scripts.Server
+namespace RAV.Scripts.Server
 {
     public class ServerDebugOverlay : MonoBehaviour
     {

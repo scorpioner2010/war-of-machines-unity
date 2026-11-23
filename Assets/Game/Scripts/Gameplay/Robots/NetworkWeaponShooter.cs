@@ -2,17 +2,17 @@ using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Game.Scripts.Client;
-using Game.Scripts.Core.Services;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Audio;
-using Game.Scripts.Gameplay.Battle;
-using Game.Scripts.Networking.Sessions;
-using Game.Scripts.Server;
-using Game.Scripts.UI.HUD;
+using RAV.Scripts.Client;
+using RAV.Scripts.Core.Services;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Gameplay.Battle;
+using RAV.Scripts.Networking.Sessions;
+using RAV.Scripts.Server;
+using RAV.Scripts.UI.HUD;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class NetworkWeaponShooter : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {

@@ -1,0 +1,4 @@
+# Production API base URLs allowed in non-development Unity builds.
+# Keep the existing Render endpoint working. Add only an owned, verified HTTPS origin here
+# before creating client or server builds for a future API hostname.
+https://war-of-machines-api.onrender.com

@@ -1,14 +1,14 @@
 using FishNet.Managing;
 using FishNet.Transporting;
-using Game.Scripts.API;
-using Game.Scripts.API.Endpoints;
-using Game.Scripts.Core.Services;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Player.Data;
-using Game.Scripts.Server;
-using Game.Scripts.Testing;
-using Game.Scripts.UI.Loading;
+using RAV.Scripts.API;
+using RAV.Scripts.API.Endpoints;
+using RAV.Scripts.Core.Services;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Player.Data;
+using RAV.Scripts.Server;
+using RAV.Scripts.Testing;
+using RAV.Scripts.UI.Loading;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -18,7 +18,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Helpers
+namespace RAV.Scripts.UI.Helpers
 {
     public enum NetworkAutoStartMode
     {
@@ -923,7 +923,7 @@ namespace Game.Scripts.UI.Helpers
         {
             if (TryGetDedicatedServerCredentials(out string serverId, out string credential) == false)
             {
-                LastServerStatus = "Dedicated server registration requires WOM_SERVER_ID and WOM_SERVER_CREDENTIAL.";
+                LastServerStatus = "Dedicated server registration requires RAV_SERVER_ID and RAV_SERVER_CREDENTIAL.";
                 yield break;
             }
 
@@ -987,17 +987,17 @@ namespace Game.Scripts.UI.Helpers
             serverId = GetCommandLineValue(ServerIdArgument);
             if (string.IsNullOrWhiteSpace(serverId))
             {
-                serverId = GetEnvironmentValue("WOM_SERVER_ID");
+                serverId = GetEnvironmentValue("RAV_SERVER_ID", "WOM_SERVER_ID");
             }
 
-            credential = GetEnvironmentValue("WOM_SERVER_CREDENTIAL");
+            credential = GetEnvironmentValue("RAV_SERVER_CREDENTIAL", "WOM_SERVER_CREDENTIAL");
             return string.IsNullOrWhiteSpace(serverId) == false
                    && string.IsNullOrWhiteSpace(credential) == false;
         }
 
         private static string GetServerRegion()
         {
-            string region = GetEnvironmentValue("WOM_SERVER_REGION");
+            string region = GetEnvironmentValue("RAV_SERVER_REGION", "WOM_SERVER_REGION");
             return string.IsNullOrWhiteSpace(region) ? "default" : region.Trim();
         }
 
@@ -1195,7 +1195,7 @@ namespace Game.Scripts.UI.Helpers
                 return value;
             }
 
-            value = GetEnvironmentValue("WOM_SERVER_ADDRESS");
+            value = GetEnvironmentValue("RAV_SERVER_ADDRESS", "WOM_SERVER_ADDRESS");
             if (string.IsNullOrWhiteSpace(value) == false)
             {
                 return value;
@@ -1236,7 +1236,7 @@ namespace Game.Scripts.UI.Helpers
                 return port;
             }
 
-            value = GetEnvironmentValue("WOM_SERVER_PORT");
+            value = GetEnvironmentValue("RAV_SERVER_PORT", "WOM_SERVER_PORT");
             if (TryParsePort(value, out port))
             {
                 return port;
@@ -1263,6 +1263,17 @@ namespace Game.Scripts.UI.Helpers
 #endif
 
             return 0;
+        }
+
+        private static string GetEnvironmentValue(string name, string legacyName)
+        {
+            string value = GetEnvironmentValue(name);
+            if (!string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(legacyName))
+            {
+                return value;
+            }
+
+            return GetEnvironmentValue(legacyName);
         }
 
         private static string GetEnvironmentValue(string name)

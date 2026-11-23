@@ -1,9 +1,9 @@
-using Game.Scripts.Audio;
-using Game.Scripts.MenuController;
+using RAV.Scripts.Audio;
+using RAV.Scripts.MenuController;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Settings
+namespace RAV.Scripts.UI.Settings
 {
     public class SettingsView : MonoBehaviour
     {

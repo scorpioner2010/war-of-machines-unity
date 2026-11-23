@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     [DisallowMultipleComponent]
     public sealed class VehicleArmorController : MonoBehaviour, IVehicleRootAware, IVehicleStatsConsumer

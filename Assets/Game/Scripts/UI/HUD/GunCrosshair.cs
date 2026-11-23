@@ -2,17 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using TMPro;
-using Game.Scripts.Audio;
-using Game.Scripts.Client;
-using Game.Scripts.Core.Services;
-using Game.Scripts.Gameplay.Battle;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.UI.Helpers;
-using Game.Scripts.UI.Settings;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Client;
+using RAV.Scripts.Core.Services;
+using RAV.Scripts.Gameplay.Battle;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.UI.Helpers;
+using RAV.Scripts.UI.Settings;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class GunCrosshair : MonoBehaviour
     {

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UESceneManager = UnityEngine.SceneManagement.SceneManager;
 
-namespace Game.Scripts.World.Maps
+namespace RAV.Scripts.World.Maps
 {
     public static class MapScopedObjectRegistry
     {

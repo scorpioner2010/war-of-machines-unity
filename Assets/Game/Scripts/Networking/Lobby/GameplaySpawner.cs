@@ -5,24 +5,24 @@ using FishNet.Connection;
 using FishNet.Managing.Scened;
 using FishNet.Object;
 using FishNet.Transporting;
-using Game.Scripts.Audio;
-using Game.Scripts.Gameplay.Battle;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.MenuController;
-using Game.Scripts.Networking.Sessions;
-using Game.Scripts.Server;
-using Game.Scripts.UI.HUD;
-using Game.Scripts.UI.Lobby;
-using Game.Scripts.UI.MainMenu;
-using Game.Scripts.World.Maps;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Gameplay.Battle;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.Networking.Sessions;
+using RAV.Scripts.Server;
+using RAV.Scripts.UI.HUD;
+using RAV.Scripts.UI.Lobby;
+using RAV.Scripts.UI.MainMenu;
+using RAV.Scripts.World.Maps;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NetworkChannel = FishNet.Transporting.Channel;
 using UEScene = UnityEngine.SceneManagement.Scene;
 using UESceneManager = UnityEngine.SceneManagement.SceneManager;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public enum GameMaps
     {

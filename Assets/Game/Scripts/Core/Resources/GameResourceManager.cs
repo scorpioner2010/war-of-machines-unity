@@ -1,8 +1,8 @@
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Scripts.Core.Resources
+namespace RAV.Scripts.Core.Resources
 {
     public class GameResourceManager : MonoBehaviour
     {

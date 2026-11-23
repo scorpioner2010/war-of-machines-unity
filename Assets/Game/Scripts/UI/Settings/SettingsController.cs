@@ -1,11 +1,11 @@
 using System;
-using Game.Scripts.Audio;
-using Game.Scripts.Client;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Client;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Game.Scripts.UI.Settings
+namespace RAV.Scripts.UI.Settings
 {
     public class SettingsController
     {

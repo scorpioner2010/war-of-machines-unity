@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Game.Scripts.MenuController
+namespace RAV.Scripts.MenuController
 {
     public class MenuManager : MonoBehaviour
     {

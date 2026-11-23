@@ -693,7 +693,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3207898f5a3e405591d0ad2f8fa17045, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleClientVisibility
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleClientVisibility
   vehicleRoot: {fileID: 5226239542433404041}
   visualRenderers:
   - {fileID: 2438689651683638384}
@@ -724,7 +724,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4e8e57c07bd4fd19e1816d01bb56941, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleAutoAimController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleAutoAimController
   vehicleRoot: {fileID: 5226239542433404041}
   acquireMask:
     serializedVersion: 2
@@ -740,7 +740,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29d83922f5d84618a77f61bcbb0ad986, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBotBrain
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleBotBrain
   vehicleRoot: {fileID: 5226239542433404041}
   navigator: {fileID: 2449881704443238150}
 --- !u!114 &2449881704443238150
@@ -754,7 +754,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 37936653d8934de4af5bb9ece911246a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.AI.WaypointGraph.BotNavigator
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.AI.WaypointGraph.BotNavigator
   target: {fileID: 0}
   drawDebugGizmos: 1
 --- !u!114 &9032475458122901811
@@ -768,7 +768,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4dbbd5d836509024292adce02cf9736a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleArmorController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleArmorController
   turretColliders:
   - {fileID: 3615997511370133376}
   - {fileID: 253331566897099099}
@@ -796,7 +796,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90ac7660fd36ac8438d8015ca893526a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
   vehicleRoot: {fileID: 5226239542433404041}
   targets:
   - transform: {fileID: 5369114017952432729}
@@ -820,7 +820,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d57d5c7dcbd428185ac553189ef20e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodySwayController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleBodySwayController
   vehicleRoot: {fileID: 5226239542433404041}
   inputDeadZone: 0.01
   accelerationInputResponse: 4
@@ -850,7 +850,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a6668d8529326c4f9168a6c0c00b6ed, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t2.TrackedVehicleAnimator
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.t2.TrackedVehicleAnimator
   vehicleRoot: {fileID: 5226239542433404041}
   trackRenderers:
   - {fileID: 7103603927942996204}
@@ -887,7 +887,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3ae1ec669c8ce3b46b8a8891ada4066f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t2.CaterpillarSuspensionController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.t2.CaterpillarSuspensionController
   vehicleRoot: {fileID: 5226239542433404041}
   targets:
   - transform: {fileID: 2847223664004203604}
@@ -1073,7 +1073,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c22534bb4a917554386bb79adf6e5ce8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.RobotDestructionParticleController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.RobotDestructionParticleController
   vehicleRoot: {fileID: 5226239542433404041}
   mainExplosionPrefab: {fileID: 7895526309886889511, guid: a1997d60dc39d5f488dbfa129b672ef6,
     type: 3}
@@ -2878,7 +2878,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2519292aa3224502a906942945245d78, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodyVerticalSpringController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleBodyVerticalSpringController
   vehicleRoot: {fileID: 5226239542433404041}
   chassis: {fileID: 6895717797577355721}
   verticalSpeedDeadZone: 0.05

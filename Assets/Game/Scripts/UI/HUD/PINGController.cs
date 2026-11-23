@@ -1,10 +1,10 @@
 using FishNet;
 using FishNet.Managing.Timing;
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Diagnostics;
 using TMPro;
 using UnityEngine;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class PingController : MonoBehaviour
     {

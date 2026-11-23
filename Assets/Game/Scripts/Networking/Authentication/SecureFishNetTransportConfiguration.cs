@@ -3,7 +3,7 @@ using FishNet.Managing;
 using FishNet.Transporting.UTP;
 using UnityEngine;
 
-namespace Game.Scripts.Networking.Authentication
+namespace RAV.Scripts.Networking.Authentication
 {
     [DefaultExecutionOrder(-1000)]
     public sealed class SecureFishNetTransportConfiguration : MonoBehaviour
@@ -31,15 +31,15 @@ namespace Game.Scripts.Networking.Authentication
 
             transport.UseEncryption = true;
 
-            string serverCertificate = ReadSecret("WOM_UTP_SERVER_CERTIFICATE");
-            string serverPrivateKey = ReadSecret("WOM_UTP_SERVER_PRIVATE_KEY");
+            string serverCertificate = ReadSecret("RAV_UTP_SERVER_CERTIFICATE", "WOM_UTP_SERVER_CERTIFICATE");
+            string serverPrivateKey = ReadSecret("RAV_UTP_SERVER_PRIVATE_KEY", "WOM_UTP_SERVER_PRIVATE_KEY");
             if (!string.IsNullOrWhiteSpace(serverCertificate) && !string.IsNullOrWhiteSpace(serverPrivateKey))
             {
                 transport.SetServerSecrets(serverCertificate, serverPrivateKey);
             }
 
-            string serverCommonName = GetEnvironmentValue("WOM_UTP_SERVER_COMMON_NAME");
-            string caCertificate = ReadSecret("WOM_UTP_CA_CERTIFICATE");
+            string serverCommonName = GetEnvironmentValue("RAV_UTP_SERVER_COMMON_NAME", "WOM_UTP_SERVER_COMMON_NAME");
+            string caCertificate = ReadSecret("RAV_UTP_CA_CERTIFICATE", "WOM_UTP_CA_CERTIFICATE");
             if (!string.IsNullOrWhiteSpace(serverCommonName))
             {
                 transport.SetClientSecrets(serverCommonName, string.IsNullOrWhiteSpace(caCertificate) ? null : caCertificate);
@@ -56,9 +56,9 @@ namespace Game.Scripts.Networking.Authentication
             }
         }
 
-        private static string ReadSecret(string environmentVariable)
+        private static string ReadSecret(string environmentVariable, string legacyEnvironmentVariable)
         {
-            string value = GetEnvironmentValue(environmentVariable);
+            string value = GetEnvironmentValue(environmentVariable, legacyEnvironmentVariable);
             if (string.IsNullOrWhiteSpace(value))
             {
                 return string.Empty;
@@ -85,22 +85,26 @@ namespace Game.Scripts.Networking.Authentication
             return value;
         }
 
-        private static string GetEnvironmentValue(string name)
+        private static string GetEnvironmentValue(string name, string legacyName)
         {
             string value = System.Environment.GetEnvironmentVariable(name) ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                value = System.Environment.GetEnvironmentVariable(legacyName) ?? string.Empty;
+            }
             if (!string.IsNullOrWhiteSpace(value))
             {
                 return value;
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            return ReadLocalClientValue(name);
+            return ReadLocalClientValue(name, legacyName);
 #else
             return string.Empty;
 #endif
         }
 
-        private static string ReadLocalClientValue(string name)
+        private static string ReadLocalClientValue(string name, string legacyName)
         {
             string[] paths =
             {
@@ -128,7 +132,7 @@ namespace Game.Scripts.Networking.Authentication
                         }
 
                         int separator = line.IndexOf('=');
-                        if (separator <= 0 || !string.Equals(line.Substring(0, separator).Trim(), name, System.StringComparison.Ordinal))
+                        if (separator <= 0 || (!string.Equals(line.Substring(0, separator).Trim(), name, System.StringComparison.Ordinal) && !string.Equals(line.Substring(0, separator).Trim(), legacyName, System.StringComparison.Ordinal)))
                         {
                             continue;
                         }

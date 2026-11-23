@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Game.Scripts.Core.Helpers;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Core.Helpers;
+using RAV.Scripts.Networking.Lobby;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Scripts.World.Spawns
+namespace RAV.Scripts.World.Spawns
 {
     public class SpawnPoint : NetworkBehaviour
     {

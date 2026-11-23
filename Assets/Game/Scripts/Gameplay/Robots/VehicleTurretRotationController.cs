@@ -1,9 +1,9 @@
 using FishNet.Object;
-using Game.Scripts.Audio;
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Diagnostics;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     [DefaultExecutionOrder(-20)]
     public class VehicleTurretRotationController : NetworkBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer

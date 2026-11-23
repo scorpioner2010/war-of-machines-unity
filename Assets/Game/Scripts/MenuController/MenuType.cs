@@ -1,4 +1,4 @@
-namespace Game.Scripts.MenuController
+namespace RAV.Scripts.MenuController
 {
     public enum MenuType
     {

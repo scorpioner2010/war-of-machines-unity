@@ -4,7 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class CameraRuntimeZoomOverridePlayModeTests
     {
@@ -16,7 +16,7 @@ namespace Game.Tests.PlayMode
             object previous = null;
             try
             {
-                Type cameraSyncType = GetType("Game.Scripts.Gameplay.Robots.CameraSync, Assembly-CSharp");
+                Type cameraSyncType = GetType("RAV.Scripts.Gameplay.Robots.CameraSync, Assembly-CSharp");
                 Assert.IsNotNull(cameraSyncType);
                 cameraSyncIn = cameraSyncType.GetField("In", BindingFlags.Public | BindingFlags.Static);
                 Assert.IsNotNull(cameraSyncIn);
@@ -50,10 +50,10 @@ namespace Game.Tests.PlayMode
 
             try
             {
-                Type clientSettingsType = GetType("Game.Scripts.Client.ClientSettings, Assembly-CSharp");
-                Type runtimeSettingsType = GetType("Game.Scripts.Client.GameplayRuntimeSettings, Assembly-CSharp");
-                Type profileType = GetType("Game.Scripts.Client.CameraZoomProfile, Assembly-CSharp");
-                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type clientSettingsType = GetType("RAV.Scripts.Client.ClientSettings, Assembly-CSharp");
+                Type runtimeSettingsType = GetType("RAV.Scripts.Client.GameplayRuntimeSettings, Assembly-CSharp");
+                Type profileType = GetType("RAV.Scripts.Client.CameraZoomProfile, Assembly-CSharp");
+                Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
 
                 clientSettingsIn = clientSettingsType.GetField("In", BindingFlags.Public | BindingFlags.Static);
                 Assert.IsNotNull(clientSettingsIn);
@@ -107,7 +107,7 @@ namespace Game.Tests.PlayMode
         [Test]
         public void RuntimeZoomOverrideFieldsSurviveValidationAndCopy()
         {
-            Type runtimeSettingsType = GetType("Game.Scripts.Client.GameplayRuntimeSettings, Assembly-CSharp");
+            Type runtimeSettingsType = GetType("RAV.Scripts.Client.GameplayRuntimeSettings, Assembly-CSharp");
             object source = Activator.CreateInstance(runtimeSettingsType);
             object target = Activator.CreateInstance(runtimeSettingsType);
 
@@ -131,9 +131,9 @@ namespace Game.Tests.PlayMode
             GameObject cameraObject = new GameObject("SpectatorVisibilityCamera");
             try
             {
-                Type vehicleRootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-                Type visibilityType = GetType("Game.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
-                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type vehicleRootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type visibilityType = GetType("RAV.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
+                Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 visualObject.transform.SetParent(vehicleObject.transform, false);
                 MeshRenderer renderer = visualObject.AddComponent<MeshRenderer>();
                 Component vehicleRoot = vehicleObject.AddComponent(vehicleRootType);
@@ -174,9 +174,9 @@ namespace Game.Tests.PlayMode
             GameObject cameraObject = new GameObject("SpectatorStartVisibilityCamera");
             try
             {
-                Type vehicleRootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-                Type visibilityType = GetType("Game.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
-                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type vehicleRootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type visibilityType = GetType("RAV.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
+                Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 visualObject.transform.SetParent(vehicleObject.transform, false);
                 MeshRenderer renderer = visualObject.AddComponent<MeshRenderer>();
                 Component vehicleRoot = vehicleObject.AddComponent(vehicleRootType);
@@ -209,7 +209,7 @@ namespace Game.Tests.PlayMode
             GameObject rigObject = new GameObject("DeathDetachCameraRig");
             try
             {
-                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 cameraObject.transform.SetParent(vehicleObject.transform, false);
                 rigObject.transform.SetParent(vehicleObject.transform, false);
                 Component cameraController = cameraObject.AddComponent(cameraControllerType);
@@ -237,7 +237,7 @@ namespace Game.Tests.PlayMode
             GameObject rigObject = new GameObject("RepeatedDeathDetachCameraRig");
             try
             {
-                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 cameraObject.transform.SetParent(vehicleObject.transform, false);
                 rigObject.transform.SetParent(vehicleObject.transform, false);
                 cameraObject.transform.position = new Vector3(-4f, 1f, 2f);
@@ -271,7 +271,7 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type cameraControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 rigObject.transform.position = new Vector3(4f, 2f, 8f);
                 cameraObject.transform.SetParent(vehicleObject.transform, true);
                 Component cameraController = cameraObject.AddComponent(cameraControllerType);
@@ -306,7 +306,7 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type cameraControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 rigObject.transform.SetParent(cameraObject.transform, false);
                 Component cameraController = cameraObject.AddComponent(cameraControllerType);
                 SetField(cameraController, "rig", rigObject.transform);
@@ -341,13 +341,13 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type cameraControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 Type phaseType = cameraControllerType.GetNestedType(
                     "DeathSpectatorPhase",
                     BindingFlags.NonPublic);
                 Component cameraController = cameraObject.AddComponent(cameraControllerType);
                 Component targetRoot = targetObject.AddComponent(
-                    GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp"));
+                    GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp"));
                 SetField(cameraController, "_deathSpectatorPhase", Enum.Parse(phaseType, "KillerIntro"));
                 SetField(cameraController, "_pendingKillerObjectId", -1);
                 SetField(cameraController, "_spectatorTarget", targetRoot);
@@ -373,9 +373,9 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type cameraControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 Type vehicleRootType = GetType(
-                    "Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
                 Type phaseType = cameraControllerType.GetNestedType(
                     "DeathSpectatorPhase",
                     BindingFlags.NonPublic);
@@ -425,7 +425,7 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type cameraControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 Type phaseType = cameraControllerType.GetNestedType(
                     "DeathSpectatorPhase",
                     BindingFlags.NonPublic);
@@ -464,11 +464,11 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type presenterType = GetType(
-                    "Game.Scripts.UI.HUD.SpectatorVehicleHudPresenter, Assembly-CSharp");
+                    "RAV.Scripts.UI.HUD.SpectatorVehicleHudPresenter, Assembly-CSharp");
                 Type cameraControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 Type vehicleRootType = GetType(
-                    "Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
                 Type phaseType = cameraControllerType.GetNestedType(
                     "DeathSpectatorPhase",
                     BindingFlags.NonPublic);
@@ -508,7 +508,7 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type collisionControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraCollisionController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraCollisionController, Assembly-CSharp");
                 Component collisionController = cameraObject.AddComponent(collisionControllerType);
                 Rigidbody debrisRigidbody = debrisObject.AddComponent<Rigidbody>();
                 int chassisLayer = LayerMask.NameToLayer("Chassis");
@@ -537,7 +537,7 @@ namespace Game.Tests.PlayMode
             try
             {
                 Type cameraControllerType = GetType(
-                    "Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                    "RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 Type phaseType = cameraControllerType.GetNestedType(
                     "DeathSpectatorPhase",
                     BindingFlags.NonPublic);
@@ -584,16 +584,16 @@ namespace Game.Tests.PlayMode
             GameObject cameraObject = new GameObject("SpectatorTeamCamera");
             try
             {
-                Type vehicleRootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-                Type initializerType = GetType("Game.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
-                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type vehicleRootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type initializerType = GetType("RAV.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
+                Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 Component vehicleRoot = vehicleObject.AddComponent(vehicleRootType);
                 Component initializer = vehicleObject.AddComponent(initializerType);
                 Component cameraController = cameraObject.AddComponent(cameraControllerType);
                 SetField(vehicleRoot, "characterInit", initializer);
                 SetField(cameraController, "vehicleRoot", vehicleRoot);
 
-                Type matchTeamType = GetType("Game.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
+                Type matchTeamType = GetType("RAV.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
                 object teamA = Enum.Parse(matchTeamType, "TeamA");
                 SetTeam(initializer, "TeamA");
 
@@ -618,9 +618,9 @@ namespace Game.Tests.PlayMode
             GameObject visualObject = new GameObject("VisibilityAllyVisual");
             try
             {
-                Type vehicleRootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-                Type initializerType = GetType("Game.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
-                Type visibilityType = GetType("Game.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
+                Type vehicleRootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type initializerType = GetType("RAV.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
+                Type visibilityType = GetType("RAV.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
                 Component localRoot = localObject.AddComponent(vehicleRootType);
                 Component localInitializer = localObject.AddComponent(initializerType);
                 Component targetRoot = targetObject.AddComponent(vehicleRootType);
@@ -661,9 +661,9 @@ namespace Game.Tests.PlayMode
             GameObject visualObject = new GameObject("VisibilitySnapshotEnemyVisual");
             try
             {
-                Type vehicleRootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-                Type initializerType = GetType("Game.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
-                Type visibilityType = GetType("Game.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
+                Type vehicleRootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type initializerType = GetType("RAV.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
+                Type visibilityType = GetType("RAV.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
                 Component localRoot = localObject.AddComponent(vehicleRootType);
                 Component localInitializer = localObject.AddComponent(initializerType);
                 Component targetRoot = targetObject.AddComponent(vehicleRootType);
@@ -683,8 +683,8 @@ namespace Game.Tests.PlayMode
                 Invoke(visibility, "OnVehicleClientStarted");
                 int targetObjectId = (int)GetProperty(GetField(targetRoot, "networkObject"), "ObjectId");
 
-                Type visibilityStateType = GetType("Game.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
-                Type relationType = GetType("Game.Scripts.Networking.Lobby.MapVehicleVisibilityRelation, Assembly-CSharp");
+                Type visibilityStateType = GetType("RAV.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
+                Type relationType = GetType("RAV.Scripts.Networking.Lobby.MapVehicleVisibilityRelation, Assembly-CSharp");
                 MethodInfo clearMethod = visibilityStateType.GetMethod("Clear", BindingFlags.Public | BindingFlags.Static);
                 MethodInfo applyMethod = visibilityStateType.GetMethod("Apply", BindingFlags.Public | BindingFlags.Static);
                 Assert.IsNotNull(clearMethod, "GameplayMapVisibilityState.Clear");
@@ -711,7 +711,7 @@ namespace Game.Tests.PlayMode
             }
             finally
             {
-                Type visibilityStateType = Type.GetType("Game.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
+                Type visibilityStateType = Type.GetType("RAV.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
                 MethodInfo clearMethod = visibilityStateType != null
                     ? visibilityStateType.GetMethod("Clear", BindingFlags.Public | BindingFlags.Static)
                     : null;
@@ -730,9 +730,9 @@ namespace Game.Tests.PlayMode
             GameObject visualObject = new GameObject("VisibilityMemoryEnemyVisual");
             try
             {
-                Type vehicleRootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-                Type initializerType = GetType("Game.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
-                Type visibilityType = GetType("Game.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
+                Type vehicleRootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type initializerType = GetType("RAV.Scripts.Gameplay.Robots.VehicleNetworkInitializer, Assembly-CSharp");
+                Type visibilityType = GetType("RAV.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
                 Component localRoot = localObject.AddComponent(vehicleRootType);
                 Component localInitializer = localObject.AddComponent(initializerType);
                 Component targetRoot = targetObject.AddComponent(vehicleRootType);
@@ -751,8 +751,8 @@ namespace Game.Tests.PlayMode
                 Invoke(visibility, "CacheLocalPlayerTeam", localRoot);
                 Invoke(visibility, "OnVehicleClientStarted");
 
-                Type visibilityStateType = GetType("Game.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
-                Type relationType = GetType("Game.Scripts.Networking.Lobby.MapVehicleVisibilityRelation, Assembly-CSharp");
+                Type visibilityStateType = GetType("RAV.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
+                Type relationType = GetType("RAV.Scripts.Networking.Lobby.MapVehicleVisibilityRelation, Assembly-CSharp");
                 MethodInfo clearMethod = visibilityStateType.GetMethod("Clear", BindingFlags.Public | BindingFlags.Static);
                 MethodInfo applyMethod = visibilityStateType.GetMethod("Apply", BindingFlags.Public | BindingFlags.Static);
                 Assert.IsNotNull(clearMethod, "GameplayMapVisibilityState.Clear");
@@ -778,7 +778,7 @@ namespace Game.Tests.PlayMode
             }
             finally
             {
-                Type visibilityStateType = Type.GetType("Game.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
+                Type visibilityStateType = Type.GetType("RAV.Scripts.UI.HUD.GameplayMapVisibilityState, Assembly-CSharp");
                 MethodInfo clearMethod = visibilityStateType != null
                     ? visibilityStateType.GetMethod("Clear", BindingFlags.Public | BindingFlags.Static)
                     : null;
@@ -797,9 +797,9 @@ namespace Game.Tests.PlayMode
             GameObject cameraObject = new GameObject("SpectatorWreckCamera");
             try
             {
-                Type vehicleRootType = GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-                Type visibilityType = GetType("Game.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
-                Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+                Type vehicleRootType = GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+                Type visibilityType = GetType("RAV.Scripts.Gameplay.Robots.VehicleClientVisibility, Assembly-CSharp");
+                Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
                 visualObject.transform.SetParent(vehicleObject.transform, false);
                 MeshRenderer renderer = visualObject.AddComponent<MeshRenderer>();
                 Component vehicleRoot = vehicleObject.AddComponent(vehicleRootType);
@@ -832,7 +832,7 @@ namespace Game.Tests.PlayMode
         [Test]
         public void DeathSpectatorMouseDirectionsWrapInOppositeDirections()
         {
-            Type cameraControllerType = GetType("Game.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
+            Type cameraControllerType = GetType("RAV.Scripts.Gameplay.Robots.CameraController, Assembly-CSharp");
             MethodInfo wrapIndex = cameraControllerType.GetMethod(
                 "WrapIndex",
                 BindingFlags.NonPublic | BindingFlags.Static);
@@ -847,7 +847,7 @@ namespace Game.Tests.PlayMode
         public void VehicleInputControllerExposesOwnerRequestAndSynchronizedState()
         {
             Type inputControllerType = GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleInputController, Assembly-CSharp");
 
             Assert.IsNotNull(inputControllerType.GetProperty(
                 "IsAutonomous",
@@ -867,7 +867,7 @@ namespace Game.Tests.PlayMode
         public void VehicleBotBrainProvidesExplicitStopLifecycle()
         {
             Type botBrainType = GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleBotBrain, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleBotBrain, Assembly-CSharp");
 
             Assert.IsNotNull(botBrainType.GetMethod(
                 "StartBrain",
@@ -969,7 +969,7 @@ namespace Game.Tests.PlayMode
             FieldInfo teamField = initializer.GetType().GetField("Team", BindingFlags.Public | BindingFlags.Instance);
             Assert.IsNotNull(teamField, "Team");
             object teamSyncVar = teamField.GetValue(initializer);
-            Type teamType = GetType("Game.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
+            Type teamType = GetType("RAV.Scripts.Networking.Lobby.MatchTeam, Assembly-CSharp");
             object teamValue = Enum.Parse(teamType, teamName);
             SetField(teamSyncVar, "_initialValue", teamValue);
             SetField(teamSyncVar, "_value", teamValue);

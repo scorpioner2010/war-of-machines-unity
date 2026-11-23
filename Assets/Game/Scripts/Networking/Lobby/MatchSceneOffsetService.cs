@@ -1,7 +1,7 @@
 using UnityEngine;
 using UEScene = UnityEngine.SceneManagement.Scene;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public sealed class MatchSceneOffsetService
     {

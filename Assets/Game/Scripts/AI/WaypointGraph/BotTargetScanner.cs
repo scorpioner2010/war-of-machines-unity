@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Server;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Server;
 using UnityEngine;
-using LobbyPlayer = Game.Scripts.Networking.Lobby.Player;
+using LobbyPlayer = RAV.Scripts.Networking.Lobby.Player;
 
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     internal sealed class BotTargetScanner
     {

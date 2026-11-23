@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.Core.Services;
+using RAV.Scripts.Core.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,7 +10,7 @@ using UnityEngine.UI;
 using UnityEditor;
 #endif
 
-namespace Game.Scripts.Core.Helpers
+namespace RAV.Scripts.Core.Helpers
 {
     public class GameplayAssistantMember : MonoBehaviour
     {

@@ -1,7 +1,7 @@
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 using UnityEngine;
 
-namespace Game.Scripts.Server
+namespace RAV.Scripts.Server
 {
     [System.Serializable]
     public class RobotMovementGlobalSettings
@@ -804,7 +804,7 @@ namespace Game.Scripts.Server
         [Tooltip("Delay before showing the result screen after battle completion, in milliseconds.")]
         public int endGameDelayMilliseconds = 2000;
         [Tooltip("Match duration in seconds before automatic draw completion.")]
-        public float matchDurationSeconds = 300f;
+        public float matchDurationSeconds = 600f;
 
         public static MatchSceneGlobalSettings Default
         {
@@ -858,7 +858,7 @@ namespace Game.Scripts.Server
         [Tooltip("Number of real players for an immediate start and target total participants. After matchmaking, the server fills the remaining slots with bots.")]
         public int maxPlayersForFindRoom = 1;
         [Tooltip("How many seconds the room waits before starting if it is not full.")]
-        public int findRoomSeconds = 60;
+        public int findRoomSeconds = 30;
         [Header("Bots")]
         [Tooltip("Add bots to fill the match to maxPlayersForFindRoom.")]
         public bool botsEnabled = true;
@@ -910,7 +910,7 @@ namespace Game.Scripts.Server
         {
             if (In == null || In.findRoomSeconds <= 0)
             {
-                return 60;
+                return 30;
             }
 
             return In.findRoomSeconds;

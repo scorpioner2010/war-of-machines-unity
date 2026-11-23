@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     [DefaultExecutionOrder(100)]
     public class VehicleGunRecoilController : MonoBehaviour, IVehicleRootAware

@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Game.Scripts.Client;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Client;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class GameplayPlayerListHud : MonoBehaviour
     {
