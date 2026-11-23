@@ -1,9 +1,9 @@
 #if UNITY_EDITOR
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 
-namespace Game.Scripts.Editor
+namespace RAV.Scripts.Editor
 {
     public sealed class DiagnosticsEditorMenu : EditorWindow
     {

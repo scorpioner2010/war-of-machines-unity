@@ -6,7 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class VehicleTestCatalogPlayModeTests
     {
@@ -17,9 +17,9 @@ namespace Game.Tests.PlayMode
             GameObject prefabObject = new GameObject("VehicleTestCatalogRegressionPrefab");
             Type registryType = Type.GetType("RobotRegistry, Assembly-CSharp");
             Type itemType = Type.GetType("RobotRegistry+Item, Assembly-CSharp");
-            Type prefabType = Type.GetType("Game.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
-            Type statsType = Type.GetType("Game.Scripts.Gameplay.Robots.VehicleRuntimeStats, Assembly-CSharp");
-            Type controllerType = Type.GetType("Game.Scripts.Testing.VehicleTestSceneController, Assembly-CSharp");
+            Type prefabType = Type.GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+            Type statsType = Type.GetType("RAV.Scripts.Gameplay.Robots.VehicleRuntimeStats, Assembly-CSharp");
+            Type controllerType = Type.GetType("RAV.Scripts.Testing.VehicleTestSceneController, Assembly-CSharp");
             Assert.IsNotNull(registryType);
             Assert.IsNotNull(itemType);
             Assert.IsNotNull(prefabType);
@@ -70,7 +70,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator OfflineMenuDataKeepsSelectionAndDistinctVehicleStats()
         {
             GameObject testObject = new GameObject("OfflineMenuDataRegressionController");
-            Type testModeType = Type.GetType("Game.Scripts.Testing.ClientMenuTestMode, Assembly-CSharp");
+            Type testModeType = Type.GetType("RAV.Scripts.Testing.ClientMenuTestMode, Assembly-CSharp");
             Assert.IsNotNull(testModeType);
 
             Component testMode = testObject.AddComponent(testModeType);

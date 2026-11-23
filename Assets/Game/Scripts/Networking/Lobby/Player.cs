@@ -1,8 +1,8 @@
 using System;
 using FishNet.Connection;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     [Serializable]
     public class Player

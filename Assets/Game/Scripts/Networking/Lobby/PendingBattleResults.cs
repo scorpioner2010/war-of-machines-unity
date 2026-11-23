@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public static class PendingBattleResults
     {

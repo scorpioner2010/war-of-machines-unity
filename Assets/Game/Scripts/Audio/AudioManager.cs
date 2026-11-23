@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Scripts.Audio
+namespace RAV.Scripts.Audio
 {
     public class AudioManager
     {

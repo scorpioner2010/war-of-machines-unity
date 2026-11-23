@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.Player.Effects
+namespace RAV.Scripts.Player.Effects
 {
     public class CharacterParticles : MonoBehaviour
     {

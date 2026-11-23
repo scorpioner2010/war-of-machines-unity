@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using NUnit.Framework;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class MatchBattleEndPlayModeTests
     {
@@ -44,7 +44,7 @@ namespace Game.Tests.PlayMode
         public void AuthoritativeDeathDespawnsOnlySpawnedServerVehicles()
         {
             Type vehicleHealthType = Type.GetType(
-                "Game.Scripts.Gameplay.Robots.VehicleHealth, Assembly-CSharp");
+                "RAV.Scripts.Gameplay.Robots.VehicleHealth, Assembly-CSharp");
             Assert.IsNotNull(vehicleHealthType);
 
             MethodInfo method = vehicleHealthType.GetMethod(
@@ -59,7 +59,7 @@ namespace Game.Tests.PlayMode
 
         private static object CreatePlayer(bool isBot, bool leftBattle, bool hasConnection)
         {
-            Type playerType = Type.GetType("Game.Scripts.Networking.Lobby.Player, Assembly-CSharp");
+            Type playerType = Type.GetType("RAV.Scripts.Networking.Lobby.Player, Assembly-CSharp");
             Assert.IsNotNull(playerType);
 
             object player = Activator.CreateInstance(playerType);
@@ -80,7 +80,7 @@ namespace Game.Tests.PlayMode
 
         private static bool ShouldReceiveEndGame(object player)
         {
-            Type battleRulesType = Type.GetType("Game.Scripts.Networking.Lobby.BattleRules, Assembly-CSharp");
+            Type battleRulesType = Type.GetType("RAV.Scripts.Networking.Lobby.BattleRules, Assembly-CSharp");
             Assert.IsNotNull(battleRulesType);
 
             MethodInfo method = battleRulesType.GetMethod(

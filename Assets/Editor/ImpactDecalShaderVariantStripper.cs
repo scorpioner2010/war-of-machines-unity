@@ -3,7 +3,7 @@ using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Game.Editor
+namespace RAV.Editor
 {
     public sealed class ImpactDecalShaderVariantStripper : IShaderVariantStripper
     {

@@ -1,8 +1,8 @@
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Server;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Server;
 using UnityEngine;
 
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     internal sealed class BotFireDecision
     {

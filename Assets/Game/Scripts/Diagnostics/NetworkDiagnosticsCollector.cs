@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using FishNet.Managing;
 using FishNet.Transporting;
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class NetworkDiagnosticsCollector
     {

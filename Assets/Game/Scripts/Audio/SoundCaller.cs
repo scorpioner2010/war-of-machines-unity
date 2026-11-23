@@ -1,8 +1,8 @@
 using FishNet;
-using Game.Scripts.MenuController;
+using RAV.Scripts.MenuController;
 using UnityEngine;
 
-namespace Game.Scripts.Audio
+namespace RAV.Scripts.Audio
 {
     public class SoundCaller : MonoBehaviour
     {

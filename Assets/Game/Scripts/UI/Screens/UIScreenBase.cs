@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.UI.Screens
+namespace RAV.Scripts.UI.Screens
 {
     public class UIScreenBase<T> : MonoBehaviour where T : UIScreenBase<T>
     {

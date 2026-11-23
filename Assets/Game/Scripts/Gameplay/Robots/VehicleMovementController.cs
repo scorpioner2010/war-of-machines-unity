@@ -1,11 +1,11 @@
 using FishNet.Managing.Timing;
 using FishNet.Component.Transforming;
 using UnityEngine;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Battle;
-using Game.Scripts.Server;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Battle;
+using RAV.Scripts.Server;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class VehicleMovementController : MonoBehaviour, IVehicleRootAware, IVehicleInitializable, IVehicleStatsConsumer
     {

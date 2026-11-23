@@ -68,7 +68,7 @@ Current owner scripts:
   - The VehicleTest `Bots` tab adds random ally/enemy bot `Player` records and uses `MatchVehicleSpawner.SpawnBotAsync` instead of custom bot instantiation.
 
 Spawn flow:
-1. Room is created for real players. It starts immediately when `maxPlayersForFindRoom` real players arrive or after `findRoomSeconds`; if bots are enabled, the server then adds `maxPlayersForFindRoom - realPlayerCount` bots.
+1. Room is created for real players. It starts immediately when `maxPlayersForFindRoom` real players arrive or after the configured search window, currently 30 seconds (`ServerSettings.findRoomSeconds`); if bots are enabled, the server then adds `maxPlayersForFindRoom - realPlayerCount` bots.
 2. `GameplaySpawner` loads the selected map scene additively for the room.
 3. The room receives a scene slot and scene offset so multiple matches can exist at once.
 4. `MatchVehicleSpawner` chooses a free `SpawnPoint` for each player/bot team.
@@ -81,6 +81,8 @@ Spawn flow:
 11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team. VehicleTest forces its spawned vehicles' client presentation visible because its test room does not receive the normal match visibility snapshots.
 12. In Client editor test mode, the prepared `VehicleTest` room is added to `LobbyRooms`, marked active, and passed to `GameplaySpawner.StartEditorTestMatch`; this keeps the normal timer and visibility tick path active for the test session.
 13. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
+
+The synchronized battle timer uses `MatchSceneGlobalSettings.matchDurationSeconds`, currently 600 seconds (ten minutes). It displays the full duration during pre-battle countdown, then starts decrementing after the countdown completes for every connected real player; the pre-battle countdown does not reduce match time. Reaching zero still finishes the match as a draw.
 
 Team population:
 - `ServerRoom.AssignTeams` balances real players first, then assigns generated bots to the remaining TeamA/TeamB slots so the final teams differ by at most one participant. For a target of 20 with six real players, each team receives three real players and seven bots.

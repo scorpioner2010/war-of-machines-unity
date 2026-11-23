@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Game.Scripts.Core.Resources;
-using Game.Scripts.Server;
+using RAV.Scripts.Core.Resources;
+using RAV.Scripts.Server;
 using UnityEngine;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public sealed class MatchBotPopulationService
     {

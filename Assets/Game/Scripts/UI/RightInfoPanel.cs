@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Game.Scripts.API;
-using Game.Scripts.Core.Resources;
-using Game.Scripts.MenuController;
-using Game.Scripts.UI.MainMenu;
-using Game.Scripts.UI.Tree;
+using RAV.Scripts.API;
+using RAV.Scripts.Core.Resources;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.UI.MainMenu;
+using RAV.Scripts.UI.Tree;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI
+namespace RAV.Scripts.UI
 {
     public sealed class RightInfoPanel : MonoBehaviour
     {

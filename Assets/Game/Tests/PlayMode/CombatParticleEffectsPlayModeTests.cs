@@ -5,7 +5,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class CombatParticleEffectsPlayModeTests
     {
@@ -136,7 +136,7 @@ namespace Game.Tests.PlayMode
         public void ParticleCameraOffsetUsesOneWorldUnitByDefault()
         {
             Type runtimeSettingsType = Type.GetType(
-                "Game.Scripts.Client.GameplayRuntimeSettings, Assembly-CSharp");
+                "RAV.Scripts.Client.GameplayRuntimeSettings, Assembly-CSharp");
             Assert.IsNotNull(runtimeSettingsType);
             FieldInfo defaultOffsetField = runtimeSettingsType.GetField(
                 "DefaultParticleCameraOffset",

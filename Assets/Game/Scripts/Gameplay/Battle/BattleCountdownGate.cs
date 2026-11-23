@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Networking.Lobby;
 
-namespace Game.Scripts.Gameplay.Battle
+namespace RAV.Scripts.Gameplay.Battle
 {
     public static class BattleCountdownGate
     {
@@ -49,6 +49,11 @@ namespace Game.Scripts.Gameplay.Battle
             {
                 ServerLockedRooms.Remove(roomId);
             }
+        }
+
+        public static bool IsServerCountdownActive(string roomId)
+        {
+            return !string.IsNullOrWhiteSpace(roomId) && ServerLockedRooms.Contains(roomId);
         }
 
         public static bool IsServerMovementAndFiringBlocked(VehicleRoot vehicleRoot)

@@ -1,4 +1,4 @@
-namespace Game.Scripts.UI.Screens
+namespace RAV.Scripts.UI.Screens
 {
     public enum PopupType
     {

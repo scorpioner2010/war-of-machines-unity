@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Game.Scripts.Core.Services
+namespace RAV.Scripts.Core.Services
 {
     public class Singleton<TSingleton> : MonoBehaviour where TSingleton : MonoBehaviour
     {

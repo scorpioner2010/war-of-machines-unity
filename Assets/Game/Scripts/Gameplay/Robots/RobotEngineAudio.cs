@@ -1,7 +1,7 @@
-using Game.Scripts.Audio;
+using RAV.Scripts.Audio;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(VehicleRoot))]

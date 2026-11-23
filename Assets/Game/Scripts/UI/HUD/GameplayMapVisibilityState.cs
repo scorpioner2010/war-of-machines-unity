@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Networking.Lobby;
 using UnityEngine;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public static class GameplayMapVisibilityState
     {

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
-using Game.Scripts.API.Endpoints;
-using Game.Scripts.Networking.Sessions;
+using RAV.Scripts.API.Endpoints;
+using RAV.Scripts.Networking.Sessions;
 using UnityEngine;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public static class MatchResultService
     {

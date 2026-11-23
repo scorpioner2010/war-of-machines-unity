@@ -1,8 +1,8 @@
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.UI.HUD;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.UI.HUD;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     [DisallowMultipleComponent]
     public sealed class VehicleClientVisibility : MonoBehaviour, IVehicleRootAware

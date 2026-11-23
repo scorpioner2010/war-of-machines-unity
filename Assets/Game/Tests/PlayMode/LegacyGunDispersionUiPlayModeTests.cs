@@ -3,7 +3,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class LegacyGunDispersionUiPlayModeTests
     {
@@ -117,7 +117,7 @@ namespace Game.Tests.PlayMode
             {
                 RectTransform target = gameObject.AddComponent<RectTransform>();
                 target.sizeDelta = new Vector2(100f, 100f);
-                Type crosshairType = Type.GetType("Game.Scripts.UI.HUD.GunCrosshair, Assembly-CSharp");
+                Type crosshairType = Type.GetType("RAV.Scripts.UI.HUD.GunCrosshair, Assembly-CSharp");
                 Assert.IsNotNull(crosshairType);
                 MethodInfo method = crosshairType.GetMethod(
                     "ApplyAimingDiameter",
@@ -144,7 +144,7 @@ namespace Game.Tests.PlayMode
             {
                 RectTransform target = gameObject.AddComponent<RectTransform>();
                 target.sizeDelta = new Vector2(100f, 100f);
-                Type crosshairType = Type.GetType("Game.Scripts.UI.HUD.GunCrosshair, Assembly-CSharp");
+                Type crosshairType = Type.GetType("RAV.Scripts.UI.HUD.GunCrosshair, Assembly-CSharp");
                 Assert.IsNotNull(crosshairType);
                 MethodInfo method = crosshairType.GetMethod(
                     "ApplyAimingDiameter",
@@ -171,7 +171,7 @@ namespace Game.Tests.PlayMode
             {
                 RectTransform target = gameObject.AddComponent<RectTransform>();
                 target.sizeDelta = new Vector2(100f, 100f);
-                Type crosshairType = Type.GetType("Game.Scripts.UI.HUD.GunCrosshair, Assembly-CSharp");
+                Type crosshairType = Type.GetType("RAV.Scripts.UI.HUD.GunCrosshair, Assembly-CSharp");
                 Assert.IsNotNull(crosshairType);
                 MethodInfo method = crosshairType.GetMethod(
                     "ApplyAimingDiameter",
@@ -201,7 +201,7 @@ namespace Game.Tests.PlayMode
 
         private static object CreateSettings()
         {
-            Type settingsType = Type.GetType("Game.Scripts.Gameplay.Robots.GunDispersionGlobalSettings, Assembly-CSharp");
+            Type settingsType = Type.GetType("RAV.Scripts.Gameplay.Robots.GunDispersionGlobalSettings, Assembly-CSharp");
             Assert.IsNotNull(settingsType);
             return Activator.CreateInstance(settingsType);
         }

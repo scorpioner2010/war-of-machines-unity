@@ -1,10 +1,11 @@
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Game.Scripts.Server;
-using Game.Scripts.UI.HUD;
+using RAV.Scripts.Gameplay.Battle;
+using RAV.Scripts.Server;
+using RAV.Scripts.UI.HUD;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public class NetworkGameplayTimer : NetworkBehaviour
     {
@@ -19,6 +20,7 @@ namespace Game.Scripts.Networking.Lobby
 
         public override void OnStartClient()
         {
+            GameplayTimerDisplay.SetTime(Timer.Value);
             Timer.OnChange += (prev, next, server) =>
             {
                 GameplayTimerDisplay.SetTime(next);
@@ -28,6 +30,19 @@ namespace Game.Scripts.Networking.Lobby
         private async UniTask RunTimer()
         {
             Timer.Value = ServerSettings.GetMatchScene().matchDurationSeconds;
+
+            while (IsServerInitialized
+                && serverRoom != null
+                && !serverRoom.isGameFinished
+                && BattleCountdownGate.IsServerCountdownActive(serverRoom.roomId))
+            {
+                await UniTask.Delay(100);
+            }
+
+            if (!IsServerInitialized || serverRoom == null || serverRoom.isGameFinished)
+            {
+                return;
+            }
 
             while (Timer.Value >= 0)
             {

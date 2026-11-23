@@ -1,8 +1,8 @@
-using Game.Scripts.Core.Services;
-using Game.Scripts.Client;
+using RAV.Scripts.Core.Services;
+using RAV.Scripts.Client;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class HealthBarUI : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {

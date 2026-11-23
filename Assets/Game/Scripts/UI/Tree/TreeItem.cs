@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Tree
+namespace RAV.Scripts.UI.Tree
 {
     public class TreeItem : MonoBehaviour
     {

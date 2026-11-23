@@ -13,7 +13,7 @@ using Unity.Profiling;
 using UnityEditor;
 #endif
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class DiagnosticsManager : MonoBehaviour
     {

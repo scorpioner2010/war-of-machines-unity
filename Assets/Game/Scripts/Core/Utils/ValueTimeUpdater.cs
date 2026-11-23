@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Game.Scripts.Core.Utils
+namespace RAV.Scripts.Core.Utils
 {
     public struct EventBool
     {

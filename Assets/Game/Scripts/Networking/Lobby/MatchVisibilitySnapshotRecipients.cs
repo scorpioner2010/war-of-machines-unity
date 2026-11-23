@@ -2,7 +2,7 @@ using System;
 using FishNet.Connection;
 using UnityEngine;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public struct MatchVisibilitySnapshot
     {

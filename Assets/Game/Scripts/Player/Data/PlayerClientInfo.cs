@@ -1,6 +1,6 @@
-using Game.Scripts.API.Models;
+using RAV.Scripts.API.Models;
 
-namespace Game.Scripts.Player.Data
+namespace RAV.Scripts.Player.Data
 {
     public class PlayerClientInfo : IPlayerClientInfo
     {

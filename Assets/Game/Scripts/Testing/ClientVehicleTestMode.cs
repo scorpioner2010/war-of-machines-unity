@@ -1,11 +1,11 @@
 using FishNet.Managing;
-using Game.Scripts.Audio;
-using Game.Scripts.Core.Resources;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Server;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Core.Resources;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Server;
 using UnityEngine;
 
-namespace Game.Scripts.Testing
+namespace RAV.Scripts.Testing
 {
     [DefaultExecutionOrder(-10000)]
     [DisallowMultipleComponent]

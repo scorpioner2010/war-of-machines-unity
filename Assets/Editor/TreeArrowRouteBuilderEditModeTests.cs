@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Game.Scripts.UI.Tree;
+using RAV.Scripts.UI.Tree;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Game.Editor.Tests
+namespace RAV.Editor.Tests
 {
     public sealed class TreeArrowRouteBuilderEditModeTests
     {

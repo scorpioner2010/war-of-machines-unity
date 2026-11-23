@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPlayersForFindRoom: 20
-  findRoomSeconds: 1
+  findRoomSeconds: 30
   botsEnabled: 1
   defaultBotVehicleCode: ia_l1_starter
   botMmr: 1000
@@ -195,4 +195,4 @@ MonoBehaviour:
     sceneSlotSpacingX: 500
     sceneValidationTimeout: 10
     endGameDelayMilliseconds: 5000
-    matchDurationSeconds: 300
+    matchDurationSeconds: 600

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using CartoonFX;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.UI.Settings;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.UI.Settings;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 

@@ -1,0 +1,41 @@
+[Unit]
+Description=RAV Unity Dedicated Server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=rav-server
+Group=rav-server
+WorkingDirectory=/opt/rav/current
+EnvironmentFile=/etc/rav/rav-server.env
+Environment=HOME=/var/lib/rav
+Environment=XDG_CONFIG_HOME=/var/lib/rav/.config
+LoadCredential=server.crt:/etc/rav/credentials/server.crt
+LoadCredential=server.key:/etc/rav/credentials/server.key
+LoadCredential=ca.crt:/etc/rav/credentials/ca.crt
+Environment=RAV_UTP_SERVER_CERTIFICATE=%d/server.crt
+Environment=RAV_UTP_SERVER_PRIVATE_KEY=%d/server.key
+Environment=RAV_UTP_CA_CERTIFICATE=%d/ca.crt
+ExecStart=/opt/rav/current/RAVServer.x86_64 -batchmode -nographics -logFile -
+Restart=on-failure
+RestartSec=5s
+KillSignal=SIGTERM
+TimeoutStopSec=45s
+UMask=0027
+LimitNOFILE=65535
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/rav /var/log/rav
+StandardOutput=append:/var/log/rav/rav-server.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

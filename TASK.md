@@ -4103,3 +4103,345 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore --nologo -v:minimal` and `dotnet build Assembly-CSharp-Editor.csproj --no-restore --nologo -v:minimal` both succeeded; live API/login/match movement validation passed. `git diff --check` still reports existing trailing whitespace in unrelated serialized `Client.unity` lines.
 - **Limitations:** The live visual check verifies no movement after stop over the captured interval; no automated physics regression test exists for this controller.
 - **Status:** COMPLETED
+
+## 2026-11-22 — Deployment readiness audit, stage 1
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-22 02:21 Asia/Manila
+- **User request:** Виконати повний технічний аудит і підготувати перевірений deployment plan для War of Machines на OVHcloud VPS-3; не купувати сервер, не підключатися до production, не виконувати deployment або production migrations, не змінювати gameplay.
+- **Scope:** Unity client/dedicated-server Linux feasibility and runtime architecture; coordinated ASP.NET Core API/PostgreSQL security and migration state; local configuration, Git diffs, deployment docs and resource/operations plan. Expected documentation deliverables: `docs/deployment/DEPLOYMENT_PLAN.md`, `DEPLOYMENT_PROGRESS.md`, `DEPLOYMENT_CHECKLIST.md`.
+- **Acceptance criteria:** Validate findings against current code/configuration and both repositories' working trees; distinguish facts, assumptions, and unperformed tests; document blockers, safe sequence for stages 2–5, redacted environment variable names, resource estimates and readiness criteria; preserve existing changes and stop after stage 1.
+- **Initial state:** Both supplied repository paths exist and contain `AGENTS.md` and `TASK.md`. No separate deployment audit workflow exists in the global memory archive. Repository rules and journals have been read; previous journal history includes unrelated open-looking entries later marked complete. Existing working-tree state has not yet been inspected.
+- **Next step:** Inspect both Git states, project documentation maps, Unity version/build support/dependencies and API configuration/migration owners before writing deployment conclusions.
+
+### Audit checkpoint — current repository and Unity hosting state
+- **Git state:** `main...origin/main`; the only working-tree change is the new append-only `TASK.md` entry for this audit. No existing source or asset changes were present before audit edits.
+- **Editor/packages:** `ProjectVersion.txt` is Unity `6000.3.13f1`; FishNet is `4.6.4`, `com.unity.dedicated-server` is `2.0.2`, FishyUnityTransport is pinned to commit `08756d9733a556018041e52fcb9d2a6035346aeb`, and resolved Unity Transport is `2.7.2`.
+- **Linux build readiness:** The Editor install has Windows Standalone support but no `LinuxStandaloneSupport` module/Mono/IL2CPP server variation. `Assets/Editor/LocalNetworkBuild.cs` only builds `StandaloneWindows64`, `.exe` names and Development builds; no Linux build profile was found. Linux server feasibility is therefore not yet build-verified; the missing build module and Linux build target are concrete blockers to a deliverable artifact.
+- **Platform scan:** No native `.so`/`.dylib` plugin or direct Windows P/Invoke/API was found in owned runtime/editor code; the four `.dll` files are managed/editor/analyzer libraries. `Server.unity` still contains camera/render components, so the Linux server subtarget build must verify visual stripping and client-only paths.
+- **Runtime topology:** `LobbyRooms` is a process-level room registry; `ServerRoom` and `GameplaySpawner` assign per-match additive scene handles/slots and offsets. `MatchBotPopulationService` fills each configured room up to `maxPlayersForFindRoom=20`; bot spawns are staggered. The architecture supports multiple rooms in one server process, but shared CPU/physics/AI cost and safe match count are unmeasured.
+- **Network/security config:** FishyUnityTransport listens on UDP `7770`; `StartServerButtons` accepts runtime port/address env and command-line settings. `SecureFishNetTransportConfiguration` enforces encryption and fails closed without DTLS PEM/cert/key/name settings. Production client API host allowlisting is still hardcoded to the Render hostname, so VPS migration requires an HTTPS-only allowlist update.
+- **Next step:** Verify the FishNet authenticator is actually wired into the runtime prefabs/scenes, trace server registration/shutdown and memory/tick diagnostics, finish API/database/security audit, then draft the three deployment documents.
+- **Documentation location decision:** The backend project already owns `docs/codex-app/deployment-hosting.md`; use the backend project as the canonical location for the requested `docs/deployment/` set and supplement that existing deployment guide instead of duplicating the plan in Unity.
+
+### Підсумок координації Stage 1 deployment audit — 2026-11-22
+- **Результат:** Unity feasibility/runtime findings додані до API repo `WarOfMachinesAPI/docs/deployment/DEPLOYMENT_PLAN.md`; progress і checklist також збережені поруч із наявним backend deployment guide. Це канонічне місце, оскільки API repo вже містить `docs/codex-app/deployment-hosting.md`.
+- **Підтверджено:** Unity 6000.3.13f1 installation не має Linux Standalone Support; відсутні Linux Server profile/build script, production client host allowlist досі обмежений Render. Архітектура підтримує кілька room у процесі, але без вимірювань перша ціль — один 20-slot матч.
+- **Зміни Unity:** Unity source/assets/config не редагувалися; лише цей append-only TASK.md журнал змінений у Unity tree.
+- **Обмеження:** Linux build, headless runtime, DTLS/network, capacity, production DB/endpoint не перевірялися. Production connection/deployment/migration не виконувалися.
+- **Статус:** COMPLETED
+- **Завершено:** 2026-11-22 (Asia/Manila)
+
+## 2026-11-22 — Deployment readiness, stage 2
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-22 (Asia/Manila)
+- **User request:** Виконати Stage 2 локальної Linux build і deployment readiness підготовки для War of Machines за вкладеним запитом.
+- **Scope:** Unity 6000.3.13f1 Linux Dedicated Server module/profile/build/runtime; backend .NET 10 LTS migration; API health/readiness; configurable HTTPS host allowlists; production-oriented Compose/Caddy; Unity systemd/env/backup/health/rollback templates; validation and docs. No VPS purchase, production connection/deployment/migration, Stage 3, paid services, real secrets, auth/DTLS weakening, gameplay changes, or automatic Git commit.
+- **Acceptance criteria:** Complete every safe local task in the attachment; report build vs runtime separately; run available builds/tests/config validation; preserve existing/uncommitted/generated changes; document exact modifications and remaining blockers; mark Stage 2 status and Stage 3 readiness truthfully.
+- **Initial state:** Stage 1 docs and repository status are to be reviewed before implementation. Stage 1 reports existing tracked API bin/obj modifications from the API build; current state must be verified and preserved.
+- **Next step:** Read Stage 1 deployment docs and inspect both repositories' current Git/worktree state, Unity install and build scripts, and API security/configuration owners.
+
+
+### Stage 2 final checkpoint — 2026-11-22
+- **Status:** BLOCKED; Stage 3 readiness: NO.
+- **Completed:** Added a Unity Linux Dedicated Server build profile limited to `Server.unity` and `Map.unity`, and a Mono build menu action. Added an exact HTTPS production API host allowlist resource while keeping localhost Development-only and TLS verification unchanged. Added Linux systemd/env/credentials, release package/deploy/rollback/health/logrotate templates and handoff documentation.
+- **Build evidence:** Unity 6000.3.13f1 Editor build succeeded at `D:\\Programing\\UnityProjects\\war-of-machines-local-builds\\LinuxServer-20261121-192956`. The output contains `WarOfMachinesServer.x86_64`, expected Unity data/shared libraries and ELF magic `7F-45-4C-46`; the Mono Dedicated Server subtarget was used. Editor script compilation had no errors and one existing warning in `ProfileStatisticsPopupRebuilder.cs`. `git diff --check` passed.
+- **Blockers:** The artifact could not be launched on Linux because WSL returns `Wsl/E_ACCESSDENIED` and Docker has no Linux daemon. Headless scene loading, clean shutdown, UDP listener, DTLS/client handshake, API heartbeat and shell script syntax/runtime remain unverified on an isolated Linux host.
+- **Safety boundary:** No production API/DB connection, real credential, deployment, migration, or gameplay change was made.
+- **Next step:** Use an isolated Linux staging host/VM for the Stage 3 runtime, network, authentication, restore and capacity gates; do not treat the build artifact alone as runtime acceptance.
+- **Completed locally:** 2026-11-22 (Asia/Manila); readiness remains blocked pending external Linux runtime evidence.
+## 2026-11-22 — Stage 2B unblock Linux runtime testing
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-22 (Asia/Manila)
+- **User request:** Continue War of Machines Stage 2B: diagnose local WSL/Docker access and run isolated Unity Linux Dedicated Server checks using the existing build.
+- **Scope:** Read-only Windows/WSL/Docker diagnostics first; then non-destructive authorized local runtime and script checks if Linux access is available. No production connection, real secrets, destructive WSL/Docker repair, Windows feature changes or reboot without confirmation, gameplay change, VPS purchase, or commit.
+- **Acceptance:** Establish actual WSL/Docker cause and status; launch existing Linux server and verify headless scene startup/UDP/graceful shutdown if feasible; record DTLS as verified or not; preserve uncommitted/generated state.
+- **Initial state:** Prior Stage 2 journal records an ELF Linux server artifact at the deployment docs path and reports WSL access denied/Docker Linux daemon unavailable. Reuse that artifact; do not rebuild unless necessary.
+- **Next step:** Read project instructions/journals and the Stage 2 docs, then inspect process state and perform read-only WSL/Windows feature/hypervisor/Docker diagnostics.
+### Stage 2B checkpoint — diagnostic results (2026-11-22)
+- **Status:** BLOCKED pending host-side read-only WSL diagnostics; Stage 3 not started.
+- **WSL/Docker:** WSL package version is available, but status/list and Windows feature/CIM/registry reads are denied in this execution context. The requested escalation was rejected by the Codex approval policy. Docker CLI/Compose are installed, but `desktop-linux` has no engine pipe and Docker Desktop cannot start because its registry key is missing.
+- **Runtime:** Existing Linux ELF was preserved and not launched. Headless startup, Linux dependencies, scene/shutdown, UDP 7770, API registration and DTLS handshake are NOT VERIFIED.
+- **Scripts:** Git Bash `bash -n` could not start because MSYS cannot create a named object (`0xC0000022`); ShellCheck is unavailable. No deployment script was executed and executable mode remains unverified.
+- **Safety:** No WSL repair/reinstall, Windows feature change, Docker reset/data deletion, production connection, real secret, or gameplay edit occurred.
+- **Next step:** User runs the read-only Administrator PowerShell diagnostics documented in the API deployment docs outside Codex and sends output; then resume with the minimum safe fix.
+### Stage 2B recovery update — Ubuntu available per user (2026-11-22)
+- **Status:** IN_PROGRESS.
+- **User reports** Ubuntu 24.04.5 LTS/WSL 2 is installed as `Ubuntu-24.04`, account `toraspc`, and host-side `whoami`/OS-release checks succeeded. This is user-provided evidence pending an independent Codex-side check.
+- **Decision:** Preserve the existing WSL install; try the requested read-only distro command once. If denied by sandbox, stop and request host output instead of repeating.
+### Stage 2B resume checkpoint — user reports Ubuntu; Codex still blocked (2026-11-22)
+- **Status:** BLOCKED; Stage 3 not started.
+- **User update:** Host Ubuntu 24.04.5 LTS/WSL 2 and `whoami=toraspc` are user-reported as verified.
+- **Validation:** The one requested Codex attempt `wsl.exe -d Ubuntu-24.04 --exec whoami` returned `Wsl/E_ACCESSDENIED`. Codex host-shell escalation was rejected; computer-use rules prohibit running Windows terminal commands through UI, so no approved alternate terminal is available.
+- **Runtime:** Existing Unity ELF remains untouched and unlaunched. Linux scene/headless startup, dependencies, shutdown, UDP 7770 and DTLS remain NOT VERIFIED. Docker Desktop start fails because its installation key is missing; Docker Engine inside Ubuntu is unknown.
+- **Documentation:** API deployment progress/checklist now record the user's Ubuntu update and the access boundary.
+- **Next step:** Resume only after an approved host-shell route becomes available; do not reinstall Ubuntu, change Windows features, delete Docker data, or start Stage 3.
+## 2026-11-22 — Stage 2 final closeout under owner-approved scope
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-22 (Asia/Manila)
+- **User decision:** Close Stage 2 as “COMPLETED — LOCAL PREPARATION SCOPE”; move unperformed Linux runtime, UDP/DTLS and multiplayer tests to Stage 3. Do not start Stage 3.
+- **Scope:** Verify the existing Unity Linux Dedicated Server artifact/profile and deployment templates; update the coordinated task journal. No rebuild without need, runtime launch, production connection, VPS purchase/provisioning, gameplay change, commit, or discard.
+- **Acceptance:** Distinguish existing build evidence from unperformed runtime tests; record Stage 2 complete only under the revised local-preparation scope and keep all runtime tests deferred.
+- **Initial state:** User reports Ubuntu 24.04.5 LTS/WSL2 works on the host, but Codex's requested WSL invocation returned E_ACCESSDENIED; the existing build and deployment templates were preserved.
+- **Next step:** Read current repo rules/journal, verify existing artifact/profile/templates and synchronize the Unity task journal with the deployment closeout.
+
+
+### Stage 2 closeout completed — 2026-11-22
+- **Status:** COMPLETED — LOCAL PREPARATION SCOPE (per explicit owner decision).
+- **Verified:** Existing Linux Server profile is present and scoped to Server/Map; existing Unity Mono server artifact exists and has ELF header `7F-45-4C-46`; systemd, environment, logrotate and package/deploy/rollback/health templates are present.
+- **Documentation:** API deployment progress/plan/checklist and deployment-hosting guide now define Stage 2 local-preparation completion and Stage 3 isolated staging. Runtime and integration checks are explicitly NOT TESTED — DEFERRED TO STAGE 3.
+- **Validation:** Unity repository `git diff --check` passed. No rebuild or runtime launch was performed; prior successful Unity build report and current artifact were verified.
+- **Limits:** Linux startup, scenes/shutdown, UDP 7770, DTLS, FishNet auth, API/DB containers, registration, tickets, gameplay, load and concurrency remain untested. Production readiness is NO.
+- **Stage 3:** Ready for price/access preflight subject to approved network access and separate owner approval before VPS provisioning. No purchase or provisioning occurred; Stage 3 was not started.
+
+## 2026-11-22 — Project rebranding to RAV
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-22 (Asia/Manila)
+- **User request:** Fully rebrand the Unity multiplayer game from War of Machines to RAV (Robotic Assault Vehicles), tagline Tactical Multiplayer Combat; safely update owned source/config/docs, rename namespaces/assemblies where safe, audit old-name references, preserve existing work, and rename project folders if all checks allow.
+- **Scope:** Unity project branding and technical identifiers, owned project-specific configuration/documentation/build naming; no gameplay behavior changes, destructive Git operations, production changes, external repository rename, or Stage 3B. Preserve serialized GUIDs and pre-existing uncommitted changes.
+- **Acceptance criteria:** Update safe in-scope Unity branding and names; verify references/build/settings as feasible; report residual historical/compatibility references, actual validation, and any blocked physical rename.
+- **Initial state:** Unity root instructions and latest journal entries read. Initial Git status shows existing user changes in LocalNetworkBuild.cs, HttpLink.cs, production-api-hosts resource/meta, Settings, deploy/, and TASK.md; preserve them. No implementation changes for this task yet.
+- **Next step:** Inspect nested rules, task-specific naming references and existing Unity project settings/build profiles before editing; avoid changing gameplay logic.
+### Discovery checkpoint — brand and compatibility map (2026-11-22)
+- Unity source uses old branding in ProductName/build outputs, local build menu labels, diagnostics EditorPrefs keys, the hover-outline shader property, and WOM-prefixed client/server environment variables. The production Render host is an externally controlled HTTPS endpoint; preserve its URL/TLS allowlist. EditorPrefs keys and the shader property are persisted/internal contracts and need compatibility-aware migration.
+- Unity deployment templates use old service/path/executable names and can be renamed as staging templates after every script reference is updated. Generated csproj/IDE state, diagnostic logs, and append-only task history are not source targets.
+- API Git root is D:\Programing\ServerProjects\war-of-machines-API; the .NET project is nested at WarOfMachinesAPI. Initial Git snapshot shows pre-existing edits in Dockerfile, Program.cs, controllers, factory, logging, docs and generated net8.0 output, plus untracked deployment files. Preserve all; inspect touched-file diffs before patching.
+- API namespaces are WarOfMachines.* across owned source and EF migration designer/snapshot metadata. Rename them coherently to RavApi.* while preserving migration IDs, database objects, JWT issuer/audience, local database names and production volume/service identifiers. The actual .env.local is never to be edited or printed.
+- No implementation files changed for this task yet.
+- **Next step:** Inspect the exact diff and file owners, map every environment-variable read/write, and verify current Unity build profile/settings and repository path references.
+### Rebrand recovery checkpoint — 2026-11-22
+- **Status:** IN_PROGRESS
+- **Recovery finding:** The RAV implementation and coordinated docs are present; earlier discovery notes saying no implementation had started are historical and were superseded by the changes below.
+- **Unity changes present:** Product name is RAV; owned build/editor labels and executable naming use RAV; runtime configuration reads RAV-prefixed values with WOM compatibility fallbacks; Linux deployment templates use RAV paths and names; compatibility notes were added.
+- **API changes present:** Project/solution/assembly and owned namespaces use RavApi; Docker/deployment paths use the new project name; existing production host, JWT identifiers, database names, volumes, and user work are preserved.
+- **Validation already recorded:** API `dotnet build` succeeded with 0 errors and two NU1900 feed-access warnings; no tests were run. Unity source currently specifies `RAVServer.x86_64` and `ProductName: RAV`.
+- **Unresolved:** The existing local Linux build directory contains `WarOfMachinesServer.x86_64` / `WarOfMachinesServer_Data`; a fresh post-rebrand Linux build must be produced and checked. The current build run has no Unity process/log evidence.
+- **Working tree:** Existing edits remain unstaged and uncommitted. Do not reset, revert, or delete user data.
+- **Next step:** Run the dedicated Unity Linux batch build into the existing timestamped build root, inspect the resulting RAV executable and log/exit code, then close this task only if the fresh output is valid.
+
+### Unity namespace migration preflight — 2026-11-22
+- **Status:** IN_PROGRESS
+- **Discovery:** The original namespace root `Game.*` remains in 257 Unity C# files, with 150 files importing it. Project-owned reflection strings use assembly-qualified names, and 117 scene/prefab/asset serialized identifiers store `Assembly-CSharp::Game.*` values. These are required dependencies for a safe namespace migration, not grounds to leave the rename incomplete.
+- **Assembly definitions:** Two first-party asmdefs exist (`Game.Gameplay.Shared` and `Game.PlayMode.Tests`); the test asmdef references the shared assembly. Third-party asmdefs are out of scope.
+- **Safety plan:** Migrate only first-party `Assets/Game` and `Assets/Editor` C# namespace roots and matching first-party Unity serialized type identifiers; update the two first-party asmdef names/root namespaces/references; preserve all script `.meta` GUIDs, gameplay code, and Unity's default `Assembly-CSharp` assembly identity.
+- **Next step:** Apply the coordinated RAV namespace/assembly migration, audit for remaining first-party `Game.*` references, then run every available compile/reference check. Unity batch validation is currently blocked by Licensing Client/headless entitlement errors.
+
+### Namespace migration encoding safeguard — 2026-11-22
+- **Status:** IN_PROGRESS
+- **Finding:** A first UTF-8 text migration attempt stopped on a source file containing a non-UTF-8 byte. No asmdef or serialized Unity asset update was reached. Earlier C# files may have received the exact root-prefix change before the stop.
+- **Safety response:** Do not normalize encodings or replay through text decoding. Continue idempotently with ASCII-only byte substitutions over first-party source/assets, preserving every other byte and all `.meta` files/GUIDs.
+- **Next step:** Finish the coordinated namespace and asmdef migration, audit references, then validate compilation as far as the host Licensing Client permits.
+
+### Unity generated-project recovery checkpoint — 2026-11-22
+- **Discovery:** Unity-generated IDE files still point at the pre-rename `war-of-machines-unity` absolute path and reference old custom asmdef project names. These generated `.csproj`/`.sln` files are present but ignored by Git, so they were not refreshed by the physical repository rename.
+- **Decision:** Update the existing generated IDE files in place to the current project root and RAV assembly names, preserving project GUIDs/configuration; rename the two first-party generated project files and the generated solution to RAV names. Keep third-party project/assembly identities unchanged. The next successful Unity project generation may recreate these files.
+- **Next step:** Apply the generated-file path/name migration, build the Unity C# and test projects with `dotnet` if their installed references permit, and audit remaining stale references.
+
+### RAV rebranding final audit checkpoint — 2026-11-22
+- **Status:** BLOCKED pending Unity Editor licensing/headless access and a final RAV Linux build; implementation and available local checks are complete.
+- **Namespace/serialization audit:** 257 first-party C# files use `RAV.*`; no first-party `namespace Game.*` / `using Game.*` files or old `Assembly-CSharp::Game.*` serialized type references remain. The renamed shared and PlayMode-test asmdefs, generated solution/project files, and updated references use RAV names; no stale generated project path was found. Existing script `.meta` GUIDs were preserved.
+- **Validation:** `RAV.Gameplay.Shared.csproj` and `RAV.PlayMode.Tests.csproj` compiled successfully with zero errors; PlayMode tests were not run. The full `Assembly-CSharp.csproj` MSBuild attempt stopped during project-reference resolution before C# compiler diagnostics. API build completed with zero errors and two NU1900 metadata warnings. Local and production Compose files passed static config validation using example/dummy validation inputs; no containers were started. `git -c core.safecrlf=false diff --check` passed in both repositories.
+- **Unity Editor limitation:** The only Linux Editor attempt preceded the final namespace migration and produced no current RAV artifact. Its log reported Licensing Client IPC failures and `com.unity.editor.headless was not found`. The corrected method is `RAV.Editor.LocalNetworkBuild.BuildLinuxDedicatedServer`; do not treat the old WarOfMachines ELF as the rebranded build.
+- **Compatibility:** Remaining old strings are intentionally retained and documented: current production HTTPS/JWT identities; WOM environment fallbacks; existing DB roles, local DB/volume names and persistent paths; EditorPrefs keys; legacy desktop shortcut names; previous build output root; append-only history. No DB, production endpoint/credentials, scene layout, gameplay, security setting, or production service was changed.
+- **Next step:** Restore/sign in to a valid Unity Editor license in Unity Hub and ensure the Unity 6000.3.13f1 Linux Dedicated Server/headless build support is available. Then rerun the corrected RAV Linux build and verify the artifact. Stage 3B remains not ready until that validation and the separate Stage 3A prerequisites are complete.
+## 2026-11-22 — RAV final Linux artifact validation
+- **Status:** IN_PROGRESS
+- **User request:** Verify the manually built Desktop `LinuxServer` Unity Linux Dedicated Server artifact, confirm it postdates the namespace rebrand, inspect Unity build logs/warnings where available, prepare a consistent RAV-named staging copy for future deployment, audit final rebrand state, and update reports. Do not run WSL/runtime tests, start Stage 3B, alter production, or buy a VPS.
+- **Scope:** Read-only inspection of Desktop build and logs; verify Unity runtime/data/scenes/dependencies; compare Unity build/profile/deployment naming and API/rebrand docs; create a separate non-destructive RAV staging copy only if the original build is valid and all naming dependencies align; update project/deployment docs and task journal.
+- **Acceptance:** Establish artifact completeness and creation time; classify available build warnings; confirm Unity/API builds and final RAV references; retain Linux runtime status as NOT TESTED; close rebrand only if both builds are supported by evidence.
+- **Initial state:** Prior RAV implementation checkpoint was blocked only on a fresh Unity Linux build. User now reports a successful manual Unity Editor build with Personal license and Linux Mono/Dedicated Server modules installed, 0 errors and 47 warnings. Existing dirty repository state and prior build outputs must be preserved.
+- **Next step:** Inspect existing Git state and locate the Desktop `LinuxServer` artifact and Unity Editor logs.
+### RAV final rebranding validation closeout — 2026-11-22
+- **Status:** COMPLETED. Linux runtime acceptance remains **NOT TESTED**, as requested.
+- **Unity build:** Confirmed in `C:\Users\TorasPC\AppData\Local\Unity\Editor\Editor.log`: Linux Server Build Profile completed successfully from 19:55:57 to 19:56:46 local time; `Build Finished, Result: Success.`; `Server.unity` and `Map.unity` loaded. The 64-bit x86_64 executable, UnityPlayer, Data folder, `Assembly-CSharp.dll`, `RAV.Gameplay.Shared.dll`, Mono runtime, and native plugin ELF64 libraries are present. Code/namespace changes predate this build. `ProjectSettings.asset` reports `productName: RAV`.
+- **Warnings:** 47 nonfatal build warnings, zero errors: 37 CS0618 obsolete API warnings, four CS0414 unused fields in FishNet utility/demo code, one CS0162 unreachable CFXR vendor-effect code path, and five FishNet upgrade-helper advisories. No RAV-owned compiler warning appears in this set.
+- **Prepared artifact:** Kept Desktop `LinuxServer` intact and created `D:\Programing\UnityProjects\war-of-machines-local-builds\RAVServer-20261122-1956`. Renamed the executable and matching Data directory together to `RAVServer.x86_64` and `RAVServer_Data`; excluded `RAV_BurstDebugInformation_DoNotShip`. SHA-256 compared all 189 retained files with zero missing, changed, or unexpected files. Eight bundled `.so` libraries are ELF64 x86_64.
+- **Deployment alignment:** Package script validates executable, Unity data, managed assembly, Mono runtime and UnityPlayer; package excludes the DoNotShip Burst debug directory. Deploy script rejects archives missing required data/runtime files. `git diff --check` passed. Linux shell script execution and runtime linker resolution were not tested.
+- **API:** `dotnet build RavApi.csproj --no-restore --nologo -v:minimal` passed with zero warnings and errors. Unity rebrand audit: 257 RAV namespace files; no old first-party Game namespaces or serialized `Assembly-CSharp::Game.*` references. API audit: 48 `RavApi.*` namespace files and no old `WarOfMachines.*` declarations/imports. Compose configuration checks remain static only.
+- **Compatibility/safety:** Preserved production HTTPS/JWT identifiers, database schema/migrations/roles, WOM fallback variables, Unity script GUIDs and historical preferences. No database, production, WSL, VPS, or Stage 3B operation occurred.
+- **Remaining tests:** Linux runtime startup and host shared-library resolution, UDP 7770, DTLS, FishNet registration, API/PostgreSQL runtime, deployment script execution, and PlayMode tests remain **NOT TESTED**. Stage 3A remains in progress; Stage 3B is not started.
+## 2026-11-23 — RAV Stage 3B preparation continuation and closeout
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-23 (Asia/Manila)
+- **User request:** Resume the interrupted RAV Stage 3B deployment-readiness task from the existing state; preserve changes, avoid duplicate artifacts, finish the package/documentation/static checks, and stop before VPS deployment or Stage 3B runtime.
+- **Scope:** API repository `D:\Programing\ServerProjects\rav-api` and Unity repository `D:\Programing\UnityProjects\rav-unity`; verify the existing staging bundle, configs and docs, run only the final requested local static checks, and close the deployment journal. Do not check OVH, WSL or production; do not deploy, run migrations, reset/clean, or commit.
+- **Acceptance criteria:** Existing Unity/API artifacts and package are intact; Compose and configuration checks are evidence-backed; deployment plan/progress/checklist are current; `git diff --check` is recorded for both repositories; runtime-only tests remain deferred; no duplicate files or changed user data.
+- **Starting checkpoint:** Prior handoff reports a fresh RAV Linux server artifact embedded in the staging bundle, Release API build and Compose static validation passed, artifact SHA-256 `712af20149fd1ec75484f8a7dc984b02761d998972c88c3ebf9ba76522e39c3f`, and deployment docs updated. Confirm these persisted before changing any project files.
+- **Next step:** Inspect current Git state and deployment docs, verify archive checksum/content and secret exclusion, run both diff whitespace checks, then append final results and close this entry.
+### Final verification checkpoint — 2026-11-23
+- **Working trees:** API has 523 status entries and Unity has 309; these pre-existing/uncommitted changes are preserved. `git -c core.safecrlf=false diff --check` passed in both repositories.
+- **Bundle:** The final archive exists at `D:\Programing\ServerProjects\rav-api\deploy\staging\artifacts\RAV-Staging-3B-20261122T154549Z.tar.gz`; current SHA-256 matches `712af20149fd1ec75484f8a7dc984b02761d998972c88c3ebf9ba76522e39c3f`. Outer archive listing has 119 entries and includes Compose/Caddy, staging env template, API, Unity release archive, systemd units, bootstrap/deploy/rollback/backup/restore/smoke/performance scripts, and first-deploy docs.
+- **Path correction:** The canonical deployment documents are under `RavApi\docs\deployment\`, not at the repository root. The first read-only path assertion used the wrong root; the corrected search located all three requested documents. No files were changed by the failed assertion.
+- **Next step:** Run the final manifest/secret-name and Codex config byte-preservation checks, add a concise 2026-11-23 closeout note to the three canonical deployment documents, then close this journal entry. Runtime/VPS checks remain deferred.
+### Stage 3B local preparation closeout — 2026-11-23
+- **Status:** COMPLETED for local preparation only.
+- **Result:** The existing authoritative bundle is intact and ready as an artifact; SHA-256 `712af20149fd1ec75484f8a7dc984b02761d998972c88c3ebf9ba76522e39c3f`, 119 archive entries, all required staging files present, no unsafe archive paths or secret-material filenames. No duplicate bundle was created.
+- **Documentation:** `RavApi\docs\deployment\DEPLOYMENT_PLAN.md`, `DEPLOYMENT_PROGRESS.md`, and `DEPLOYMENT_CHECKLIST.md` now record the final archive, readiness gates, prior API/Compose pass evidence, current partial local static validation, and all deferred runtime tests.
+- **Validation:** API Release build and Docker Compose static validation had passed during the original preparation (not rerun here). Final API and Unity `git diff --check` passed after documentation/journal updates. Existing working trees remain uncommitted and preserved.
+- **Limitations:** Bash syntax was not parsed locally because the previous Git Bash launch returned `E_ACCESSDENIED`; that attempt was not repeated. The last owner-provided VPS state had no active endpoint/IP or SSH path; OVH was not rechecked. Linux host setup, API/PostgreSQL runtime, Unity headless startup, UDP 7770, FishNet, DTLS, registration/tickets, gameplay/load, backup/restore execution, and deployment/rollback remain **NOT TESTED**.
+- **Readiness:** Bundle **READY**; local static validation **PARTIAL**; **READY FOR VPS DEPLOYMENT: NO** until VPS access is available and the syntax preflight passes. Stage 3B runtime **NOT STARTED**. No production, VPS, migration, or runtime operation occurred.
+- **Completed:** 2026-11-23 (Asia/Manila).
+## 2026-11-23 — RAV local deployment readiness resume
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-23 (Asia/Manila)
+- **User request:** Restore context from local AGENTS/TASK/deployment progress/checklist, inspect both repositories, continue only unfinished local deployment-preparation work, and state actual session permission mode first. Do not edit Codex config or production, perform payment, or run destructive database operations.
+- **Scope:** Read the current RAV deployment handoff, inspect current repository/package state, and resolve any remaining local static-validation gap only if an already available permitted tool can do so. Preserve all existing changes and artifacts. Do not check OVH, repeat WSL/Docker diagnostics, deploy, migrate, commit, reset, clean, or start Stage 3B runtime.
+- **Acceptance criteria:** Current status and pending work are verified; only unfinished safe local work is attempted; deployment docs/journal reflect accurate evidence; remaining external/runtime gates are explicit.
+- **Starting state:** The prior closeout marks the bundle READY, local static validation PARTIAL, VPS deployment not ready, and Stage 3B runtime NOT STARTED. Bash syntax parsing was deferred after an earlier Git Bash `E_ACCESSDENIED`; do not retry that executable.
+- **Next step:** Read current API deployment progress/checklist, then inspect repository status and determine whether a different already-installed local Bash syntax checker is available without WSL/Docker or network installation.
+### Resume inspection checkpoint — 2026-11-23
+- **Repository state:** API status still has 523 entries; Unity has 309. All three deployment documents are untracked in the API repository, and `TASK.md` is the Unity journal. No reset, clean, commit, or project-code change occurred.
+- **Bundle state:** The same archive remains present (77,732,985 bytes) with the previously recorded SHA-256; no duplicate was created.
+- **Remaining local check:** `shellcheck`, `checkbashisms`, `sh`, and a global Node Bash parser are unavailable. The only `bash.exe` found is the WindowsApps alias; it was not executed because this task must not repeat WSL diagnostics. The earlier Git Bash executable was not retried.
+- **Documentation validation:** Found two trailing spaces in the untracked checklist's existing header lines 3-4. Removed only those spaces and corrected the closeout note to state that `git diff --check` does not include untracked docs; final whitespace scanning remains to be run.
+- **Next step:** Re-run `git diff --check` for tracked changes, scan all three untracked deployment docs for trailing whitespace, verify the current readiness note, then close this entry with Bash syntax still deferred to VPS preflight.
+### Final resumed validation — 2026-11-23
+- The authoritative bundle checksum and 119-entry archive listing remain unchanged.
+- Tracked API and Unity changes pass `git diff --check`. The three deployment Markdown files are untracked; a separate whole-file whitespace scan now finds zero trailing whitespace after removing the two pre-existing checklist header spaces.
+- No local `shellcheck`, `checkbashisms`, `sh`, or global npm Bash parser is available. Only the WindowsApps `bash.exe` alias was found and left uninvoked; the earlier Git Bash denial was not repeated, and no WSL diagnostic was run.
+- Remaining local preparation is complete. The Linux `bash -n` gate remains the first non-mutating preflight on the future VPS before any host changes.
+- **Next step:** Record this final tool/whitespace check in deployment progress and checklist, rerun final whitespace/Git checks, and close this entry. No config change, host operation, or production access.
+### RAV local deployment preparation resume closeout — 2026-11-23
+- **Status:** COMPLETED for the local preparation scope.
+- **Result:** Existing staging bundle remains READY at the recorded path/hash; no duplicate package, production change, host operation, database operation, or config.toml change was made.
+- **Documentation:** Appended the current-session tool/whitespace findings to `DEPLOYMENT_PROGRESS.md` and `DEPLOYMENT_CHECKLIST.md`; the plan retains the same current readiness gate. All three are untracked, were explicitly scanned, and now have zero trailing whitespace.
+- **Validation:** Bundle SHA-256 still matches; `git diff --check` passed for tracked API/Unity changes; API Release and Compose static validation remain prior-session passes and were not repeated.
+- **Remaining limitation:** No local Bash syntax parser is available; the WindowsApps `bash.exe` alias was not run and the earlier Git Bash `E_ACCESSDENIED` was not repeated. Keep the non-mutating `bash -n` preflight as the first VPS gate. Last owner-provided state had no active VPS endpoint/SSH path; OVH, WSL, Docker, production, and VPS were not checked or operated in this turn.
+- **Final state:** Local bundle preparation complete; local static validation **PARTIAL**; VPS deployment **NOT READY** until access and preflight; Stage 3B runtime **NOT STARTED**.
+- **Completed:** 2026-11-23 (Asia/Manila).
+## 2026-11-23 — RAV Stage 3A order status and secure access
+
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-23 (Asia/Manila)
+- **User request:** Check OVH order #23370514 once; if active, verify the VPS identity/specs/billing and, only with working authorized SSH access, complete secure Stage 3A setup. If pending, do not retry endlessly or create another order; report and stop. Verify the existing bundle and update deployment progress/checklist. Do not edit config.toml, touch production/database, perform paid actions, or start Stage 3B.
+- **Scope:** Authenticated OVH Control Panel read-only inspection; local read-only verification of the existing RAV staging bundle. If the server is active and SSH access is valid, perform only explicitly authorized Stage 3A security/operations setup, preserving fallback access and avoiding public PostgreSQL exposure.
+- **Acceptance criteria:** Actual order/service status is evidenced; pending branch stops after one check, or active branch confirms hostname/IP/region/Ubuntu/resources/billing and secure SSH before setup; bundle hash and required files are verified; deployment progress/checklist and this journal record the result; Stage 3B remains NOT STARTED.
+- **Initial state:** Last recorded OVH checkpoint said order #23370514 payment validation was pending and no VPS/IP/SSH endpoint existed. This is historical evidence only; current status must be checked once in the authenticated panel.
+- **Next step:** Read the latest deployment handoff, then inspect order #23370514 once in the current OVH browser tab.
+### OVH order and bundle checkpoint — 2026-11-23
+- **OVH:** Made one read-only inspection of order #23370514. The tracker step says “Your order has been processed,” but the latest order-history event is **“Checking your order”** (2026-11-22 21:53:48), requiring additional processing usually around 48 hours; the preceding event says **“Your payment is being validated.”** This does not confirm payment clearance, an active VPS, or provisioning.
+- **Order summary shown:** VPS-3 2027 monthly fees, Linux distribution, 6 vCPU, 12 GB RAM, 100 GB disk, Local Storage and Automated Backup Standard. Actual installed Ubuntu, assigned region, hostname/IP, invoice/payment clearance and current service activation are not confirmed on this order page.
+- **SSH:** Not tested; no active endpoint was confirmed. No key, account, firewall, SSH, or Docker changes were made.
+- **Bundle:** Existing archive SHA-256 still matches the handoff; 119 entries and all required Compose/Caddy/API/Unity/backup/restore/smoke files are present. No rebuild or duplicate archive.
+- **Next step:** Append this authoritative pending status and bundle verification to deployment progress/checklist, then stop awaiting OVH’s external order review. No second order, payment, production, WSL, or Stage 3B action.
+### Stage 3A wait for OVH order review — 2026-11-23
+- **Status:** BLOCKED on the external OVH order/payment review, per the user’s stop condition.
+- **Result:** One authenticated read-only check found order #23370514 still at **Checking your order** with payment **being validated**; the order page does not prove an active VPS. No repeated status checks, duplicate order, SSH attempt, paid action, or host change occurred.
+- **Bundle:** Existing archive verified with the recorded SHA-256 and required entries; no rebuild.
+- **Documentation:** Updated `RavApi\docs\deployment\DEPLOYMENT_PROGRESS.md` and `DEPLOYMENT_CHECKLIST.md` with this timestamped status and explicit unverified fields.
+- **Validation:** API and Unity tracked `git diff --check` passed; both updated untracked deployment docs have zero trailing whitespace.
+- **Recovery action:** Wait for OVH to change the existing order to provisioned/active or for the owner to provide an update. Then resume Stage 3A with one status review and verified SSH/fingerprint checks. Do not start Stage 3B without separate authorization.
+- **Stage status:** VPS **PENDING**; SSH **NOT TESTED**; Stage 3A **IN PROGRESS**; Stage 3B **NOT STARTED**.
+### Stage 3A resumed after owner request — 2026-11-23
+- **Status:** IN_PROGRESS, resumed from the prior external-order blocker.
+- **User update:** The owner requests one fresh status check for order #23370514. The actual session permission mode is `danger-full-access` / unrestricted filesystem / `never`; do not change config.toml.
+- **Scope reaffirmed:** If the order is still under review, do not attempt SSH or repeat status checks; verify the existing bundle, update progress/checklist, and stop. If active, verify service details before any authorized Stage 3A setup. No duplicate order, payment, production/database change, or Stage 3B.
+- **Next step:** Read current deployment progress/checklist, then refresh the existing order page once and follow the pending/active branch.
+### Fresh OVH status refresh — 2026-11-23
+- **Current order page:** Reloaded the existing order URL exactly once. The progress indicator says “Your order has been processed,” but the latest history row still says **“Checking your order”** at 2026-11-22 21:53:48 and requests additional processing (usually around 48 hours). Payment clearance and active VPS provisioning are not confirmed.
+- **Decision:** Pending branch applies. Do not open service inventory, probe SSH, or change the host. No new order or payment action.
+- **Bundle:** Rechecked; 119 entries, expected checksum, and all required staging files present.
+- **Next step:** Append the fresh order-page result and bundle verification to deployment progress/checklist, run whitespace/Git checks, then stop pending an OVH status change.
+### Stage 3A refresh stop — 2026-11-23
+- **Status:** BLOCKED on OVH order/payment review; the user’s pending-order stop condition is met.
+- **Evidence:** One reload of order #23370514 still shows the latest history row **“Checking your order”** (2026-11-22 21:53:48; additional processing usually around 48 hours). The tracker’s “Your order has been processed” step does not establish a provisioned service. Cleared payment and active VPS are unconfirmed.
+- **Bundle:** Existing 119-entry bundle SHA-256 matches; required staging files are present. No rebuild or duplicate.
+- **Documentation/validation:** Progress and checklist updated. API and Unity tracked `git diff --check` passed; updated untracked documents have zero trailing whitespace.
+- **No operations:** No service-list/SSH probe, key generation, host hardening, payment, second order, production/database, or Stage 3B action.
+- **Recovery action:** Wait for OVH/account-owner notification or a verified order state change; then resume once. Until then VPS is **PENDING**, SSH **NOT TESTED**, Stage 3A **IN PROGRESS**, Stage 3B **NOT STARTED**.
+### Owner asks payment-status check — 2026-11-23
+- **Status:** BLOCKED on OVH payment validation and provisioning.
+- **Result:** Read the current checkout page and the existing tracker for order #23370514. The tracker still says “Checking your order”; its preceding event says “Your payment is being validated.” No successful/cleared payment or active VPS is confirmed. The checkout page showed an out-of-stock error for the selected UK region; no payment was submitted.
+- **Configuration decision:** Do not begin VPS setup yet. There is no confirmed active endpoint/IP; SSH remains **NOT TESTED**. Wait for OVH to confirm payment and provision the existing order, then resume Stage 3A with verified service details and host fingerprint.
+- **Scope respected:** No repeated polling, payment, second order, SSH probe, host changes, production/database access, or Stage 3B.
+## 2026-11-23 — RAV concise Game Design Document
+- **Status:** IN_PROGRESS
+- **Started:** 2026-11-23 22:39 (Asia/Manila)
+- **User request:** Fully analyze the RAV Unity game and backend API, then write a concise, professional game design document for the user to review and correct.
+- **Scope:** Read-only audit of Unity client/dedicated server and RAV API source, project documentation, and available configuration. Create one user-facing document under the current task's `outputs` directory. Do not change game/API implementation, production, database, deployment, or runtime state.
+- **Acceptance criteria:** Describe the actual player experience, core loop, roles/vehicles, match flow, progression, multiplayer architecture, and current limits using verified project evidence; separate implemented behavior from planned or unverified behavior; keep the GDD concise and readable; render and inspect the final document.
+- **Initial state:** RAV Unity project is `D:\Programing\UnityProjects\rav-unity`; API source is nested at `D:\Programing\ServerProjects\rav-api\RavApi`. Existing local task journals contain unrelated deployment tasks and user changes; preserve all existing entries and project state.
+- **Next step:** Inspect repo status, nested instructions, source/docs inventories and the existing gameplay/API contract; then draft, render, visually inspect, and close this task entry.
+### Source inspection checkpoint — 2026-11-23
+- Both requested projects are present at the RAV paths. The Unity working tree contains extensive pre-existing modified and untracked gameplay, asset, API-client, and rebrand/deployment files; the API working tree contains extensive pre-existing rebrand/deployment changes. All are preserved and treated as the current source of truth.
+- Unity documentation index maps the relevant menu/progression, combat, bots, matchmaking/spawn, maps, and FishNet transport owners. API documentation maps profile, catalog/research, server discovery, authentication, match result/reward, maps and leaderboard contracts.
+- The only edits so far are this task's append-only journal entries in each repository. No game/API implementation, assets, scenes, configuration, or deployment state has been changed.
+### Design audit findings — 2026-11-23
+- Current Unity match configuration: 20 total slots, bots enabled to fill open slots, 300-second match timer, two MMR-balanced teams, and one playable map scene (`Map`). Current end rule awards victory when only one team has living vehicles; timeout currently ends as a draw even though the end screen reports team kill totals.
+- Current API seed catalog: two factions (Iron Alliance tracked and Nova Syndicate biped), three vehicle classes (Scout, Guardian, Colossus), and a multi-level research tree. Twenty-one vehicle records are seeded; eight are marked visible and thirteen unavailable. New API registrations initialize 0 MMR, 50,000 Bolts, 5,000 Free XP, and an IA Skirmisher starter vehicle.
+- API owns player/session authentication, one-time server-bound connection tickets, dedicated-server registry/discovery, catalog/research/ownership, match records, rewards, profile statistics, and leaderboards. `Adamant` is present in profile data but no active earn/spend loop was found in current controllers.
+- Integration questions for the draft: API seeds `Demo Yard` and `Steel Arena`, while Unity currently lists only the `Map` gameplay scene; timeout-result policy needs owner confirmation. No RAV API social, campaign/lore, monetization, or release-platform system was found in the inspected current scope.
+- No tests or runtime processes were launched. Source and project documentation remain unchanged; only append-only journals were updated.
+
+#### Завершення — 2026-11-23
+- Створено професійний короткий GDD українською: `C:\Users\TorasPC\Documents\Codex\2026-11-23\new-chat-4\outputs\RAV_Game_Design_Document_Draft_v0_1.docx`.
+- Зафіксовано перевірені поточним кодом правила бою, бойову систему, фракції та класи, прогресію/економіку й межі інтеграції Unity–Dedicated Server–API; окремо винесено авторські рішення для підтвердження.
+- Через відсутність LibreOffice DOCX експортовано у PDF встановленим Microsoft Word; обидві сторінки переглянуто як зображення. Після компонування фінальна версія має 2 сторінки без відірваного останнього пункту.
+- Зміни у вихідний код гри й API не вносилися; тести не запускалися.
+- Статус: COMPLETED.
+
+### Edited GDD comparison checkpoint — 2026-11-23
+- Compared the Desktop DOCX with the prior generated draft. It contains no Word comments or tracked insertions/deletions. Visible content changes are: (1) additional modes described only as future, (2) match duration changed from 5 to 10 minutes, (3) new-profile grant changed from 50,000 Bolts / 5,000 Free XP to 1,000 / 500, (4) Adamant described as a future donor currency for shop items, and (5) clarified names of the eight visible vehicles.
+- User explicitly authorized API changes for the starting grant. Apply the concrete match duration, search wait, and API starting grant. Treat additional modes and shop/Adamant monetization as future roadmap language without enough rules to implement safely; do not create modes, store, payments, or purchase mechanics from the document alone.
+- Existing user working-tree changes are extensive in Unity and API and were observed before changes; preserve them.
+- Next: verify current settings/default owners in Unity and API source, then patch only those values and their system docs.
+
+### Owner/source checkpoint — 2026-11-23
+- Unity `ServerRoom.RunMatchmakingTimer` reads `ServerSettings.GetFindRoomSeconds()` and publishes the remaining seconds through `RoomController.UpdateTimer`; `MatchmakingStatusView` displays that synchronized value. `ServerSettings.prefab` currently serializes 1 second, while C# and remote-snapshot defaults are 60 seconds. Set the active prefab and all fallback defaults to 30 seconds; full real-player rooms still start immediately.
+- Match duration is owned by `MatchSceneGlobalSettings.matchDurationSeconds` and `NetworkGameplayTimer`; the settings class and prefab currently use 300 seconds. Set both to 600 seconds. Update the Unity settings inspector examples and mechanics docs.
+- API normal registration currently grants 50,000 Bolts / 5,000 Free XP; empty-database dev seed creates a separate testuser with 10,000 / 0. User approved API scope. Align both new-account grants to 1,000 / 500; keep the test profile's MMR 1000 and do not alter existing persisted accounts. Update auth/profile/seed docs.
+- No source files have been edited yet. Next: apply targeted value changes and docs while preserving all existing project modifications.
+
+### Implementation checkpoint — 2026-11-23
+- Updated Unity defaults: matchmaking window `30` seconds in `ServerSettings`, `RemoteServerSettings`, and `ServerSettings.prefab`; match duration `600` seconds in the settings class default and serialized prefab. Existing full-player immediate-start rule remains intact; bot fill still occurs after the wait expires.
+- Updated `ServerSettingsEditor` examples and `server-settings.md` / `match-lobby-spawn.md` to document 30-second maximum wait, 10-minute timer, and unchanged timeout-as-draw behavior.
+- Updated API normal registration and empty-database test-user seed to 1,000 Bolts / 500 Free XP. Existing DB records are not changed. Updated auth/profile/EF seed docs; no schema/migration change.
+- Did not implement the future extra modes or the future Adamant shop/economy because the edited GDD gives no mode mechanics, item catalog, prices, purchase rules, or payment flow.
+- Next: verify targeted source/config/docs values and whitespace; do not run tests per task scope.
+
+
+### Task closeout — 2026-11-23 23:26 (Asia/Manila)
+- Applied the concrete GDD settings in Unity: matchmaking room wait 30 seconds, match duration 600 seconds (10 minutes). The wait is a maximum: a room still starts early if it reaches the real-player target; otherwise bot fill follows the 30-second timeout.
+- Updated the ServerSettings C# defaults/fallbacks, remote snapshot fallback, serialized ServerSettings prefab, inspector examples, and the matchmaking/server-settings mechanic docs.
+- Updated API new-registration and empty-database development seed grants to 1,000 Bolts / 500 Free XP; updated auth/profile/EF seed docs. No existing database account was touched.
+- The edited DOCX's future mode and Adamant shop statements remain roadmap items; no mode rules, item catalog, prices, purchase flow, or payment design was provided, so no such features were invented.
+- Validation: targeted source/config/doc value scans match 30, 600, 1,000, and 500; old account grant values no longer occur in API C#; Unity git diff --check reported no whitespace errors (only standard LF/CRLF warnings). No Unity/API tests, builds, runtime, or database actions were run.
+- State note: the Unity prefab in the current checkout had findRoomSeconds=1 (not 3) before this change; C# fallback was 60. The source and prefab now consistently target 30 seconds. Existing working-tree changes were preserved.
+- Status: COMPLETED.
+
+## 2026-11-23 — RAV 10-second battle countdown and match timer start
+- **Status:** COMPLETED
+- **Started:** 2026-11-23 23:44 (Asia/Manila)
+- **Request:** Set the pre-battle countdown to 10 seconds and start match-time consumption only after that countdown completes.
+- **Changes:** Changed the serialized `Client` scene countdown from 3 to 10. `NetworkGameplayTimer` now initializes the display to the full match duration and holds that duration while the server countdown gate is active; it starts decrementing after all connected real players report countdown completion. Added a room-lock query to `BattleCountdownGate` and updated countdown/spawn documentation.
+- **Validation:** Static scans confirm the scene value is 10 and the timer waits on the server countdown gate before decrementing; targeted `git diff --check` found no whitespace errors. Unity tests/build/runtime were not run.
+- **Preservation:** Kept all unrelated pre-existing working-tree changes intact.
+
+### Git fork sync after repository rename — 2026-11-23
+- **Status:** IN_PROGRESS.
+- **User request:** Restore/sync the Unity and API repositories in the fork after the repositories were renamed.
+- **Safety scope:** Inspect existing branch/upstream/remotes and working-tree changes first. Preserve all local modifications. Do not commit, reset, rebase, clean, or discard anything. Fetch remote refs; only fast-forward a local branch if its upstream and working tree make that safe.
+- **Acceptance:** Identify the configured fork/upstream repositories, determine whether the local clones are behind or point to obsolete names, sync both repos safely where possible, and report any unresolved fork-hosting issue.
+- **Next:** Inspect Git status/remotes/current branch tracking without changing source files.
+#### Fork sync findings — 2026-11-23
+- GitHub HTTPS fetch succeeded for the existing origin repositories without changing the checked-out source. Both local main branches are exactly aligned with fetched origin/main (0 commits ahead, 0 behind); there was nothing to merge into either working tree.
+- GitHub metadata identifies scorpioner2010/war-of-machines-unity and scorpioner2010/war-of-machines-API as ordinary repositories (fork=false), and the current canonical names are still those old slugs. Candidate names scorpioner2010/rav-unity and scorpioner2010/rav-api were not found.
+- SSH fetch failed because this session has no usable GitHub public key. HTTPS fetch worked. No origin URL was changed.
+- Existing worktrees already had 313 (Unity) and 523 (API) changed/untracked entries. No checkout, merge, rebase, commit, reset, clean, or source-file change was made; only the append-only task journal was updated.
+- Status: BLOCKED for the requested fork sync. No fork remote is configured, and the intended fork URLs/owner are not identifiable from the available remotes. Recovery: provide the GitHub URL(s) or owner/name of the intended RAV fork(s); then fetch and fast-forward only if safe.
+#### Interpretation correction and Fork app handoff — 2026-11-23
+- The user meant the desktop Fork Git client, not a GitHub fork relationship. The earlier GitHub metadata check is not the intended outcome.
+- Fork is open on the unrelated VR-Demo repository; the RAV Unity and API local clones are not among the open tabs observed.
+- A UI interaction was interrupted by repeated “user input was detected in this window” notices. Stopped UI control to avoid interfering with the user's active Fork session. No repository was added or removed in the app.
+- Existing local clones remain present and their main branches are synchronized with their configured origin/main. The only repo changes by this task are the task-journal additions; the fetch updated Git remote-tracking refs without touching source or worktree files.
+- **Status: BLOCKED on the Fork window being free for UI control.** Resume by adding the existing folders D:\Programing\UnityProjects\rav-unity and D:\Programing\ServerProjects\rav-api as existing repositories in Fork; do not clone over them or replace their working directories.
+### Completed — RAV repositories added to Fork — 2026-11-24
+- Correctly interpreted “Fork” as the desktop Git client. Opened the existing local repositories using File > Open Repository; the Fork window now shows separate tabs for rav-unity and rav-api alongside the pre-existing VR-Demo tab.
+- Verified the displayed repositories are the existing paths D:\Programing\UnityProjects\rav-unity and D:\Programing\ServerProjects\rav-api. No duplicate clones were created and no repository source files were edited.
+- HTTPS fetch updated/checks the existing origin refs; both local main branches are at 0 ahead / 0 behind origin/main, so no commit needed merging. Existing working-tree changes remain preserved.
+- **Status: COMPLETED** for making both RAV repositories visible/open in Fork.

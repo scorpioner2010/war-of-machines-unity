@@ -1,6 +1,6 @@
 using System;
 using FishNet.Managing;
-using Game.Scripts.UI.HUD;
+using RAV.Scripts.UI.HUD;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 using UnityEditor;
 #endif
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class ClientDiagnosticsCollector : IDisposable
     {

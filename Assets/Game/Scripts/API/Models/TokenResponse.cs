@@ -1,4 +1,4 @@
-namespace Game.Scripts.API.Models
+namespace RAV.Scripts.API.Models
 {
     [System.Serializable]
     public class TokenResponse

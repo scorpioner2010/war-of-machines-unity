@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Game.Scripts.Client;
+using RAV.Scripts.Client;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Settings
+namespace RAV.Scripts.UI.Settings
 {
     public class VideoTabView : MonoBehaviour
     {

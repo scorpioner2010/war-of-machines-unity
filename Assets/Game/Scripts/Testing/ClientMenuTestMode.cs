@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Game.Scripts.API;
-using Game.Scripts.API.Models;
-using Game.Scripts.API.ServerManagers;
-using Game.Scripts.MenuController;
+using RAV.Scripts.API;
+using RAV.Scripts.API.Models;
+using RAV.Scripts.API.ServerManagers;
+using RAV.Scripts.MenuController;
 using UnityEngine;
 
-namespace Game.Scripts.Testing
+namespace RAV.Scripts.Testing
 {
     [Serializable]
     public class ClientMenuTestVehicle

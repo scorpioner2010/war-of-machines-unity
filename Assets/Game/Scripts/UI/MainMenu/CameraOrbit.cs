@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.UI.MainMenu
+namespace RAV.Scripts.UI.MainMenu
 {
     public class CameraOrbit : MonoBehaviour
     {

@@ -1,12 +1,12 @@
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Client;
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Client;
+using RAV.Scripts.Diagnostics;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class GameplayMapHud : MonoBehaviour
     {

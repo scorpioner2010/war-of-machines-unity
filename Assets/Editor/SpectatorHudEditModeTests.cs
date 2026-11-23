@@ -1,11 +1,11 @@
 using System.Reflection;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.UI.HUD;
-using Game.Scripts.UI.Settings;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.UI.HUD;
+using RAV.Scripts.UI.Settings;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Game.Editor.Tests
+namespace RAV.Editor.Tests
 {
     public sealed class SpectatorHudEditModeTests
     {

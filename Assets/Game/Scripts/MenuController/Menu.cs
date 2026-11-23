@@ -2,7 +2,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
 
-namespace Game.Scripts.MenuController
+namespace RAV.Scripts.MenuController
 {
     public class Menu : MonoBehaviour
     {

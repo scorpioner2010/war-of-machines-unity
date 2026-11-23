@@ -1,11 +1,11 @@
 using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API.Helpers;
+using RAV.Scripts.API.Helpers;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Game.Scripts.API.Endpoints
+namespace RAV.Scripts.API.Endpoints
 {
     public abstract class MatchesManager
     {
@@ -116,10 +116,16 @@ namespace Game.Scripts.API.Endpoints
             return candidates.Length > 0 ? candidates[0] : HttpLink.APIBase;
         }
 
+        private static string GetEnvironmentValue(string primaryName, string legacyName)
+        {
+            string value = Environment.GetEnvironmentVariable(primaryName);
+            return string.IsNullOrWhiteSpace(value) ? Environment.GetEnvironmentVariable(legacyName) ?? string.Empty : value;
+        }
+
         private static bool TryGetServerCredentials(out string serverId, out string credential)
         {
-            serverId = Environment.GetEnvironmentVariable("WOM_SERVER_ID") ?? string.Empty;
-            credential = Environment.GetEnvironmentVariable("WOM_SERVER_CREDENTIAL") ?? string.Empty;
+            serverId = GetEnvironmentValue("RAV_SERVER_ID", "WOM_SERVER_ID");
+            credential = GetEnvironmentValue("RAV_SERVER_CREDENTIAL", "WOM_SERVER_CREDENTIAL");
             return string.IsNullOrWhiteSpace(serverId) == false
                    && string.IsNullOrWhiteSpace(credential) == false;
         }

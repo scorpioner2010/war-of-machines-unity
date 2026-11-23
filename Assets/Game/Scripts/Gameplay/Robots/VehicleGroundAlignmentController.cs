@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     [DisallowMultipleComponent]
     public sealed class VehicleGroundAlignmentController : MonoBehaviour, IVehicleRootAware

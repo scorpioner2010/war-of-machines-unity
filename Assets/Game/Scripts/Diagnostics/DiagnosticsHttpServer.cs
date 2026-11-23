@@ -3,7 +3,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class DiagnosticsHttpServer : IDisposable
     {

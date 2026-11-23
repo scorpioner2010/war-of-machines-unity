@@ -811,7 +811,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2519292aa3224502a906942945245d78, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBodyVerticalSpringController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleBodyVerticalSpringController
   vehicleRoot: {fileID: 5798367828239414435}
   chassis: {fileID: 7687057134619296339}
   verticalSpeedDeadZone: 0.05
@@ -1285,7 +1285,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3207898f5a3e405591d0ad2f8fa17045, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleClientVisibility
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleClientVisibility
   vehicleRoot: {fileID: 5798367828239414435}
   visualRenderers:
   - {fileID: 1342743577789121863}
@@ -1309,7 +1309,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4e8e57c07bd4fd19e1816d01bb56941, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleAutoAimController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleAutoAimController
   vehicleRoot: {fileID: 5798367828239414435}
   acquireMask:
     serializedVersion: 2
@@ -1325,7 +1325,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29d83922f5d84618a77f61bcbb0ad986, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleBotBrain
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleBotBrain
   vehicleRoot: {fileID: 5798367828239414435}
   navigator: {fileID: 4741424496171530709}
 --- !u!114 &4741424496171530709
@@ -1339,7 +1339,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 37936653d8934de4af5bb9ece911246a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.AI.WaypointGraph.BotNavigator
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.AI.WaypointGraph.BotNavigator
   target: {fileID: 0}
   drawDebugGizmos: 1
 --- !u!114 &6431979623619128167
@@ -1353,7 +1353,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4dbbd5d836509024292adce02cf9736a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleArmorController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleArmorController
   turretColliders:
   - {fileID: 8626111167429773425}
   - {fileID: 9012618769719413394}
@@ -1387,7 +1387,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90ac7660fd36ac8438d8015ca893526a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.VehicleGroundAlignmentController
   vehicleRoot: {fileID: 5798367828239414435}
   targets:
   - transform: {fileID: 7687057134619296339}
@@ -1431,7 +1431,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1e0bb6d1ebd1dd341b67dd9169ebffb2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.t1.WalkerAnimationController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.t1.WalkerAnimationController
   vehicleRoot: {fileID: 5798367828239414435}
   leftFoot:
     transform: {fileID: 450216799538671986}
@@ -1486,7 +1486,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c22534bb4a917554386bb79adf6e5ce8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Gameplay.Robots.RobotDestructionParticleController
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Gameplay.Robots.RobotDestructionParticleController
   vehicleRoot: {fileID: 5798367828239414435}
   mainExplosionPrefab: {fileID: 7895526309886889511, guid: a1997d60dc39d5f488dbfa129b672ef6,
     type: 3}

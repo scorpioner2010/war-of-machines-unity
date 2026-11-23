@@ -1,9 +1,9 @@
 using FishNet.Connection;
 using FishNet.Observing;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Networking.Lobby;
 using UnityEngine;
 
-namespace Game.Scripts.Conditions
+namespace RAV.Scripts.Conditions
 {
     [CreateAssetMenu(menuName = "FishNet/Observers/Room Condition", fileName = "New Room Condition")]
     public class RoomCondition : ObserverCondition

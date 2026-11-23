@@ -1,10 +1,10 @@
 using System.Reflection;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
-namespace Game.Editor.Tests
+namespace RAV.Editor.Tests
 {
     public sealed class VehicleHudCanvasFadeEditModeTests
     {

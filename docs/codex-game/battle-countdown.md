@@ -11,4 +11,6 @@
 
 ## Timing
 
-The loading screen is hidden first, then the client gate waits `0.5` seconds before displaying `10`. Each number is displayed for one second and plays `UI_Battle_Countdown` once. The gate releases after the `1` tick finishes.
+The loading screen is hidden first, then the client gate waits `0.5` seconds before displaying `10`. Each number from `10` through `1` is displayed for one second and plays `UI_Battle_Countdown` once. The gate releases after the `1` tick finishes. The `Client` scene serializes `countdownSeconds` as `10`.
+
+The server initializes the synchronized match timer to its full configured duration, then holds it there while the room countdown gate is active. It begins decrementing only after `BattleCountdownAuthority` receives completion from every connected real player and releases the room gate; time spent in the pre-battle countdown does not consume match time.

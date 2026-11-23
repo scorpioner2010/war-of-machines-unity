@@ -1,6 +1,6 @@
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Networking.Lobby;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public static class DamageService
     {

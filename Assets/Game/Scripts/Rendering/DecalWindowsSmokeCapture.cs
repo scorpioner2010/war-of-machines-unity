@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using UnityEngine;
 
-namespace Game.Rendering
+namespace RAV.Rendering
 {
     public sealed class DecalWindowsSmokeCapture : MonoBehaviour
     {

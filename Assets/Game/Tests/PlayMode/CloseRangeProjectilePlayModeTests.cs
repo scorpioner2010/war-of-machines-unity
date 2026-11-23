@@ -5,14 +5,14 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class CloseRangeProjectilePlayModeTests
     {
         [Test]
         public void ShotHudStatusUsesGlyphOnlyForAutonomousControl()
         {
-            Type shooterType = FindGameType("Game.Scripts.Gameplay.Robots.NetworkWeaponShooter");
+            Type shooterType = FindGameType("RAV.Scripts.Gameplay.Robots.NetworkWeaponShooter");
             MethodInfo getStatusText = shooterType.GetMethod(
                 "GetShotHudStatusText",
                 BindingFlags.Static | BindingFlags.NonPublic);
@@ -30,7 +30,7 @@ namespace Game.Tests.PlayMode
         [Test]
         public void BackwardAimPointUsesMuzzleForwardDirection()
         {
-            Type shooterType = FindGameType("Game.Scripts.Gameplay.Robots.NetworkWeaponShooter");
+            Type shooterType = FindGameType("RAV.Scripts.Gameplay.Robots.NetworkWeaponShooter");
             GameObject shooterObject = new GameObject("CloseRangeShooter");
             GameObject muzzleObject = new GameObject("Muzzle");
             muzzleObject.transform.SetParent(shooterObject.transform);
@@ -224,7 +224,7 @@ namespace Game.Tests.PlayMode
             try
             {
                 targetObject.transform.position = new Vector3(0f, 0f, 3f);
-                targetObject.AddComponent(FindGameType("Game.Scripts.Gameplay.Robots.VehicleRoot"));
+                targetObject.AddComponent(FindGameType("RAV.Scripts.Gameplay.Robots.VehicleRoot"));
                 BoxCollider defaultCollider = targetObject.AddComponent<BoxCollider>();
                 defaultCollider.size = new Vector3(3f, 3f, 2f);
 

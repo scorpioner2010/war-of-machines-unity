@@ -1,9 +1,9 @@
 using System.Collections;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.UI.Screens;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.UI.Screens;
 using UnityEngine;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class DamageScreen : UIScreenBase<DamageScreen>
     {

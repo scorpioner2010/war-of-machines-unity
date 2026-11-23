@@ -1,7 +1,7 @@
 using FishNet.Object;
 using FishNet.Observing;
 
-namespace Game.Scripts.Conditions
+namespace RAV.Scripts.Conditions
 {
     public class RoomConditionRebuilder : NetworkBehaviour
     {

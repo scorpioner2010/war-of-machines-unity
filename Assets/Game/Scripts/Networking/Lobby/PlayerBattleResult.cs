@@ -1,6 +1,6 @@
 using FishNet.Connection;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public struct PlayerBattleResult
     {

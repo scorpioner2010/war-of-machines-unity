@@ -1,9 +1,9 @@
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.UI.Settings;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.UI.Settings;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace Game.Scripts.Testing
+namespace RAV.Scripts.Testing
 {
     public class VehicleTestRuntimeSettings : MonoBehaviour
     {

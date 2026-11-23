@@ -1,7 +1,7 @@
-using Game.Scripts.MenuController;
+using RAV.Scripts.MenuController;
 using UnityEngine;
 
-namespace Game.Scripts.UI
+namespace RAV.Scripts.UI
 {
     public sealed class RightInfoPanelHost : MonoBehaviour
     {

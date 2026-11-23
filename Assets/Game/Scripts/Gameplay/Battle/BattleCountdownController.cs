@@ -1,12 +1,12 @@
 using System.Collections;
-using Game.Scripts.Audio;
-using Game.Scripts.MenuController;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.UI.HUD;
-using Game.Scripts.UI.Loading;
+using RAV.Scripts.Audio;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.UI.HUD;
+using RAV.Scripts.UI.Loading;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Battle
+namespace RAV.Scripts.Gameplay.Battle
 {
     public class BattleCountdownController : MonoBehaviour
     {

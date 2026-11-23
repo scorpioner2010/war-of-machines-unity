@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots.t2
+namespace RAV.Scripts.Gameplay.Robots.t2
 {
     [DisallowMultipleComponent]
     public sealed class CaterpillarSuspensionController : MonoBehaviour, IVehicleRootAware

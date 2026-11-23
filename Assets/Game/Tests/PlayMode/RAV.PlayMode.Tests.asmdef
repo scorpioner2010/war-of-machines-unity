@@ -1,8 +1,8 @@
 {
-  "name": "Game.PlayMode.Tests",
-  "rootNamespace": "Game.Tests.PlayMode",
+  "name": "RAV.PlayMode.Tests",
+  "rootNamespace": "RAV.Tests.PlayMode",
   "references": [
-    "Game.Gameplay.Shared"
+    "RAV.Gameplay.Shared"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

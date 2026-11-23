@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace Game.Tests.PlayMode
+namespace RAV.Tests.PlayMode
 {
     public sealed class BotBattle10v9PlayModeTests
     {
@@ -29,7 +29,7 @@ namespace Game.Tests.PlayMode
             yield return WaitUntil(
                 () =>
                 {
-                    Type controllerType = Type.GetType("Game.Scripts.Testing.VehicleTestSceneController, Assembly-CSharp");
+                    Type controllerType = Type.GetType("RAV.Scripts.Testing.VehicleTestSceneController, Assembly-CSharp");
                     controller = controllerType != null
                         ? UnityEngine.Object.FindFirstObjectByType(controllerType, FindObjectsInactive.Include) as Component
                         : null;

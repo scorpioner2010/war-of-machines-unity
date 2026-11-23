@@ -1,16 +1,16 @@
 using System.Globalization;
-using Game.Scripts.API.Models;
-using Game.Scripts.API.ServerManagers;
-using Game.Scripts.Audio;
-using Game.Scripts.Core.Services;
-using Game.Scripts.MenuController;
-using Game.Scripts.UI;
-using Game.Scripts.UI.Tree;
+using RAV.Scripts.API.Models;
+using RAV.Scripts.API.ServerManagers;
+using RAV.Scripts.Audio;
+using RAV.Scripts.Core.Services;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.UI;
+using RAV.Scripts.UI.Tree;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.MainMenu
+namespace RAV.Scripts.UI.MainMenu
 {
     public class MainMenu : MonoBehaviour
     {

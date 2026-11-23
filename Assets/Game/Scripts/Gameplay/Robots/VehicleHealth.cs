@@ -4,7 +4,7 @@ using FishNet.Object.Synchronizing;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class VehicleHealth : NetworkBehaviour, IVehicleStatsConsumer
     {

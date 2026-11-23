@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using FishNet.Connection;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 using Object = UnityEngine.Object;
 
-namespace Game.Scripts.Networking.Lobby
+namespace RAV.Scripts.Networking.Lobby
 {
     public static class LobbyRooms //only server
     {

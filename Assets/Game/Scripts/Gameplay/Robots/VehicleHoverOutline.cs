@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using Game.Scripts.Client;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Rendering;
+using RAV.Scripts.Client;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Rendering;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     [DisallowMultipleComponent]
     public class VehicleHoverOutline : MonoBehaviour, IVehicleRootAware, IVehicleInitializable

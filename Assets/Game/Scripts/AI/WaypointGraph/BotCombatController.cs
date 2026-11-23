@@ -1,10 +1,10 @@
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.Server;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Server;
 using UnityEngine;
 
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     public sealed class BotCombatController
     {

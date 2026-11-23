@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Game.Scripts.UI.MainMenu;
+using RAV.Scripts.UI.MainMenu;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Game.Scripts.Editor
+namespace RAV.Scripts.Editor
 {
     public static class ProfileStatisticsPopupRebuilder
     {
@@ -16,7 +16,7 @@ namespace Game.Scripts.Editor
         private const string ButtonPath = "Assets/Game/Content/UI/Textures/Buttons/Button_Default.png";
         private const string FontPath = "Assets/Game/Content/Fonts/RobotoCondensed-Regular SDF.asset";
 
-        [MenuItem("War Of Machines/UI/Rebuild Profile Statistics Popup")]
+        [MenuItem("RAV/UI/Rebuild Profile Statistics Popup")]
         public static void RebuildProfileStatisticsPopup()
         {
             Scene scene = EditorSceneManager.OpenScene(ClientScenePath, OpenSceneMode.Single);

@@ -1,8 +1,8 @@
-using Game.Scripts.Server;
-using Game.Scripts.Audio;
+using RAV.Scripts.Server;
+using RAV.Scripts.Audio;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots.t1
+namespace RAV.Scripts.Gameplay.Robots.t1
 {
     [DisallowMultipleComponent]
     public sealed class WalkerAnimationController : MonoBehaviour, IVehicleRootAware

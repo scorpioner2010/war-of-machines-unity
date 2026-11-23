@@ -1,9 +1,9 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API;
+using RAV.Scripts.API;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public static class VehicleStatsProvider
     {

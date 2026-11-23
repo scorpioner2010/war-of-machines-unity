@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Networking.Lobby;
 using UnityEngine;
 using UEScene = UnityEngine.SceneManagement.Scene;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public enum PlayerType
     {

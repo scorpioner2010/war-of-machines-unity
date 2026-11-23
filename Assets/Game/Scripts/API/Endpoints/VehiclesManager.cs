@@ -1,10 +1,10 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API.Helpers;
+using RAV.Scripts.API.Helpers;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Game.Scripts.API
+namespace RAV.Scripts.API
 {
     public abstract class VehiclesManager
     {

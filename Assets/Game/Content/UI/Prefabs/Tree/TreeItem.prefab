@@ -2105,6 +2105,6 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: beec20bd74e97c74d863024397cd6e48, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Audio.ButtonComponent
+  m_EditorClassIdentifier: Assembly-CSharp::RAV.Scripts.Audio.ButtonComponent
   button: {fileID: 777103099743618107}
   childGraphics: []

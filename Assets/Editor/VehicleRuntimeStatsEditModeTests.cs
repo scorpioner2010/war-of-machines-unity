@@ -1,5 +1,5 @@
-using Game.Scripts.API;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.API;
+using RAV.Scripts.Gameplay.Robots;
 using NUnit.Framework;
 
 public sealed class VehicleRuntimeStatsEditModeTests

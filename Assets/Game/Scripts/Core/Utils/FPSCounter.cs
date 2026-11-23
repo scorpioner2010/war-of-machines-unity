@@ -1,7 +1,7 @@
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Diagnostics;
 using UnityEngine;
 
-namespace Game.Scripts.Core.Utils
+namespace RAV.Scripts.Core.Utils
 {
     public class FPSCounter : MonoBehaviour
     {

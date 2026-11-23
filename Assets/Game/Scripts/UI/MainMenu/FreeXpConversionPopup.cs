@@ -1,13 +1,13 @@
 using System.Collections.Generic;
-using Game.Scripts.API.Models;
-using Game.Scripts.API.ServerManagers;
-using Game.Scripts.Core.Services;
-using Game.Scripts.Player.Data;
+using RAV.Scripts.API.Models;
+using RAV.Scripts.API.ServerManagers;
+using RAV.Scripts.Core.Services;
+using RAV.Scripts.Player.Data;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.MainMenu
+namespace RAV.Scripts.UI.MainMenu
 {
     public class FreeXpConversionPopup : MonoBehaviour
     {

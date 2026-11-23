@@ -1,13 +1,13 @@
 using FishNet;
 using FishNet.Object;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.Gameplay.Robots.t1;
-using Game.Scripts.Gameplay.Robots.t2;
-using Game.Scripts.UI.HUD;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.Gameplay.Robots.t1;
+using RAV.Scripts.Gameplay.Robots.t2;
+using RAV.Scripts.UI.HUD;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class VehicleRoot : NetworkBehaviour
     {

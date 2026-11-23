@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Gameplay.Robots;
 using NaughtyAttributes;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "RobotRegistry", menuName = "WOM/Robot Registry")]
+[CreateAssetMenu(fileName = "RobotRegistry", menuName = "RAV/Robot Registry")]
 public class RobotRegistry : ScriptableObject
 {
     [Serializable]

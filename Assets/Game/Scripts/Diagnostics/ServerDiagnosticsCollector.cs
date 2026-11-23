@@ -1,11 +1,11 @@
 using System;
 using FishNet.Managing;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Networking.Lobby;
 using UnityEngine;
 using UnityEngine.Profiling;
-using LobbyPlayer = Game.Scripts.Networking.Lobby.Player;
+using LobbyPlayer = RAV.Scripts.Networking.Lobby.Player;
 
-namespace Game.Scripts.Diagnostics
+namespace RAV.Scripts.Diagnostics
 {
     public sealed class ServerDiagnosticsCollector
     {

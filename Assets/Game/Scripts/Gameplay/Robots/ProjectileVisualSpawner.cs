@@ -1,12 +1,12 @@
 using System;
-using Game.Scripts.Client;
-using Game.Scripts.Diagnostics;
+using RAV.Scripts.Client;
+using RAV.Scripts.Diagnostics;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Unity.Profiling;
 #endif
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public struct ProjectileVisualSpawnParams
     {

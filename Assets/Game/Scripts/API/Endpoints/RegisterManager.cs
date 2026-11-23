@@ -1,10 +1,10 @@
 using System.Text;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API.Models;
+using RAV.Scripts.API.Models;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Game.Scripts.API.Endpoints
+namespace RAV.Scripts.API.Endpoints
 {
     public abstract class RegisterManager
     {

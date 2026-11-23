@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using FishNet.Connection;
-using Game.Scripts.API.Models;
+using RAV.Scripts.API.Models;
 
-namespace Game.Scripts.Networking.Sessions
+namespace RAV.Scripts.Networking.Sessions
 {
     public static class ServerPlayerSessions
     {

@@ -1,6 +1,6 @@
-using Game.Scripts.UI.Screens;
+using RAV.Scripts.UI.Screens;
 
-namespace Game.Scripts.UI.Helpers
+namespace RAV.Scripts.UI.Helpers
 {
     public class Popup : PopupScreen<Popup> { }
 }

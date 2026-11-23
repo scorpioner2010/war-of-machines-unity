@@ -1,8 +1,8 @@
-using Game.Scripts.Client;
-using Game.Scripts.UI.Robots;
+using RAV.Scripts.Client;
+using RAV.Scripts.UI.Robots;
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots
+namespace RAV.Scripts.Gameplay.Robots
 {
     public class VehicleHudInitializer : MonoBehaviour, IVehicleRootAware, IVehicleInitializable
     {

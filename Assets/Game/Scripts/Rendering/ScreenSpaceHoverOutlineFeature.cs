@@ -3,11 +3,11 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Game.Scripts.Rendering
+namespace RAV.Scripts.Rendering
 {
     public sealed class ScreenSpaceHoverOutlineFeature : ScriptableRendererFeature
     {
-        private const string MaskTextureName = "_WOM_HoverOutlineMask";
+        private const string MaskTextureName = "_RAV_HoverOutlineMask";
         private const int MaxOutlineRadiusPixels = 8;
 
         private static readonly List<RendererEntry> ActiveRenderers = new List<RendererEntry>(64);
@@ -187,7 +187,7 @@ namespace Game.Scripts.Rendering
         private sealed class MaskPass : ScriptableRenderPass
         {
             private static readonly int MaskTextureId = Shader.PropertyToID(MaskTextureName);
-            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("WOM Hover Outline Mask");
+            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("RAV Hover Outline Mask");
             private readonly Material _material;
             private RTHandle _maskHandle;
             private int _maskWidth;
@@ -332,7 +332,7 @@ namespace Game.Scripts.Rendering
             private static readonly int OutlineTexelSizeId = Shader.PropertyToID("_OutlineTexelSize");
             private static readonly int OutlineMaskUvScaleId = Shader.PropertyToID("_OutlineMaskUvScale");
 
-            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("WOM Hover Outline Composite");
+            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("RAV Hover Outline Composite");
             private readonly Material _material;
             private readonly MaskPass _maskPass;
 

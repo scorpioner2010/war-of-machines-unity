@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Scripts.Gameplay.Robots.t2
+namespace RAV.Scripts.Gameplay.Robots.t2
 {
     /// <summary>
     /// Stable tank nose pitch based on filtered movement without Rigidbody springs.

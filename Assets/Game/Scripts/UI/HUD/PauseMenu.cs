@@ -1,13 +1,13 @@
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.MenuController;
-using Game.Scripts.Networking.Lobby;
-using Game.Scripts.UI.Loading;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.UI.Loading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.HUD
+namespace RAV.Scripts.UI.HUD
 {
     public class PauseMenu : MonoBehaviour
     {

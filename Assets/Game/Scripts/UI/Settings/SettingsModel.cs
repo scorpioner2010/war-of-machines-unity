@@ -1,8 +1,8 @@
 using System.IO;
-using Game.Scripts.Client;
+using RAV.Scripts.Client;
 using UnityEngine;
 
-namespace Game.Scripts.UI.Settings
+namespace RAV.Scripts.UI.Settings
 {
     [System.Serializable]
     public class SettingsModel

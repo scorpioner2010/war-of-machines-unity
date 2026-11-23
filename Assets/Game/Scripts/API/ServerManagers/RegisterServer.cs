@@ -2,17 +2,17 @@ using Cysharp.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Transporting;
-using Game.Scripts.API.Endpoints;
-using Game.Scripts.Diagnostics;
-using Game.Scripts.MenuController;
-using Game.Scripts.Networking.Sessions;
-using Game.Scripts.Testing;
-using Game.Scripts.UI.Helpers;
+using RAV.Scripts.API.Endpoints;
+using RAV.Scripts.Diagnostics;
+using RAV.Scripts.MenuController;
+using RAV.Scripts.Networking.Sessions;
+using RAV.Scripts.Testing;
+using RAV.Scripts.UI.Helpers;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.API.ServerManagers
+namespace RAV.Scripts.API.ServerManagers
 {
     public class RegisterServer : NetworkBehaviour
     {

@@ -1,9 +1,9 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Game.Scripts.API.Helpers;
+using RAV.Scripts.API.Helpers;
 using UnityEngine.Networking;
 
-namespace Game.Scripts.API.Endpoints
+namespace RAV.Scripts.API.Endpoints
 {
     public abstract class MapsManager
     {

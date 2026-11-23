@@ -1,8 +1,8 @@
 using System;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Networking.Lobby;
 using UnityEngine;
 
-namespace Game.Scripts.World.Maps
+namespace RAV.Scripts.World.Maps
 {
     [Serializable]
     public class MapInfo

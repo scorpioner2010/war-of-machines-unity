@@ -1,7 +1,7 @@
-using Game.Scripts.Gameplay.Robots;
-using Game.Scripts.Networking.Lobby;
+using RAV.Scripts.Gameplay.Robots;
+using RAV.Scripts.Networking.Lobby;
 
-namespace Game.Scripts.AI.WaypointGraph
+namespace RAV.Scripts.AI.WaypointGraph
 {
     internal sealed class BotTargetValidator
     {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using FishNet;
-using Game.Scripts.Client;
-using Game.Scripts.Gameplay.Robots;
+using RAV.Scripts.Client;
+using RAV.Scripts.Gameplay.Robots;
 using UnityEngine;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using Unity.Profiling;

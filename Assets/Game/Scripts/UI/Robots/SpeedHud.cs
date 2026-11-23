@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.UI.Robots
+namespace RAV.Scripts.UI.Robots
 {
     public class SpeedHud : View<SpeedHud> { }
 
