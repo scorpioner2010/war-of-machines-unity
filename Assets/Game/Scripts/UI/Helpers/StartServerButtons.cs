@@ -400,7 +400,7 @@ namespace RAV.Scripts.UI.Helpers
                         continue;
                     }
 
-                    if (TryReadServerConnectionInfo(responseText, out ServerConnectionInfo connectionInfo, out string error) == false)
+                    if (TryReadServerConnectionInfo(responseText, apiBase, out ServerConnectionInfo connectionInfo, out string error) == false)
                     {
                         lastError = error;
                         continue;
@@ -439,7 +439,7 @@ namespace RAV.Scripts.UI.Helpers
             apiBases.Add(normalizedBase);
         }
 
-        private bool TryReadServerConnectionInfo(string responseText, out ServerConnectionInfo connectionInfo, out string error)
+        private bool TryReadServerConnectionInfo(string responseText, string apiBase, out ServerConnectionInfo connectionInfo, out string error)
         {
             UnityServerStatusResponse response;
             try
@@ -456,10 +456,44 @@ namespace RAV.Scripts.UI.Helpers
             ushort fallbackPort = GetConfiguredClientPort();
             if (response.servers != null && response.servers.Length > 0)
             {
-                return TryGetServerConnectionInfo(response.servers[0], fallbackPort, out connectionInfo, out error);
+                bool expectsLocalServer = HttpLink.IsLocalBase(apiBase);
+                for (int i = 0; i < response.servers.Length; i++)
+                {
+                    UnityServerStatusItem server = response.servers[i];
+                    if (server == null
+                        || server.isOnline == false
+                        || IsLoopbackServerAddress(server.address) != expectsLocalServer)
+                    {
+                        continue;
+                    }
+
+                    return TryGetServerConnectionInfo(server, fallbackPort, out connectionInfo, out error);
+                }
+
+                connectionInfo = default;
+                error = expectsLocalServer
+                    ? "No online Local Dedicated Server is registered. Start the local server and refresh its heartbeat."
+                    : "No online Netcup Dedicated Server is registered. Check its deployment and heartbeat.";
+                return false;
             }
 
             return TryGetServerConnectionInfo(response, fallbackPort, out connectionInfo, out error);
+        }
+
+        private static bool IsLoopbackServerAddress(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return false;
+            }
+
+            string value = address.Trim();
+            if (string.Equals(value, "localhost", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return IPAddress.TryParse(value, out IPAddress ipAddress) && IPAddress.IsLoopback(ipAddress);
         }
 
         private int GetApiRequestTimeoutSeconds(string apiBase)

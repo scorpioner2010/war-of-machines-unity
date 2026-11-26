@@ -967,6 +967,9 @@ namespace RAV.Editor
                 string tag = "rav-api:staging-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
                 BeginOperationStage("Building the Netcup API image locally");
                 AddLog("Building a staging-only API image; no remote service will change.", LiveLogLevel.Active);
+                yield return EnsureDockerLinuxEngineRoutine();
+                if (!string.IsNullOrEmpty(lastError)) yield break;
+
                 Task<CommandResult> imageTask = RunProcessAsync("docker.exe", new[] { "build", "--file", dockerfile, "--tag", tag, repository }, repository, 900000, null);
                 SetOperationWaiting("Waiting for the API container image build...");
                 yield return imageTask;
@@ -1015,6 +1018,101 @@ namespace RAV.Editor
 
             PreparedLocalApiBuild = builtAssembly;
             AddLog("Local API build passed.", LiveLogLevel.Success);
+        }
+
+        private static IEnumerator EnsureDockerLinuxEngineRoutine()
+        {
+            AddLog("Checking Docker Linux engine...", LiveLogLevel.Active);
+            Task<CommandResult> check = RunProcessAsync("docker.exe", new[] { "info", "--format", "{{.OSType}}" }, ProjectRoot, 15000, null);
+            SetOperationWaiting("Checking Docker Linux engine readiness...");
+            yield return check;
+            CommandResult lastCheck = check.Result;
+            if (IsLinuxDockerEngineReady(lastCheck))
+            {
+                AddLog("Docker Linux engine is ready.", LiveLogLevel.Success);
+                yield break;
+            }
+
+            string dockerDesktop = FindDockerDesktopExecutable();
+            if (string.IsNullOrWhiteSpace(dockerDesktop))
+            {
+                AddCommandOutput(lastCheck);
+                lastError = "Docker Linux engine is unavailable and Docker Desktop was not found. Install or start Docker Desktop, then retry the Netcup API build.";
+                yield break;
+            }
+
+            AddLog("Docker Linux engine is stopped; starting the installed Docker Desktop and waiting for readiness.", LiveLogLevel.Warning);
+            try
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = dockerDesktop,
+                    UseShellExecute = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                using (Process process = Process.Start(startInfo))
+                {
+                    if (process == null)
+                    {
+                        lastError = "Docker Desktop could not be started. Start it manually and retry the Netcup API build.";
+                        yield break;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                lastError = "Docker Desktop could not be started: " + Sanitize(exception.Message);
+                yield break;
+            }
+
+            double deadline = EditorApplication.timeSinceStartup + DefaultStartupTimeout;
+            double nextCheckAt = EditorApplication.timeSinceStartup;
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
+                if (EditorApplication.timeSinceStartup < nextCheckAt)
+                {
+                    SetOperationWaiting("Waiting for Docker Desktop Linux engine...");
+                    yield return null;
+                    continue;
+                }
+
+                check = RunProcessAsync("docker.exe", new[] { "info", "--format", "{{.OSType}}" }, ProjectRoot, 15000, null);
+                yield return check;
+                lastCheck = check.Result;
+                if (IsLinuxDockerEngineReady(lastCheck))
+                {
+                    AddLog("Docker Linux engine is ready.", LiveLogLevel.Success);
+                    yield break;
+                }
+
+                nextCheckAt = EditorApplication.timeSinceStartup + 2.0;
+            }
+
+            AddCommandOutput(lastCheck);
+            lastError = "Docker Desktop did not make its Linux engine ready within "
+                + DefaultStartupTimeout.ToString(CultureInfo.InvariantCulture)
+                + " seconds. See Open Full Log for the Docker diagnostic.";
+        }
+
+        private static bool IsLinuxDockerEngineReady(CommandResult result)
+        {
+            return result != null
+                && result.Success
+                && string.Equals(result.Output.Trim(), "linux", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string FindDockerDesktopExecutable()
+        {
+            string localPrograms = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "DockerDesktop", "Docker Desktop.exe");
+            string programFiles = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Docker", "Docker", "Docker Desktop.exe");
+            string programFilesX86 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Docker", "Docker", "Docker Desktop.exe");
+            string[] candidates = { localPrograms, programFiles, programFilesX86 };
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                if (File.Exists(candidates[i])) return candidates[i];
+            }
+
+            return string.Empty;
         }
 
         private static IEnumerator BuildServerRoutine()

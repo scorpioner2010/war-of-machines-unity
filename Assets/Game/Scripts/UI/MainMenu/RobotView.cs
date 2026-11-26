@@ -36,6 +36,7 @@ namespace RAV.Scripts.UI.MainMenu
         private readonly List<VehicleSlotView> _slots = new List<VehicleSlotView>();
         private int _buildVersion;
         private int _spawnVersion;
+        private bool _vehicleSelectionLoadingScopeActive;
 
         private static RobotView _in;
 
@@ -46,6 +47,7 @@ namespace RAV.Scripts.UI.MainMenu
 
         private void OnDestroy()
         {
+            EndVehicleSelectionLoading();
             if (_in == this)
             {
                 _buildVersion++;
@@ -77,6 +79,12 @@ namespace RAV.Scripts.UI.MainMenu
             {
                 StandardLoadingOverlay.EndRequest();
             }
+        }
+
+        public override void OnStopClient()
+        {
+            EndVehicleSelectionLoading();
+            base.OnStopClient();
         }
 
         private static async UniTask GenerateIconsInternalAsync(RobotView view)
@@ -426,8 +434,30 @@ namespace RAV.Scripts.UI.MainMenu
                 return;
             }
 
-            Helpers.StandardLoadingOverlay.Show();
+            BeginVehicleSelectionLoading();
             SelectVehicleServerRpc(id);
+        }
+
+        private void BeginVehicleSelectionLoading()
+        {
+            if (_vehicleSelectionLoadingScopeActive)
+            {
+                return;
+            }
+
+            _vehicleSelectionLoadingScopeActive = true;
+            StandardLoadingOverlay.BeginRequest();
+        }
+
+        private void EndVehicleSelectionLoading()
+        {
+            if (!_vehicleSelectionLoadingScopeActive)
+            {
+                return;
+            }
+
+            _vehicleSelectionLoadingScopeActive = false;
+            StandardLoadingOverlay.EndRequest();
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -435,6 +465,7 @@ namespace RAV.Scripts.UI.MainMenu
         {
             if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
+                TargetRpcSelect(sender, false, "Not logged in.");
                 return;
             }
 
@@ -443,21 +474,32 @@ namespace RAV.Scripts.UI.MainMenu
 
         private async UniTask SelectVehicleAsync(NetworkConnection sender, int id)
         {
-            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+            try
             {
-                TargetRpcSelect(sender, false, "Not logged in.");
-                return;
-            }
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                {
+                    TargetRpcSelect(sender, false, "Not logged in.");
+                    return;
+                }
 
-            string token = session.Token;
-            if (string.IsNullOrEmpty(token))
+                string token = session.Token;
+                if (string.IsNullOrEmpty(token))
+                {
+                    TargetRpcSelect(sender, false, "Not logged in.");
+                    return;
+                }
+
+                (bool ok, string msg) result = await UserVehiclesManager.SetActive(id, token);
+                TargetRpcSelect(sender, result.ok, result.msg);
+            }
+            catch (Exception exception)
             {
-                TargetRpcSelect(sender, false, "Not logged in.");
-                return;
+                GameplayRuntimeDiagnostics.Record(
+                    "robot_selection_failed",
+                    "reason", exception.Message,
+                    "vehicle_id", id);
+                TargetRpcSelect(sender, false, "Unable to switch robot.");
             }
-
-            (bool ok, string msg) result = await UserVehiclesManager.SetActive(id, token);
-            TargetRpcSelect(sender, result.ok, result.msg);
         }
 
         [TargetRpc]
@@ -465,13 +507,20 @@ namespace RAV.Scripts.UI.MainMenu
         {
             if (success)
             {
-                ProfileServer.UpdateProfile();
+                try
+                {
+                    ProfileServer.UpdateProfile();
+                }
+                finally
+                {
+                    EndVehicleSelectionLoading();
+                }
+
+                return;
             }
-            else
-            {
-                Popup.ShowText(errorMessage, Color.red);
-                Helpers.StandardLoadingOverlay.Hide();
-            }
+
+            Popup.ShowText(errorMessage, Color.red);
+            EndVehicleSelectionLoading();
         }
 
         [Button]

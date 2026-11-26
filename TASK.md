@@ -4972,3 +4972,104 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors; focused `git diff --check` passed. After the fix, clean login showed the overlay at the early empty-MainMenu state; clicking `BATTLE` did not open FindGame, and the same run later showed the robot and both owned-vehicle slots before the overlay was released.
 - **Result:** `ProfileServer` now holds an idempotent scoped request through profile retrieval and `RobotView.GenerateIconsAsync()`. Connection-loading `Hide()` calls no longer clear this pending scope, so the overlay remains visually and interactively active until the robot/slots are ready.
 - **Finish:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED. Remaining limitation: the click test covered `BATTLE`; other menu controls use the same full-screen overlay raycast path.
+
+## 2026-11-27 — Diagnose and repair Netcup deployment workflow — IN_PROGRESS
+- **Request:** Local mode works; Netcup/server workflow fails. Reproduce and fix the failures so the server deployment workflow completes reliably, using the Development Control Panel and existing deployment tooling.
+- **Scope:** Diagnose the screenshot failure at Netcup API image build, trace Execute All/API/server sequencing, correct root causes, and run focused real staging checks. Preserve user changes and do not alter the database, production, security settings, or paid resources.
+- **Acceptance:** Identify exact build/deploy/start failure; fix the smallest relevant cause; verify API image build and the selected remote workflow through real panel logs/status checks; report any parts not safely or technically verifiable.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Next:** Inspect current worktree, active panel/full logs and deployment/build configuration; reproduce only the failing Netcup step before making changes.
+
+### Diagnostic checkpoint — 2026-11-27 (Asia/Manila)
+- Screenshot/live operation log confirms Netcup API image build failed before any upload or remote change: Docker could not open the desktop-linux named pipe because it did not exist.
+- Local Docker Desktop 29.8.2 was already installed but not running. Its configured context is desktop-linux. Started the existing Docker Desktop application; the Linux engine now responds to docker info.
+- Inspected Docker containers after startup: all listed containers were already exited, including old local RAV services. No container was started/stopped, no volumes/data were touched, and no remote service changed.
+- The panel currently has no daemon startup path before running docker build. Plan: add a bounded preflight that starts the already-installed Docker Desktop only when the Linux engine is unavailable, waits for docker info to report linux, and returns a specific error if the engine cannot become ready. Then build the image via the panel and continue the selected staging workflow.
+- Status: IN_PROGRESS; API image build and remote workflow have not yet been retried.
+### Implementation checkpoint — 2026-11-27 (Asia/Manila)
+- Changed Unity Editor panel: before Netcup API image build, it now probes Docker for an active Linux engine, starts the existing Docker Desktop only if needed, and polls readiness with a 120-second bound. Failure messages now identify missing/unready Docker Desktop rather than silently treating every engine absence as an API build error.
+- Source diff is limited to Assets/Editor/RAVDevelopmentControlPanel.cs; focused git diff --check passed. Unity Editor is open and not in Play Mode; Editor.log has no C# compilation errors after the reload.
+- The Linux Docker engine is currently running, so the next non-destructive check is to build and inspect the staging API image. No deployment or remote service change will occur during that check.
+- Status: IN_PROGRESS.
+### Validation checkpoint — 2026-11-27 (Asia/Manila)
+- Docker Linux engine 29.8.2 became ready on desktop-linux. The staging API image built successfully from the API repository using the same Dockerfile/build context as the panel: rav-api:staging-20261126172515, linux/amd64, manifest digest sha256:8b8c0fae3744c726144842489e09ef0137b044e4d003ec29e0b758b29d586ab7. The Dockerfile is multi-stage; runtime only copies published output, health probe, and entrypoint. .dockerignore excludes env files, private keys, certificates, and production secrets.
+- Panel's 01:23:28 Netcup refresh passed HTTPS API health, PostgreSQL SSH health, and fresh Dedicated Server heartbeat.
+- Strict-host-checked SSH read-only check returned the Dedicated Server systemd service active; remote ss showed RAVServer.x86_64 bound to UDP 7770 on 0.0.0.0.
+- No staging API/server service was restarted or deployed. No database writes, container starts, or volume changes occurred; existing containers remain exited.
+- The Unity panel source change compiled/reloaded without reported C# errors and focused git diff --check passed. The full Execute All button was not safely retried: Computer Use detected simultaneous user input and an unrelated browser sign-in surface became foreground, so UI input was stopped to avoid touching that session.
+- Remaining: actual post-fix panel Build/API + Deploy/Start orchestration has not been observed end-to-end. The underlying Docker build and current remote readiness are verified; keep task IN_PROGRESS until the panel operation is safely rerun.
+- Additional image configuration check: the API appsettings connection string is empty; runtime image does not inherit production credentials from appsettings. No secret values were printed or uploaded.
+- Current result: the original failure cause is handled in source, a real Linux/amd64 API image build passed, and the live staging server/API/database are healthy. Remaining acceptance item is an actual post-fix Execute All panel run; no active deployment was needed to resolve the local Docker-engine prerequisite.
+
+### Panel rerun checkpoint — 2026-11-27 (Asia/Manila)
+- Resumed the accepted Netcup workflow in the Unity Editor after confirming the Docker Linux engine and existing remote staging health.
+- Clicked Execute All once with Build, Deploy, and Start selected. The panel reports Stage 1/10: Building the Netcup API image locally; operation is in progress. No duplicate operation started.
+- Next: follow the live panel log through API staging/activation and Linux Dedicated Server build/deploy/start; fix only the first concrete failure if one occurs.
+- Status: IN_PROGRESS.
+
+
+### API activation root-cause checkpoint — 2026-11-27 (Asia/Manila)
+- The panel built, exported, transferred, and remotely verified staging API image rav-api:staging-20261126173606. The activation helper then refused before changing services because it derives RAV_STAGING_ROOT from $0, but the helper is invoked from /home/ravadmin/rav-staging-incoming; API HTTPS liveness/readiness remained HTTP 200 after failure.
+- Fixed the helper to explicitly set the trusted /opt/rav-staging root before sourcing the staging guard library; the database-name guard remains intact. Bash syntax validation and focused source diff checks pass.
+- Retry plan: run Execute All with the panel's current Build/Deploy/Start selection. This creates a fresh uniquely tagged staging API artifact, avoiding overwrite of the existing tar, then exercises API activation and the Linux server build/deploy/start path.
+- Status: IN_PROGRESS.
+
+### Completion checkpoint — 2026-11-27 (Asia/Manila)
+- Fixed the Netcup API activation guard bug: the temporary helper runs from the incoming upload directory, so it now explicitly sets RAV_STAGING_ROOT to /opt/rav-staging before sourcing the staging-only config guard. Database-name validation is unchanged.
+- Unity panel Docker preflight started the already-installed Docker Desktop Linux engine and reported readiness; the panel then built and verified a fresh staging API image, exported and transferred it over verified SSH, staged it remotely, and activated it with rollback protection.
+- The API became HTTPS healthy. PostgreSQL and Caddy were not restarted, and no database migrations or data changes occurred.
+- The panel built a fresh Linux x86-64 Mono Dedicated Server, verified the archive checksum/content, staged and activated the release with rollback protection. Remote health confirmed UDP 7770, and the API received a fresh Dedicated Server registration/heartbeat. Execute All completed with all 12 stages done.
+- Validation: Bash syntax check passed for activate-api-image.sh; Unity Editor log has no recent C# compilation errors; focused source diff checks passed. Existing unrelated working-tree changes were preserved. No commit or push.
+- Result: the requested Netcup Build → Deploy → Start flow is COMPLETED and the staging API and Dedicated Server are ready.
+
+## 2026-11-27 — Fix Netcup client endpoint selection — IN_PROGRESS
+- **Request:** The Unity Editor screenshot shows Play Mode in Netcup environment, while the Client status says it is connecting to 127.0.0.1:7770 and the Console reports Failed to connect to server. Correct the client’s selected-environment endpoint and verify the real connection path.
+- **Scope:** Trace environment switching, runtime FishNet client transport address/port, DTLS settings, and connection start order. Make the smallest safe fix and test Netcup client connection without changing production or database data.
+- **Acceptance:** In Netcup Play Mode the client targets the configured public staging Dedicated Server endpoint rather than loopback; connection result is verified from runtime logs/UI. Preserve prior working-tree changes. No commit or push.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Next:** Inspect the client endpoint owner, Netcup environment application path, transport configuration, and recent Unity runtime logs; then isolate why loopback remains active.
+
+### Discovery checkpoint — 2026-11-27 (Asia/Manila)
+- The staging GET /unity-server/status response contains two fresh online registrations: local-server-1 at 127.0.0.1:7770 and the Netcup RAV staging server at 62.83.120.40:7770.
+- StartServerButtons.TryReadServerConnectionInfo currently selects response.servers[0] without filtering, so Netcup Play Mode chooses the local registration. This matches the screenshot exactly; API health, Netcup server, and UDP 7770 are already healthy.
+- Next: inspect existing server identity/region fields and API list contract, then select the server identity configured for the active Editor environment and verify that Netcup mode picks the staging entry.
+- Status: IN_PROGRESS.
+
+### Client endpoint selection fix — 2026-11-27 (Asia/Manila)
+- Replaced first-entry selection from `/unity-server/status` with environment-aware selection based on the API URL that actually answered: loopback API selects an online loopback server; public API selects an online non-loopback server. No fallback to the wrong environment; missing target returns a clear Local/Netcup-specific message.
+- Unity Editor recompiled `Assembly-CSharp.dll` after the source timestamp (no C# compiler errors found in the compilation output). `git diff --check` passed.
+- Read-only staging status check showed both active endpoints with fresh heartbeats. A focused selection check against that live response maps Local → `local-server-1` / `127.0.0.1:7770`, Netcup → `rav-staging-ca17cc60ee1f` / `62.83.120.40:7770`.
+- End-to-end authenticated Unity connection remains unverified. Computer Use could not refresh the Unity window after it became minimized/user input was detected; no credentials were entered and no server/API/database state was changed. Resume runtime validation when Unity is visible and the user has authenticated in the staging client.
+- Unity also currently reports modified `Assets/DefaultPrefabObjects.asset` and `ProjectSettings/MultiplayerManager.asset`; these were not edited by this task and are preserved.
+- Status: IN_PROGRESS — code fix and compile verified; authenticated Play Mode connection pending.
+
+### Status correction — 2026-11-27 (Asia/Manila)
+- Final `git status --short` no longer lists `Assets/DefaultPrefabObjects.asset` or `ProjectSettings/MultiplayerManager.asset`; they are not outstanding working-tree changes. The earlier transient status observation is superseded.
+
+## 2026-11-27 — Fix robot switch loading overlay — COMPLETED
+- **User request:** Критичний баг: під час перемикання на іншого робота loading overlay не зникає й висить постійно.
+- **Scope:** Trace the robot-switch request, loading overlay ownership, success/error/timeout paths, and fix the smallest root cause without changing unrelated loading flows.
+- **Acceptance criteria:** Switching to another robot completes normally; the loading overlay is released on success and terminal failure; stale or overlapping switch requests cannot leave the overlay permanently visible; existing login/profile loading behavior remains intact.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED.
+- **Next:** Read the relevant workflow rules, locate robot-switch and overlay call sites, reproduce or reason through the stuck path, patch the focused owner, and run targeted validation.
+
+### Discovery checkpoint — 2026-11-27 (Asia/Manila)
+- **Finding:** `RobotView.OnVehicleSelected()` calls `StandardLoadingOverlay.Show()`, which sets the shared `_manuallyVisible` flag. The successful `TargetRpcSelect()` starts `ProfileServer.UpdateProfile()` but never clears that flag, so `ProfileServer` can finish its counted profile scope while the overlay remains permanently visible.
+- **Additional failure path:** `SelectVehicleServerRpc()` returns without a `TargetRpcSelect()` when the server session is missing, leaving the manual overlay with no terminal response. The normal HTTP failure path does return a response and currently calls the broad `Hide()` method.
+- **Ownership decision:** `RobotView` owns one idempotent counted request for the active-robot switch. It starts the request before the RPC, ends it on every target response, and releases it on object destruction. `ProfileServer` continues owning the nested profile/preview refresh scope.
+- **Next:** Patch `RobotView` and document the boundary in `docs/codex-game/menus-settings-progression.md`, then compile and inspect the focused diff.
+
+### Completion checkpoint — 2026-11-27 (Asia/Manila)
+- **Implementation:** Replaced the switch path's shared manual `StandardLoadingOverlay.Show()` with an idempotent counted request owned by `RobotView`. The request ends after success/error responses and is released on client stop or destruction; missing server sessions and unexpected server exceptions now produce terminal failure responses.
+- **Documentation:** Added the switch/profile loading ownership boundary to `docs/codex-game/menus-settings-progression.md`.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 4 existing warnings. `git diff --check` passed; only existing line-ending normalization warnings were reported.
+- **Result:** A successful robot switch no longer leaves `_manuallyVisible` set, while the nested profile refresh keeps the overlay active until the new robot data, slots, preview, and layout are ready. Existing login/profile loading code was not changed.
+- **Remaining limitation:** Unity Play Mode visual reproduction of switching robots was not run in this session; the focused source diff and project compilation passed.
+- **Completed:** 2026-11-27 (Asia/Manila).
+
+### Implementation checkpoint — 2026-11-27 (Asia/Manila)
+- **Changed:** `Assets/Game/Scripts/UI/MainMenu/RobotView.cs` now tracks an idempotent `_vehicleSelectionLoadingScopeActive` request. `OnVehicleSelected()` begins `StandardLoadingOverlay.BeginRequest()` instead of setting the shared manual flag; `TargetRpcSelect()` ends only its own request after starting the nested profile refresh or after showing an error; `OnDestroy()` releases an outstanding request; unauthenticated server requests now return a terminal target error.
+- **Documented:** `docs/codex-game/menus-settings-progression.md` records that `RobotView` owns the switch request scope while `ProfileServer` owns the nested profile/preview refresh.
+- **Preserved:** Existing changes in `Assets/Editor/RAVDevelopmentControlPanel.cs`, `Assets/Game/Scripts/UI/Helpers/StartServerButtons.cs`, and prior journal history remain untouched.
+- **Validation so far:** Focused `git diff --check` passed; only line-ending normalization warnings were reported.
+- **Next:** Build `Assembly-CSharp.csproj`, then inspect the final focused diff and close this entry if validation passes.
