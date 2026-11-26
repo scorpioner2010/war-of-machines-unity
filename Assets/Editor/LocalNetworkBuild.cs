@@ -51,10 +51,54 @@ namespace RAV.Editor
             lastServerBuildOutputDirectory = Build("Server-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8), ServerExecutableName, ServerScenes, StandaloneBuildSubtarget.Server);
         }
 
+        public static string BuildControlPanelServer(string outputRoot)
+        {
+            string buildName = "Server-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            string outputDirectory = Path.Combine(Path.GetFullPath(outputRoot), buildName);
+            lastServerBuildOutputDirectory = BuildAtPath(outputDirectory, ServerExecutableName, ServerScenes, StandaloneBuildSubtarget.Server);
+            return lastServerBuildOutputDirectory;
+        }
+
+        public static string BuildControlPanelLinuxServer(string outputRoot)
+        {
+            ConfigureLinuxServerBuildProfile();
+            string buildName = "LinuxServer-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            string outputDirectory = Path.Combine(Path.GetFullPath(outputRoot), buildName);
+            PrepareCustomOutputDirectory(outputDirectory);
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.Mono2x);
+
+            BuildPlayerOptions buildOptions = new BuildPlayerOptions
+            {
+                scenes = ServerScenes,
+                locationPathName = Path.Combine(outputDirectory, "RAVServer.x86_64"),
+                target = BuildTarget.StandaloneLinux64,
+                subtarget = (int)StandaloneBuildSubtarget.Server,
+                options = BuildOptions.Development
+            };
+
+            BuildReport report = BuildPlayerWithProgress(buildOptions, buildName);
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException("Linux Dedicated Server build failed. See the Unity Console and Editor.log for details.");
+            }
+
+            lastServerBuildOutputDirectory = outputDirectory;
+            Debug.Log($"Linux Dedicated Server build created at {outputDirectory}.");
+            return outputDirectory;
+        }
+
         [MenuItem("RAV/Local Build/Windows Client")]
         public static void BuildLocalClient()
         {
             lastClientBuildOutputDirectory = Build("Client-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8), ClientExecutableName, ClientScenes, StandaloneBuildSubtarget.Player);
+        }
+
+        public static string BuildControlPanelClient(string outputRoot)
+        {
+            string buildName = "Client-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            string outputDirectory = Path.Combine(Path.GetFullPath(outputRoot), buildName);
+            lastClientBuildOutputDirectory = BuildAtPath(outputDirectory, ClientExecutableName, ClientScenes, StandaloneBuildSubtarget.Player);
+            return lastClientBuildOutputDirectory;
         }
 
         [MenuItem("RAV/Local Build/Windows Server and Client")]
@@ -88,7 +132,7 @@ namespace RAV.Editor
                 options = BuildOptions.Development
             };
 
-            BuildReport report = BuildPipeline.BuildPlayer(buildOptions);
+            BuildReport report = BuildPlayerWithProgress(buildOptions, "Linux Dedicated Server");
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new InvalidOperationException("Linux Dedicated Server build failed. See the Unity Console and Editor.log for details.");
@@ -305,6 +349,18 @@ namespace RAV.Editor
             string outputDirectory = GetOutputDirectory(buildName);
             PrepareOutputDirectory(outputDirectory);
 
+            return BuildPlayerAtPath(outputDirectory, buildName, executableName, scenes, subtarget);
+        }
+
+        private static string BuildAtPath(string outputDirectory, string executableName, string[] scenes, StandaloneBuildSubtarget subtarget)
+        {
+            PrepareCustomOutputDirectory(outputDirectory);
+            return BuildPlayerAtPath(outputDirectory, Path.GetFileName(outputDirectory), executableName, scenes, subtarget);
+        }
+
+        private static string BuildPlayerAtPath(string outputDirectory, string buildName, string executableName, string[] scenes, StandaloneBuildSubtarget subtarget)
+        {
+
             BuildPlayerOptions buildOptions = new BuildPlayerOptions
             {
                 scenes = scenes,
@@ -314,7 +370,7 @@ namespace RAV.Editor
                 options = BuildOptions.Development
             };
 
-            BuildReport report = BuildPipeline.BuildPlayer(buildOptions);
+            BuildReport report = BuildPlayerWithProgress(buildOptions, buildName);
             if (report.summary.result != BuildResult.Succeeded)
             {
                 throw new InvalidOperationException($"{buildName} build failed. See the Unity Console and Editor.log for details.");
@@ -322,6 +378,19 @@ namespace RAV.Editor
 
             Debug.Log($"Local {buildName.ToLowerInvariant()} build created at {outputDirectory}.");
             return outputDirectory;
+        }
+
+        private static BuildReport BuildPlayerWithProgress(BuildPlayerOptions options, string buildName)
+        {
+            EditorUtility.DisplayProgressBar("RAV Build", "Building " + buildName + ". Exact percentage is not available here.", 0f);
+            try
+            {
+                return BuildPipeline.BuildPlayer(options);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
         }
 
         private static string GetOutputDirectory(string buildName)
@@ -344,6 +413,26 @@ namespace RAV.Editor
             if (normalizedOutputDirectory.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase) == false)
             {
                 throw new InvalidOperationException("Local build output is outside the approved build directory.");
+            }
+
+            if (Directory.Exists(normalizedOutputDirectory) || File.Exists(normalizedOutputDirectory))
+            {
+                throw new InvalidOperationException($"Build output already exists and will not be overwritten: {normalizedOutputDirectory}");
+            }
+
+            Directory.CreateDirectory(normalizedOutputDirectory);
+        }
+
+        private static void PrepareCustomOutputDirectory(string outputDirectory)
+        {
+            string normalizedOutputDirectory = Path.GetFullPath(outputDirectory);
+            string projectRoot = Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string projectPrefix = projectRoot + Path.DirectorySeparatorChar;
+            if (normalizedOutputDirectory.StartsWith(projectPrefix, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalizedOutputDirectory, projectRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Control Panel builds must be outside the Unity project folder.");
             }
 
             if (Directory.Exists(normalizedOutputDirectory) || File.Exists(normalizedOutputDirectory))

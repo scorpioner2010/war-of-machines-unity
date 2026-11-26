@@ -10,6 +10,7 @@ namespace RAV.Scripts.Diagnostics
     public static class GameplayRuntimeDiagnostics
     {
         private const string RelativeLogPath = "Logs/GameplayRuntimeDiagnostics.log";
+        private const string LogPathEnvironmentVariable = "RAV_GAMEPLAY_DIAGNOSTICS_PATH";
         private static readonly object Sync = new object();
         private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false);
         private static string _logPath;
@@ -105,6 +106,13 @@ namespace RAV.Scripts.Diagnostics
         {
             if (!string.IsNullOrEmpty(_logPath))
             {
+                return _logPath;
+            }
+
+            string configuredPath = Environment.GetEnvironmentVariable(LogPathEnvironmentVariable);
+            if (!string.IsNullOrWhiteSpace(configuredPath))
+            {
+                _logPath = Path.GetFullPath(configuredPath.Trim());
                 return _logPath;
             }
 

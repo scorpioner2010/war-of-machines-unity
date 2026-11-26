@@ -4445,3 +4445,412 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - Verified the displayed repositories are the existing paths D:\Programing\UnityProjects\rav-unity and D:\Programing\ServerProjects\rav-api. No duplicate clones were created and no repository source files were edited.
 - HTTPS fetch updated/checks the existing origin refs; both local main branches are at 0 ahead / 0 behind origin/main, so no commit needed merging. Existing working-tree changes remain preserved.
 - **Status: COMPLETED** for making both RAV repositories visible/open in Fork.
+## 2026-11-24 — RAV Stage 3A Hetzner CX33 provider switch
+- **Status:** IN_PROGRESS.
+- **User request:** Replace the canceled OVHcloud VPS order with a Hetzner Cloud CX33 staging VPS evaluation and prepare up to, but not including, payment.
+- **Scope:** Verify current official CX33 availability, Germany/Finland regions, x86-64 specs, public IPv4, hourly/monthly price and applicable VAT; inspect account/identity/prepayment/refund requirements and future x86 resize options. Compare only available x86 plans if CX33 is unavailable, without automatic upgrade.
+- **Safety:** Do not create a paid server/resource or authorize payment. Do not accept legally binding contract terms. Use only accurate owner-provided identity/address data; pause for user input where the true account details or personal verification are required. Do not start Stage 3B or change production/database.
+- **Acceptance:** Provide official-source evidence, account/verification status and any exact owner action; reach the final checkout review only if possible without payment, account misrepresentation, or legal acceptance.
+- **Initial known state:** OVHcloud order #23370514 was canceled per owner; the separate $14.50 refund case remains unresolved. Existing RAV deployment bundle is prepared; no active VPS endpoint is available.
+- **Next:** Verify official Hetzner plan/pricing and account requirements; use the in-app browser for any needed sign-in or owner-controlled identity steps.### Hetzner evaluation checkpoint — 2026-11-24
+- Hetzner’s official Cost-Optimized catalog currently marks CX33 unavailable; the listing specifies 4 shared x86 vCPU, 8 GB RAM, 80 GB NVMe, and eu-central sites NBG1 (Germany) / HEL1 (Finland).
+- Published CX33 price: €8.49/month / €0.0136/hour before VAT. Required public Primary IPv4 adds €0.50/month / €0.0008/hour, total €8.99/month before VAT. €10.70/month is only an illustrative German 19% VAT total; account-specific tax remains to be confirmed.
+- Public CX23 is also unavailable; no x86 alternative within budget was confirmed available. x86 rescaling is supported, but server location cannot be changed in place and disk cannot be reduced below the existing disk.
+- The owner completed the browser security check and submitted the Ukrainian individual profile in Hetzner signup; EUR is selected. The account page supports English/German only and currently offers credit card. No card data, account-finalization action, payment, paid VPS, production, or Stage 3B operation was performed.
+- Hetzner may request ID or card prepayment. Its published rule generally returns unused verification credit only after account closure and settlement of outstanding invoices; adding credit does not make unavailable products available.
+- **Status:** Stage 3A IN PROGRESS, waiting for owner-controlled payment-method/account setup before account-specific availability and tax-inclusive checkout checks. Stage 3B NOT STARTED.
+### Hetzner Console diagnosis — 2026-11-24
+
+- Console access works; the Default project has 0 resources. No invoices/current transactions were found and the credit balance is USD $0.00; a pending card authorization was not checked. 2FA is only recommended. The account email page asks for an independent contact address and is not a rejection screen.
+- Account billing currently uses USD, although EUR had been selected in the earlier signup form. Hetzner says currency cannot be changed after registration. The Ukrainian contact profile is not the apparent blocker.
+- Cost-Optimized x86 options, including CX33, are disabled for this account in Helsinki, Nuremberg and Falkenstein. Regular Performance plans are selectable, but CPX12 has only 1 vCPU/2 GB RAM and CPX32 costs far above the target.
+- No server was created and Create & Buy now was not pressed. Stage 3A awaits the owner’s decision about USD billing and waiting for CX stock versus considering a more expensive CPX32. Stage 3B remains NOT STARTED.
+
+## 2026-11-25 — RAV Edgegap free-trial deployment evaluation
+- **Status:** IN_PROGRESS.
+- **User request:** Evaluate the existing Edgegap account/free trial and prepare/test a separate Linux AMD64 RAV Unity Dedicated Server deployment, using no paid resources and no production changes.
+- **Scope:** Check Edgegap account/trial limits and European UDP deployment support; audit the existing RAV Unity Linux build and API integration; prepare a separate Edgegap container/deployment configuration only if it does not alter the production bundle; verify UDP 7770, FishNet/DTLS, endpoint/port mapping, and safe smoke tests within the free-trial allowance; update Edgegap/deployment docs.
+- **Safety:** Do not create a new account, request or handle passwords/codes, bypass CAPTCHA/verification, add billing/card data, incur charges, disable TLS/DTLS validation, alter gameplay without need, modify production, or run tests beyond verified free limits. Stop deployments after authorized free tests. Preserve all pre-existing dirty files and journal history; no commit/reset/clean.
+- **Acceptance:** Record account/trial status and actual limits; validate only existing artifacts; prepare and, if safely free and compatible, test an isolated Edgegap staging deployment; clearly mark anything blocked by credentials, plan limits, endpoint compatibility, or unavailable VPS/API staging.
+- **Initial state:** No Edgegap-specific entry was present in this journal. Hetzner Stage 3A remains IN_PROGRESS in its existing separate entry; do not close or overwrite it.
+- **Next:** Inspect Edgegap account in a new browser tab and verify free-trial terms before creating resources; inspect repository status/artifacts before any edits.## 2026-11-25 2026-11-25 02:52:41.000 +08:00 — RAV Altare free hosting preparation
+- **Status:** IN_PROGRESS.
+- **User request:** Inspect Altare free hosting and prepare the existing RAV Unity FishNet Dedicated Server for possible $0 deployment, without spending Bolts or changing production.
+- **Scope:** Audit Altare account/products, free-plan access, Workstations availability, Docker deployment support, UDP 7770/DTLS/public endpoint, runtime behavior, regions and limits; inspect existing Unity/API repositories and build; prepare separate Altare deployment files only if technically suitable and free; document validation and blockers.
+- **Safety:** Strict budget $0. Never upgrade, add a payment method, buy or consume Bolts, enable automatic billing, or create resources when cost is unclear. Do not change production auth/matchmaking/database, run production migrations, expose PostgreSQL, embed secrets, disable TLS/DTLS validation, or claim 20-slot support without load tests. Preserve working-tree changes and all task history; no commit/reset/clean.
+- **Acceptance:** Verify platform capabilities from the authenticated dashboard and official docs; inspect actual RAV artifact/source paths and compatibility; create only isolated deployment artifacts within existing repositories if appropriate; run only safe local validations; report READY FOR DEPLOYMENT / READY FOR LIMITED TESTING / NOT SUITABLE based on verified UDP/DTLS and cost constraints.
+- **Initial state:** Unity and API repositories already contain unrelated in-progress task journal entries, including Hetzner and Edgegap work; leave those entries untouched. No Altare-specific workflow was found in the Codex memory archive.
+- **Next:** Open the official Altare console in a new in-app browser tab for the user’s login, then verify account/plan before inspecting or creating any platform resource.
+
+#### Altare login handoff — 2026-11-25
+- Opened the official console at `https://console.altare.gg/apps` in a new in-app browser tab; it redirected to the Altare login page.
+- The user must authenticate in the browser. No username, password, passkey, or code was entered or requested in chat. No account or hosting settings were changed.
+- The tab is marked for handoff and awaits the user returning after login.
+- **Next:** Once the user confirms the console is open, inspect account/products and free-plan limits before any resource creation; continue the repository audit only after the account status is known.#### Altare free-plan/platform audit checkpoint — 2026-11-25
+- Authenticated as Taras_Samarin in the Default team; team plan is **Always Free**, usage is 0/4 GiB memory, 0%/125% CPU, 0/40 GiB disk, 0/2 app slots, and no apps exist. The dashboard shows 50 Bolts; none were spent.
+- Account → Experiments shows Workstations beta **All 30 seats taken; 2,408 on the waitlist**. No waitlist join was submitted. Official beta docs say early testers receive 2 shared vCPU, 4 GB RAM, 60 GB disk, up to two workstations, free within the included amount, with London as the only region; above that requires billing/card.
+- Official Workstations networking docs support up to 10 raw TCP/UDP public ports, externally mapped from 46000–47999 to chosen internal ports on a per-workstation hostname. This would fit UDP 7770 in principle, but this account has no beta seat.
+- Official Docker Apps docs explicitly say only TCP traffic reaches an app. GitHub App Hosting is web/API/worker oriented and listens on PORT; it is not a raw UDP server entry point.
+- Sandboxes are persistent Linux systems, but not full VMs: no systemd or Docker inside; long-running processes need tmux/nohup. Their extra public ports require Bolts under the documented store/resource pricing. No Bolts may be used, so no public UDP allocation can be attempted.
+- Altare Go provides 8 GB RAM, 4 CPUs, 40 GB disk for at most 12 hours, is started through CLI, and public exposure is HTTPS-only. It is not a persistent production server path and no Go machine was started because the task forbids resources of unclear cost.
+- Console/status page reports the Nov 21 heavy-demand incident affecting app deployments, sandboxes, Altare Go and Console; dashboard showed 0/49 nodes up/unknown. No resource or app was created, and the app-creation wizard did not finish loading.
+- **Decision so far:** No currently available $0 path is verified for the required always-on UDP/DTLS server: Docker/GitHub apps are TCP-only; the only documented free raw-UDP route is Workstations beta, for which this account is waitlisted. Do not create an app, sandbox, workstation or Go machine; do not consume the 50 Bolts.
+- **Next:** Inspect actual Unity/API repos, existing Linux build(s), and deployment documentation; preserve all existing changes. Determine whether the existing build is current and what can be validated locally without an Altare deployment.
+
+
+#### Altare hosting assessment closeout — 2026-11-25
+- **Status:** COMPLETED for the requested platform feasibility assessment; deployment NOT STARTED.
+- Account is Always Free with 0 usage and no apps; 50 Bolts remain untouched. Workstations beta is full and this account is waitlisted. The only documented free raw UDP path is therefore unavailable to this account. Docker/GitHub Apps are TCP-only; Sandboxes and Altare Go do not meet the persistent zero-cost UDP requirement.
+- RAV statically configures FishyUnityTransport for UDP 7770 with encryption enabled. Existing registration advertises the same port used for the internal bind; no separate external mapped-port setting exists.
+- The November 22 RAV Linux build predates Unity HEAD on November 24 and is not accepted as a current deployment artifact. No Docker image, headless/runtime, UDP, DTLS, API, or load test was run.
+- No Unity code, production service, paid resource, or Bolt was changed or used. Deployment documentation was updated in the API repository.
+- **Decision:** NOT SUITABLE for the current Altare account under the strict $0 constraint. Do not deploy. Re-evaluate only after actual Workstations beta access and port mapping compatibility are available.
+
+
+## 2026-11-25 03:20:50 +08:00 — RAV AlienX Cloud Free Lite assessment
+- **Status:** IN_PROGRESS.
+- **User request:** Evaluate AlienX Cloud free Lite for RAV Unity Dedicated Server, use only clearly free resources, and prepare/deploy only if public UDP/DTLS and account access are suitable.
+- **Scope:** Verify authenticated Cloud access and Lite quotas; audit current official UDP/port mapping, geographic policy, uptime and safety; inspect existing RAV Unity/API source and Linux build; prepare only the minimal deployment path if eligible.
+- **Safety:** Strict $0. Never purchase boosts, add payment details, create a paid/unclear-cost resource, accept a paid tier, bypass region restrictions, disable DTLS, expose production/database credentials, alter gameplay without need, or claim 20-slot capacity without load tests. Preserve existing dirty files and journals; no commit/reset/clean.
+- **Acceptance:** Confirm actual account/Cloud access, Lite specs, UDP semantics, endpoint stability, Ukraine/Russia connectivity rules, current artifact compatibility and what remains untested. Submit only a clearly free Cloud access request if required. Do not create a VM until access and zero cost are explicitly confirmed.
+- **Initial state:** Prior deployment prep remains in progress in existing journal entries; Unity/API have existing uncommitted journal/documentation changes. Preserve them. AlienX account login completed by the owner; panel showed no servers and Cloud beta access request.
+- **Start:** 2026-11-25 03:20:50 +08:00
+- **Next:** Inspect current repository status and source/build artifacts; update deployment docs with AlienX findings and final decision.
+
+
+### AlienX browser findings — 2026-11-25 03:21:55 +08:00
+### AlienX account/network checkpoint
+- The authenticated panel shows no existing server and Cloud access is invitation-only. A single free access request was submitted; panel confirms ticket #93 is waiting for staff. No VM or paid resource was created.
+- The panel advertises Lite as free: 1 VM, 1 vCPU, 2 GB RAM, 30 GB disk, 2 projects, 10 WAN ports, 10 Mbit/s; available OS list includes Ubuntu 24.04 LTS.
+- Official networking guide says ports may use TCP, UDP, or TCP/UDP; game mapping sends traffic to the same port number on the VM. The public address is shared and the provider may change assigned ports. RAV can set one runtime FishNet port and registers that same port.
+- Current terms list Russia among IP-blocked countries; Ukraine is not listed. Do not bypass the block. Cloud is hobby beta on UK residential hardware, without an uptime promise; do not treat it as production/24x7 hosting.
+- **Next:** Inspect working-tree status, existing deployment scripts, Linux build freshness, and API/Unity configuration. Do not create a VM until staff grants access and confirms the free tier.
+
+
+#### AlienX local preparation checkpoint — 2026-11-25
+- **Current status:** BLOCKED pending staff approval of AlienX Cloud access request ticket #93. Do not create a VM until free Lite access and zero-cost allocation are confirmed.
+- Unity source HEAD is 3a050ee43598d5ff6aea16f17cd243e677043534; no source/gameplay changes were made. Existing build pipeline safely generated a fresh Linux x86-64 Development Dedicated Server build at D:\Programing\UnityProjects\war-of-machines-local-builds\LinuxServer-20261124-192541; Unity reported successful build and exit code 0, with nonfatal warnings.
+- Required Unity/Mono files, x86-64 ELF header and Server/Map scene configuration were verified. A separate archive and SHA-256 manifest were created and checked; artifact details are recorded in API DEPLOYMENT_PROGRESS.md.
+- Added provider-specific native/systemd runbook deploy/alienx/README.md; reused existing deploy/linux scripts rather than duplicating host tooling.
+- Official AlienX documentation supports UDP but uses same-number public-to-VM mapping on a shared address; RAV can bind/register the assigned port through RAV_SERVER_PORT. No source change needed. Panel ticket #93 is still pending; no actual VM, assigned port, API endpoint, external UDP or DTLS test exists.
+- Remaining recovery: after staff approval, confirm free allocation, Ubuntu/x86-64, endpoint, SSH fingerprint and UDP port; then use the runbook and test only against isolated staging API credentials. No production service, paid resource or database was touched.
+
+## 2026-11-25 04:02:48 +08:00 — RAV full cloud deployment and multiplayer integration
+- **Status:** IN_PROGRESS.
+- **User request:** Build, configure and deploy the RAV Unity Dedicated Server to AlienX Cloud Lite, the .NET 10 API and staging PostgreSQL to Altare Always Free, then configure a separate Unity cloud-staging client and run a real end-to-end multiplayer test if account access and free quotas permit.
+- **Scope:** Reuse current Unity/API repositories, the existing AlienX release/runbook, API Docker/deployment setup and existing deployment scripts. Configure only an isolated staging environment; preserve local and production configuration; validate the full client-to-server flow where access exists.
+- **Safety:** Strict $0; no payments, cards, Bolts, paid services, production data/credentials, public database exposure, weakened HTTPS/JWT/DTLS/certificate checks, or unnecessary gameplay rewrites. Do not commit/reset/revert/clean; preserve prior changes. Follow provider restrictions and record only tests that actually ran.
+- **Acceptance:** Record actual host/API/database endpoints and resource allocations, deploy/start components where access permits, keep Unity local config intact, run staged health/auth/ticket/registration/heartbeat/DTLS/gameplay checks, provide exact user launch steps, and mark missing tests/blockers honestly.
+- **Initial state:** Unity has existing dirty TASK.md and untracked deploy/alienx documentation from prior work; backend has existing dirty TASK/deployment documents from earlier Altare work. AlienX ticket #93 was last recorded waiting for staff; no VM existed. Altare had no app or database, a $0 storage cap, no saved card, and auto top-up Off. Preserve all these states.
+- **Start:** 2026-11-25 04:02:48 +08:00.
+- **Next:** Check this task's providers and artifacts from the last recorded state; do not repeat completed broad audits. Inspect latest Unity/API revision and current local runtime availability, then build only what is stale or missing.
+### Cloud and Unity artifact checkpoint — 2026-11-25 04:09:17 +08:00
+- AlienX panel is still invite-only: Cloud request ticket #93 says “Your request has been sent to staff”; server count is 0. No VM/IP/UDP mapping is available, so remote Unity deployment is blocked.
+- Altare still shows 0/2 apps, 0 RAM/CPU/storage use, 0/1 managed databases, and $0 this month; wallet balance is 50 Bolts. No cloud resources were created.
+- Unity HEAD remains 3a050ee43598d5ff6aea16f17cd243e677043534, matching the recorded build source. The existing release archive hashes to 80216b46ac3e520bd6100543e9517ce26bba9dc81e4f88eff9414dc20c9bd030 and contains the required ELF executable, data folder and UnityPlayer.so; no rebuild is needed unless local integration detects a config mismatch.
+- **Next:** Continue local-only API/DB and client preparation while preserving prior local database data; do not retry ticket #93.
+### RAV cloud deployment — local validation checkpoint (2026-11-25)
+
+- Preserved prior dirty state; no commit/reset/clean. Local source edits: explicit RAV_API_BASE is authoritative and fails closed instead of falling back to production; gameplay diagnostics support a configured file path; systemd directs diagnostics to /var/log/rav.
+- Fresh Unity Linux x86-64 Development Dedicated Server build succeeded at D:\Programing\UnityProjects\war-of-machines-local-builds\LinuxServer-20261124-203532. Release archive and SHA-256 are recorded in deploy/alienx/README.md.
+- Isolated Ubuntu 24.04 container verified headless startup, FishNet UDP 7770 listener, Server scene, API registration/heartbeat, and graceful shutdown/unregister. Compose host binding was restricted to loopback.
+- Map scene was included in build configuration but not observed loading at runtime. No real client, DTLS handshake, external UDP, bots, gameplay match, reconnect, or 20-player load test was available.
+- AlienX VM access remains gated by ticket #93; Altare API/database cloud resources remain uncreated. No cloud code upload, payment, Bolt use, production access, or data deletion occurred.
+
+## 2026-11-25 04:49 +08:00 — RAV Altare staging and Unity client integration
+- **Status:** IN_PROGRESS.
+- **Direct user authorization:** Upload the private RAV API Docker image or necessary source to Altare and create free isolated API/PostgreSQL staging resources; no money/Bolts, payment details, production secrets/data, or production changes.
+- **Scope:** Configure a separate cloud-staging Unity client profile while preserving local/production settings; connect it to the actual Altare staging API and, if AlienX remains unavailable, the local dedicated server for a real Unity Editor multiplayer test.
+- **Preserve:** Existing user changes and journals; no commit/reset/revert/clean. Avoid gameplay changes unless required for compatibility.
+- **Acceptance:** Record actual endpoint, changed files and client launch steps; do not claim client/DTLS/gameplay checks unless observed.
+- **Start:** 2026-11-25 04:49 +08:00.
+- **Next:** Review Unity network/config owners and required docs before any client configuration edit; first confirm actual cloud API endpoint and server availability.
+
+### Altare deployment path checkpoint — 2026-11-25
+- GitHub's Altare installation request includes read/write access to commit statuses and pull requests in addition to repository code/metadata. To honor the previously approved read-only scope, no grant was submitted.
+- Altare App Hosting does not list .NET as a supported runtime; Docker Apps pull images from an external registry. The local API image is available but has not been uploaded. No cloud API endpoint exists yet, so no Unity cloud-staging configuration or client changes were made.
+- **Next:** Resume Unity staging configuration only after an API HTTPS endpoint is available; preserve existing local, production, and working-tree configuration in the meantime.
+
+## 2026-11-25 05:39 +08:00 — RAV cloud API and Unity staging continuation
+- **Status:** IN_PROGRESS.
+- **User request:** After the private RAV API image is deployed to a free Altare Docker App and connected to `rav-staging`, apply only staging migrations, verify the API contracts, then point the existing local Unity Dedicated Server at the cloud staging API and prepare the Unity Client for a first multiplayer test.
+- **Safety:** Keep source/working-tree changes intact; do not install Altare's GitHub App, change production or Unity defaults, expose secrets, spend money/Bolts, or disable HTTPS/DTLS. Use only staging credentials and a separate runtime environment for cloud testing.
+- **Acceptance:** Record verified staging HTTPS endpoint, API/server test results, any new client-side files/configuration, and exact Editor launch steps; do not claim client/DTLS/gameplay tests until observed. No Unity cloud configuration changes before the API endpoint and isolated credentials exist.
+- **Initial state:** Existing local Linux Dedicated Server build and local-only test path are documented in prior entries. API deployment is currently blocked on private image transfer and Altare app configuration. Preserve the existing dirty changes.
+- **Start/next:** 2026-11-25 05:39 +08:00. Review prior entries and repo status; wait for the API endpoint before editing client/server runtime settings.
+
+## 2026-11-25 — Altare cloud staging API continuation checkpoint
+
+- The API team is preparing private GHCR image `ghcr.io/scorpioner2010/rav-api:staging-20261125`; local image security audit and API Release build passed, but GHCR push is waiting for the owner's masked PUSH_TOKEN input.
+- Unity API endpoint is not configured yet because the Altare app hostname has not been assigned. Keep `RAV_API_BASE` unset until the exact staging HTTPS host is known; the staging override must never fall back to the legacy production API.
+- No Unity source/build/runtime changes in this checkpoint. Local Dedicated Server cloud registration and Unity Client staging login/multiplayer tests remain NOT TESTED.
+
+## 2026-11-25 — Final cloud deployment and client preparation
+- **Status:** IN_PROGRESS.
+- **User request:** Continue the authorized staging deployment; use only actual staging API/server endpoints, prepare a separate Unity Client profile and launch instructions, and do not launch the user's Unity Client. Preserve local/production settings and existing dirty work.
+- **Safety:** No production endpoint/credentials/data, no paid resources or Bolts, no Git reset/clean/commit, no weakened HTTPS/DTLS, no secret in source, no unsupported UDP claims. Keep current AlienX access gate and use a verified free persistent UDP host only.
+- **Acceptance:** Client config points at real staging HTTPS/API and actual dedicated-server address/port when those exist; document all changed files and unverified tests. If endpoints are unavailable, leave client unchanged and record the exact blocker.
+- **Start:** 2026-11-25 (Asia/Manila).
+- **Initial handoff:** Unity Linux server local runtime smoke passed, but actual cloud VM/API endpoint and client-to-server DTLS/gameplay tests were pending. Existing Unity working tree contains deployment docs/journal changes; preserve them.
+- **Next:** Check Git status and inspect current provider access before altering Unity settings.
+
+### 2026-11-25 — Final deployment preparation checkpoint
+- Current Unity HEAD remains 3a050ee43598d5ff6aea16f17cd243e677043534; existing dirty Unity changes and deployment notes are preserved. No Unity source/config was changed during this checkpoint.
+- Copied the verified current Linux Dedicated Server archive to the requested Desktop deployment folder; SHA-256 matches repository runbook.
+- Desktop documentation and PowerShell operations scripts now describe the current cloud blockers and are parser-validated.
+- Actual cloud API and Dedicated Server endpoints still do not exist; do not edit staging client configuration or launch Unity Client until they are confirmed.
+- AlienX ticket #93 remains last known pending; current panel was not checked because the owner is completing an Altare database credential reset.
+### User continuation — defer staging DB password rotation — 2026-11-25
+- The owner asked to postpone rav-staging password rotation until after staging configuration and testing. Preserve the existing test database and continue staging integration work; no credential reset is authorized or needed now.
+- Do not change local/production Unity defaults. Wait for the real HTTPS API endpoint and a real UDP server endpoint before adding a separate client launch profile. Do not launch the user''s Unity Client.
+- Next: Use the current Altare API endpoint if it becomes available; otherwise keep client configuration unchanged and continue only safe staging preparation.
+
+### 2026-11-25 — Cloud staging checkpoint after Altare availability issue
+- Owner deferred the test DB password rotation until after staging is configured and tested.
+- Altare API App is not created and the database schema/backup status has not been verified; do not set a Unity staging API URL yet.
+- No Unity Client, networking config or gameplay file changed in this checkpoint. Keep the client unlaunched until the real HTTPS API and public UDP/DTLS endpoint exist.
+- Oracle Always Free AMD micro was researched as a low-capacity x86 UDP candidate only; no account/resource was created. Current AlienX ticket #93 status and UDP endpoint still need a live check.
+
+### 2026-11-25 — Altare API app pending
+- Altare verified the private RAV API image; a free API App creation request is pending in Stockholm under the provider's heavy-demand incident.
+- Keep Unity Client configuration unchanged and do not launch the Unity Client until the HTTPS API hostname and a public UDP/DTLS server endpoint have been verified.
+- No cloud app endpoint, API health, auth/ticket, registration/heartbeat, or multiplayer tests are confirmed yet. Database password rotation is deferred by the owner.
+
+### 2026-11-25 — Altare has no available free app port
+- The API app could not be created: automatic allocation failed and two Stockholm nodes reported no free ports. No HTTPS API hostname exists.
+- No DB migration, cloud API test, Unity staging config, public UDP/DTLS or gameplay test occurred. Keep Unity Client settings unchanged and unlaunched.
+
+### 2026-11-25 — Oracle Cloud ARM64 compatibility preflight
+- **Status:** COMPLETED — READY WITH LIMITATIONS.
+- **User request:** Inspect the existing Linux x86-64 Dedicated Server build and determine whether Unity 6000.3.13f1, FishNet 4.6.4, Mono, DTLS, and native dependencies support a separate Linux ARM64 Dedicated Server for Oracle Ampere A1; attempt a separate build and actual ARM64 runtime tests where locally possible.
+- **Scope:** Read-only inspection plus a new isolated ARM64 build output only if the installed Unity version/modules/toolchain support it. Test API registration/heartbeat only against an already-configured staging endpoint; never allow production fallback.
+- **Safety:** Preserve all existing dirty changes and x86-64 artifacts. Do not create Oracle resources/account, use trial credits, upgrade PAYG, pay, alter gameplay or production, or use emulation as a production solution.
+- **Acceptance:** Save `ORACLE_ARM64_PREFLIGHT.md` to Desktop/War of Machines Deployment with build/ELF/dependencies/FishNet/DTLS/API/runtime findings, Oracle Always Free/deployment plan and remaining risks. Record tests honestly.
+- **Start:** 2026-11-25 (Asia/Manila).
+- **Completed:** Unity 6000.3.13f1 produced a separate Linux Dedicated Server ARM64 IL2CPP build at `D:/Programing/UnityProjects/war-of-machines-local-builds/RAV-Oracle-A1-Arm64-20261125`; BuildResult Succeeded, 0 errors, 30 warnings. `RAVServer`, `UnityPlayer.so`, `GameAssembly.so`, and Burst runtime are AArch64. Existing x86-64 artifact and project Mono settings were preserved; temporary build helper was removed.
+- **Runtime:** Ran Ubuntu 24.04 ARM64 under local Docker/QEMU emulation, isolated with `--network none` and an ephemeral self-signed test certificate. Headless server startup, Server scene startup, FishNet initialization, UDP 7770 bind, and SIGTERM shutdown all passed; container exit code 0. This was not a native A1 test. `Map.unity` is in the build but was not loaded because no client/match was created. DTLS handshake and API registration/heartbeat remain NOT TESTED; no live staging endpoint exists and production fallback was blocked.
+- **Compatibility findings:** Unity 6000.3 supports Ubuntu 24.04 ARM64 server players, but ARM64 is IL2CPP-only; the existing Mono x86-64 build remains separate. Two auxiliary x86-64 ELF libraries were included (`abci.so` from Alembic and `libdecor-cairo.so`/`libdecor-0.so.0`); `abci.so` failed to load while server startup continued. A runtime convex-mesh warning reported a partial hull for `tripo_node_b7d6146a`. Resolve/accept these limits and run native ARM64, real DTLS/client, Map/match, and API tests before relying on A1 for production.
+- **Oracle:** The requested 2 OCPU / 12 GB A1 and 50 GB boot volume are within published Always Free compute/storage quotas when created in the tenancy home region. Frankfurt capacity and public IPv4 billing were not verifiable without an account/console; no account or resources were created. Always Free idle-reclamation and capacity risks remain.
+- **Next:** Prefer a supported x86-64 Linux VPS for production readiness. If Oracle A1 is still considered, first do a native ARM64 staging deployment and complete the outstanding integration tests; do not describe the emulated run as native validation.
+
+### 2026-11-25 — Oracle Cloud A1 real RAV Dedicated Server deployment
+- **Status:** IN_PROGRESS.
+- **User request:** Use `Desktop/War of Machines Deployment/ORACLE_ARM64_PREFLIGHT.md` as handoff, do not repeat completed local ARM64 build/emulation tests, and pursue a real zero-cost Oracle Always Free A1 deployment.
+- **Scope:** Verify Oracle account/access, A1 European availability and $0 cost for VM, disk, public IPv4 and networking. Create Ubuntu 24.04 ARM64 2 OCPU/12 GB/50 GB only if every resource is explicitly verified free. Deploy the existing ARM64 artifact, configure SSH/firewall/UDP 7770/systemd/restart, and run native stability/integration/load tests where safe.
+- **Safety:** No payment details, card authorization/hold, trial credits, PAYG, production API, weakened DTLS/authentication, or code/gameplay change without need. Use staging API only. Preserve existing user changes. Do not repeat preflight local tests.
+- **Acceptance:** Real ARM64 VM remains active at zero cost; record real public IP, endpoint/port, resource billing evidence, services, CPU/RAM, 30–60 minute stability, networking/DTLS/API/gameplay/load results and exact untested items. Save deployment documentation under the existing Desktop deployment directory; credentials only in an approved encrypted vault.
+- **Start:** 2026-11-25 (Asia/Manila).
+- **Initial handoff:** ARM64 IL2CPP build passed local emulated smoke; native A1, Map/match, DTLS handshake, API registration/heartbeat, and Oracle IPv4 cost remain unverified. Altare API app was last recorded unavailable due no free ports. No Oracle account or resources were recorded.
+- **Next:** Inspect live Oracle account/session in the browser and verify current free billing before any resource creation.
+
+## RAV Netcup infrastructure deployment — IN_PROGRESS
+
+- Started: 2026-11-25 18:30:05 +08:00 (Asia/Manila).
+- Request: Resume previous Netcup preparation and deploy staging infrastructure for RAV: PostgreSQL 17, ASP.NET Core 10 API over HTTPS, Unity Linux x86-64 Dedicated Server on UDP 7770 with DTLS, and configure Unity Client. Search/reuse existing artifacts; do not repeat successful audits/tests.
+- Acceptance: actual resources and integration only after provider/account state, exact billed amount, contract term, renewal/cancellation and IPv4 price are verified. Stop before paid order and obtain user's confirmation. No production API/database; no payment or legally binding order without explicit final authorization; no paid add-ons; preserve current work and do not expose secrets.
+- Current status: IN_PROGRESS. No repository/source inspection or deployment action performed in this task yet. No cloud resource, order, payment, migration, or client endpoint change made.
+- Next: read both project AGENTS.md and task journals; inspect existing Netcup docs/artifacts/status and browser/account session; continue only safe local preparation until purchase gate.
+### Netcup discovery checkpoint — 2026-11-25
+- Read project instructions and current journals before source edits. Both repositories already contain user changes; Unity working tree includes HttpLink/diagnostics and deployment docs/scripts, API working tree includes staging/Docker/config/migration-related changes. No commit/reset/clean performed.
+- Desktop deployment folder contains current generic/Altare/AlienX deployment notes, a packaged x86-64 Unity server archive, scripts, and DPAPI vault. No dedicated Netcup deployment plan/config was found in tracked deploy files or current deployment docs.
+- Do not read or expose secret values. A separate `secure-vault/alienx-rav-staging-ed25519` private-key file exists beside `credentials.dpapi.txt`; it is scoped by name to AlienX and will not be reused for Netcup without an explicit technical need. Inspect its ACL before any further key handling.
+- Existing state recorded in documents is stale for the newly selected provider: Altare API app was unavailable; no current Netcup VPS/IP/SSH endpoint is confirmed yet.
+- Next: verify official Netcup plan/order requirements and inspect the existing in-app browser/account session; preserve the current order until price/term/renewal/IPv4/cancellation are verified. Stop before final purchase and request explicit confirmation.## 2026-11-26 — Netcup staging client/server integration — IN_PROGRESS
+- User request: deploy the current RAV Linux x86_64 Unity Dedicated Server with FishNet/DTLS on Netcup, configure the client for the new staging API/server endpoint, and run real external/network/match stability tests.
+- Scope: staging only, no production fallback, preserve existing dirty files and gameplay, no commits/resets. OS selection must follow Unity's current Linux Server platform support.
+- Acceptance: compatible Linux build deployed, UDP 7770/DTLS preserved, server registration/heartbeat/tickets validated, Unity client staging profile ready, and test gaps reported.
+- Current checkpoint: Netcup SSH host fingerprint verified; read-only server check confirms a fresh Debian 13.8 x86_64 instance with no project data. No server artifact deployed. Unity artifact compatibility with current staging host/API allowlist remains to be verified.
+- Status: IN_PROGRESS; next inspect current git state, deployment archive manifest, and RAV staging-host configuration.
+
+## 2026-11-26 — Commit readiness review — IN_PROGRESS
+- User asks whether the current pending API and Unity changes can be committed manually.
+- Scope: inspect working tree and diff contents for intended changes, secrets, generated artifacts, and whitespace issues; do not commit, stage, reset, clean, or edit implementation.
+- Acceptance: give a clear commit recommendation, safe scope, exclusions, and validation status.- Review result: branch main has no staged changes; five tracked paths are modified and deploy/alienx/README.md is untracked. High-confidence secret-pattern scan found no matches. The AlienX README is unrelated and stale for the current Netcup staging deployment; keep it out of the Netcup commit. Unity client Play/DTLS/gameplay validation remains pending, so a commit is not a claim of full multiplayer verification.
+- Recommendation: the staging override, diagnostics path and Linux deployment documentation are commit candidates; do not include deploy/alienx/README.md in this change. No commit or staging action was performed.
+- Status: COMPLETED.
+## 2026-11-26 — RAV Unity Editor Development Control Panel — IN_PROGRESS
+- User request: implement a compact Unity Editor control panel at RAV/Development Control Panel for Local/Netcup Database, API, Dedicated Server, client Play Mode environment switching, builds, status and logs. Use existing scripts/builders, preserve production settings and unrelated changes, and provide one short usage guide in Desktop deployment docs.
+- Scope: Unity Editor tooling plus only the minimum supporting local configuration/helper integration needed for requested controls. No gameplay refactor, production changes, remote deployment, database destructive actions, Git commit/push/reset/clean, or deletion of existing scripts.
+- Acceptance: supported combinations and blocked combinations are explicit; selected environment is applied before client Awake/Play Mode without Editor restart or cross-environment cached auth/tickets; local services are owned and stopped only by this panel; Netcup ordinary start is health/status-only; builds reuse LocalNetworkBuild; secrets are not logged or included in client artifacts; save one short usage guide; perform requested focused validation and record limitations.
+- Start: 2026-11-26 (Asia/Manila).
+- Status: IN_PROGRESS. Next inspect both repositories' current Git state and relevant existing launch/build/health helpers, then implement the smallest safe EditorWindow and profile application path.
+- **Discovery checkpoint:** Read global/project instructions and the existing architecture discovery report before implementation. Unity worktree already has dirty `HttpLink.cs`, diagnostics, TMP fallback asset, deployment docs/service, root journal, and untracked `deploy/alienx/`; API worktree already has staging/Docker changes and a local journal. These are pre-existing and must remain intact. Discovery identifies unsafe production fallback for Development, staging's exact `RAV_API_BASE` requirement, a global-name Stop BAT, empty Desktop remote settings/stale systemd unit, and secrets files with broad ACLs. Next: inspect exact existing APIs/scripts and design only profile/runtime application plus owned local processes.
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Added `Assets/Editor/RAVDevelopmentControlPanel.cs` and its Unity `.meta`; added safe Editor-process API selection in `HttpLink.cs` and reusable timestamped Client/Server build entry points in `LocalNetworkBuild.cs`. The panel includes Local/Netcup presets, supported-combination checks, environment/cache isolation, panel-owned local processes, PostgreSQL/API/server lifecycle actions, staging status, client build/launch, logs, and separately confirmed remote restart actions.
+- Added the short usage guide at `Desktop/War of Machines Deployment/RAV_DEVELOPMENT_CONTROL_PANEL.md`; corrected it to distinguish API/heartbeat checks from separate SSH/systemd actions. Netcup public DTLS CA and local `client-transport.env` exist. SSH identity reference is blank and must be configured before remote SSH actions.
+- Validation: Unity Editor recompiled the Editor assembly after the final source change (Editor assembly timestamp is newer than the panel source; recent Editor log shows the compile/copy steps and no compiler errors). The Unity Editor menu/window had been observed. `git diff --check` passed; three deployment PowerShell scripts parsed with zero AST errors; deployment settings JSON parsed successfully.
+- Not run: no local database/API/server or client was started or built; no Netcup SSH/network calls, remote restarts, migrations, multiplayer/DTLS handshake, or external reachability tests were performed. No service state or database volume was changed.
+- Final status: implementation and focused static/Editor validation complete; runtime and remote integration remain unverified. Existing dirty files and unrelated `deploy/alienx/` were preserved. No commit/stage/reset/clean performed.
+## 2026-11-26 — RAV Development Control Panel operational verification — IN_PROGRESS
+- User request: finish machine-specific SSH/configuration and practically validate existing Full Local and Full Netcup panel flows, including process lifecycle, client build, status/heartbeat, remote logs, profile switching, and primary buttons. Keep Hybrid blocked.
+- Scope: configure the existing control panel using the existing SSH key/vault and deployment settings; run only requested staging/local checks and fix root causes if found. No new features, service reinstall, DB reset/data deletion, production changes, load tests, or Git commit/push.
+- Acceptance: all components and paths/URLs/ports/CA are preconfigured; Full Local start/check/build/launch/stop/restart-without-rebuild works; Full Netcup API/heartbeat/SSH/logs/profile application works; Local→Netcup→Local switches without Editor restart; primary buttons are exercised; report actual limitations.
+- Start: 2026-11-26 (Asia/Manila).
+- Initial state: previous panel implementation is compiled, but no local service/client runtime or Netcup SSH check was performed. Desktop deployment settings contain the current API/server endpoint and blank SSH key reference; a local secure-vault and existing SSH key are recorded in prior task notes. Preserve all dirty changes and do not print secret material.
+- Next: identify the existing Netcup-capable SSH key/secure-vault path without opening secret values, configure the panel's machine-local SSH reference and other defaults, then exercise the already-open Unity Editor panel and record each result.- **Discovery:** The Editor panel is open with Full Local selected. Local PostgreSQL status was Ready, API Failed, server Stopped. Editor recent activity shows access denied on `LocalSecurity\local-security.env`; its protected DACL had zero ACEs. The existing Temp Netcup key's derived public key matches the public key stored in the DPAPI vault; SSH agent is stopped. The known-host fingerprint calculation was rerun with OpenSSH's standard Base64 format before trusting it.
+- **Decision:** Restore only the LocalSecurity directory/file ACLs to current user, SYSTEM, and Administrators. Reuse the existing Netcup key file after matching it to the vault and restricting its ACL; do not generate another key.- **SSH trust result:** Direct `ravadmin` login was correctly blocked because default `known_hosts` held the pre-reinstall key. The new key is already confirmed by SCP and is in the dedicated `rav-netcup-known-hosts-verified` cache; after replacing only the stale `62.83.120.40` entry, key-only SSH succeeded and confirmed Ubuntu 24.04.5, x86_64, 4 vCPU, about 7.8 GiB RAM and 157 GiB root filesystem.
+- **Configuration blocker:** The Unity floating panel is outside the original Editor window bounds, so computer-use input could not reach its text fields. Clicks did not modify settings. The single needed key-path preference will be written from the existing machine-local deployment settings and loaded by restarting Unity once; the requested environment switching will still be tested within one Editor session after that setup restart.
+- The Netcup key was moved (not regenerated) from its existing Temp copy to the user's persistent .ssh directory with restricted ACL; the DPAPI vault copy remains untouched. The Desktop deployment settings and Unity EditorPrefs now reference the persistent key path. Unity was closed cleanly (no scene-save prompt) to load this one-time machine setting before runtime checks.
+- **Runtime findings (2026-11-26):** Reused the existing Ed25519 key/vault and verified strict key-only SSH to Netcup. `https://api.staging.62-83-120-40.sslip.io/health/live` and `/health/ready` return 200. API status reports one online server, UDP 7770, and a fresh heartbeat; `rav-staging-dedicated-server.service` is active, and remote `ss` confirms `RAVServer.x86_64` bound to `0.0.0.0:7770`. The configured public DTLS CA parses and is currently valid.
+- **Local builds/data:** `Build Selected` completed API build and created timestamped Windows server output `D:\Programing\UnityProjects\war-of-machines-local-builds\Server-20261125-230306-410-d9dd93fc`; `Build Client` produced `C:\Users\TorasPC\Desktop\RAV Builds\Client-20261125-230522-477-94c055c0\RAVClient.exe`. Docker Desktop and PostgreSQL started; PostgreSQL is healthy on loopback only. API started with the existing local DB; logs confirm EF migrations were already current. No database was cleared.
+- **Root-cause fixes:** The Unity panel's `HttpClient` routed loopback API probes through the configured system proxy, causing false readiness failures. `CreateApiHttpClient` now disables proxy use only for loopback URLs; TLS validation remains enabled and remote URLs keep normal proxy behavior. Unity recompiled cleanly; the refreshed panel reports local DB/API Ready. The remote server log helper previously ran `journalctl` without privilege and returned no entries; it now uses `sudo -n journalctl`, and an actual Netcup log read passed.
+- **Pending action:** Full Local subsequently reached a Windows Defender Firewall prompt for `ravserver.exe`. Per Computer-use restrictions I did not change Windows security settings; asked the owner to allow Private networks only (or Cancel if that choice is unavailable). Local server process and UDP 7770 startup are not yet verified. Netcup services were not restarted.
+- **Verification update (2026-11-26):** Rechecked local health/live and health/ready (HTTP 200), PostgreSQL container healthy on loopback `127.0.0.1:5433`, standalone client build present, and local server process bound to UDP `0.0.0.0:7770`. The local API reports the server online on port 7770 with a fresh heartbeat. Netcup read-only checks remain passed: API health, SSH key-only access, active server/UDP listener, and remote logs. `git diff --check` passed for the Unity worktree (only existing LF/CRLF warnings); the API checkout path was not found under `D:\Programing\UnityProjects`, so no API diff check is claimed.
+- **Still pending:** The Unity panel operation remains `Start Selected` and its displayed server status is stale (`Stopped`) while local process/API checks show the server online. A Windows Firewall prompt appeared for the local server executable. Per computer-use restrictions, no security setting was changed. Standalone client launch, panel stop/restart-without-build, Full Local → Full Netcup → Full Local switching in the same Editor session, and panel button verification are not yet complete.
+### 2026-11-26 — Recovery after user resolved Firewall prompt
+- User confirmed the Windows Firewall step is complete. Resume the existing `RAV Development Control Panel operational verification` entry; no new feature or architecture work.
+- Current objective: diagnose why the panel's `Start Selected` stays busy and reports local Dedicated Server `Stopped` although the local process owns UDP 7770 and the local API reports a fresh online heartbeat. Then validate stop/restart, client launch, profile switching, and primary buttons without restarting Unity or touching Netcup services.
+- Do not rerun confirmed API/DB/Netcup audits. Start with current repository/UI/process state and inspect only the relevant panel coroutine/status/process ownership paths. No commit/push.
+
+### Continuation checkpoint — 2026-11-26 (Asia/Manila)
+- Resume point: Unity Editor remained open; prior Start Selected run was still in progress after recompiling the latest panel changes. Earlier panel run had completed with Local DB/API/heartbeat Ready without rebuild; standalone Client launch and Local/Netcup preset switching had also succeeded.
+- Root-cause fixes now in source: operation pumping is deferred until after GUI layout; run log uses one joined label to avoid variable IMGUI control counts; local PostgreSQL status uses `pg_isready`; Stop Local refreshes statuses before completing.
+- Latest observed validation: after recompile, Refresh Status showed Database Stopped / API Failed / Dedicated Server Stopped when Local services were stopped. A second Start Selected started the existing local PostgreSQL container and was still progressing at handoff; no rebuild was requested, no volume was removed, and no Netcup service was changed.
+- Next: finish the active Start Selected operation; verify automatic stop-state refresh and restart; finish on Full Local with services ready; record final outcomes and remaining Play-mode limitations. Preserve all dirty files; no commit/push.
+
+### Final verification — 2026-11-26 (Asia/Manila)
+- Fixed the remaining status inaccuracies: a short grace period avoids marking a newly started Unity Server as exited while its process metadata settles; local API status distinguishes a stopped listener from an unhealthy API. The existing asynchronous operation-pump/IMGUI corrections remain in place.
+- After recompiling the Editor assembly, Refresh Status correctly reported Database/API/Server Stopped after Stop Local. A fresh Start Selected completed without rebuild: local PostgreSQL became healthy, HTTPS `/health/live` and `/health/ready` returned 200, and the API reported the local Dedicated Server online with a fresh heartbeat on UDP 7770. Panel statuses finished Ready; no database volume was deleted.
+- Stop Local, no-rebuild restart, Full Local → Full Netcup → Full Local in one Editor session, and DB/API/Server Check buttons passed. Launch Client had already passed earlier in this session; client build was not repeated. Netcup remained read-only and unchanged; Hybrid remains unavailable. `git diff --check` passed (only existing LF/CRLF notices).
+- Editor is left on Full Local with PostgreSQL, API, and Dedicated Server running, ready for ordinary Play Mode. A real user login/match in Play Mode was not performed; gameplay/auth flow and DTLS handshake remain unverified here. No load test, commit, or push was performed.
+- The Desktop `Start War of Machines.bat` was inspected but not run: its companion Stop script uses image-wide `taskkill /IM` for `RAVServer.exe`, `RavApi.exe`, and `RAVClient.exe`, which could terminate unrelated or currently managed sessions. The panel workflow was verified instead; make the batch Stop script PID/path-scoped before claiming that legacy launcher is safe and verified.
+
+## 2026-11-26 — Development Control Panel live operation status and log — IN_PROGRESS
+- User request: add a compact `Live Operation Status & Log` section to the existing RAV EditorWindow. Show real operation/phase, completed stage count, elapsed time, honest progress, status, color-coded timestamped live log, auto-scroll, clear/copy/open full log, adjustable height, and persistence across window close/reopen. Cover existing lifecycle/build/health/SSH/profile operations with truthful skip/wait messages and no secrets.
+- Scope: only the existing Unity Editor control panel implementation plus this journal. Preserve previous dirty work; no gameplay/API/DB/Netcup changes, no commits/push, and no long rebuild just to preview UI.
+- Acceptance: operation progress is driven by actual stages (unknown build percentage stays indeterminate); background messages are marshalled safely to the UI; compilation succeeds and the visible panel demonstrates retained colored live log/status controls.
+- Start: 2026-11-26 (Asia/Manila).
+- Status: IN_PROGRESS. Next inspect the existing panel implementation and Unity compile/runtime state, then extend its current logging/progress primitives rather than introducing a separate architecture.
+
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Added the bottom `Live Operation Status & Log` section to the existing RAV EditorWindow: operation name/status, active phase, real completed-stage count/progress, elapsed time, spinner while busy, color-coded timestamped entries, auto-scroll preference, adjustable height, and Clear/Copy/Open Full Log controls.
+- Routed background messages through a concurrent queue to the Editor update loop; retained the last 180 readable entries in `%LOCALAPPDATA%\RAV\DevelopmentControlPanel\Logs\operations.log` and detailed sanitized command output in `operations-full.log`. Recent entries survived script/domain reload and closing/reopening the EditorWindow.
+- Added real stage/wait/skip/success/error messages across existing build, local service, health, registration/heartbeat, Netcup, SSH, and environment-switch operations. Unity BuildPipeline shows the active build name with an indeterminate progress bar instead of a fabricated percentage.
+- Fixed two UI issues found during verification: color markup was being displayed literally (now each message uses a colorized GUI label), and accessing `EditorStyles` in `OnEnable` caused `NullReferenceException` during domain initialization (styles are now created lazily in `OnGUI`). Closing the window clears only its stale repaint reference; persisted logs and active operation state remain intact.
+- Validation: Unity 6000.3.13f1 Editor assembly was newer than the changed source; Editor.log showed no C# compile errors after the latest refresh and no new panel `NullReferenceException`. In the visible panel, Refresh Status completed with PostgreSQL, API, and Dedicated Server `Ready`, and server registration/heartbeat verified. Closing/reopening the panel retained logs and settings. `git diff --check` passed; only existing line-ending notices remain.
+- No component/player build was run, no service state was changed by the verification refresh, and no commit/push was performed. Existing unrelated dirty changes were preserved.
+- Status: COMPLETED.
+
+## 2026-11-26 — Move Live Operation Log to right column — IN_PROGRESS
+- User request: move the Live Operation Status & Log area to the right side because part of the messages is currently hidden.
+- Scope: adjust only the existing EditorWindow layout and any minimal sizing/wrapping needed for the live log. Preserve current logging behavior, progress tracking, settings, services, and unrelated working-tree changes.
+- Acceptance: the operation status/log is visibly placed on the right side with readable wrapped messages and usable scrolling; Unity Editor recompiles; no long player/component build, commit, or push.
+- Start: 2026-11-26 (Asia/Manila).
+- Status: IN_PROGRESS. Next inspect the panel's IMGUI layout and current window dimensions, implement a right-side log column, then verify visually in the already-open Unity Editor.
+- Discovery/implementation checkpoint: the log's auto-scroll was measuring wraps with the entire EditorWindow width, and the 190 px saved height exposed only a few rows. Split the EditorWindow into a controls column and a right-side log column, raised the minimum window width for legibility, and migrated the default log pane to 420 px while preserving user-set larger heights. Auto-scroll now measures the right column and accounts for label margins.
+
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Moved `Live Operation Status & Log` into a dedicated right-side column; all existing controls remain in the left column. Increased the window minimum width so the two columns and action labels stay readable.
+- Expanded the log pane to 420 px by default and retained its height slider up to 720 px. Auto-scroll now estimates wrapped rows using the right-column width and includes each GUI label's vertical margins, so the last messages remain in view.
+- Visual check confirmed the operation/log panel on the right with retained colored messages and all three service statuses Ready. Unity Editor assembly timestamp is newer than the updated panel source; Editor.log has no C# compiler errors after the refresh. `git diff --check` passed.
+- The final scroll-margin-only adjustment compiled after the visual check. A follow-up screenshot could not be captured because Computer Use began targeting another app; no further UI input was sent. The layout itself had already been visibly confirmed before this final measurement adjustment.
+- No builds, service restarts, or commits/pushes were performed. Pre-existing dirty files were preserved.
+- Status: COMPLETED.
+
+## 2026-11-26 — Green running-state buttons — IN_PROGRESS
+- User request: make the existing Development Control Panel simply highlight buttons green when their corresponding service is running/ready, so current service state is immediately visible. Do not launch the Client.
+- Scope: minimal presentation-only change to the existing EditorWindow and this journal. Use actual refreshed/verified component status, preserve all existing project changes and service state; no architecture refactor, builds, service starts/stops, client launch, commit, or push.
+- Acceptance: green indicates the relevant service is confirmed Ready; inactive/not-ready buttons retain their normal appearance; `Start Selected` is green only when all selected components are Ready; Client is not launched.
+- Start: 2026-11-26 (Asia/Manila).
+- Status: IN_PROGRESS. Next inspect existing status/button drawing code, make the smallest suitable UI-only change, and perform focused source/compile validation if Unity has already refreshed the Editor assembly.
+- Discovery: `ComponentStatus.Ready` is populated by actual PostgreSQL/API readiness and server registration/fresh heartbeat checks. Environment changes currently retain the previous cached statuses, so button tint must not reuse those after switching profiles.
+- Decision: green-tint only the active, fully Ready `Full Local`/`Full Netcup` preset, `Start Selected` when all selected components are Ready, and Local Component Start buttons when their selected local component is Ready. On preset/component selection changes, invalidate the displayed cache and trigger the existing read-only status refresh. Leave Build/Client/stop buttons unchanged; do not launch Client.
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Added restrained green tint to `Full Local` / `Full Netcup` only when that exact profile is selected and every corresponding service check is Ready. `Start Selected` is green only while all selected components are Ready. Local DB/API/Dedicated Server Start buttons are green only when their corresponding selected local service is Ready. Build, stop, and Client buttons retain their normal appearance.
+- On profile/location changes, cached states are reset to Unknown and the existing read-only status refresh is triggered, preventing stale green indicators from carrying across environments. No client was launched and no service state was intentionally changed.
+- Validation: Unity Editor recompiled `Assembly-CSharp-Editor.dll` after the source change (DLL modified 20:09:48, source modified 20:07:56); Editor.log contains zero C# compiler errors. `git diff --check` passed; only existing LF/CRLF warnings were reported.
+- Visual screenshot verification was not possible: Computer Use timed out twice while activating the Unity window, after the required single retry; no further UI actions were attempted. The compilation confirms the Editor script is accepted, but the actual button colors were not visually inspected.
+- No player/server build, Client launch, service start/stop, commit, or push was performed. Existing unrelated working-tree changes were preserved.
+- Status: COMPLETED.
+
+## 2026-11-26 — Reset local RAV database to a fresh start — IN_PROGRESS
+- User request: completely clear the local RAV database so development starts from zero, comparable to a fresh production deployment.
+- Scope: identify the exact local RAV PostgreSQL database and rebuild only that database to the current schema with required system/game catalog seeds. Remove existing local player/user/game data. Do not touch production, remote Netcup, other databases/containers, deployment credentials, or project source unless the existing fresh-install process requires it.
+- Acceptance: the active local RAV database is newly initialized from current EF Core migrations and required non-user seed data; no old user profiles/progress/history remain; API uses this same local database; result is verified without launching the Unity Client.
+- Start: 2026-11-26 (Asia/Manila).
+- Status: IN_PROGRESS. Next inspect local compose/API settings and seed behavior, verify the exact database/container target before any destructive SQL, then reset and reinitialize only that database.
+- Discovery: the local PostgreSQL Compose project is `war-of-machines-local`, loopback-only on 5433, backed by `war-of-machines-local_war_of_machines_postgres_data`; the current RAV API Compose file uses the same exact project and named-volume identity. Its container is stopped and no local API/server process or listener is running. Other `rav-local-*` containers are unrelated staging artifacts and will not be touched.
+- Fresh-start requirement: Development currently auto-runs migrations and catalog seed but also enables the demo account/match fixture. The fixture flag must be disabled so the empty database remains production-like on API startup.
+- Implemented the local API Development fixture-seed default as false, preserving migrations/catalog seed so an API restart will not recreate a demo account or demo match.
+- Next start only the verified `war-of-machines-local` Postgres service. Recreate its database in place (no volume deletion), then let the local API apply current migrations/catalog seed. Do not start the Unity Dedicated Server or Client.
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Cleared and reinitialized only the local RAV database `war_of_machines_local` on the loopback-only PostgreSQL service; kept its named Docker volume and all unrelated containers/databases intact.
+- Current API applied 9 migrations and the required catalog seed. Vehicles/factions/maps/research references remain; all player, match, ownership, session, ticket, and server-registration tables are empty.
+- Local API is running and both HTTPS liveness/readiness endpoints return 200. Development fixture seeding was disabled so a restart will not recreate the demo user or match. No Netcup/production change, Unity Server startup, or Client launch.
+- Status: COMPLETED.
+
+## 2026-11-26 — Simplify RAV Development Control Panel — IN_PROGRESS
+- User request: simplify the existing Unity Editor panel around the Netcup shared PostgreSQL, Local/Netcup modes, API and Dedicated Server local/remote actions, combined Build/Deploy/Start/Stop operations, Client actions, compact status and existing Live Log.
+- Scope: reuse the current panel, Builder, SSH/vault references, existing deployment scripts and rollback. Local API must use a secure SSH tunnel to Netcup PostgreSQL with TLS verification and migrations/fixtures disabled. No production fallback, public PostgreSQL, new DB, data clearing, unnecessary remote restart, client launch, commit, or push.
+- Acceptance: compact English UI matching the provided reference; two modes only; correct mode switching without Editor restart; real status/log stages; build/deploy/start ordering and API readiness gate; Netcup mutation confirmation and existing rollback; focused compile/status/tunnel checks and `git diff --check`.
+- Start: 2026-11-26 (Asia/Manila).
+- Status: IN_PROGRESS. Next inspect current dirty state, panel controls/process routines, deployment helpers and the existing secure-vault/SSH tunnel configuration; preserve all existing changes.
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Removed duplicate Local API tunnel state/property, obsolete per-component environment aliases, and an unused PowerShell quoting helper. Kept the legacy preference read for one-time environment continuity.
+- Fixed Unity main-thread access from the PostgreSQL background check; made API builds use isolated output directories; added strict ownership/tunnel checks before Local Dedicated Server start; isolated inherited server/API environment values; moved server archive hashing off the UI thread; and made stage progress expand when operations run more stages than estimated.
+- Validation: Unity Editor assembly recompiled after the changes; API build passed in an isolated output folder (0 warnings/errors); Compose validation passed and PostgreSQL has no published host ports; Netcup HTTPS liveness/readiness returned 200; panel PostgreSQL SSH health returned Ready; `git diff --check` passed (line-ending notices only).
+- Blocked runtime checks: an unmanaged `RavApi.exe` (PID 18232) owns localhost ports 7216/5220 and does not answer HTTPS readiness. It was left untouched. Local API/server start, Stop All, live Local/Netcup switching, and deployment actions were not exercised; Client was not launched.
+- Status: PARTIALLY COMPLETED — safe code/config work is in place; Local runtime verification is blocked by the unowned API process.
+
+## 2026-11-26 — Complete Local/Netcup control panel runtime validation — IN_PROGRESS
+- User authorizes stopping PID 18232 only after confirming it is the old project `RavApi.exe` occupying localhost 7216/5220; user also authorizes project process/service start/stop and fixes. Preserve all uncommitted work; never touch PostgreSQL data, production, or Git history.
+- Scope: verify/stop only that confirmed Local API process; start Local API through the panel using the verified Netcup PostgreSQL SSH tunnel; start Local Dedicated Server; verify status/heartbeat, Stop All, restart without rebuild, and Local/Netcup switching; remove only proven-dead panel code.
+- Acceptance: practical component checks pass, code remains minimal/stable, existing API/Dedicated Server buttons function; no client launch, commit, or push.
+- Prior checkpoint: panel and API code changes compile; isolated Local API build artifact exists; Compose validation and Netcup HTTPS health passed; panel PostgreSQL SSH health reported Ready. Local runtime was blocked by the unowned process; verify current PID/path/ports anew before stopping.
+- Next: inspect current working trees and latest project journals/instructions, verify exact process identity and listeners, then continue from the existing isolated build (avoid a rebuild unless the artifact is missing/stale).
+- Status: IN_PROGRESS.
+- Verification checkpoint: PID 18232 is `RavApi.exe` at `D:\Programing\ServerProjects\rav-api\RavApi\bin\Debug\net10.0\RavApi.exe`, owned by the current Windows user, and is the listener for both 7216 and 5220. User explicitly authorized stopping this exact old API process. Next stop only PID 18232, confirm ports free, and launch the panel-managed API.
+- Stopped only the verified old `RavApi.exe` PID 18232; confirmed listeners 7216/5220 are free. No database or other process was touched.
+- Updated the panel to recover the latest isolated API build artifact automatically when no prepared-build preference exists. This lets Start reuse the previously verified DLL without a rebuild.
+- Next: Unity recompile/refresh, start the Local API through the panel, then start and verify the Local Dedicated Server.
+
+## 2026-11-26 — Resume Local/Netcup control-panel runtime validation — IN_PROGRESS
+- User confirmed the Windows Firewall prompt was dismissed with Cancel and authorized completing Stop All, restart without rebuild, and Local/Netcup switching; leave panel in Local with API and Dedicated Server running. No Client launch, commit, or push.
+- Resume from the existing verified Local state. Do not repeat successful health checks/builds; use the panel, verify stopped state, restart with Build disabled, switch Local → Netcup → Local, then leave Local API and Dedicated Server Ready.
+- Start: 2026-11-26 (Asia/Manila). Status: IN_PROGRESS.
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Completed panel-driven Stop All. The operation reported the Local API and Dedicated Server stop sequence completed; it also stopped only the loopback SSH tunnel helper and explicitly left Netcup PostgreSQL running. API status refreshed to Stopped; no data/service changes were made remotely.
+- Re-ran Execute All in Local with Build unchecked and Start checked. Live Log explicitly said the API build was skipped and the existing build was used. The protected loopback PostgreSQL tunnel restarted, API reached Ready, and the Windows Dedicated Server reached Ready with registration/heartbeat verification. No Client launch or rebuild occurred.
+- Switched Local → Netcup → Local. Netcup refresh reported PostgreSQL, API, and Dedicated Server Ready; returning to Local applied the Local API/DTLS settings and the fresh panel status showed PostgreSQL, Local API, and Local Dedicated Server Ready. Unity Editor was not restarted.
+- Final state: Local selected; API Ready; Dedicated Server Ready; PostgreSQL Netcup Ready; Build checkbox off; Client not launched. No implementation code changed in this continuation. No commit or push.
+- Status: COMPLETED.
+
+## 2026-11-26 — Clearer registration validation and server errors — IN_PROGRESS
+- User request: set minimum login and password lengths to 4 characters, and make server responses explain the reason for failures in the Unity client instead of showing raw/unhelpful responses.
+- Scope: trace registration DTO validation and Unity registration response handling; preserve existing auth/security behavior except the requested length floor; return/display safe, actionable validation messages. Do not expose secrets or change unrelated flows.
+- Acceptance: login and password each accept 4+ characters and reject shorter values with a clear reason; API returns explanatory validation errors; Unity UI displays a human-readable cause for failed registration/login responses. Run focused API/client compilation or tests available without launching a multiplayer client.
+- Start: 2026-11-26 (Asia/Manila). Status: IN_PROGRESS.
+- Implementation checkpoint: API `RegisterRequest` and `LoginRequest` now require Login length 4–32 and Password length 4–128, with explicit validation messages; applied to canonical AuthController and staging API snapshot while preserving existing unrelated starter-data edits in the snapshot.
+- Unity `RegisterManager` now converts ASP.NET validation `errors`, ProblemDetails `detail/message/title`, plain-text auth failures, and empty/network responses into concise human-readable messages instead of forwarding raw JSON or blank text to the popup.
+- Changed files: `Assets/Game/Scripts/API/Endpoints/RegisterManager.cs`; `RavApi/Controllers/AuthController.cs`; `deploy/staging/api/RavApi/Controllers/AuthController.cs`. No schema, database, service, or gameplay changes.
+- Next: inspect the focused diff, compile the API into an isolated output and confirm Unity Editor recompilation, then record results and remaining deployment limitation.
+### Completion checkpoint — 2026-11-26 (Asia/Manila)
+- Registration and login now enforce Login 4–32 characters and Password 4–128 characters; API validation text names the field and accepted range. The canonical API controller and staging source snapshot are aligned for validation; unrelated starter balances in the staging snapshot were preserved.
+- Unity auth handling now extracts ASP.NET validation messages and ProblemDetails details, keeps plain server messages readable, and supplies concise HTTP/network explanations when the response has no usable body. Raw validation JSON is no longer passed to the auth popup.
+- Validation: canonical API `dotnet build --no-restore` succeeded with 0 warnings/errors; `git diff --check` passed in both repositories with only existing line-ending notices. Unity Editor compilation and live registration were not verified: the Editor log predates the client edit and the active Windows view is a Google identity check, which was left untouched. No API deployment/restart or database write was performed; the running service needs the updated API build to use the new server-side minimum.
+- Status: COMPLETED (source implementation complete; Unity compile/live activation remain unverified).
+
+### Resume checkpoint — registration still fails to connect — IN_PROGRESS
+- User reports the Unity Play Mode popup now says “Could not connect to the server. Check your connection and try again.” Screenshot shows Local mode, API/Server statuses Ready, and Play Mode prevents environment/service changes.
+- Scope: diagnose the active Unity API URL/TLS/network path and distinguish a stale status indicator from an API transport/endpoint error. Do not submit registration, create accounts, change credentials, or stop/restart services unless a concrete safe fix requires it.
+- Start: 2026-11-26 (Asia/Manila). Next inspect the configured API address without secrets, current listeners/health endpoints, and recent Unity/API logs; then fix the smallest root cause.
+- Diagnostic finding: current Unity `Editor.log` records libcurl `Curl error 28` after exactly 2000 ms. `RegisterManager` configured a 2-second local auth timeout. Local API HTTPS `/health/live` and `/health/ready` return 200 (108 ms / 330 ms); a deliberately invalid registration is rejected with HTTP 400 in 21 ms, and a nonexistent-user login returns HTTP 401 in 676 ms without creating an account. The failure therefore occurs only on slower real registration work (player plus starter-data database calls through the remote PostgreSQL tunnel), not at API reachability or TLS health.
+- Decision: raise only the local authentication request timeout to 20 seconds and map UnityWebRequest's timeout/certificate errors to clear popup messages. The local API is still running an older build, so rebuild/restart only the Local API through the existing panel after exiting Play Mode; do not touch Netcup services or create a user.
+
+### 2026-11-26 follow-up — registration connection timeout
+- The current Unity screenshot shows a generic connection failure while the Development Control Panel reports Local API and Dedicated Server Ready.
+- Existing diagnostics: local `/health/live` and `/health/ready` returned HTTPS 200 (108 ms / 330 ms); a deliberately invalid short registration payload returned HTTP 400 in 21 ms; a nonexistent-user login returned HTTP 401 in 676 ms. No account was created and no database write was made.
+- Unity `Editor.log` shows `Curl error 28` at exactly 2,000 ms during registration. This matches the old local request timeout and explains why the API's slower registration transaction over the protected Netcup PostgreSQL tunnel was cut off before a response.
+- `RegisterManager.cs` now sets the Local request timeout to 20 seconds and maps timeout, TLS/certificate, and DNS failures to clearer messages. Existing source changes and unrelated user changes were preserved.
+- The API source already enforces 4–128 character passwords and 4–32 character logins with explanatory validation messages. The currently running API predates that build and needs the Local API Build/Start operation to activate it.
+- Remaining blocker: Unity is in Play Mode and its panel intentionally disables service changes. Computer-use could list Unity but could not attach to its native window (`Accessibility state unavailable`), so Play Mode was not stopped and the API was not restarted. No Netcup service was changed.
+- Next: exit Play Mode, let Unity compile the script edit, then use the panel's Build API and Start API actions. Verify health plus only an invalid registration request (HTTP 400); do not create an account. Leave Local API running.
+- Status: IN PROGRESS; no commit/push.
+### 2026-11-26 follow-up — local registration path restored
+- User exited Play Mode. Used the Unity Development Control Panel in Local mode to Build API and Start API; both operations completed. API is Ready and the panel-owned loopback-only PostgreSQL SSH tunnel was confirmed listening on port 15432.
+- Active process is the newly built isolated API assembly under `%LOCALAPPDATA%\RAV\DevelopmentControlPanel\Logs\LocalApiBuilds\api-20261126T143121313\RavApi.dll`.
+- Strict-TLS health checks returned `/health/live` HTTP 200 (95 ms) and `/health/ready` HTTP 200 (287 ms).
+- A deliberately invalid short registration request returned HTTP 400 with the expected messages: login 4–32 characters; password 4–128 characters. No valid registration was submitted and no account was created.
+- Unity Editor.log had no C# compiler errors in the recent tail. The client code now allows 20 seconds for Local auth requests and gives specific timeout/TLS/DNS explanations.
+- Registration itself remains for the user to try in Play Mode; the short-input validation and healthy API path are verified. No Netcup service/database was changed. No commit/push.
+- Status: local registration fix applied; end-to-end account creation intentionally NOT TESTED.

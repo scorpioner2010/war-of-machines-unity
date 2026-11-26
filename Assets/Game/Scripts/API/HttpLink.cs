@@ -16,6 +16,8 @@ namespace RAV.Scripts.API
         public static string APIBase = GetDefaultApiBase();
 
         private static bool _runtimeConfigApplied;
+        private static bool _hasExplicitApiBaseOverride;
+        private static string _explicitApiBaseOverride = string.Empty;
         private static HashSet<string> _productionApiBases;
 
         public static bool IsLocal
@@ -38,9 +40,61 @@ namespace RAV.Scripts.API
             APIBase = normalizedBase;
         }
 
+#if UNITY_EDITOR
+        public static bool TrySetEditorApiBase(string apiBase, out string error)
+        {
+            error = string.Empty;
+            string normalizedBase = NormalizeBase(apiBase);
+            if (string.IsNullOrWhiteSpace(normalizedBase)
+                || !Uri.TryCreate(normalizedBase, UriKind.Absolute, out Uri uri)
+                || uri.Scheme != Uri.UriSchemeHttps)
+            {
+                error = "The selected Editor API endpoint must be a valid HTTPS base URL.";
+                return false;
+            }
+
+            string previousApiBase = Environment.GetEnvironmentVariable(ApiBaseEnvironmentVariable);
+            Environment.SetEnvironmentVariable(ApiBaseEnvironmentVariable, normalizedBase);
+            _runtimeConfigApplied = false;
+            _hasExplicitApiBaseOverride = false;
+            _explicitApiBaseOverride = string.Empty;
+            APIBase = GetDefaultApiBase();
+            ApplyRuntimeConfig();
+
+            string[] candidates = GetBaseCandidates();
+            if (candidates.Length == 1
+                && string.Equals(candidates[0], normalizedBase, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            Environment.SetEnvironmentVariable(ApiBaseEnvironmentVariable, previousApiBase);
+            _runtimeConfigApplied = false;
+            _hasExplicitApiBaseOverride = false;
+            _explicitApiBaseOverride = string.Empty;
+            APIBase = GetDefaultApiBase();
+            ApplyRuntimeConfig();
+            error = "The selected API endpoint is not in the Editor allow-list. No fallback will be used.";
+            return false;
+        }
+#endif
+
         public static string[] GetBaseCandidates()
         {
             ApplyRuntimeConfig();
+
+            // An explicitly configured endpoint defines the current environment. Do not
+            // silently fall back from staging to a production API if that endpoint fails.
+            if (_hasExplicitApiBaseOverride)
+            {
+                if (string.IsNullOrWhiteSpace(_explicitApiBaseOverride)
+                    || IsAllowedBase(_explicitApiBaseOverride) == false)
+                {
+                    return Array.Empty<string>();
+                }
+
+                return new[] { _explicitApiBaseOverride };
+            }
 
             if (IsDevelopmentConfiguration == false)
             {
@@ -118,6 +172,12 @@ namespace RAV.Scripts.API
             if (string.IsNullOrWhiteSpace(apiBase))
             {
                 apiBase = Environment.GetEnvironmentVariable(ApiBaseFallbackEnvironmentVariable);
+            }
+
+            if (string.IsNullOrWhiteSpace(apiBase) == false)
+            {
+                _hasExplicitApiBaseOverride = true;
+                _explicitApiBaseOverride = NormalizeBase(apiBase);
             }
 
             SetResolvedBase(apiBase);
