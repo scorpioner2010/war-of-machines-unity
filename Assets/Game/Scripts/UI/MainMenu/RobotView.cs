@@ -68,6 +68,20 @@ namespace RAV.Scripts.UI.MainMenu
                 return;
             }
 
+            StandardLoadingOverlay.BeginRequest();
+            try
+            {
+                await GenerateIconsInternalAsync(view);
+            }
+            finally
+            {
+                StandardLoadingOverlay.EndRequest();
+            }
+        }
+
+        private static async UniTask GenerateIconsInternalAsync(RobotView view)
+        {
+
             int buildVersion = ++view._buildVersion;
             view.DespawnPreviewRobot();
 
@@ -481,7 +495,7 @@ namespace RAV.Scripts.UI.MainMenu
 
             List<Transform> l = new List<Transform>();
             l.Add(_in.vehicleContainer);
-            GameplayAssistant.RebuildAllLayouts(l).Forget();
+            await GameplayAssistant.RebuildAllLayouts(l);
         }
 
         public static void Spawn(VehicleRoot vehicleRoot)

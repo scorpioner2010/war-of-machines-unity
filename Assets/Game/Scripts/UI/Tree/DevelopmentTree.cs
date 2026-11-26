@@ -93,6 +93,7 @@ namespace RAV.Scripts.UI.Tree
             }
 
             _isInitializing = true;
+            StandardLoadingOverlay.BeginRequest();
 
             try
             {
@@ -109,6 +110,7 @@ namespace RAV.Scripts.UI.Tree
             finally
             {
                 _isInitializing = false;
+                StandardLoadingOverlay.EndRequest();
             }
         }
 

@@ -31,6 +31,7 @@ namespace RAV.Scripts.API.ServerManagers
         private Coroutine _profileRefreshCoroutine;
         private bool _profileRefreshQueued;
         private bool _profileRequestInFlight;
+        private bool _profileLoadingScopeActive;
         private int _profileRefreshAttempt;
 
         private void Awake() => _in = this;
@@ -80,11 +81,12 @@ namespace RAV.Scripts.API.ServerManagers
             if (!ClientAuthenticationState.IsAuthenticated)
             {
                 GameplayRuntimeDiagnostics.Record("profile_refresh_skipped", "reason", "https_session_missing");
+                _in.EndProfileLoadingScope();
                 StandardLoadingOverlay.Hide();
                 return;
             }
 
-            StandardLoadingOverlay.Show();
+            _in.BeginProfileLoadingScope();
             _in.QueueProfileRefresh();
         }
 
@@ -125,6 +127,7 @@ namespace RAV.Scripts.API.ServerManagers
 
             _profileRefreshQueued = false;
             _profileRequestInFlight = false;
+            EndProfileLoadingScope();
         }
 
         private IEnumerator ProfileRefreshLoop()
@@ -177,7 +180,7 @@ namespace RAV.Scripts.API.ServerManagers
                     "attempts", _profileRefreshAttempt);
                 _profileRefreshQueued = false;
                 _profileRequestInFlight = false;
-                StandardLoadingOverlay.Hide();
+                EndProfileLoadingScope();
             }
 
             _profileRefreshCoroutine = null;
@@ -188,6 +191,28 @@ namespace RAV.Scripts.API.ServerManagers
             return ClientAuthenticationState.IsAuthenticated
                    && IsClientInitialized
                    && IsClientStarted;
+        }
+
+        private void BeginProfileLoadingScope()
+        {
+            if (_profileLoadingScopeActive)
+            {
+                return;
+            }
+
+            _profileLoadingScopeActive = true;
+            StandardLoadingOverlay.BeginRequest();
+        }
+
+        private void EndProfileLoadingScope()
+        {
+            if (!_profileLoadingScopeActive)
+            {
+                return;
+            }
+
+            _profileLoadingScopeActive = false;
+            StandardLoadingOverlay.EndRequest();
         }
 
         public static void ConvertFreeXp(int vehicleId, int amount)
@@ -446,7 +471,7 @@ namespace RAV.Scripts.API.ServerManagers
                 Popup.ShowText(errorMessage, Color.red);
             }
 
-            StandardLoadingOverlay.Hide();
+            EndProfileLoadingScope();
         }
 
         private static void ApplyLocalTestProfile(PlayerProfile profile)

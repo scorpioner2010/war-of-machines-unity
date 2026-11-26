@@ -43,6 +43,8 @@ Current owner scripts:
   - Vehicle slot display and vehicle-selection click handling. It does not create a hover specifications popup.
 - `Assets/Game/Scripts/UI/MainMenu/RobotView.cs`
   - Main menu robot preview display and vehicle slot generation.
+  - Owns the garage refresh loading scope: `GenerateIconsAsync()` keeps `StandardLoadingOverlay` visible through profile/catalog slot generation, preview activation, and the final vehicle-container layout rebuild, then releases it in `finally` for both live and direct refresh paths.
+  - The successful login path leaves the auth overlay visible while MainMenu requests the profile; `ProfileServer` owns a request scope for that full profile/robot refresh, so connection-screen `Hide` calls cannot remove it before the garage is ready. It ends the scope only after this robot/garage refresh completes. Failed authentication keeps its immediate error-state hide behavior.
   - Sends the selected vehicle's resolved API stats to `MainMenu.UpdateVehicleInfo` after rebuilding the slots.
   - Resolves local/API vehicle stats by unique `vehicleId` before falling back to the visual `code`, so test variants that reuse one registry model still retain their own configured stats.
   - Initializes preview vehicles through `VehicleRoot.Init(true)`. Menu context keeps the robot model visible but suppresses its gameplay-only world nickname and HP bar.
@@ -51,6 +53,7 @@ Current owner scripts:
   - In `Assets/Game/Scenes/Client.unity`, it is bound to `MainMenuNew/DragImage`; this transparent image must keep `Raycast Target` enabled.
 - `Assets/Game/Scripts/UI/Tree/DevelopmentTree.cs`
   - Loads `VehicleGraph` data per faction, builds the selected faction tree at runtime, and keeps purchase/research RPC validation authoritative on the server.
+  - Owns the first-open vehicle/graph loading lifecycle and wraps it in `StandardLoadingOverlay.BeginRequest()`/`EndRequest()` so the empty tree is never presented while API data is pending. The overlay owns visibility presentation, keeps concurrent request visibility until the last scoped request completes, and uses a dedicated high-sorting Canvas plus GraphicRaycaster in `Client.unity` so menus opened afterward cannot render or receive input above it.
   - Groups every graph node by `level`: level 1 is the lowest row, later levels are stacked above it, and nodes in every row are centered.
   - A `TreeItem` click only selects a vehicle; it never starts purchase or research directly. `DevelopmentTree` keeps one `_selectedTreeItem`, disables its previous `IsSelect` child before enabling the newly clicked item's child, and clears the selection when changing faction or rebuilding the runtime tree.
   - When the tree opens or the active faction changes, it selects the first valid robot from the lowest level using stable `code` ordering and shows its details through the same selection path as a manual click.

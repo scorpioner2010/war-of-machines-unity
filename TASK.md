@@ -4854,3 +4854,121 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - Unity Editor.log had no C# compiler errors in the recent tail. The client code now allows 20 seconds for Local auth requests and gives specific timeout/TLS/DNS explanations.
 - Registration itself remains for the user to try in Play Mode; the short-input validation and healthy API path are verified. No Netcup service/database was changed. No commit/push.
 - Status: local registration fix applied; end-to-end account creation intentionally NOT TESTED.
+
+## 2026-11-26 — Always show StandardLoadingOverlay while API requests are pending — COMPLETED
+- **User request:** `StandardLoadingOverlay` має показуватися завжди, коли клієнт очікує відповідь API; зокрема при першому відкритті дерева розвитку не має бути порожнього екрану до завершення завантаження.
+- **Scope:** Trace the existing loading-overlay owner and DevelopmentTree/API request lifecycle, fix the smallest root cause so pending API work reliably blocks the empty presentation, and preserve unrelated working-tree changes.
+- **Acceptance criteria:** The overlay is visible for the full pending-request interval, appears before the first DevelopmentTree data request can render an empty state, hides on success and failure, and does not remain stuck across repeated opens or request errors.
+- **Start:** 2026-11-26 (Asia/Manila). **Status:** COMPLETED.
+- **Next:** Inspect current Git state, overlay implementation, DevelopmentTree request ownership, and adjacent tests/docs before editing.
+- **Discovery:** `MainMenu` opens `MenuType.DevelopmentTree` and immediately calls `DevelopmentTree.Init()`, but `DevelopmentTree.InitAsync()` currently starts `VehiclesManager.GetAll()`/`GetGraph()` without showing `StandardLoadingOverlay`; the empty tree is therefore visible until the first API response completes.
+- **Discovery:** `StandardLoadingOverlay` currently stores one global boolean. Existing profile/selection/research flows use direct `Show/Hide`, including chained operations where a server action starts a profile refresh before the original response flow finishes.
+- **Decision:** Keep existing direct `Show/Hide` behavior compatible, add a request-scoped counter to the overlay, and use it around the DevelopmentTree initialization so the overlay is shown before the first await and hidden in `finally` after success, failure, or repeated-open cancellation paths.
+- **Ownership:** DevelopmentTree remains the owner of its vehicle/graph data loading and UI construction; StandardLoadingOverlay owns only presentation and pending-request visibility. The existing `docs/codex-game/menus-settings-progression.md` ownership map will be updated with this boundary.
+- **Implementation:** `StandardLoadingOverlay` now separates legacy manual visibility from a scoped pending-request count via `BeginRequest()`/`EndRequest()`, preserving the overlay while any scoped request remains active. `DevelopmentTree.InitAsync()` begins the scope before `LoadDataFromServer()` and ends it in `finally` after UI construction or failure.
+- **Documentation:** Updated `docs/codex-game/menus-settings-progression.md` with the DevelopmentTree/overlay ownership boundary and first-open loading behavior.
+- **Validation:** `git diff --check` passed. `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 30 existing warnings. Unity Editor was already open, so no batch-mode PlayMode test or manual visual runtime check was run.
+- **Result:** On the first DevelopmentTree open, `StandardLoadingOverlay` activates before vehicle/graph API loading and remains active through runtime tree construction; it hides on success or failure. Concurrent scoped requests no longer hide it prematurely.
+- **Completed:** 2026-11-26 (Asia/Manila). **Remaining limitation:** Visual PlayMode confirmation remains for a later run with the already-open Unity Editor; no scene or prefab changes were required.
+
+## 2026-11-26 — Rewrite recent commit subjects (requested)
+**Request:** Review the latest 10 commits in each of the RAV API and Unity repositories, identify what each commit changed, and replace vague subjects with clear, accurate names.
+**Scope:** API repo and Unity repo; preserve all file/tree changes and commit order. Do not create new content commits. Inspect local working-tree changes before rewriting. Do not rewrite commits outside the most recent 10 per repository. Check remote divergence before deciding whether local rewording can be safely synchronized.
+**Acceptance:** 20 recent commits reviewed; each gets a concise, evidence-based subject; branch trees remain unchanged; final status and any remote synchronization limitation reported. No unrelated edits.
+**Status:** IN_PROGRESS.
+
+### Commit subject review checkpoint — 2026-11-26
+- Reviewed the latest 10 first-parent commits and their code/asset/deployment changes. All are unsigned, single-parent commits. `main` exactly matches `origin/main`; only this task's uncommitted `TASK.md` journal edit is present.
+- Proposed subjects, newest to oldest:
+  1. `Add RAV control panel and improve local API/client build flow` — e0d26176
+  2. `Rebrand Unity project and add Linux server deployment tooling` — 3a050ee4
+  3. `Tune vehicle movement and apply remote server settings` — 878e3f20
+  4. `Add ticket-based FishNet authentication and secure transport` — b5679056
+  5. `Fix missing GameObject reference in Client scene` — b705d688
+  6. `Improve projectile handling and add gameplay diagnostics` — 801f84f2
+  7. `Tune combat effects across vehicle prefabs` — 8a74335a
+  8. `Organize Unity content under Assets/Game/Content` — 8bf3a2e4
+  9. `Add editor validation tools and remove duplicate effects` — 2f369210
+  10. `Remove legacy assets and add performance audit reports` — eba594e4
+- Rewriting local subjects changes commit IDs. Because all 10 are already on `origin/main`, synchronizing them would require a force update of remote `main`; do not push without explicit approval. Next: rewrite local commit objects while preserving tree, author, and committer metadata; verify exact tree equality and keep working-tree changes.
+- Status: IN_PROGRESS.
+### Commit subject rewrite — completed locally — 2026-11-26
+- Rewrote subjects for the latest 10 commits on local main after reviewing each commit's changes.
+- Verified each rewritten commit retains the original tree, parent sequence, author/committer metadata, and commit message body; only the first subject line changed.
+- Preserved existing uncommitted work. No content files were changed by the history rewrite.
+- origin/main remains untouched. Local main is now 10 commits ahead and 10 behind because rewritten history has new hashes; publishing it would require a force update of origin/main.
+- No push performed. Status: LOCAL REWRITE COMPLETED; REMOTE SYNCHRONIZATION NOT DONE.
+
+## 2026-11-27 — Show loading overlay while the initial garage loads — COMPLETED
+- **User request:** При першому вході після логіну ангар і список техніки на мить/залишаються порожніми, але `StandardLoadingOverlay` не показується; потрібно показувати loading screen, поки стартові дані/API та UI ангара завантажуються.
+- **Scope:** Trace the login-to-main-menu/profile/robot-roster lifecycle, identify why the overlay is hidden or never shown during the initial garage load, implement the smallest ownership-safe fix, and preserve unrelated working-tree/history changes.
+- **Acceptance criteria:** The overlay appears before the initial garage/profile/catalog loading begins, stays visible until the garage roster and selected robot presentation finish or fail, hides on both success and failure, and does not regress repeated profile refreshes or menu navigation.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED.
+- **Next:** Inspect current Git state, auth/profile/main-menu/RobotView loading owners, overlay lifecycle, and available compile/runtime validation before editing.
+- **Discovery:** `MainMenu` requests a profile on `MenuType.MainMenu`, and live `ProfileServer` success already awaits `RobotView.GenerateIconsAsync()` before its legacy overlay `Hide()`. However, offline/local profile application and other garage refresh paths call `RobotView.GenerateIcons()` directly, and `RobotView` itself has no loading scope.
+- **Discovery:** `RobotView.UpdateUIAsync()` starts `GameplayAssistant.RebuildAllLayouts(...)` with `.Forget()`, so the profile flow can hide the overlay before the vehicle scroll layout finishes rebuilding. The scene wiring is valid: the active `StandardLoadingOverlayController` points to the inactive visual `StandardLoadingOverlay`, and offline menu test mode is disabled in `Client.unity`.
+- **Decision:** Make `RobotView.GenerateIconsAsync()` the focused owner of garage loading visibility with `BeginRequest()`/`EndRequest()` in `finally`, and await its layout rebuild. Preserve `ProfileServer` as the profile/API owner and retain compatibility with its existing manual overlay calls.
+- **Implementation:** Added a request scope around the complete `RobotView.GenerateIconsAsync()` flow, including live/offline roster generation, selected vehicle preview activation, and the final scroll layout rebuild. Changed `UpdateUIAsync()` to await `GameplayAssistant.RebuildAllLayouts(...)` instead of fire-and-forget.
+- **Documentation:** Updated `docs/codex-game/menus-settings-progression.md` to record RobotView as the garage presentation/loading owner while ProfileServer remains the profile/API owner.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 30 existing warnings. `git diff --check` passed with only existing line-ending notices. Unity Editor processes are open, so no batch-mode PlayMode or manual visual login/runtime check was run.
+- **Result:** Garage refreshes now explicitly keep `StandardLoadingOverlay` visible until the roster, selected preview, and scroll layout are ready; failures release the scope through `finally`, while existing profile/manual overlay behavior remains compatible.
+- **Completed:** 2026-11-27 (Asia/Manila). **Remaining limitation:** The built/current client was not launched in Play Mode because Unity Editor was already open; visual login-to-garage confirmation remains the next runtime check.
+
+## 2026-11-27 — Block clicks while StandardLoadingOverlay is active — COMPLETED
+- **User request:** Налаштувати `Client` scene так, щоб активний `StandardLoadingOverlay` блокував кліки та UI-райкасти до елементів під ним.
+- **Scope:** Перевірити serialized UI-компонент overlay, зберегти його повноекранне покриття та `Raycast Target`, увімкнути лише потрібну сценову властивість без змін у логіці завантаження.
+- **Acceptance criteria:** Коли overlay активний, його повноекранний UI Image перехоплює райкасти; за замовчуванням overlay залишається вимкненим; існуючі контролери та інші незавершені зміни не змінюються.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED.
+- **Next:** Перевірити точний компонент у `Assets/Game/Scenes/Client.unity`, увімкнути його, перевірити diff/YAML і закрити запис.
+- **Discovery:** `StandardLoadingOverlay` є повноекранним `RectTransform` з anchor min `(0, 0)` і max `(1, 1)`. Його `Image` вже має `m_RaycastTarget: 1`, але serialized `m_Enabled: 0`, тому активований GameObject не створює UI-райкаст-блокер.
+- **Decision:** Змінити лише `m_Enabled` цього `Image` на `1`; не додавати нову логіку або окремий `CanvasGroup`, бо існуючого повноекранного raycast target достатньо.
+- **Implementation:** У `Assets/Game/Scenes/Client.unity` для компонента `Image` з file ID `486140949` встановлено `m_Enabled: 1`. Батьківський GameObject `StandardLoadingOverlay` і далі має `m_IsActive: 0`, тому стартовий стан сцени не змінився.
+- **Validation:** `git diff --check -- Assets/Game/Scenes/Client.unity` пройшов; diff містить лише зміну `m_Enabled: 0` → `1`. Статично підтверджено повноекранні anchors і `m_RaycastTarget: 1`.
+- **Result:** Коли `StandardLoadingOverlay` активується, його повноекранний `Image` тепер перехоплює UI-райкасти й не пропускає кліки до елементів під overlay.
+- **Completed:** 2026-11-27 (Asia/Manila). **Remaining limitation:** Unity PlayMode не запускався, тому фактичний клік перевірено конфігурацією сцени, але не ручним runtime-тестом.
+
+## 2026-11-27 — Keep StandardLoadingOverlay above every menu — COMPLETED
+- **User request:** `StandardLoadingOverlay` має завжди бути поверх усіх меню й блокувати їхні кнопки; зараз після повернення з дерева спочатку видно loading, потім MainMenu опиняється вище та приймає кліки.
+- **Scope:** Trace Canvas/sorting hierarchy and menu transition lifecycle, identify why overlay loses visual and raycast priority, and apply the smallest ownership-safe fix so every activation puts it above all client UI.
+- **Acceptance criteria:** During every active loading interval, overlay renders above all menus and intercepts input; returning from DevelopmentTree cannot expose clickable MainMenu controls before loading ends; overlay remains hidden when inactive; preserve unrelated working-tree changes.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED.
+- **Next:** Inspect scene Canvas hierarchy, `StandardLoadingOverlay` activation, and DevelopmentTree/MainMenu transition code; then patch and validate.
+- **Discovery:** `StandardLoadingOverlay.RefreshVisibility()` already calls `SetAsLastSibling()`, but `MenuManager.OpenMenu()` invokes `OnEnable` before opening the target menu, and `Menu.Open()` then calls `BringToFront()` on MainMenu. Since both are children of the single root Canvas (sorting order `5`), MainMenu can move above the active overlay after loading begins.
+- **Decision:** Make the overlay a nested Canvas with `m_OverrideSorting: 1`, a dedicated high `m_SortingOrder`, and its own `GraphicRaycaster`. This gives the overlay an independent render/input priority while preserving the existing sibling fallback and request lifecycle.
+- **Implementation:** Updated `Assets/Game/Scenes/Client.unity` so `StandardLoadingOverlay` owns a nested Canvas with sorting order `1000` and a dedicated `GraphicRaycaster`; its full-screen Image remains enabled and raycastable. Updated `docs/codex-game/menus-settings-progression.md` with the overlay sorting/input ownership rule.
+- **Validation:** The final scene invariant check passed for the inactive default root, override sorting order `1000`, enabled raycastable Image, and dedicated GraphicRaycaster. `git diff --check` passed with only existing line-ending notices. `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 30 existing warnings. An earlier ad-hoc PowerShell assertion failed due to malformed expression/trailing whitespace in the check script; the scene was corrected and the final checks passed.
+- **Result:** MainMenu and other menus can still call `BringToFront()`, but they cannot render or receive input above the active overlay Canvas. Returning from DevelopmentTree therefore keeps the loading screen visually and interactively on top until its request scope ends.
+- **Completed:** 2026-11-27 (Asia/Manila). **Remaining limitation:** Unity PlayMode visual/click regression was not run because the Unity Editor is already open; runtime confirmation remains the next manual check.
+
+## 2026-11-27 — Keep loading overlay until the garage robot appears — COMPLETED
+- **User request:** Після натискання Login loading screen має залишатися без миготіння після успішної авторизації й ховатися лише коли MainMenu завершив завантаження та робот з'явився в ангарі.
+- **Scope:** Trace successful login completion, MainMenu/profile refresh, `RobotView` presentation completion, and every overlay `Show/Hide` call; remove the premature hide without regressing failed login or later menu/API loading.
+- **Acceptance criteria:** Successful login keeps `StandardLoadingOverlay` active through MainMenu/profile/robot presentation; it hides after the robot is visible and garage layout is ready; failed login still hides the overlay and returns to Auth; no loading flicker or stuck overlay.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED.
+- **Next:** Inspect auth/profile/garage lifecycle and overlay calls, patch the ownership-safe completion point, validate build and focused diff.
+- **Discovery:** `RegisterServer.RequestLoginAsync()` hides the overlay immediately on successful authentication before opening MainMenu. MainMenu then calls `ProfileServer.UpdateProfile()`, which shows it again; the successful profile path already awaits `RobotView.GenerateIconsAsync()` and hides the overlay afterward, causing the visible flicker.
+- **Decision:** Remove only the successful-login `StandardLoadingOverlay.Hide()` call. Auth failure and registration failure keep their existing hide behavior; `ProfileServer` remains the owner that hides the overlay after profile data, robot preview, and garage layout are ready.
+- **Implementation:** Removed the premature success-path hide from `Assets/Game/Scripts/API/ServerManagers/RegisterServer.cs` and documented the login-to-garage loading ownership in `docs/codex-game/menus-settings-progression.md`.
+- **Validation:** Focused `git diff --check` passed with only existing line-ending notices. The inspected flow now opens MainMenu without hiding the overlay, awaits `RobotView.GenerateIconsAsync()`, then hides it in `ProfileServer`. `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and existing warnings.
+- **Result:** After a successful login, `StandardLoadingOverlay` remains visible continuously through profile loading, vehicle slots, robot preview activation, and garage layout rebuild; it disappears only after that flow completes. Failed login still hides it immediately and returns to Auth.
+- **Completed:** 2026-11-27 (Asia/Manila). **Remaining limitation:** Unity PlayMode login-to-garage visual confirmation was not run because the Unity Editor is already open.
+## 2026-11-27 — Runtime-test login loading overlay with test credentials — COMPLETED
+- **User request:** Самостійно протестувати Unity login з логіном `2222` і паролем `2222`, перевірити successful login → MainMenu/garage loading behavior.
+- **Scope:** Use Unity Editor/Play Mode and existing Local services only; enter the provided credentials, observe overlay continuity through profile/robot presentation, record actual result and any runtime blocker. Do not alter account data or unrelated project files.
+- **Acceptance criteria:** Login request completes or reports exact runtime failure; if successful, MainMenu opens, overlay remains until robot appears, then hides; if blocked, record exact blocker and next step. No commit/push.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Validation:** Unity Editor Play Mode accepted login `2222`/`2222`; the loading overlay appeared immediately after submit and remained visible while MainMenu loaded behind it. After the garage robot and robot slots appeared, the overlay disappeared; no premature interactive MainMenu state was observed.
+- **Result:** Runtime flow matches the requested behavior: successful login keeps `StandardLoadingOverlay` active until the robot is visible in the garage, then reveals the usable MainMenu.
+- **Finish:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED. No remaining limitation for this runtime check.
+## 2026-11-27 — Reproduce blank garage after login with test credentials — IN_PROGRESS
+- **User request:** Повторно перевірити логін `2222`/`2222` після скріншотів, які показують MainMenu без робота, і встановити, чи `StandardLoadingOverlay` зникає раніше за завершення завантаження робота.
+- **Scope:** Повторити cold Play Mode login у відкритому Unity Editor, спостерігати overlay/MainMenu/robot/slots у кількох часових точках, перевірити Unity Console на runtime errors, не змінювати implementation без підтвердженого відтворення.
+- **Acceptance criteria:** Зафіксувати фактичний порядок подій; якщо робот не з'являється або overlay ховається завчасно, записати точний стан/помилку й визначити root cause або наступну перевірку. No commit/push.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Discovery:** Clean login succeeds. At submit the overlay/spinner is visible; about 1.2 seconds later MainMenu is visible with an empty robot area and empty slots, while the overlay is no longer intercepting input. Clicking `BATTLE` at that point opened the matchmaking screen before the robot appeared, reproducing the user's report.
+- **Comparison:** In a separate run the robot and slots appeared after about 3.4 seconds, so the failure is a timing/race condition rather than a login rejection.
+- **Root cause:** `ProfileServer.UpdateProfile()` used the shared manual overlay flag, while `MenuLoadingScreenManager.HideConnectionLoading()` called `StandardLoadingOverlay.Hide()` when FishNet connected. That cleared the profile loading indication before `ProfileServer` received the profile and before `RobotView.GenerateIconsAsync()` began.
+- **Implementation:** `ProfileServer` now owns an idempotent request scope around the full profile refresh lifecycle and ends it on success, terminal failure, retry exhaustion, or client stop. The scoped request count survives unrelated connection-loading `Hide()` calls.
+- **Validation:** `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors; focused `git diff --check` passed. After the fix, clean login showed the overlay at the early empty-MainMenu state; clicking `BATTLE` did not open FindGame, and the same run later showed the robot and both owned-vehicle slots before the overlay was released.
+- **Result:** `ProfileServer` now holds an idempotent scoped request through profile retrieval and `RobotView.GenerateIconsAsync()`. Connection-loading `Hide()` calls no longer clear this pending scope, so the overlay remains visually and interactively active until the robot/slots are ready.
+- **Finish:** 2026-11-27 (Asia/Manila). **Status:** COMPLETED. Remaining limitation: the click test covered `BATTLE`; other menu controls use the same full-screen overlay raycast path.

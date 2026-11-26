@@ -125,7 +125,6 @@ namespace RAV.Scripts.API.ServerManagers
                     "token_received", !string.IsNullOrEmpty(result.token),
                     "expires_at", result.expiresAtUtc);
                 ClientAuthenticationState.SetSession(result.token, result.refreshToken, result.expiresAtUtc);
-                StandardLoadingOverlay.Hide();
                 MenuManager.CloseMenu(MenuType.Auth);
                 MenuManager.OpenMenu(MenuType.MainMenu);
             }
