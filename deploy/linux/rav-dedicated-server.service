@@ -11,6 +11,7 @@ WorkingDirectory=/opt/rav/current
 EnvironmentFile=/etc/rav/rav-server.env
 Environment=HOME=/var/lib/rav
 Environment=XDG_CONFIG_HOME=/var/lib/rav/.config
+Environment=RAV_GAMEPLAY_DIAGNOSTICS_PATH=/var/log/rav/GameplayRuntimeDiagnostics.log
 LoadCredential=server.crt:/etc/rav/credentials/server.crt
 LoadCredential=server.key:/etc/rav/credentials/server.key
 LoadCredential=ca.crt:/etc/rav/credentials/ca.crt

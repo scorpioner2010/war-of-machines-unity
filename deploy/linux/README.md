@@ -21,3 +21,9 @@ The unit sends RAV dedicated-server stdout to /var/log/rav/rav-server.log; logro
 Systemd restarts the server on process failure and sends SIGTERM before the 45-second stop timeout. The service uses a dedicated identity, strict filesystem protection, private temporary storage, systemd credentials, and write access only to state/log directories. Review those limits against Unity behavior during staging; do not weaken DTLS or certificate verification to make a test pass.
 
 The API repository owns PostgreSQL backup/restore scripts in deploy/production/scripts/. Use them only after provisioning isolated staging secrets and a confirmed empty restore database. A custom-format pg_dump archive supports pg_restore --list validation. Restore refuses a non-empty public schema and does not drop objects or run EF migrations. Store encrypted off-host copies and rehearse restore before production planning.
+
+## Local runtime rehearsal — 2026-11-25
+
+The service template was rehearsed with the current Linux Dedicated Server build in an isolated Ubuntu 24.04 container, not installed as a systemd unit on an Ubuntu VPS. FishNet started on UDP 7770 and the Server scene became active. The container wrote gameplay diagnostics under /var/log/rav using the RAV_GAMEPLAY_DIAGNOSTICS_PATH environment setting from the unit template. A graceful SIGTERM stopped Unity with exit code 0 and the API registry confirmed the server had unregistered.
+
+The container mapping was loopback-only (127.0.0.1:7770/udp). This confirms a local listener, not public UDP reachability or DTLS. Actual systemd hardening, firewall, logrotate, external client and Map-scene runtime validation remain pending a staging VPS/client.
