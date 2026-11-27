@@ -2,6 +2,7 @@ using System.Collections;
 using RAV.Scripts.Audio;
 using RAV.Scripts.MenuController;
 using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Testing;
 using RAV.Scripts.UI.HUD;
 using RAV.Scripts.UI.Loading;
 using UnityEngine;
@@ -45,6 +46,7 @@ namespace RAV.Scripts.Gameplay.Battle
         private bool CanStartCountdown()
         {
             return isActiveAndEnabled
+                && !ClientVehicleTestMode.IsEnabled
                 && MenuManager.IsReady
                 && MenuManager.CurrentType == MenuType.GameplayHUD
                 && GameplaySpawner.In != null

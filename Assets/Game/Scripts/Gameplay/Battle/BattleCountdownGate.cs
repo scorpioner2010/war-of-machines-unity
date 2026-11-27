@@ -2,42 +2,45 @@ using System;
 using System.Collections.Generic;
 using RAV.Scripts.Gameplay.Robots;
 using RAV.Scripts.Networking.Lobby;
+using RAV.Scripts.Testing;
 
 namespace RAV.Scripts.Gameplay.Battle
 {
     public static class BattleCountdownGate
     {
         private static readonly HashSet<string> ServerLockedRooms = new HashSet<string>();
+        private static bool _clientMovementAndFiringBlocked;
 
-        public static bool IsClientMovementAndFiringBlocked { get; private set; }
+        public static bool IsClientMovementAndFiringBlocked =>
+            _clientMovementAndFiringBlocked && !ClientVehicleTestMode.IsEnabled;
         public static bool IsClientCountdownActive => IsClientMovementAndFiringBlocked;
         public static event Action<bool> ClientCountdownStateChanged;
 
         public static void BeginClient()
         {
-            if (IsClientMovementAndFiringBlocked)
+            if (ClientVehicleTestMode.IsEnabled || _clientMovementAndFiringBlocked)
             {
                 return;
             }
 
-            IsClientMovementAndFiringBlocked = true;
+            _clientMovementAndFiringBlocked = true;
             ClientCountdownStateChanged?.Invoke(true);
         }
 
         public static void EndClient()
         {
-            if (!IsClientMovementAndFiringBlocked)
+            if (!_clientMovementAndFiringBlocked)
             {
                 return;
             }
 
-            IsClientMovementAndFiringBlocked = false;
+            _clientMovementAndFiringBlocked = false;
             ClientCountdownStateChanged?.Invoke(false);
         }
 
         public static void BeginServer(string roomId)
         {
-            if (!string.IsNullOrWhiteSpace(roomId))
+            if (!ClientVehicleTestMode.IsEnabled && !string.IsNullOrWhiteSpace(roomId))
             {
                 ServerLockedRooms.Add(roomId);
             }
@@ -53,12 +56,14 @@ namespace RAV.Scripts.Gameplay.Battle
 
         public static bool IsServerCountdownActive(string roomId)
         {
-            return !string.IsNullOrWhiteSpace(roomId) && ServerLockedRooms.Contains(roomId);
+            return !ClientVehicleTestMode.IsEnabled
+                && !string.IsNullOrWhiteSpace(roomId)
+                && ServerLockedRooms.Contains(roomId);
         }
 
         public static bool IsServerMovementAndFiringBlocked(VehicleRoot vehicleRoot)
         {
-            if (vehicleRoot == null || !vehicleRoot.IsServerInitialized)
+            if (ClientVehicleTestMode.IsEnabled || vehicleRoot == null || !vehicleRoot.IsServerInitialized)
             {
                 return false;
             }

@@ -1,6 +1,7 @@
 using System.IO;
 using FishNet.Managing;
 using FishNet.Transporting.UTP;
+using RAV.Scripts.Testing;
 using UnityEngine;
 
 namespace RAV.Scripts.Networking.Authentication
@@ -28,6 +29,14 @@ namespace RAV.Scripts.Networking.Authentication
                 Debug.LogError("Secure transport configuration requires FishyUnityTransport.");
                 return;
             }
+
+#if UNITY_EDITOR
+            if (ClientVehicleTestMode.IsEnabled)
+            {
+                transport.UseEncryption = false;
+                return;
+            }
+#endif
 
             transport.UseEncryption = true;
 

@@ -20,7 +20,7 @@ Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/GameplaySpawner.cs`
   - Server/client additive scene load flow, scene slot reservation, spawn lifecycle, visibility ticking, disconnect handling.
   - Ticks `ServerRoom.Visibility` for active matches so player map HUDs and bots share the same logical map spotting state.
-  - In the editor-only Client vehicle test path, `StartEditorTestMatch` registers the prepared test room as an active match, starts its visibility service, and spawns the normal network gameplay timer without changing the production match path.
+  - In the editor-only Client vehicle test path, `StartEditorTestMatch` registers the prepared test room as an active match, starts its visibility service, and spawns the normal network gameplay timer without opening the production pre-battle countdown gate.
   - Sends reliable ordered visibility snapshots with a monotonic state version, FishNet server tick, and per-entry remaining lifetime. The client uses the tick to subtract packet age before applying a deadline; this prevents a direct `Enemy` transition from being lost while an authoritative bot is already firing.
 - `Assets/Game/Scripts/Networking/Lobby/MatchVisibilitySnapshotRecipients.cs`
   - Owns visibility snapshot recipient selection separately from spotting participant construction. It sends each team snapshot to active real-player connections using the persistent `Player.team`, including a dead player whose network `playerRoot` has already despawned; the dead root is never reintroduced as a server spotting participant.
@@ -83,7 +83,7 @@ Spawn flow:
 9. `VehicleNetworkInitializer.ServerInit` configures player/bot type, name, team, and scene.
 10. Bot vehicles start `VehicleBotBrain.StartBrain` after spawn.
 11. In VehicleTest, bot buttons require a spawned local player and a `SpawnPoint` in that player's current scene. Ally bots receive the test player's team; enemy bots receive the opposing team. VehicleTest forces its spawned vehicles' client presentation visible because its test room does not receive the normal match visibility snapshots.
-12. In Client editor test mode, the prepared `VehicleTest` room is added to `LobbyRooms`, marked active, and passed to `GameplaySpawner.StartEditorTestMatch`; this keeps the normal timer and visibility tick path active for the test session.
+12. In Client editor test mode, the prepared `VehicleTest` room is added to `LobbyRooms`, marked active, and passed to `GameplaySpawner.StartEditorTestMatch`; this keeps the normal timer and visibility tick path active while bypassing the production pre-battle countdown so controls work immediately.
 13. On a server-only process, `VehicleRoot.OnStartServer` removes the inspector-configured model visual GameObjects from each spawned vehicle. Functional transforms, armor colliders, movement, aiming, and damage logic remain.
 
 The synchronized battle timer uses `MatchSceneGlobalSettings.matchDurationSeconds`, currently 600 seconds (ten minutes). It displays the full duration during pre-battle countdown, then starts decrementing after the countdown completes for every connected real player; the pre-battle countdown does not reduce match time. Reaching zero still finishes the match as a draw.

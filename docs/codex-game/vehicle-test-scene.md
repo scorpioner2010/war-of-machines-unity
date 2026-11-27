@@ -10,8 +10,9 @@ Current owner scripts:
   - When enabled, suppresses normal Client auto-connect/auth/settings startup, enables the inactive test controller, and disables only the normal Client camera for the editor test session.
 - `Assets/Game/Scripts/Testing/VehicleTestSceneController.cs`
   - Starts the local FishNet host for the test scene.
+  - Authenticates the valid server-side remote connection from `OnRemoteConnection` when `ClientVehicleTestMode.IsEnabled`, including the `ServerPlayerSessions` entry required by movement and weapon RPC authorization; this bypasses only the production connection-ticket exchange for the in-process local test host and avoids authenticating FishNet's not-yet-initialized client connection.
   - Sets the local test host `TimeManager` tick rate from `localTestTickRate` before starting FishNet; default is 120 Hz so host-only movement does not visibly step at editor frame rates.
-  - Loads API vehicle stats and lets the user spawn the selected vehicle.
+  - Loads API vehicle stats and lets the user spawn the selected vehicle. If the API catalog is unavailable, it builds a registry-only fallback from valid prefabs with normalized test defaults so local spawn testing remains usable.
   - In legacy `VehicleTest`, can instantiate its configured HUD prefab; in Client test mode, binds the existing scene-owned `Client.unity/Canvas/GameplayHUD` and manages that object without instantiating or destroying UI.
   - Loads the configured gameplay map scene additively when `loadGameplaySceneForSpawns` is enabled.
   - Loads the additive gameplay scene through FishNet with `AutomaticallyUnload = false` so test shutdown does not auto-unload the map from an inactive/destroying `NetworkManager`.
@@ -50,7 +51,7 @@ Rendering prerequisites:
 
 VehicleTest spawn flow:
 1. `VehicleTestSceneController` starts a local FishNet host and waits for a ready local owner connection.
-2. The selected API stats are cloned and test overrides are applied.
+2. The selected API stats are cloned and test overrides are applied. If API stats are unavailable, the selected registry fallback stats are used for the editor test session.
 3. If `loadGameplaySceneForSpawns` is enabled, the controller loads `gameplaySceneName` through FishNet scene loading.
 4. The controller waits until the scene is loaded, contains a `SpawnPoint`, and `ownerConnection.Scenes` contains that scene. Do not manually add the owner connection to the additive map before FishNet receives the client-loaded acknowledgement.
 5. `MatchVehicleSpawner.SpawnPlayerAsync` spawns the vehicle at a map `SpawnPoint`.

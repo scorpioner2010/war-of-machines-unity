@@ -11,6 +11,7 @@ using FishNet.Transporting;
 using RAV.Scripts.API;
 using RAV.Scripts.Diagnostics;
 using RAV.Scripts.Networking.Sessions;
+using RAV.Scripts.Testing;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -25,6 +26,8 @@ namespace RAV.Scripts.Networking.Authentication
         private const string RenewEndpoint = "/connection-tickets/renew";
         private const float TokenRenewalCheckIntervalSeconds = 30f;
         private const int TokenRenewalLeadMinutes = 5;
+        private const int VehicleTestUserId = 1;
+        private const string VehicleTestToken = "ClientVehicleTestMode";
         private readonly HashSet<int> _pendingConnections = new HashSet<int>();
         private float _nextTokenRenewalCheckTime;
 
@@ -45,7 +48,26 @@ namespace RAV.Scripts.Networking.Authentication
                 return;
             }
 
+            if (ShouldBypassServerAuthentication(ClientVehicleTestMode.IsEnabled))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                AuthenticateVehicleTestConnection(connection);
+                OnAuthenticationResult?.Invoke(connection, true);
+                return;
+#endif
+            }
+
             StartCoroutine(AuthenticationTimeout(connection));
+        }
+
+        private static void AuthenticateVehicleTestConnection(NetworkConnection connection)
+        {
+            ServerPlayerSessions.SetAuthenticated(
+                connection,
+                VehicleTestUserId,
+                Guid.NewGuid(),
+                VehicleTestToken,
+                DateTimeOffset.MaxValue);
         }
 
         private void Update()
@@ -80,15 +102,9 @@ namespace RAV.Scripts.Networking.Authentication
                 return;
             }
 
-            if (NetworkManager.IsHostStarted)
+            if (ClientVehicleTestMode.IsEnabled)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                OnAuthenticationResult?.Invoke(NetworkManager.ClientManager.Connection, true);
                 return;
-#else
-                NetworkManager.ClientManager.StopConnection();
-                return;
-#endif
             }
 
             if (ClientAuthenticationState.IsAuthenticated == false
@@ -102,6 +118,11 @@ namespace RAV.Scripts.Networking.Authentication
             {
                 Ticket = ClientAuthenticationState.ConnectionTicket
             });
+        }
+
+        private static bool ShouldBypassServerAuthentication(bool vehicleTestModeEnabled)
+        {
+            return vehicleTestModeEnabled;
         }
 
         private void OnAuthenticationResponse(ConnectionTicketAuthenticationResponse response, FishNetChannel channel)

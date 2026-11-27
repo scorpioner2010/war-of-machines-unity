@@ -14,3 +14,7 @@ Local verification:
 2. Start the local API, then `RAVServer.exe`.
 3. Confirm `GET https://localhost:7216/unity-server/status` returns `isOnline: true`.
 4. Start `RAVClient.exe` and check that neither log contains `Size of -6 is invalid` or `has been kicked for being on FishNet version`.
+
+Editor VehicleTest:
+- `ClientVehicleTestMode` starts an in-process FishNet host without production DTLS secrets, so `SecureFishNetTransportConfiguration` disables transport encryption only while that editor-only mode is enabled.
+- Normal Client Editor Play Mode and all dedicated-server/client builds retain the secure transport configuration and still require their configured DTLS secrets.

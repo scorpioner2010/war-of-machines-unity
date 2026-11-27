@@ -689,7 +689,7 @@ namespace RAV.Scripts.Networking.Lobby
                 "active_vehicle_count", VehicleRoot.ActiveVehicleCount);
         }
 
-        private void SpawnTimer(ServerRoom serverRoom)
+        private void SpawnTimer(ServerRoom serverRoom, bool startBattleCountdown = true)
         {
             UEScene roomScene = serverRoom.GetLoadedScene();
             if (!roomScene.IsValid())
@@ -697,7 +697,15 @@ namespace RAV.Scripts.Networking.Lobby
                 return;
             }
 
-            BattleCountdownGate.BeginServer(serverRoom.roomId);
+            if (startBattleCountdown)
+            {
+                BattleCountdownGate.BeginServer(serverRoom.roomId);
+            }
+            else
+            {
+                BattleCountdownGate.EndServer(serverRoom.roomId);
+            }
+
             NetworkGameplayTimer timer = Instantiate(gameplayTimerPrefab, Vector3.zero, Quaternion.identity);
             timer.serverRoom = serverRoom;
             ServerManager.Spawn(timer.networkObject, LocalConnection, roomScene);
@@ -721,7 +729,7 @@ namespace RAV.Scripts.Networking.Lobby
             serverRoom.spawnStarted = true;
             serverRoom.Visibility.Start(serverRoom);
             LobbyRooms.UpdateRoomStatusInGame(serverRoom.roomId);
-            SpawnTimer(serverRoom);
+            SpawnTimer(serverRoom, startBattleCountdown: false);
         }
 #endif
         

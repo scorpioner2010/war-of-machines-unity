@@ -3,6 +3,7 @@ using FishNet.Connection;
 using FishNet.Object;
 using RAV.Scripts.Networking.Lobby;
 using RAV.Scripts.Networking.Sessions;
+using RAV.Scripts.Testing;
 using UnityEngine;
 using LobbyPlayer = RAV.Scripts.Networking.Lobby.Player;
 
@@ -23,6 +24,11 @@ namespace RAV.Scripts.Gameplay.Battle
         public override void OnStartServer()
         {
             base.OnStartServer();
+
+            if (ClientVehicleTestMode.IsEnabled)
+            {
+                return;
+            }
 
             _serverRoom = gameplayTimer != null ? gameplayTimer.serverRoom : null;
             if (_serverRoom == null)

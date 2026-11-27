@@ -519,9 +519,17 @@ namespace RAV.Scripts.Testing
 
             VehicleRuntimeStats[] result = await VehicleStatsProvider.GetAllAsync(forceReload: true);
             _vehicles = FilterVehiclesWithPrefabs(result);
+            bool usingRegistryFallback = _vehicles.Length == 0;
+            if (usingRegistryFallback)
+            {
+                _vehicles = BuildRegistryFallbackVehicles();
+            }
+
             _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _vehicles.Length - 1));
             _status = _vehicles.Length > 0
-                ? "Loaded " + _vehicles.Length + " vehicles with prefabs."
+                ? usingRegistryFallback
+                    ? "API vehicle stats unavailable. Loaded " + _vehicles.Length + " registry prefabs with test defaults."
+                    : "Loaded " + _vehicles.Length + " vehicles with prefabs."
                 : "No vehicles with prefabs loaded. Check API server or RobotRegistry.";
             _loading = false;
         }
@@ -544,6 +552,79 @@ namespace RAV.Scripts.Testing
             }
 
             return filtered.ToArray();
+        }
+
+        private VehicleRuntimeStats[] BuildRegistryFallbackVehicles()
+        {
+            if (registry == null || registry.items == null)
+            {
+                return new VehicleRuntimeStats[0];
+            }
+
+            List<VehicleRuntimeStats> fallback = new List<VehicleRuntimeStats>(registry.items.Count);
+            for (int index = 0; index < registry.items.Count; index++)
+            {
+                RobotRegistry.Item item = registry.items[index];
+                if (item == null || item.prefab == null || string.IsNullOrWhiteSpace(item.code))
+                {
+                    continue;
+                }
+
+                bool alreadyAdded = false;
+                for (int existingIndex = 0; existingIndex < fallback.Count; existingIndex++)
+                {
+                    if (fallback[existingIndex].Code == item.code)
+                    {
+                        alreadyAdded = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyAdded)
+                {
+                    fallback.Add(CreateRegistryFallbackStats(item.code));
+                }
+            }
+
+            return fallback.ToArray();
+        }
+
+        private static VehicleRuntimeStats CreateRegistryFallbackStats(string code)
+        {
+            return new VehicleRuntimeStats
+            {
+                Code = code,
+                Name = code,
+                Level = 1,
+                MaxHealth = 1000f,
+                Penetration = 100f,
+                ShellSpeed = VehicleRuntimeStats.DefaultShellSpeed,
+                ShellsCount = VehicleRuntimeStats.DefaultShellsCount,
+                DamageMin = VehicleRuntimeStats.DefaultDamageMin,
+                DamageMax = VehicleRuntimeStats.DefaultDamageMax,
+                ReloadTime = 5f,
+                Accuracy = 5f,
+                AimTime = 1f,
+                ViewRange = VehicleRuntimeStats.DefaultViewRange,
+                Speed = 10f,
+                Acceleration = 10f,
+                EnginePower = VehicleRuntimeStats.DefaultEnginePower,
+                TraverseAcceleration = 10f,
+                TraverseSpeed = 30f,
+                TurretTraverseSpeed = 30f,
+                HullArmor = new VehicleArmorValues
+                {
+                    Front = 100,
+                    Side = 75,
+                    Rear = 50
+                },
+                TurretArmor = new VehicleArmorValues
+                {
+                    Front = 100,
+                    Side = 75,
+                    Rear = 50
+                }
+            };
         }
 
         private void DrawVehicleList(float height, float width = 0f)
@@ -2150,74 +2231,81 @@ namespace RAV.Scripts.Testing
 
             _networkStartInProgress = true;
             _status = "Starting local FishNet host...";
-            ConfigureLocalTestTickRate();
-
-            if (!networkManager.IsServerStarted)
+            try
             {
-                if (!TryConfigureAvailablePort(out ushort port))
+                ConfigureLocalTestTickRate();
+
+                if (!networkManager.IsServerStarted)
                 {
-                    _status = "FishNet host failed: no free UDP port near " + localTestPort + ".";
-                    _networkStartInProgress = false;
+                    if (!TryConfigureAvailablePort(out ushort port))
+                    {
+                        _status = "FishNet host failed: no free UDP port near " + localTestPort + ".";
+                        return;
+                    }
+
+                    if (!networkManager.ServerManager.StartConnection(port))
+                    {
+                        _status = "FishNet host failed: server could not bind UDP port " + port + ".";
+                        return;
+                    }
+
+                    _startedTestServer = true;
+                }
+
+                await WaitForServerStartedAsync();
+
+                if (!networkManager.IsServerStarted)
+                {
+                    _status = "FishNet host failed: server did not start.";
                     return;
                 }
 
-                if (!networkManager.ServerManager.StartConnection(port))
+                if (!networkManager.IsClientStarted)
                 {
-                    _status = "FishNet host failed: server could not bind UDP port " + port + ".";
-                    _networkStartInProgress = false;
-                    return;
+                    ushort port = networkManager.TransportManager.Transport.GetPort();
+                    if (!networkManager.ClientManager.StartConnection("127.0.0.1", port))
+                    {
+                        _status = "FishNet host failed: client could not connect to UDP port " + port + ".";
+                        return;
+                    }
+
+                    _startedTestClient = true;
                 }
 
-                _startedTestServer = true;
+                await WaitForClientStartedAsync();
+                await WaitForLocalOwnerConnectionAsync();
+
+                _startedNetwork = IsNetworkReady();
+                if (_startedNetwork)
+                {
+                    NetworkConnection ownerConnection = GetLocalOwnerConnection();
+                    if (!EnsureLocalConnectionInTestScene(ownerConnection))
+                    {
+                        _startedNetwork = false;
+                        _status = "FishNet host failed: local owner did not enter the test scene.";
+                        return;
+                    }
+
+                    _status = "Local FishNet host ready on UDP " + networkManager.TransportManager.Transport.GetPort() + ".";
+                }
+                else
+                {
+                    _status = "FishNet host failed to start.";
+                }
             }
-
-            await WaitForServerStartedAsync();
-
-            if (!networkManager.IsServerStarted)
+            catch (System.Exception exception)
             {
-                _status = "FishNet host failed: server did not start.";
-                StopStartedTestNetwork();
+                _startedNetwork = false;
+                _status = "FishNet host failed: " + exception.Message;
+                Debug.LogException(exception, this);
+            }
+            finally
+            {
                 _networkStartInProgress = false;
-                return;
-            }
-
-            if (!networkManager.IsClientStarted)
-            {
-                ushort port = networkManager.TransportManager.Transport.GetPort();
-                if (!networkManager.ClientManager.StartConnection("127.0.0.1", port))
-                {
-                    _status = "FishNet host failed: client could not connect to UDP port " + port + ".";
-                    StopStartedTestNetwork();
-                    _networkStartInProgress = false;
-                    return;
-                }
-
-                _startedTestClient = true;
-            }
-
-            await WaitForClientStartedAsync();
-            await WaitForLocalOwnerConnectionAsync();
-
-            _startedNetwork = IsNetworkReady();
-            _networkStartInProgress = false;
-
-            if (_startedNetwork)
-            {
-                NetworkConnection ownerConnection = GetLocalOwnerConnection();
-                if (!EnsureLocalConnectionInTestScene(ownerConnection))
+                if (!_startedNetwork)
                 {
                     StopStartedTestNetwork();
-                    _startedNetwork = false;
-                    _status = "FishNet host failed: local owner did not enter the test scene.";
-                    return;
                 }
-
-                _status = "Local FishNet host ready on UDP " + networkManager.TransportManager.Transport.GetPort() + ".";
-            }
-            else
-            {
-                StopStartedTestNetwork();
-                _status = "FishNet host failed to start.";
             }
         }
 

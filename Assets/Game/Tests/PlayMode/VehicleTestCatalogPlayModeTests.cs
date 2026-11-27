@@ -67,6 +67,179 @@ namespace RAV.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator RegistryFallbackIncludesOnlyValidPrefabs()
+        {
+            GameObject controllerObject = new GameObject("VehicleTestRegistryFallbackController");
+            GameObject validPrefabObject = new GameObject("VehicleTestRegistryFallbackPrefab");
+            GameObject duplicatePrefabObject = new GameObject("VehicleTestRegistryFallbackDuplicatePrefab");
+            Type registryType = Type.GetType("RobotRegistry, Assembly-CSharp");
+            Type itemType = Type.GetType("RobotRegistry+Item, Assembly-CSharp");
+            Type prefabType = Type.GetType("RAV.Scripts.Gameplay.Robots.VehicleRoot, Assembly-CSharp");
+            Type statsType = Type.GetType("RAV.Scripts.Gameplay.Robots.VehicleRuntimeStats, Assembly-CSharp");
+            Type controllerType = Type.GetType("RAV.Scripts.Testing.VehicleTestSceneController, Assembly-CSharp");
+            Assert.IsNotNull(registryType);
+            Assert.IsNotNull(itemType);
+            Assert.IsNotNull(prefabType);
+            Assert.IsNotNull(statsType);
+            Assert.IsNotNull(controllerType);
+
+            UnityEngine.Object registry = ScriptableObject.CreateInstance(registryType);
+            Component validPrefab = validPrefabObject.AddComponent(prefabType);
+            Component duplicatePrefab = duplicatePrefabObject.AddComponent(prefabType);
+            Component controller = controllerObject.AddComponent(controllerType);
+            try
+            {
+                IList items = (IList)registryType.GetField("items").GetValue(registry);
+                object validItem = Activator.CreateInstance(itemType);
+                itemType.GetField("code").SetValue(validItem, "registry_vehicle");
+                itemType.GetField("prefab").SetValue(validItem, validPrefab);
+                items.Add(validItem);
+
+                object duplicateItem = Activator.CreateInstance(itemType);
+                itemType.GetField("code").SetValue(duplicateItem, "registry_vehicle");
+                itemType.GetField("prefab").SetValue(duplicateItem, duplicatePrefab);
+                items.Add(duplicateItem);
+
+                object invalidItem = Activator.CreateInstance(itemType);
+                itemType.GetField("code").SetValue(invalidItem, "missing_prefab");
+                items.Add(invalidItem);
+
+                controllerType.GetField("registry").SetValue(controller, registry);
+                MethodInfo buildFallback = controllerType.GetMethod(
+                    "BuildRegistryFallbackVehicles",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                Assert.IsNotNull(buildFallback);
+
+                Array fallback = (Array)buildFallback.Invoke(controller, null);
+                Assert.That(fallback, Has.Length.EqualTo(1));
+                object fallbackStats = fallback.GetValue(0);
+                Assert.That(statsType.GetField("Code").GetValue(fallbackStats), Is.EqualTo("registry_vehicle"));
+                Assert.That((float)statsType.GetField("MaxHealth").GetValue(fallbackStats), Is.GreaterThan(0f));
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(controllerObject);
+                UnityEngine.Object.Destroy(validPrefabObject);
+                UnityEngine.Object.Destroy(duplicatePrefabObject);
+                UnityEngine.Object.Destroy(registry);
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator VehicleTestServerAuthenticationUsesValidRemoteConnection()
+        {
+            Type authenticatorType = Type.GetType(
+                "RAV.Scripts.Networking.Authentication.ConnectionTicketAuthenticator, Assembly-CSharp");
+            Assert.IsNotNull(authenticatorType);
+
+            MethodInfo shouldBypassServerAuthentication = authenticatorType.GetMethod(
+                "ShouldBypassServerAuthentication",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(shouldBypassServerAuthentication);
+            Assert.IsTrue((bool)shouldBypassServerAuthentication.Invoke(null, new object[] { true }));
+            Assert.IsFalse((bool)shouldBypassServerAuthentication.Invoke(null, new object[] { false }));
+
+            MethodInfo authenticateVehicleTestConnection = authenticatorType.GetMethod(
+                "AuthenticateVehicleTestConnection",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(authenticateVehicleTestConnection);
+
+            Type connectionType = Type.GetType("FishNet.Connection.NetworkConnection, FishNet.Runtime");
+            Type sessionsType = Type.GetType("RAV.Scripts.Networking.Sessions.ServerPlayerSessions, Assembly-CSharp");
+            Assert.IsNotNull(connectionType);
+            Assert.IsNotNull(sessionsType);
+
+            object connection = Activator.CreateInstance(connectionType);
+            MethodInfo markAuthenticated = connectionType.GetMethod(
+                "ConnectionAuthenticated",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo tryGetAuthenticated = null;
+            MethodInfo removeSession = sessionsType.GetMethod("Remove", BindingFlags.Public | BindingFlags.Static);
+            foreach (MethodInfo method in sessionsType.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (method.Name == "TryGetAuthenticated" && method.GetParameters().Length == 2)
+                {
+                    tryGetAuthenticated = method;
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(markAuthenticated);
+            Assert.IsNotNull(tryGetAuthenticated);
+            Assert.IsNotNull(removeSession);
+
+            try
+            {
+                markAuthenticated.Invoke(connection, null);
+                authenticateVehicleTestConnection.Invoke(null, new[] { connection });
+                object[] sessionArguments = { connection, null };
+                Assert.IsTrue((bool)tryGetAuthenticated.Invoke(null, sessionArguments));
+            }
+            finally
+            {
+                removeSession.Invoke(null, new object[] { -1 });
+            }
+
+            yield return null;
+        }
+
+        [Test]
+        public void ClientVehicleTestModeBypassesMovementAndFiringCountdownGate()
+        {
+            Type gateType = Type.GetType(
+                "RAV.Scripts.Gameplay.Battle.BattleCountdownGate, Assembly-CSharp");
+            Type testModeType = Type.GetType(
+                "RAV.Scripts.Testing.ClientVehicleTestMode, Assembly-CSharp");
+            Assert.IsNotNull(gateType);
+            Assert.IsNotNull(testModeType);
+
+            FieldInfo activeField = testModeType.GetField(
+                "_active",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(activeField);
+
+            bool previousActive = (bool)activeField.GetValue(null);
+            MethodInfo beginClient = gateType.GetMethod("BeginClient");
+            MethodInfo endClient = gateType.GetMethod("EndClient");
+            MethodInfo beginServer = gateType.GetMethod("BeginServer");
+            MethodInfo isClientBlocked = gateType.GetProperty("IsClientMovementAndFiringBlocked").GetGetMethod();
+            MethodInfo isServerActive = gateType.GetMethod("IsServerCountdownActive");
+            MethodInfo clearServerLocks = gateType.GetMethod("ClearAllServerLocks");
+            Assert.IsNotNull(beginClient);
+            Assert.IsNotNull(endClient);
+            Assert.IsNotNull(beginServer);
+            Assert.IsNotNull(isClientBlocked);
+            Assert.IsNotNull(isServerActive);
+            Assert.IsNotNull(clearServerLocks);
+
+            endClient.Invoke(null, null);
+            clearServerLocks.Invoke(null, null);
+
+            try
+            {
+                activeField.SetValue(null, false);
+                beginClient.Invoke(null, null);
+                beginServer.Invoke(null, new object[] { "vehicle-test-regression" });
+                Assert.IsTrue((bool)isClientBlocked.Invoke(null, null));
+                Assert.IsTrue((bool)isServerActive.Invoke(null, new object[] { "vehicle-test-regression" }));
+
+                activeField.SetValue(null, true);
+                Assert.IsFalse((bool)isClientBlocked.Invoke(null, null));
+                Assert.IsFalse((bool)isServerActive.Invoke(null, new object[] { "vehicle-test-regression" }));
+                beginServer.Invoke(null, new object[] { "vehicle-test-regression-disabled" });
+                Assert.IsFalse((bool)isServerActive.Invoke(null, new object[] { "vehicle-test-regression-disabled" }));
+            }
+            finally
+            {
+                activeField.SetValue(null, previousActive);
+                endClient.Invoke(null, null);
+                clearServerLocks.Invoke(null, null);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator OfflineMenuDataKeepsSelectionAndDistinctVehicleStats()
         {
             GameObject testObject = new GameObject("OfflineMenuDataRegressionController");
