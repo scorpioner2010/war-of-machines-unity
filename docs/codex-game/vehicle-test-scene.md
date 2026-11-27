@@ -61,6 +61,11 @@ VehicleTest spawn flow:
 9. VehicleTest-created bots have their `VehicleHUD` configured immediately after spawn with the test camera, bot root, and bot nickname, matching the normal in-world HP bar behavior. This setup also forces their client presentation visible because the test room does not run the gameplay visibility-snapshot stream.
 10. The normal `PauseMenu` is suppressed whenever the `VehicleTest` scene is loaded, including after the additive gameplay map becomes the active scene, so pressing Escape only toggles VehicleTest cursor/test UI. Expanded VehicleTest UI hides `GameplayHUD`; collapsed UI/vehicle control shows it again.
 
+Orientation validation:
+- Direct local spawns that remain in the persistent Client/test scene use the loaded gameplay map's `RespawnTrigger` for their initial rotation and reapply it after `ServerInit`.
+- The network auto-spawn harness follows the same initial-and-post-initialization orientation contract.
+- The runtime acceptance check is performed during the battle countdown and after gameplay initialization; the camera's independent `33` degree pitch is not changed by this flow.
+
 Important constraints:
 - `WaypointPointSpawner.cs` is waypoint authoring and should not own VehicleTest spawn or movement fixes.
 - Keep the test flow using the same gameplay vehicle prefabs and `MatchVehicleSpawner` as normal gameplay. Client test mode must use the one scene-owned HUD; the legacy VehicleTest prefab field is not used by Client mode.

@@ -21,6 +21,7 @@ namespace RAV.Scripts.Gameplay.Robots
         private const float DeathSpectatorKillerViewSeconds = DeathSpectatorIntroSeconds * 2f;
         private const float DeathSpectatorTargetLossHoldSeconds = 5f;
         private const float DiagnosticSnapshotIntervalSeconds = 0.5f;
+        private const float InitialGameplayCameraPitchDegrees = 33f;
 
         private enum DeathSpectatorPhase
         {
@@ -132,7 +133,7 @@ namespace RAV.Scripts.Gameplay.Robots
 
             Vector3 angles = transform.eulerAngles;
             _X = angles.y;
-            _Y = angles.x;
+            _Y = InitialGameplayCameraPitchDegrees;
 
             if (_cameraSync != null)
             {

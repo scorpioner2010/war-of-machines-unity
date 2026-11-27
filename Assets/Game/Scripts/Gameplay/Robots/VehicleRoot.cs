@@ -4,6 +4,7 @@ using RAV.Scripts.Diagnostics;
 using RAV.Scripts.Gameplay.Robots.t1;
 using RAV.Scripts.Gameplay.Robots.t2;
 using RAV.Scripts.UI.HUD;
+using RAV.Scripts.World.Spawns;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -93,6 +94,7 @@ namespace RAV.Scripts.Gameplay.Robots
                 "position", transform.position);
             CacheComponents();
             InitializeComponents(VehicleInitializationPhase.Server);
+            MatchSpawnOrientationResolver.ApplyMapCenterRotation(gameObject.scene, transform);
             VehicleColliderRegistry.RegisterNetworkRoot(this);
 
             if (!InstanceFinder.IsClientStarted)
@@ -109,6 +111,7 @@ namespace RAV.Scripts.Gameplay.Robots
                 "object_id", networkObject != null ? networkObject.ObjectId : -1,
                 "owner", IsOwner,
                 "position", transform.position);
+            MatchSpawnOrientationResolver.ApplyMapCenterRotation(gameObject.scene, transform);
             VehicleColliderRegistry.RegisterNetworkRoot(this);
             if (clientVisibility != null)
             {
@@ -135,6 +138,11 @@ namespace RAV.Scripts.Gameplay.Robots
             if (!IsOwner && !IsMenu)
             {
                 return;
+            }
+
+            if (!IsMenu)
+            {
+                MatchSpawnOrientationResolver.ApplyMapCenterRotation(gameObject.scene, transform);
             }
 
             InitializeComponents(VehicleInitializationPhase.Owner);

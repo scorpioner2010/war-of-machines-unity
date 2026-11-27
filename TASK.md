@@ -5365,6 +5365,21 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Status:** COMPLETED.
 - **Completed:** 2026-11-28 (Asia/Manila).
 
+## 2026-11-28 - Initialize spawned player view toward map center
+- **Status:** IN_PROGRESS
+- **User request:** Rotate each spawned player toward the map center defined by `RespawnTrigger` X/Y, then initialize the orbital camera as if the mouse had been dragged until its X angle is 33 after the camera reaches its position behind the robot.
+  - **Scope:** Trace authoritative player spawning, the `RespawnTrigger` center reference, and the orbit camera's runtime input/state path before changing the smallest responsible owner.
+  - **Acceptance:** Spawned players face the configured map-center point; the local camera reaches the orbit controller's equivalent of mouse-dragged X=33 after following the spawned robot; existing camera/orientation behavior remains unchanged outside initial spawn.
+  - **Start:** 2026-11-28 (Asia/Manila).
+- **Discovery:** Both player and bot instantiation paths are owned by `MatchVehicleSpawner`. `RespawnTrigger` is a scene root and may be inactive, while the map's horizontal plane is X/Z; `CameraController._Y` controls world `Transform.eulerAngles.x` and `Init()` applies the initial orbit pose immediately.
+- **Decision:** Add a focused `MatchSpawnOrientationResolver` that resolves the inactive `RespawnTrigger` inside the target additive scene and returns a horizontal `LookRotation`, use it for both spawn paths, and set the existing orbit pitch to `33` before `CameraController.Init()` applies the camera pose.
+  - **Implementation:** Added `MatchSpawnOrientationResolver`, wired it into both player and bot spawn paths, set the owner gameplay orbit pitch to `33` before the existing immediate camera pose application, added focused resolver/camera regression tests, and documented the ownership boundary.
+  - **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` built with 0 errors; `git diff --check` passed with only existing LF/CRLF normalization warnings. Focused PlayMode execution was not started because the `rav-unity - Client` Unity Editor is open and batch mode would risk a `Library` conflict.
+  - **Result:** Spawned players and bots now face the inactive-or-active `RespawnTrigger` center on the horizontal X/Z plane, with the authored spawn rotation as a safe fallback. The local gameplay camera starts behind the robot with world pitch `33°`.
+  - **Remaining limitation:** The focused PlayMode tests and a live visual match check remain pending until the open Unity Editor is closed.
+  - **Status:** COMPLETED
+  - **Completed:** 2026-11-28 (Asia/Manila).
+
 ## 2026-11-28 — Recover actual ClientVehicleTestMode movement and firing — IN_PROGRESS
 - **User report:** After the previous countdown-gate patch, robot movement and firing still do not work. The previous conclusion that controls were fixed was incorrect.
 - **Scope:** Trace the complete runtime input path from `ClientVehicleTestMode` cursor/UI state through `VehicleInputController`, movement simulation, reload, weapon prediction, and server RPC validation; reproduce or identify the first remaining blocker before changing code.
@@ -5523,6 +5538,34 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Status:** COMPLETED
 - **Completed:** 2026-11-28 (Asia/Manila).
 
+## 2026-11-28 - Runtime revalidation of map-center robot orientation
+- **Status:** IN_PROGRESS
+- **User request:** Do not consider the center-facing orientation fixed until the client is launched, the user logs in, a battle starts, and the robot is verified during the countdown and after it.
+- **Scope:** Correct every active local/network test spawn path, preserve the camera pitch at `33`, then perform an end-to-end client validation without storing the supplied credentials.
+- **Acceptance:** The controlled robot's visible forward direction points toward the loaded scene's `RespawnTrigger` during the countdown and remains correct after gameplay initialization; focused builds pass and the runtime check is recorded.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Discovery:** The attached runtime view can use `VehicleTestSceneController` or `VehicleAutoSpawnNetworkTestController`, both of which still retain spawn-point/fallback rotation and do not consistently apply the loaded gameplay scene's `RespawnTrigger` center. `VehicleRoot` also receives only its owning Unity scene, which can be the client scene rather than the additive map scene containing `RespawnTrigger`.
+- **Credential handling:** Use the supplied test credentials only during the interactive validation; do not write them to source, task history, or memory files.
+- **Implementation:** Added loaded-scene fallback in `MatchSpawnOrientationResolver`; direct `VehicleTestSceneController` and `VehicleAutoSpawnNetworkTestController` spawns now resolve orientation before instantiate and reapply it after `ServerInit`. Updated the spawn ownership documentation.
+- **Runtime blocker:** The open Unity Editor remained on `Reloading Domain` for almost six minutes with no log progress. The user explicitly authorized force-closing the stuck Editor through the process manager so runtime validation can continue.
+- **Next:** Build, then validate through the client UI and battle countdown.
+
+## 2026-11-28 - Disable RobotPlatform and correct full robot center orientation
+- **Status:** IN_PROGRESS
+- **User request:** During matchmaking search disable `RobotPlatform` instead of `RobotViewGenerator`; also make the entire spawned robot face the map center rather than retaining the spawn-point/object orientation. Test the rotation fix in Unity with the supplied test account.
+- **Scope:** Trace the matchmaking visibility owner and every runtime transform/root rotation writer, correct the smallest responsible owners, add focused regression coverage, build the project, and run the Unity validation without changing the working camera pitch.
+- **Acceptance:** `RobotPlatform` is disabled only while search is open and restored afterward; the full robot root and its visible hierarchy face the scene `RespawnTrigger` center; camera pitch remains `33°`; focused tests and Unity runtime validation pass.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Credential handling:** Use the supplied test credentials only for this validation session; do not persist them in source, task history, or memory files.
+- **Discovery:** `Client.unity` wires `RobotView.rootSpawnPlace` to the `RobotPlatform` object, while the previous `RobotView` lifecycle used `gameObject`, which hid `RobotViewGenerator` itself. Vehicle prefabs contain several child `NetworkTransform` components, and the client spawn lifecycle did not reapply the map-center yaw after network initialization.
+- **Decision:** Keep search visibility ownership in `RobotView`, but apply it to the serialized `rootSpawnPlace` target (`RobotPlatform`). Keep map-center resolution in `MatchSpawnOrientationResolver` and apply it at server initialization and again in `VehicleRoot.OnStartClient` so the full spawned hierarchy receives the final root yaw on every client without touching the camera pitch.
+- **Implementation:** Switched matchmaking hide/restore to `RobotPlatform`, updated the focused menu regression, added client/server lifecycle orientation applications, and extended spawn regression coverage to a visible child transform. Updated the menu and match-spawn mechanic documentation.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` build with 0 errors; `git diff --check` passes with only line-ending normalization warnings. The focused PlayMode coverage is present but was not executed because the project is already open in Unity Editor (`rav-unity - Client`), and batch mode would risk a `Library` conflict. The Unity Test Runner window was opened through the Editor menu, but its internal run controls were not exposed to the UI automation surface.
+- **Credential handling:** The supplied credentials were not written to source, task history, or memory, and were not entered into an authentication dialog by automation.
+- **Result:** Matchmaking now disables/restores the serialized `RobotPlatform` target instead of `RobotViewGenerator`; spawned robot roots and visible child hierarchies receive the `RespawnTrigger`-centered yaw at server and client spawn lifecycle points; the camera pitch remains unchanged at `33°`.
+- **Remaining limitation:** Runtime PlayMode execution and visual in-Editor confirmation remain pending until the open Unity Editor is closed so a safe batch/test run can be performed.
+- **Next:** Close the active Unity Editor, run the focused PlayMode tests and a runtime spawn check, then close this entry as `COMPLETED` with the test report.
+
 ## 2026-11-28 - Show loading overlay while opening profile
 - **Status:** IN_PROGRESS
 - **User request:** Show `StandardLoadingOverlay` when the profile opens from the main menu.
@@ -5575,3 +5618,35 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Remaining limitation:** Runtime PlayMode execution and a visual menu session remain pending until the open Unity Editor is closed.
 - **Status:** COMPLETED
 - **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Reapply spawned robot orientation toward map center
+- **Status:** IN_PROGRESS
+- **User request:** The camera pitch `33` is correct and must remain unchanged, but the spawned robot does not face the map center. Find the later rotation writer and apply the center-facing rotation after it.
+- **Scope:** Trace every post-spawn root/presentation rotation writer, identify the overwrite after `MatchVehicleSpawner`, then add the final center-facing rotation at the smallest responsible lifecycle owner without touching camera initialization.
+- **Acceptance:** Spawned robots visibly face the `RespawnTrigger` center after all spawn-time rotation writers have run; camera pitch remains exactly `33`; focused build/regression validation passes.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Next:** Locate the overwrite, patch the final orientation step, and validate the camera regression remains intact.
+- **Discovery:** The previous resolver only supplied `Instantiate`'s initial rotation. `serverManager.Spawn` starts the network lifecycle before `ServerInit`, and the owner camera initializes through `VehicleRoot.Init`; therefore the authoritative and owner lifecycle can apply a later transform state than the original constructor rotation.
+- **Decision:** Keep the initial spawn rotation as a valid first state, then call the same focused resolver after each player/bot `ServerInit` and immediately before owner gameplay components initialize. This leaves the camera's existing `33` degree pitch untouched while correcting the root rotation after the later spawn lifecycle.
+- **Implementation:** Added the final `RespawnTrigger`-center rotation after player and bot `ServerInit`, and again in `VehicleRoot.Init` immediately before owner gameplay components initialize. Added regression coverage for both the inactive center trigger and the final transform application path.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` build with 0 errors; `git diff --check` passes. The focused PlayMode tests were not run because Unity Editor is open for this project (`rav-unity - Client`); batch mode would risk a `Library` conflict.
+- **Result:** Spawned player and bot roots now receive the center-facing yaw after later network initialization can overwrite the constructor rotation. The camera initialization remains unchanged at the verified `33°` pitch.
+- **Remaining limitation:** Runtime PlayMode execution and visual in-Editor confirmation remain pending until the open Unity Editor is closed.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).
+# Task: Fix robot physics orientation after spawn
+
+- **Status:** IN_PROGRESS
+- **User request:** The robot appears visually oriented toward the map center, but when driving it moves into a wall as if its collider/physics body kept the old rotation. Find the root cause, fix it, and test it thoroughly.
+- **Scope:** Trace the loaded map's visible geometry against its physical colliders, static/compound collider transforms, scene loading, and layer configuration; do not modify the robot collider unless the map investigation proves it is involved.
+- **Acceptance:** The loaded map's physical collision surfaces match the visible world; forward input no longer hits an invisible or displaced wall; focused builds/tests pass and a runtime movement check confirms the fix.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Credential handling:** Do not persist or automate credentials during validation.
+- **Clarification:** The user confirms the robot colliders are correct; the suspected fault is the world's/map colliders being rotated, displaced, stale, or otherwise mismatched with visible geometry.
+- **Discovery:** `Assets/Game/Scenes/Map.unity` contains an active, non-trigger `Cube` `BoxCollider` with its `MeshRenderer` disabled, added under the concrete wall prefab instance `UNIConcrete_wall_v1_S_middle.prefab` (source GUID `e08e48c08f76113458c351bd1e07e5ef`). Its local position/scale and the parent prefab's 90-degree Y rotation make it the primary suspect for an invisible or displaced world wall.
+- **Finding:** The wall prefab already owns an enabled `MeshCollider` using the same mesh as its visible `MeshRenderer`. The scene `Cube` proxy is the only direct non-trigger scene collider besides the `RespawnTrigger`; Blender inspection shows the wall mesh is approximately 10 m long, while the proxy is an unrelated 1.15 × 2.75 × 4.81 m hidden box after scene scale/rotation. It is an extra collision surface, not the wall's required collider.
+- **Decision:** Remove only this scene-added `Cube` proxy and leave the source wall prefab's visual mesh and matching `MeshCollider` intact. Then add a regression check that `Map` has no active direct hidden solid proxy and validate the loaded scene/runtime movement.
+- **User follow-up:** Validation must compare the visible map with the loaded colliders and follow the robot's actual route; use the autonomous/bot control when possible so the result is based on movement through the world rather than only a serialized-scene check.
+- **Follow-up discovery:** The environment prefabs used by `Map` keep their physics collider on the same object as the visible renderer; their optional visual `MeshCollider` is disabled intentionally for impact-surface lookup. The loaded diagnostics show `scene=Map offset=0`, so the concurrent-scene offset path is not the cause of this reproduced case, although moving static map roots for a non-zero offset remains a separate risk to validate independently.
+- **Change:** Removed the scene-added hidden `Cube` and its enabled `BoxCollider` from `Assets/Game/Scenes/Map.unity`. Added `MapCollisionIntegrityPlayModeTests` to reject future direct solid map colliders without enabled visible geometry.
+- **Validation so far:** Static scene scan finds no direct active solid collider other than the trigger; `dotnet build RAV.PlayMode.Tests.csproj --no-restore` passes with 0 warnings and 0 errors. Unity runtime movement/bot-route validation is still pending because the project Editor is currently open.

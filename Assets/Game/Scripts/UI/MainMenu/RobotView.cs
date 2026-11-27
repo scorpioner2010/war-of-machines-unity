@@ -44,6 +44,8 @@ namespace RAV.Scripts.UI.MainMenu
         private bool _hiddenForMatchmaking;
         private bool _wasActiveBeforeMatchmaking;
 
+        private GameObject MatchmakingVisibilityTarget => rootSpawnPlace != null ? rootSpawnPlace : gameObject;
+
         private static RobotView _in;
 
         private void Awake()
@@ -93,9 +95,10 @@ namespace RAV.Scripts.UI.MainMenu
                 return;
             }
 
-            _wasActiveBeforeMatchmaking = gameObject.activeSelf;
+            GameObject visibilityTarget = MatchmakingVisibilityTarget;
+            _wasActiveBeforeMatchmaking = visibilityTarget.activeSelf;
             _hiddenForMatchmaking = true;
-            gameObject.SetActive(false);
+            visibilityTarget.SetActive(false);
         }
 
         private void RestoreAfterMatchmaking()
@@ -107,9 +110,10 @@ namespace RAV.Scripts.UI.MainMenu
 
             bool shouldBeActive = _wasActiveBeforeMatchmaking;
             _hiddenForMatchmaking = false;
-            if (gameObject.activeSelf != shouldBeActive)
+            GameObject visibilityTarget = MatchmakingVisibilityTarget;
+            if (visibilityTarget.activeSelf != shouldBeActive)
             {
-                gameObject.SetActive(shouldBeActive);
+                visibilityTarget.SetActive(shouldBeActive);
             }
         }
 

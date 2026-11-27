@@ -335,6 +335,7 @@ namespace RAV.Scripts.Testing
                 : spawnPoint != null
                     ? spawnPoint.rotation
                     : Quaternion.Euler(spawnRotationEuler);
+            rotation = MatchSpawnOrientationResolver.ResolveRotation(spawnScene, position, rotation);
             VehicleRoot vehicleRoot = Instantiate(prefab, position, rotation);
             vehicleRoot.gameObject.SetActive(true);
 
@@ -356,6 +357,8 @@ namespace RAV.Scripts.Testing
             {
                 vehicleRoot.characterInit.ServerInit(1, PlayerType.Player, loginName, team, spawnScene);
             }
+
+            MatchSpawnOrientationResolver.ApplyMapCenterRotation(spawnScene, vehicleRoot.transform);
 
             _spawnedByClientId[connection.ClientId] = vehicleRoot;
             _status = "Spawned " + vehicleRoot.name + " for client " + connection.ClientId + ".";

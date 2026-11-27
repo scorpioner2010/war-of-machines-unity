@@ -109,7 +109,11 @@ namespace RAV.Scripts.Networking.Lobby
                 "vehicle_code", vehicleCode,
                 "scene", additiveServerScene.name,
                 "position", spawnPoint.transform.position);
-            VehicleRoot vehicleRoot = UnityEngine.Object.Instantiate(vehicle, spawnPoint.transform.position, spawnPoint.transform.rotation);
+            Quaternion spawnRotation = MatchSpawnOrientationResolver.ResolveRotation(
+                additiveServerScene,
+                spawnPoint.transform.position,
+                spawnPoint.transform.rotation);
+            VehicleRoot vehicleRoot = UnityEngine.Object.Instantiate(vehicle, spawnPoint.transform.position, spawnRotation);
             VehicleRuntimeStats stats = await VehicleStatsProvider.GetAsync(player.activeVehicleId, vehicleCode);
             if (stats != null)
             {
@@ -129,6 +133,7 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Player, player.loginName, player.team, additiveServerScene);
+            MatchSpawnOrientationResolver.ApplyMapCenterRotation(additiveServerScene, vehicleRoot.transform);
             GameplayRuntimeDiagnostics.Record(
                 "player_spawn_completed",
                 "client_id", clientId,
@@ -221,7 +226,11 @@ namespace RAV.Scripts.Networking.Lobby
                 "vehicle_code", vehicleCode,
                 "scene", additiveServerScene.name,
                 "position", spawnPoint.transform.position);
-            VehicleRoot vehicleRoot = UnityEngine.Object.Instantiate(vehicle, spawnPoint.transform.position, spawnPoint.transform.rotation);
+            Quaternion spawnRotation = MatchSpawnOrientationResolver.ResolveRotation(
+                additiveServerScene,
+                spawnPoint.transform.position,
+                spawnPoint.transform.rotation);
+            VehicleRoot vehicleRoot = UnityEngine.Object.Instantiate(vehicle, spawnPoint.transform.position, spawnRotation);
             VehicleRuntimeStats stats = await VehicleStatsProvider.GetAsync(player.activeVehicleId, vehicleCode);
             if (stats != null)
             {
@@ -241,6 +250,7 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             player.playerRoot.characterInit.ServerInit(serverRoom.maxPlayers, PlayerType.Bot, player.loginName, player.team, additiveServerScene);
+            MatchSpawnOrientationResolver.ApplyMapCenterRotation(additiveServerScene, vehicleRoot.transform);
 
             VehicleBotBrain brain = vehicleRoot.botBrain;
             if (brain == null)

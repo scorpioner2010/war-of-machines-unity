@@ -1358,7 +1358,12 @@ namespace RAV.Scripts.Testing
 
             DespawnCurrent();
 
-            _spawnedVehicle = Instantiate(prefab, GetSpawnPosition(), GetSpawnRotation());
+            Vector3 spawnPosition = GetSpawnPosition();
+            Quaternion spawnRotation = MatchSpawnOrientationResolver.ResolveRotation(
+                spawnScene,
+                spawnPosition,
+                GetSpawnRotation());
+            _spawnedVehicle = Instantiate(prefab, spawnPosition, spawnRotation);
             if (_spawnedVehicle == null)
             {
                 return false;
@@ -1402,6 +1407,8 @@ namespace RAV.Scripts.Testing
             {
                 _spawnedVehicle.characterInit.ServerInit(1, PlayerType.Player, TestPlayerName, MatchTeam.TeamA, spawnScene);
             }
+
+            MatchSpawnOrientationResolver.ApplyMapCenterRotation(spawnScene, _spawnedVehicle.transform);
 
             ConfigureTestCameraForPlayerVehicle(_spawnedVehicle);
             ConfigureWorldHudForTestVehicle(_spawnedVehicle, TestPlayerName);

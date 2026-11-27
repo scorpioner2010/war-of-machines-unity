@@ -46,8 +46,17 @@ Current owner scripts:
   - Spawns player and bot vehicles in loaded match scenes.
   - Applies runtime stats, assigns `player.playerRoot`, initializes teams/identity, and starts bot brain.
   - Refuses player matchmaking/spawn when the authenticated server session has no loaded profile; this prevents a broken empty-profile match from reaching gameplay.
+- `Assets/Game/Scripts/World/Spawns/MatchSpawnOrientationResolver.cs`
+  - Owns the initial horizontal orientation of spawned players and bots.
+  - Resolves the `RespawnTrigger` in the target additive scene, including inactive scene roots, and rotates each vehicle toward its world position on the X/Z map plane.
+  - If a test or client object belongs to the persistent Client scene, falls back to the loaded gameplay scene containing the active `RespawnTrigger` instead of using the Client scene's authored yaw.
+  - Is applied once for the initial instantiate rotation, again after `VehicleNetworkInitializer.ServerInit`, and on the local owner before gameplay components initialize so later network lifecycle state cannot leave the authored spawn yaw.
+  - Returns the authored spawn-point rotation when the scene has no center trigger or the spawn already sits at the center.
 - `Assets/Game/Scripts/Diagnostics/GameplayRuntimeDiagnostics.cs`
   - Records the profile-to-match-to-spawn lifecycle and every player/bot spawn failure reason in the local persistent gameplay log.
+- `Assets/Game/Scenes/Map.unity`
+  - Owns the loaded battle-world geometry and the source-prefab colliders used by that geometry.
+  - Direct scene-added solid colliders must not be hidden collision proxies; environment prefabs must keep their renderer and collider transforms together. The map collision regression test rejects a direct enabled non-trigger collider when its visible geometry is missing or disabled.
 - `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`
   - FishNet spawnable-prefab collection assigned to `Assets/Game/Content/Networking/Prefabs/NetworkManager.prefab`.
   - Every vehicle prefab referenced by `RobotRegistry` and spawned in a match must also be present here.
@@ -75,7 +84,7 @@ Spawn flow:
 1. Room is created for real players. The server publishes the remaining search time and real-player count immediately after each add/remove and on each timer tick. It starts immediately when `maxPlayersForFindRoom` real players arrive or after the configured search window, currently 30 seconds (`ServerSettings.findRoomSeconds`); if bots are enabled, the server then adds `maxPlayersForFindRoom - realPlayerCount` bots. Clients complete the visible matchmaking progress over one unscaled second and acknowledge presentation readiness before the additive scene-load request is sent. If a stale/early scene-load notification reaches the client first, `MenuLoadingScreenManager` defers `MenuLoadingScreen` until the same presentation-ready event, so `FindGame` remains visible for the full final fill.
 2. `GameplaySpawner` loads the selected map scene additively for the room.
 3. The room receives a scene slot and scene offset so multiple matches can exist at once.
-4. `MatchVehicleSpawner` chooses a free `SpawnPoint` for each player/bot team.
+4. `MatchVehicleSpawner` chooses a free `SpawnPoint` for each player/bot team and uses `MatchSpawnOrientationResolver` to face the vehicle toward the scene's `RespawnTrigger` center.
 5. Vehicle prefab is resolved by vehicle code through `GameResourceManager`.
 6. FishNet resolves that prefab on clients through `Assets/Game/Content/Configuration/Networking/PrefabObjects.asset`.
 7. Runtime stats are loaded through `VehicleStatsProvider` and applied before/after FishNet spawn.
@@ -106,6 +115,7 @@ Rules when editing match/spawn:
 - Keep direct spotting and spotted memory as separate relations for map-position semantics. The client vehicle presenter renders only direct `Enemy`; `EnemyLastKnown` remains a map marker. Preserve direct spotter links across visibility refreshes when a pair was not evaluated because of the raycast budget, and cache the assigned local team before owner despawn so allied models remain visible while the death spectator camera is active.
 - Keep visibility snapshot versions monotonic within a match. Client state rejects older network packets and expires finite enemy entries locally from the server-provided lifetime.
 - In VehicleTest, do not spawn into an additive map scene until the local owner connection is authenticated, start scenes are loaded, the map has a `SpawnPoint`, and `ownerConnection.Scenes` contains the map scene because FishNet acknowledged that the client loaded it. Do not manually add the connection to the additive map to bypass that acknowledgement.
+- Local direct test spawns and the network auto-spawn harness must resolve orientation from the loaded gameplay map after `ServerInit`; their persistent Client/test scene is not a valid center-marker source.
 - If bots are affected, update `ai-bots.md`.
 - If vehicle prefab contracts change, update `robot-control.md`.
 
