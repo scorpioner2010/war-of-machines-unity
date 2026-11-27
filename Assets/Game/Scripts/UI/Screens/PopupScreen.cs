@@ -49,9 +49,9 @@ namespace RAV.Scripts.UI.Screens
                 return;
             }
             
-            if (message == string.Empty)
+            if (string.IsNullOrWhiteSpace(message))
             {
-                message = "Server API is not available!";
+                message = "The operation failed without an error message. Check the client and server diagnostic logs for details.";
             }
 
             if (act != null)

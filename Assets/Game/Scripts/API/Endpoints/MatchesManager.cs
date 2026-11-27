@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using RAV.Scripts.API.Helpers;
+using RAV.Scripts.Diagnostics;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -19,6 +21,7 @@ namespace RAV.Scripts.API.Endpoints
             }
 
             string url = GetApiBase() + "/matches/start";
+            string requestId = Guid.NewGuid().ToString("N");
             var payload = new StartMatchRequest
             {
                 map = string.IsNullOrWhiteSpace(map) ? "default_map" : map,
@@ -32,11 +35,15 @@ namespace RAV.Scripts.API.Endpoints
                 downloadHandler = new DownloadHandlerBuffer(),
             };
             req.SetRequestHeader("Content-Type", "application/json");
+            req.SetRequestHeader("X-RAV-Request-Id", requestId);
             SetServerHeaders(req, serverId, credential);
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+            stopwatch.Stop();
 
             string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            RecordApiResult("dedicated_match_start_http_completed", requestId, req, stopwatch.ElapsedMilliseconds);
 
             if (req.result == UnityWebRequest.Result.Success)
             {
@@ -44,7 +51,7 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, r.matchId);
             }
 
-            return (false, resp, 0);
+            return (false, HttpLink.FormatApiFailure(req), 0);
         }
 
         public static async UniTask<(bool isSuccess, string message, EndMatchResponse response)> EndMatchAsDedicatedServer(
@@ -57,6 +64,7 @@ namespace RAV.Scripts.API.Endpoints
             }
 
             string url = GetApiBase() + "/matches/" + matchId + "/end";
+            string requestId = Guid.NewGuid().ToString("N");
 
             var body = new EndMatchRequest { participants = participants ?? Array.Empty<ParticipantInput>() };
             string json = JsonUtility.ToJson(body);
@@ -67,11 +75,15 @@ namespace RAV.Scripts.API.Endpoints
                 downloadHandler = new DownloadHandlerBuffer(),
             };
             req.SetRequestHeader("Content-Type", "application/json");
+            req.SetRequestHeader("X-RAV-Request-Id", requestId);
             SetServerHeaders(req, serverId, credential);
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+            stopwatch.Stop();
 
             string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            RecordApiResult("dedicated_match_end_http_completed", requestId, req, stopwatch.ElapsedMilliseconds, "match_id", matchId);
             if (req.result == UnityWebRequest.Result.Success)
             {
                 EndMatchResponse response = null;
@@ -84,22 +96,27 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, response);
             }
 
-            return (false, resp, null);
+            return (false, HttpLink.FormatApiFailure(req), null);
         }
 
         public static async UniTask<(bool isSuccess, string message, MatchParticipantView[] items)> GetParticipants(int matchId, string token)
         {
             string url = HttpLink.APIBase + "/matches/" + matchId + "/participants";
+            string requestId = Guid.NewGuid().ToString("N");
 
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
             {
                 downloadHandler = new DownloadHandlerBuffer(),
             };
             req.SetRequestHeader("Authorization", "Bearer " + token);
+            req.SetRequestHeader("X-RAV-Request-Id", requestId);
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+            stopwatch.Stop();
 
             string resp = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+            RecordApiResult("match_participants_http_completed", requestId, req, stopwatch.ElapsedMilliseconds, "match_id", matchId);
 
             if (req.result == UnityWebRequest.Result.Success)
             {
@@ -107,13 +124,68 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, arr);
             }
 
-            return (false, resp, Array.Empty<MatchParticipantView>());
+            return (false, HttpLink.FormatApiFailure(req), Array.Empty<MatchParticipantView>());
         }
 
         private static string GetApiBase()
         {
             string[] candidates = HttpLink.GetBaseCandidates();
             return candidates.Length > 0 ? candidates[0] : HttpLink.APIBase;
+        }
+
+        private static void RecordApiResult(
+            string eventName,
+            string requestId,
+            UnityWebRequest request,
+            long durationMilliseconds,
+            string additionalKey = null,
+            object additionalValue = null)
+        {
+            if (string.IsNullOrWhiteSpace(additionalKey))
+            {
+                GameplayRuntimeDiagnostics.Record(
+                    eventName,
+                    "request_id", requestId,
+                    "status_code", request.responseCode,
+                    "result", request.result,
+                    "duration_ms", durationMilliseconds,
+                    "response_bytes", request.downloadHandler?.data?.Length ?? 0,
+                    "error_category", request.result == UnityWebRequest.Result.Success ? "none" : GetErrorCategory(request));
+                return;
+            }
+
+            GameplayRuntimeDiagnostics.Record(
+                eventName,
+                "request_id", requestId,
+                "status_code", request.responseCode,
+                "result", request.result,
+                "duration_ms", durationMilliseconds,
+                "response_bytes", request.downloadHandler?.data?.Length ?? 0,
+                "error_category", request.result == UnityWebRequest.Result.Success ? "none" : GetErrorCategory(request),
+                additionalKey, additionalValue);
+        }
+
+        private static string GetErrorCategory(UnityWebRequest request)
+        {
+            if (request.result == UnityWebRequest.Result.ConnectionError)
+            {
+                return !string.IsNullOrWhiteSpace(request.error)
+                       && request.error.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? "timeout"
+                    : "connection_error";
+            }
+
+            if (request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                return "http_error";
+            }
+
+            if (request.result == UnityWebRequest.Result.DataProcessingError)
+            {
+                return "response_processing_error";
+            }
+
+            return "unknown";
         }
 
         private static string GetEnvironmentValue(string primaryName, string legacyName)

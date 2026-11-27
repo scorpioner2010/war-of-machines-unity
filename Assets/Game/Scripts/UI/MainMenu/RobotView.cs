@@ -25,6 +25,8 @@ namespace RAV.Scripts.UI.MainMenu
 {
     public class RobotView : NetworkBehaviour
     {
+        private const float VehicleSelectionTimeoutSeconds = 10f;
+
         public Transform spawnPosition;
         public GameObject rootSpawnPlace;
         public Transform vehicleContainer;
@@ -36,7 +38,9 @@ namespace RAV.Scripts.UI.MainMenu
         private readonly List<VehicleSlotView> _slots = new List<VehicleSlotView>();
         private int _buildVersion;
         private int _spawnVersion;
-        private bool _vehicleSelectionLoadingScopeActive;
+        private int _vehicleSelectionRequestVersion;
+        private StandardLoadingOverlay.LoadingRequest _vehicleSelectionLoadingRequest;
+        private bool _hiddenForGameplay;
 
         private static RobotView _in;
 
@@ -47,6 +51,7 @@ namespace RAV.Scripts.UI.MainMenu
 
         private void OnDestroy()
         {
+            _vehicleSelectionRequestVersion++;
             EndVehicleSelectionLoading();
             if (_in == this)
             {
@@ -64,25 +69,26 @@ namespace RAV.Scripts.UI.MainMenu
         public static async UniTask GenerateIconsAsync()
         {
             RobotView view = _in;
-            if (view == null)
+            if (view == null || view._hiddenForGameplay)
             {
                 GameplayRuntimeDiagnostics.Record("robot_menu_refresh_skipped", "reason", "view_missing");
                 return;
             }
 
-            StandardLoadingOverlay.BeginRequest();
+            StandardLoadingOverlay.LoadingRequest loadingRequest = StandardLoadingOverlay.BeginRequest();
             try
             {
                 await GenerateIconsInternalAsync(view);
             }
             finally
             {
-                StandardLoadingOverlay.EndRequest();
+                loadingRequest.End();
             }
         }
 
         public override void OnStopClient()
         {
+            _vehicleSelectionRequestVersion++;
             EndVehicleSelectionLoading();
             base.OnStopClient();
         }
@@ -245,7 +251,10 @@ namespace RAV.Scripts.UI.MainMenu
 
         private static bool IsBuildCurrent(RobotView view, int buildVersion)
         {
-            return view != null && _in == view && view._buildVersion == buildVersion;
+            return view != null
+                && _in == view
+                && !view._hiddenForGameplay
+                && view._buildVersion == buildVersion;
         }
 
         private static void BuildVehicleSlots(RobotView view, List<VehicleSlotVehicleData> vehicles)
@@ -434,63 +443,11 @@ namespace RAV.Scripts.UI.MainMenu
                 return;
             }
 
-            BeginVehicleSelectionLoading();
-            SelectVehicleServerRpc(id);
-        }
-
-        private void BeginVehicleSelectionLoading()
-        {
-            if (_vehicleSelectionLoadingScopeActive)
-            {
-                return;
-            }
-
-            _vehicleSelectionLoadingScopeActive = true;
-            StandardLoadingOverlay.BeginRequest();
-        }
-
-        private void EndVehicleSelectionLoading()
-        {
-            if (!_vehicleSelectionLoadingScopeActive)
-            {
-                return;
-            }
-
-            _vehicleSelectionLoadingScopeActive = false;
-            StandardLoadingOverlay.EndRequest();
-        }
-
-        [ServerRpc(RequireOwnership = false)]
-        private void SelectVehicleServerRpc(int code, NetworkConnection sender = null)
-        {
-            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
-            {
-                TargetRpcSelect(sender, false, "Not logged in.");
-                return;
-            }
-
-            SelectVehicleAsync(sender, code).Forget();
-        }
-
-        private async UniTask SelectVehicleAsync(NetworkConnection sender, int id)
-        {
+            int requestVersion = BeginVehicleSelectionLoading();
             try
             {
-                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
-                {
-                    TargetRpcSelect(sender, false, "Not logged in.");
-                    return;
-                }
-
-                string token = session.Token;
-                if (string.IsNullOrEmpty(token))
-                {
-                    TargetRpcSelect(sender, false, "Not logged in.");
-                    return;
-                }
-
-                (bool ok, string msg) result = await UserVehiclesManager.SetActive(id, token);
-                TargetRpcSelect(sender, result.ok, result.msg);
+                SelectVehicleServerRpc(id, requestVersion);
+                WaitForVehicleSelectionTimeoutAsync(requestVersion).Forget();
             }
             catch (Exception exception)
             {
@@ -498,13 +455,116 @@ namespace RAV.Scripts.UI.MainMenu
                     "robot_selection_failed",
                     "reason", exception.Message,
                     "vehicle_id", id);
-                TargetRpcSelect(sender, false, "Unable to switch robot.");
+                Popup.ShowText("Unable to switch robot.", Color.red);
+                EndVehicleSelectionLoading(requestVersion);
+            }
+        }
+
+        private int BeginVehicleSelectionLoading()
+        {
+            if (_vehicleSelectionLoadingRequest != null && _vehicleSelectionLoadingRequest.IsActive)
+            {
+                return _vehicleSelectionRequestVersion;
+            }
+
+            _vehicleSelectionRequestVersion++;
+            _vehicleSelectionLoadingRequest = StandardLoadingOverlay.BeginRequest();
+            return _vehicleSelectionRequestVersion;
+        }
+
+        private void EndVehicleSelectionLoading()
+        {
+            if (_vehicleSelectionLoadingRequest == null)
+            {
+                return;
+            }
+
+            _vehicleSelectionLoadingRequest.End();
+            _vehicleSelectionLoadingRequest = null;
+        }
+
+        private void EndVehicleSelectionLoading(int requestVersion)
+        {
+            if (requestVersion != _vehicleSelectionRequestVersion)
+            {
+                return;
+            }
+
+            EndVehicleSelectionLoading();
+        }
+
+        private async UniTask WaitForVehicleSelectionTimeoutAsync(int requestVersion)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(VehicleSelectionTimeoutSeconds), ignoreTimeScale: true);
+            if (this == null
+                || requestVersion != _vehicleSelectionRequestVersion
+                || _vehicleSelectionLoadingRequest == null)
+            {
+                return;
+            }
+
+            GameplayRuntimeDiagnostics.Record(
+                "robot_selection_failed",
+                "reason", "timeout");
+            Popup.ShowText("Robot switch timed out.", Color.red);
+            EndVehicleSelectionLoading(requestVersion);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void SelectVehicleServerRpc(int code, int requestVersion, NetworkConnection sender = null)
+        {
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
+            {
+                TargetRpcSelect(sender, requestVersion, false, "Not logged in.");
+                return;
+            }
+
+            SelectVehicleAsync(sender, code, requestVersion).Forget();
+        }
+
+        private async UniTask SelectVehicleAsync(NetworkConnection sender, int id, int requestVersion)
+        {
+            try
+            {
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                {
+                    TargetRpcSelect(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
+
+                string token = session.Token;
+                if (string.IsNullOrEmpty(token))
+                {
+                    TargetRpcSelect(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
+
+                (bool ok, string msg) result = await UserVehiclesManager.SetActive(id, token);
+                TargetRpcSelect(sender, requestVersion, result.ok, result.msg);
+            }
+            catch (Exception exception)
+            {
+                GameplayRuntimeDiagnostics.Record(
+                    "robot_selection_failed",
+                    "reason", exception.Message,
+                    "vehicle_id", id);
+                TargetRpcSelect(sender, requestVersion, false, "Unable to switch robot.");
             }
         }
 
         [TargetRpc]
-        private void TargetRpcSelect(NetworkConnection target, bool success, string errorMessage)
+        private void TargetRpcSelect(NetworkConnection target, int requestVersion, bool success, string errorMessage)
         {
+            if (requestVersion != _vehicleSelectionRequestVersion)
+            {
+                if (success)
+                {
+                    ProfileServer.UpdateProfile();
+                }
+
+                return;
+            }
+
             if (success)
             {
                 try
@@ -513,14 +573,14 @@ namespace RAV.Scripts.UI.MainMenu
                 }
                 finally
                 {
-                    EndVehicleSelectionLoading();
+                    EndVehicleSelectionLoading(requestVersion);
                 }
 
                 return;
             }
 
             Popup.ShowText(errorMessage, Color.red);
-            EndVehicleSelectionLoading();
+            EndVehicleSelectionLoading(requestVersion);
         }
 
         [Button]
@@ -554,7 +614,7 @@ namespace RAV.Scripts.UI.MainMenu
 
         private static async UniTask SpawnAsync(VehicleRoot vehicleRoot)
         {
-            if (_in == null || vehicleRoot == null)
+            if (_in == null || _in._hiddenForGameplay || vehicleRoot == null)
             {
                 return;
             }
@@ -599,6 +659,25 @@ namespace RAV.Scripts.UI.MainMenu
 
             _in._buildVersion++;
             _in.DespawnContent(hidePreviewPlatform: true);
+        }
+
+        public static void HideForGameplay()
+        {
+            if (_in == null)
+            {
+                return;
+            }
+
+            _in._hiddenForGameplay = true;
+            Despawn();
+        }
+
+        public static void ShowForMainMenu()
+        {
+            if (_in != null)
+            {
+                _in._hiddenForGameplay = false;
+            }
         }
 
         private void DespawnContent(bool hidePreviewPlatform)

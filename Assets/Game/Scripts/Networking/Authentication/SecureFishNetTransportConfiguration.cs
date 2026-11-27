@@ -87,6 +87,15 @@ namespace RAV.Scripts.Networking.Authentication
 
         private static string GetEnvironmentValue(string name, string legacyName)
         {
+#if !UNITY_EDITOR
+            // Packaged client target settings must match the build selected in the
+            // Control Panel, regardless of stale machine-level environment values.
+            if (ClientRuntimeConfiguration.TryGetBundledValue(name, out string bundledValue))
+            {
+                return bundledValue;
+            }
+#endif
+
             string value = System.Environment.GetEnvironmentVariable(name) ?? string.Empty;
             if (string.IsNullOrWhiteSpace(value))
             {

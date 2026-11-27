@@ -28,7 +28,7 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, arr);
             }
 
-            return (false, resp, Array.Empty<LeaderboardEntry>());
+            return (false, HttpLink.FormatApiFailure(req), Array.Empty<LeaderboardEntry>());
         }
     }
 

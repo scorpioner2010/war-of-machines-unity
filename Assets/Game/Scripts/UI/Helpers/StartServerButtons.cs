@@ -179,7 +179,7 @@ namespace RAV.Scripts.UI.Helpers
         private IEnumerator AutoStartClient()
         {
             WaitForSeconds authenticationWait = new WaitForSeconds(Mathf.Max(0.1f, clientRetryDelaySeconds));
-            while (ClientAuthenticationState.IsAuthenticated == false)
+            while (ClientAuthenticationState.HasAuthenticationSession == false)
             {
                 MenuLoadingScreenManager.SetConnectionStatus("Login required before multiplayer connection");
                 yield return authenticationWait;
@@ -236,7 +236,7 @@ namespace RAV.Scripts.UI.Helpers
                 return;
             }
 
-            if (ClientAuthenticationState.IsAuthenticated == false)
+            if (ClientAuthenticationState.HasAuthenticationSession == false)
             {
                 LastServerStatus = "Client connection requires an authenticated HTTPS session.";
                 Popup.ShowText("Log in before connecting to the battle server.", Color.red);
@@ -325,16 +325,30 @@ namespace RAV.Scripts.UI.Helpers
 
         private IEnumerator RequestConnectionTicket(string serverId, System.Action<bool, string> onComplete)
         {
-            if (string.IsNullOrWhiteSpace(serverId) || ClientAuthenticationState.IsAuthenticated == false)
+            if (string.IsNullOrWhiteSpace(serverId) || ClientAuthenticationState.HasAuthenticationSession == false)
             {
                 onComplete(false, "Authenticated session or server ID is missing.");
                 yield break;
             }
 
+            bool accessTokenReady = false;
+            string accessTokenError = string.Empty;
+            yield return ClientAuthenticationState.EnsureValidAccessToken((success, message) =>
+            {
+                accessTokenReady = success;
+                accessTokenError = message;
+            });
+            if (!accessTokenReady)
+            {
+                onComplete(false, accessTokenError);
+                yield break;
+            }
+
             var payload = new ConnectionTicketRequest { serverId = serverId };
             byte[] body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(payload));
-            string lastError = "Connection ticket endpoint is not available.";
+            string lastError = "No valid API endpoint is configured for the selected environment.";
             string[] apiBases = HttpLink.GetBaseCandidates();
+            bool retriedAfterUnauthorized = false;
 
             for (int i = 0; i < apiBases.Length; i++)
             {
@@ -364,6 +378,25 @@ namespace RAV.Scripts.UI.Helpers
                     }
 
                     lastError = FormatApiRequestError(apiBase, request);
+                    if (request.responseCode == 401 && !retriedAfterUnauthorized)
+                    {
+                        retriedAfterUnauthorized = true;
+                        accessTokenReady = false;
+                        accessTokenError = string.Empty;
+                        yield return ClientAuthenticationState.EnsureValidAccessToken((success, message) =>
+                        {
+                            accessTokenReady = success;
+                            accessTokenError = message;
+                        }, forceRefresh: true);
+
+                        if (!accessTokenReady)
+                        {
+                            lastError = accessTokenError;
+                            break;
+                        }
+
+                        i--;
+                    }
                 }
             }
 
@@ -373,7 +406,7 @@ namespace RAV.Scripts.UI.Helpers
         private IEnumerator RequestActiveServerConnectionInfo(System.Action<bool, ServerConnectionInfo, string> onComplete)
         {
             string[] apiBases = GetServerLookupApiBases();
-            string lastError = "Server API is not available";
+            string lastError = "No valid API endpoint is configured for the selected environment.";
 
             for (int i = 0; i < apiBases.Length; i++)
             {
@@ -509,7 +542,7 @@ namespace RAV.Scripts.UI.Helpers
 
         private static string FormatApiRequestError(string apiBase, UnityWebRequest request)
         {
-            return "Server API is not available at " + apiBase + ": " + request.responseCode + " " + request.error;
+            return HttpLink.FormatApiFailure(request);
         }
 
         private static bool TryGetServerConnectionInfo(UnityServerStatusResponse response, ushort fallbackPort, out ServerConnectionInfo connectionInfo, out string error)

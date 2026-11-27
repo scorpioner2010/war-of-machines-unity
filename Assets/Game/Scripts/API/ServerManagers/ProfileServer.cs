@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using FishNet;
 using FishNet.Connection;
@@ -23,6 +24,7 @@ namespace RAV.Scripts.API.ServerManagers
     {
         private const float ProfileRetryDelaySeconds = 0.5f;
         private const float ProfileRequestTimeoutSeconds = 4f;
+        private const float FreeXpConversionTimeoutSeconds = 10f;
         private const int MaxProfileRefreshAttempts = 120;
 
         private static ProfileServer _in;
@@ -31,8 +33,11 @@ namespace RAV.Scripts.API.ServerManagers
         private Coroutine _profileRefreshCoroutine;
         private bool _profileRefreshQueued;
         private bool _profileRequestInFlight;
-        private bool _profileLoadingScopeActive;
+        private StandardLoadingOverlay.LoadingRequest _profileLoadingRequest;
+        private StandardLoadingOverlay.LoadingRequest _freeXpLoadingRequest;
+        private int _freeXpRequestVersion;
         private int _profileRefreshAttempt;
+        private string _profileFlowId;
 
         private void Awake() => _in = this;
 
@@ -51,19 +56,23 @@ namespace RAV.Scripts.API.ServerManagers
         public override void OnStopClient()
         {
             StopQueuedProfileRefresh();
+            _freeXpRequestVersion++;
+            EndFreeXpLoadingScope();
             base.OnStopClient();
         }
 
         private void OnDestroy()
         {
             StopQueuedProfileRefresh();
+            _freeXpRequestVersion++;
+            EndFreeXpLoadingScope();
             if (_in == this)
             {
                 _in = null;
             }
         }
 
-        public static void UpdateProfile()
+        public static void UpdateProfile(string flowId = null)
         {
             if (ClientMenuTestMode.TryCreateProfile(out PlayerProfile localTestProfile))
             {
@@ -78,12 +87,20 @@ namespace RAV.Scripts.API.ServerManagers
                 return;
             }
 
-            if (!ClientAuthenticationState.IsAuthenticated)
+            if (!ClientAuthenticationState.HasAuthenticationSession)
             {
                 GameplayRuntimeDiagnostics.Record("profile_refresh_skipped", "reason", "https_session_missing");
                 _in.EndProfileLoadingScope();
-                StandardLoadingOverlay.Hide();
                 return;
+            }
+
+            if (Guid.TryParse(flowId, out Guid parsedFlowId))
+            {
+                _in._profileFlowId = parsedFlowId.ToString("N");
+            }
+            else if (!_in._profileRequestInFlight && !_in._profileRefreshQueued)
+            {
+                _in._profileFlowId = Guid.NewGuid().ToString("N");
             }
 
             _in.BeginProfileLoadingScope();
@@ -132,87 +149,108 @@ namespace RAV.Scripts.API.ServerManagers
 
         private IEnumerator ProfileRefreshLoop()
         {
-            while (_profileRefreshQueued && _profileRefreshAttempt < MaxProfileRefreshAttempts)
+            try
             {
-                if (!IsProfileRpcReady())
+                while (_profileRefreshQueued && _profileRefreshAttempt < MaxProfileRefreshAttempts)
                 {
-                    yield return new WaitForSecondsRealtime(ProfileRetryDelaySeconds);
-                    continue;
-                }
+                    if (!IsProfileRpcReady())
+                    {
+                        yield return new WaitForSecondsRealtime(ProfileRetryDelaySeconds);
+                        continue;
+                    }
 
-                _profileRefreshQueued = false;
-                _profileRequestInFlight = true;
-                _profileRefreshAttempt++;
-                GameplayRuntimeDiagnostics.Record(
-                    "profile_request_started",
-                    "attempt", _profileRefreshAttempt,
-                    "client_initialized", IsClientInitialized,
-                    "client_started", IsClientStarted);
-
-                GetProfileServerRpc();
-
-                float timeoutAt = Time.unscaledTime + ProfileRequestTimeoutSeconds;
-                while (_profileRequestInFlight && Time.unscaledTime < timeoutAt)
-                {
-                    yield return null;
-                }
-
-                if (_profileRequestInFlight)
-                {
-                    _profileRequestInFlight = false;
-                    _profileRefreshQueued = true;
+                    _profileRefreshQueued = false;
+                    _profileRequestInFlight = true;
+                    _profileRefreshAttempt++;
+                    string requestId = Guid.NewGuid().ToString("N");
+                    string flowId = _profileFlowId;
                     GameplayRuntimeDiagnostics.Record(
-                        "profile_request_timeout",
-                        "attempt", _profileRefreshAttempt);
+                        "profile_request_started",
+                        "request_id", requestId,
+                        "flow_id", flowId,
+                        "attempt", _profileRefreshAttempt,
+                        "client_initialized", IsClientInitialized,
+                        "client_started", IsClientStarted);
+
+                    GetProfileServerRpc(requestId, flowId);
+
+                    float timeoutAt = Time.unscaledTime + ProfileRequestTimeoutSeconds;
+                    while (_profileRequestInFlight && Time.unscaledTime < timeoutAt)
+                    {
+                        yield return null;
+                    }
+
+                    if (_profileRequestInFlight)
+                    {
+                        _profileRequestInFlight = false;
+                        _profileRefreshQueued = true;
+                        GameplayRuntimeDiagnostics.Record(
+                            "profile_request_timeout",
+                            "request_id", requestId,
+                            "flow_id", flowId,
+                            "attempt", _profileRefreshAttempt);
+                    }
+
+                    if (_profileRefreshQueued)
+                    {
+                        yield return new WaitForSecondsRealtime(ProfileRetryDelaySeconds);
+                    }
                 }
 
                 if (_profileRefreshQueued)
                 {
-                    yield return new WaitForSecondsRealtime(ProfileRetryDelaySeconds);
+                    GameplayRuntimeDiagnostics.Record(
+                        "profile_refresh_failed",
+                        "reason", "attempt_limit",
+                        "attempts", _profileRefreshAttempt);
+                    _profileRefreshQueued = false;
+                    _profileRequestInFlight = false;
+                    EndProfileLoadingScope();
                 }
             }
-
-            if (_profileRefreshQueued)
+            finally
             {
-                GameplayRuntimeDiagnostics.Record(
-                    "profile_refresh_failed",
-                    "reason", "attempt_limit",
-                    "attempts", _profileRefreshAttempt);
-                _profileRefreshQueued = false;
-                _profileRequestInFlight = false;
-                EndProfileLoadingScope();
-            }
+                if (_profileRefreshQueued || _profileRequestInFlight)
+                {
+                    GameplayRuntimeDiagnostics.Record(
+                        "profile_refresh_failed",
+                        "reason", "coroutine_stopped",
+                        "attempts", _profileRefreshAttempt);
+                    _profileRefreshQueued = false;
+                    _profileRequestInFlight = false;
+                    EndProfileLoadingScope();
+                }
 
-            _profileRefreshCoroutine = null;
+                _profileRefreshCoroutine = null;
+            }
         }
 
         private bool IsProfileRpcReady()
         {
-            return ClientAuthenticationState.IsAuthenticated
+            return ClientAuthenticationState.HasAuthenticationSession
                    && IsClientInitialized
                    && IsClientStarted;
         }
 
         private void BeginProfileLoadingScope()
         {
-            if (_profileLoadingScopeActive)
+            if (_profileLoadingRequest != null && _profileLoadingRequest.IsActive)
             {
                 return;
             }
 
-            _profileLoadingScopeActive = true;
-            StandardLoadingOverlay.BeginRequest();
+            _profileLoadingRequest = StandardLoadingOverlay.BeginRequest();
         }
 
         private void EndProfileLoadingScope()
         {
-            if (!_profileLoadingScopeActive)
+            if (_profileLoadingRequest == null)
             {
                 return;
             }
 
-            _profileLoadingScopeActive = false;
-            StandardLoadingOverlay.EndRequest();
+            _profileLoadingRequest.End();
+            _profileLoadingRequest = null;
         }
 
         public static void ConvertFreeXp(int vehicleId, int amount)
@@ -236,8 +274,75 @@ namespace RAV.Scripts.API.ServerManagers
                 return;
             }
 
-            StandardLoadingOverlay.Show();
-            _in.ConvertFreeXpServerRpc(vehicleId, amount);
+            if (_in._freeXpLoadingRequest != null && _in._freeXpLoadingRequest.IsActive)
+            {
+                return;
+            }
+
+            int requestVersion = _in.BeginFreeXpLoadingScope();
+            try
+            {
+                _in.ConvertFreeXpServerRpc(vehicleId, amount, requestVersion);
+                _in.WaitForFreeXpConversionTimeoutAsync(requestVersion).Forget();
+            }
+            catch (System.Exception exception)
+            {
+                _in.EndFreeXpLoadingScope(requestVersion);
+                GameplayRuntimeDiagnostics.Record("freexp_conversion_failed", "reason", exception.Message);
+                FreeXpConversionPopup.NotifyConversionFailed();
+                Popup.ShowText("Unable to convert Free XP.", Color.red);
+            }
+        }
+
+        private int BeginFreeXpLoadingScope()
+        {
+            if (_freeXpLoadingRequest != null && _freeXpLoadingRequest.IsActive)
+            {
+                return _freeXpRequestVersion;
+            }
+
+            _freeXpRequestVersion++;
+            _freeXpLoadingRequest = StandardLoadingOverlay.BeginRequest();
+            return _freeXpRequestVersion;
+        }
+
+        private void EndFreeXpLoadingScope()
+        {
+            if (_freeXpLoadingRequest == null)
+            {
+                return;
+            }
+
+            _freeXpLoadingRequest.End();
+            _freeXpLoadingRequest = null;
+        }
+
+        private void EndFreeXpLoadingScope(int requestVersion)
+        {
+            if (requestVersion != _freeXpRequestVersion)
+            {
+                return;
+            }
+
+            EndFreeXpLoadingScope();
+        }
+
+        private async UniTask WaitForFreeXpConversionTimeoutAsync(int requestVersion)
+        {
+            await UniTask.Delay(System.TimeSpan.FromSeconds(FreeXpConversionTimeoutSeconds), ignoreTimeScale: true);
+            if (this == null
+                || requestVersion != _freeXpRequestVersion
+                || _freeXpLoadingRequest == null)
+            {
+                return;
+            }
+
+            GameplayRuntimeDiagnostics.Record(
+                "freexp_conversion_failed",
+                "reason", "timeout");
+            FreeXpConversionPopup.NotifyConversionFailed();
+            Popup.ShowText("Free XP conversion timed out.", Color.red);
+            EndFreeXpLoadingScope(requestVersion);
         }
 
         public static void RequestProfileStatistics()
@@ -265,29 +370,33 @@ namespace RAV.Scripts.API.ServerManagers
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void GetProfileServerRpc(NetworkConnection sender = null)
+        private void GetProfileServerRpc(string requestId, string flowId, NetworkConnection sender = null)
         {
             if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
                 GameplayRuntimeDiagnostics.Record(
                     "profile_request_rejected",
                     "reason", "server_session_not_authenticated",
+                    "request_id", requestId,
+                    "flow_id", flowId,
                     "client_id", sender != null ? sender.ClientId : -1);
                 return;
             }
 
-            RequestGetProfileAsync(sender).Forget();
+            RequestGetProfileAsync(sender, requestId, flowId).Forget();
         }
 
-        private async UniTask RequestGetProfileAsync(NetworkConnection sender)
+        private async UniTask RequestGetProfileAsync(NetworkConnection sender, string requestId, string flowId)
         {
             if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
             {
                 GameplayRuntimeDiagnostics.Record(
                     "profile_request_failed",
                     "reason", "server_session_missing",
+                    "request_id", requestId,
+                    "flow_id", flowId,
                     "client_id", sender != null ? sender.ClientId : -1);
-                TargetRpcUpdateProfile(sender, false, "Not logged in.", null);
+                TargetRpcUpdateProfile(sender, requestId, flowId, false, "Not logged in.", null);
                 return;
             }
 
@@ -297,21 +406,24 @@ namespace RAV.Scripts.API.ServerManagers
                 GameplayRuntimeDiagnostics.Record(
                     "profile_request_failed",
                     "reason", "delegated_token_missing",
+                    "request_id", requestId,
+                    "flow_id", flowId,
                     "client_id", sender.ClientId);
-                TargetRpcUpdateProfile(sender, false, "Not logged in.", null);
+                TargetRpcUpdateProfile(sender, requestId, flowId, false, "Not logged in.", null);
                 return;
             }
 
-            (bool isSuccess, string message, PlayerProfile profile) data = await PlayersManager.GetMyProfile(token);
+            (bool isSuccess, string message, PlayerProfile profile) data = await PlayersManager.GetMyProfile(token, requestId, flowId);
 
             if (data.isSuccess)
             {
                 ServerPlayerSessions.SetProfile(sender, data.profile);
                 GameplayRuntimeDiagnostics.Record(
                     "profile_loaded_server",
+                    "request_id", requestId,
+                    "flow_id", flowId,
                     "client_id", sender.ClientId,
                     "user_id", data.profile != null ? data.profile.id : 0,
-                    "username", data.profile != null ? data.profile.username : string.Empty,
                     "owned_count", data.profile?.ownedVehicles?.Length ?? 0,
                     "active_vehicle_code", data.profile != null ? data.profile.activeVehicleCode : string.Empty);
             }
@@ -319,22 +431,25 @@ namespace RAV.Scripts.API.ServerManagers
             {
                 GameplayRuntimeDiagnostics.Record(
                     "profile_request_failed",
-                    "reason", data.message,
+                    "reason_category", string.IsNullOrWhiteSpace(data.message) ? "empty_api_error" : "api_rejected_request",
+                    "request_id", requestId,
+                    "flow_id", flowId,
                     "client_id", sender.ClientId);
             }
 
-            TargetRpcUpdateProfile(sender, data.isSuccess, data.message, data.profile);
+            TargetRpcUpdateProfile(sender, requestId, flowId, data.isSuccess, data.message, data.profile);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void ConvertFreeXpServerRpc(int vehicleId, int amount, NetworkConnection sender = null)
+        private void ConvertFreeXpServerRpc(int vehicleId, int amount, int requestVersion, NetworkConnection sender = null)
         {
             if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
+                TargetRpcConvertFreeXp(sender, requestVersion, false, "Not logged in.");
                 return;
             }
 
-            ConvertFreeXpAsync(sender, vehicleId, amount).Forget();
+            ConvertFreeXpAsync(sender, vehicleId, amount, requestVersion).Forget();
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -348,29 +463,41 @@ namespace RAV.Scripts.API.ServerManagers
             RequestProfileStatisticsAsync(sender).Forget();
         }
 
-        private async UniTask ConvertFreeXpAsync(NetworkConnection sender, int vehicleId, int amount)
+        private async UniTask ConvertFreeXpAsync(NetworkConnection sender, int vehicleId, int amount, int requestVersion)
         {
-            if (vehicleId <= 0 || amount <= 0)
+            try
             {
-                TargetRpcConvertFreeXp(sender, false, "Choose a vehicle and XP amount.");
-                return;
-            }
+                if (vehicleId <= 0 || amount <= 0)
+                {
+                    TargetRpcConvertFreeXp(sender, requestVersion, false, "Choose a vehicle and XP amount.");
+                    return;
+                }
 
-            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                {
+                    TargetRpcConvertFreeXp(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
+
+                string token = session.Token;
+                if (string.IsNullOrEmpty(token))
+                {
+                    TargetRpcConvertFreeXp(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
+
+                (bool ok, string message) result = await UserVehiclesManager.ConvertFreeXp(vehicleId, amount, token);
+                TargetRpcConvertFreeXp(sender, requestVersion, result.ok, result.message);
+            }
+            catch (System.Exception exception)
             {
-                TargetRpcConvertFreeXp(sender, false, "Not logged in.");
-                return;
+                GameplayRuntimeDiagnostics.Record(
+                    "freexp_conversion_failed",
+                    "reason", exception.Message,
+                    "vehicle_id", vehicleId,
+                    "amount", amount);
+                TargetRpcConvertFreeXp(sender, requestVersion, false, "Unable to convert Free XP.");
             }
-
-            string token = session.Token;
-            if (string.IsNullOrEmpty(token))
-            {
-                TargetRpcConvertFreeXp(sender, false, "Not logged in.");
-                return;
-            }
-
-            (bool ok, string message) result = await UserVehiclesManager.ConvertFreeXp(vehicleId, amount, token);
-            TargetRpcConvertFreeXp(sender, result.ok, result.message);
         }
 
         private async UniTask RequestProfileStatisticsAsync(NetworkConnection sender)
@@ -393,31 +520,57 @@ namespace RAV.Scripts.API.ServerManagers
         }
 
         [TargetRpc]
-        private void TargetRpcUpdateProfile(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
+        private void TargetRpcUpdateProfile(
+            NetworkConnection target,
+            string requestId,
+            string flowId,
+            bool success,
+            string errorMessage,
+            PlayerProfile profile)
         {
             _profileRequestInFlight = false;
             GameplayRuntimeDiagnostics.Record(
                 success ? "profile_response_received" : "profile_response_failed",
+                "request_id", requestId,
+                "flow_id", flowId,
                 "success", success,
-                "reason", success ? string.Empty : errorMessage,
+                "reason_category", success ? "none" : string.IsNullOrWhiteSpace(errorMessage) ? "empty_server_error" : "server_api_rejected_request",
                 "owned_count", profile?.ownedVehicles?.Length ?? 0,
                 "active_vehicle_code", profile != null ? profile.activeVehicleCode : string.Empty);
             TargetRpcUpdateProfileAsync(target, success, errorMessage, profile).Forget();
         }
 
         [TargetRpc]
-        private void TargetRpcConvertFreeXp(NetworkConnection target, bool success, string errorMessage)
+        private void TargetRpcConvertFreeXp(NetworkConnection target, int requestVersion, bool success, string errorMessage)
         {
+            if (requestVersion != _freeXpRequestVersion)
+            {
+                if (success)
+                {
+                    UpdateProfile();
+                }
+
+                return;
+            }
+
             if (success)
             {
-                FreeXpConversionPopup.NotifyConversionSucceeded();
-                UpdateProfile();
+                try
+                {
+                    FreeXpConversionPopup.NotifyConversionSucceeded();
+                    UpdateProfile();
+                }
+                finally
+                {
+                    EndFreeXpLoadingScope(requestVersion);
+                }
+
                 return;
             }
 
             FreeXpConversionPopup.NotifyConversionFailed();
             Popup.ShowText(errorMessage, Color.red);
-            StandardLoadingOverlay.Hide();
+            EndFreeXpLoadingScope(requestVersion);
         }
 
         [TargetRpc]
@@ -434,44 +587,53 @@ namespace RAV.Scripts.API.ServerManagers
 
         private async UniTask TargetRpcUpdateProfileAsync(NetworkConnection target, bool success, string errorMessage, PlayerProfile profile)
         {
-            if (success && profile != null)
+            bool keepLoadingScope = false;
+            try
             {
-                _profileRefreshQueued = false;
-                IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
-                clientInfo.SetPlayerData(profile);
-                clientInfo.SetClientId(target.ClientId);
-
-                await RobotView.GenerateIconsAsync();
-
-                MainMenu.In?.UpdatePlayerInfo(clientInfo.Profile);
-                developmentTree?.RefreshProgressionStates();
-
-                GameplayRuntimeDiagnostics.Record(
-                    "profile_applied_client",
-                    "client_id", target.ClientId,
-                    "user_id", profile.id,
-                    "username", profile.username,
-                    "owned_count", profile.ownedVehicles?.Length ?? 0,
-                    "active_vehicle_code", profile.activeVehicleCode);
-
-                if (GameplaySpawner.In != null)
+                if (success && profile != null)
                 {
-                    GameplaySpawner.In.RequestPendingGameResultsServerRpc();
+                    _profileRefreshQueued = false;
+                    IPlayerClientInfo clientInfo = ServiceLocator.Get<IPlayerClientInfo>();
+                    clientInfo.SetPlayerData(profile);
+                    clientInfo.SetClientId(target.ClientId);
+
+                    await RobotView.GenerateIconsAsync();
+
+                    MainMenu.In?.UpdatePlayerInfo(clientInfo.Profile);
+                    developmentTree?.RefreshProgressionStates();
+
+                    GameplayRuntimeDiagnostics.Record(
+                        "profile_applied_client",
+                        "client_id", target.ClientId,
+                        "user_id", profile.id,
+                        "username", profile.username,
+                        "owned_count", profile.ownedVehicles?.Length ?? 0,
+                        "active_vehicle_code", profile.activeVehicleCode);
+
+                    if (GameplaySpawner.In != null)
+                    {
+                        GameplaySpawner.In.RequestPendingGameResultsServerRpc();
+                    }
+                }
+                else if (string.Equals(errorMessage, "Not logged in.", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    _profileRefreshQueued = true;
+                    keepLoadingScope = true;
+                    GameplayRuntimeDiagnostics.Record("profile_response_retrying", "reason", "server_session_not_ready");
+                }
+                else
+                {
+                    _profileRefreshQueued = false;
+                    Popup.ShowText(errorMessage, Color.red);
                 }
             }
-            else if (string.Equals(errorMessage, "Not logged in.", System.StringComparison.OrdinalIgnoreCase))
+            finally
             {
-                _profileRefreshQueued = true;
-                GameplayRuntimeDiagnostics.Record("profile_response_retrying", "reason", "server_session_not_ready");
-                return;
+                if (!keepLoadingScope)
+                {
+                    EndProfileLoadingScope();
+                }
             }
-            else
-            {
-                _profileRefreshQueued = false;
-                Popup.ShowText(errorMessage, Color.red);
-            }
-
-            EndProfileLoadingScope();
         }
 
         private static void ApplyLocalTestProfile(PlayerProfile profile)

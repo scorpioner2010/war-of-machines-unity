@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using RAV.Scripts.API;
+using RAV.Scripts.Networking.Authentication;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -110,6 +111,12 @@ namespace RAV.Editor
             Netcup
         }
 
+        internal enum ClientTarget
+        {
+            Local,
+            Netcup
+        }
+
         private enum ComponentStatus
         {
             Stopped,
@@ -195,6 +202,18 @@ namespace RAV.Editor
         {
             get => GetString("ClientBuildRoot", Path.Combine(DesktopPath, "RAV Builds"));
             set => SetString("ClientBuildRoot", value);
+        }
+
+        internal static string ClientBuildOutputRoot => ClientBuildRoot;
+
+        internal static ClientTarget SelectedClientTarget
+        {
+            get => (ClientTarget)Mathf.Clamp(EditorPrefs.GetInt(Pref + "ClientTarget", (int)SelectedEnvironment), (int)ClientTarget.Local, (int)ClientTarget.Netcup);
+            set
+            {
+                EditorPrefs.SetInt(Pref + "ClientTarget", (int)value);
+                LocalNetworkBuild.SynchronizeWindowsClientBuildProfile(value);
+            }
         }
 
         private static string NetcupServerHost
@@ -346,6 +365,7 @@ namespace RAV.Editor
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
             EditorApplication.update -= PumpOperation;
             EditorApplication.update += PumpOperation;
+            LocalNetworkBuild.SynchronizeWindowsClientBuildProfile(SelectedClientTarget);
             ApplyConfiguredEnvironment("Editor startup");
         }
 
@@ -572,10 +592,18 @@ namespace RAV.Editor
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Client", EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField(SelectedEnvironment == Location.Local ? "Local environment" : "Netcup environment", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(SelectedClientTarget == ClientTarget.Local ? "Local Client · Development" : "Netcup Client · Release", EditorStyles.miniLabel);
             EditorGUILayout.EndHorizontal();
             using (new EditorGUI.DisabledScope(IsBusy || EditorApplication.isPlaying))
             {
+                bool netcupClient = SelectedClientTarget == ClientTarget.Netcup;
+                bool selectedNetcupClient = EditorGUILayout.ToggleLeft("Netcup Client (unchecked = Local)", netcupClient);
+                if (selectedNetcupClient != netcupClient)
+                {
+                    SelectedClientTarget = selectedNetcupClient ? ClientTarget.Netcup : ClientTarget.Local;
+                    AddLog("Client target selected: " + SelectedClientTarget + ".");
+                }
+
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Build Client")) StartOperation("Build Client", BuildClientRoutine());
                 if (GUILayout.Button("Launch Client")) StartOperation("Launch Client", LaunchClientRoutine());
@@ -1349,18 +1377,20 @@ namespace RAV.Editor
                 yield break;
             }
 
-            string validation = ValidateSelection();
-            if (!string.IsNullOrEmpty(validation))
+            ClientTarget target = SelectedClientTarget;
+            if (!TryGetClientTargetSettings(target, out _, out _, out _, out string error))
             {
-                lastError = validation;
+                lastError = error;
                 yield break;
             }
 
             try
             {
-                BeginOperationStage("Building Client (Unity build percentage unavailable)");
-                string output = LocalNetworkBuild.BuildControlPanelClient(ClientBuildRoot);
-                AddLog("Windows Client build passed: " + output);
+                BeginOperationStage(target == ClientTarget.Netcup
+                    ? "Building Netcup Release Client (Unity build percentage unavailable)"
+                    : "Building Local Development Client (Unity build percentage unavailable)");
+                string output = LocalNetworkBuild.BuildControlPanelClient(ClientBuildRoot, target);
+                AddLog(target + " Windows Client build passed: " + output);
             }
             catch (Exception exception)
             {
@@ -1378,21 +1408,36 @@ namespace RAV.Editor
                 yield break;
             }
 
-            if (!TryApplyClientEnvironment("Launch Client", out Dictionary<string, string> environment, out string error))
+            ClientTarget target = SelectedClientTarget;
+            if (!TryGetClientTargetSettings(target, out string apiBase, out string commonName, out string caPath, out string error))
             {
                 lastError = error;
                 yield break;
             }
 
-            string executable = FindLatestBuild(ClientBuildRoot, "RAVClient.exe");
+            string executable = FindLatestClientBuild(ClientBuildRoot, target);
             if (string.IsNullOrEmpty(executable))
             {
-                lastError = "No Windows Client build was found. Click Build Client first.";
+                lastError = "No " + target + " Windows Client build was found. Select the target and click Build Client first.";
                 yield break;
             }
 
+            string buildDirectory = Path.GetDirectoryName(executable);
+            string bundledCaPath = Path.Combine(buildDirectory, "RAV-Client-DTLS-CA.crt");
+            if (!File.Exists(bundledCaPath))
+            {
+                lastError = "The selected Client build is missing its bundled DTLS CA certificate. Rebuild it from the panel.";
+                yield break;
+            }
+
+            Dictionary<string, string> environment = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["RAV_API_BASE"] = apiBase,
+                ["RAV_UTP_SERVER_COMMON_NAME"] = commonName,
+                ["RAV_UTP_CA_CERTIFICATE"] = bundledCaPath
+            };
             string clientLog = GetLogPath("local-client");
-            string clientArguments = JoinWindowsArguments(new[] { "-apiBase", SelectedEnvironment == Location.Local ? LocalApiUrl : NetcupApiUrl, "-logFile", clientLog });
+            string clientArguments = JoinWindowsArguments(new[] { "-apiBase", apiBase, "-logFile", clientLog });
             BeginOperationStage("Launching the standalone Client");
             Task<ManagedProcessInfo> task = StartManagedProcessAsync(executable, clientArguments, Path.GetDirectoryName(executable), "client", environment, false, clientLog + ".stdout.log", clientLog + ".stderr.log");
             yield return task;
@@ -1403,7 +1448,7 @@ namespace RAV.Editor
             }
 
             SaveManagedProcess(LocalClientRole, task.Result, clientLog, clientLog + ".stderr.log");
-            AddLog("Standalone Client launched with the selected explicit API and public DTLS trust settings.");
+            AddLog("Standalone " + target + " Client launched with its explicit API and bundled DTLS trust settings.");
         }
 
         private static IEnumerator StartApiRoutine()
@@ -1496,9 +1541,26 @@ namespace RAV.Editor
             Task<CommandResult> vaultTask = ReadVaultDatabaseUrlAsync();
             SetOperationWaiting("Reading the encrypted database URL without displaying or logging it...");
             yield return vaultTask;
-            if (!vaultTask.Result.Success || !TryDecodeVaultDatabaseUrl(vaultTask.Result.Output, out string databaseUrl))
+            if (!vaultTask.Result.Success)
             {
-                lastError = "The rav_staging database connection is unavailable in the encrypted secure vault.";
+                if (vaultTask.Result.TimedOut)
+                {
+                    lastError = "Reading the encrypted rav_staging credential timed out. Check PowerShell 7 and secure-vault access.";
+                }
+                else if (string.Equals(vaultTask.Result.Error, "PowerShell 7 is unavailable to Unity Editor.", StringComparison.Ordinal))
+                {
+                    lastError = "PowerShell 7 is unavailable to Unity Editor. Install PowerShell 7 or make its executable available to the panel.";
+                }
+                else
+                {
+                    lastError = "PowerShell 7 could not decrypt the rav_staging credential for this Windows user. Check the encrypted vault entry and user profile.";
+                }
+                yield break;
+            }
+
+            if (!TryDecodeVaultDatabaseUrl(vaultTask.Result.Output, out string databaseUrl))
+            {
+                lastError = "The secure-vault helper returned invalid data; no database credential was passed to the Local API.";
                 yield break;
             }
 
@@ -2431,9 +2493,64 @@ namespace RAV.Editor
                 return Task.FromResult(new CommandResult { ExitCode = 1, Error = "Secure-vault helper is missing." });
             }
 
-            // The deployment vault is DPAPI protected by PowerShell 7. Windows PowerShell 5.1
-            // cannot decrypt this vault on this workstation, so use the installed PowerShell Core.
-            return RunProcessAsync("pwsh.exe", new[] { "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper, "-Name", "DatabaseUrl" }, HelperScriptsRoot, 15000, null);
+            // The vault is DPAPI protected by PowerShell 7. Unity may have been started without
+            // the Codex Desktop runtime on PATH, so resolve a full executable path explicitly.
+            string powerShell7 = ResolvePowerShell7Executable();
+            if (string.IsNullOrWhiteSpace(powerShell7))
+            {
+                return Task.FromResult(new CommandResult { ExitCode = 1, Error = "PowerShell 7 is unavailable to Unity Editor." });
+            }
+
+            return RunProcessAsync(powerShell7, new[] { "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", helper, "-Name", "DatabaseUrl" }, HelperScriptsRoot, 15000, null);
+        }
+
+        private static string ResolvePowerShell7Executable()
+        {
+            List<string> candidates = new List<string>();
+            string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!string.IsNullOrWhiteSpace(programFiles))
+            {
+                candidates.Add(Path.Combine(programFiles, "PowerShell", "7", "pwsh.exe"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(localAppData))
+            {
+                candidates.Add(Path.Combine(localAppData, "Programs", "PowerShell", "7", "pwsh.exe"));
+            }
+
+            foreach (string candidate in candidates)
+            {
+                if (File.Exists(candidate)) return candidate;
+            }
+
+            // Codex Desktop supplies PowerShell 7 as a registered framework package rather
+            // than adding its versioned WindowsApps path to other applications' PATH values.
+            if (string.IsNullOrWhiteSpace(programFiles)) return null;
+            try
+            {
+                using (Microsoft.Win32.RegistryKey packages = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                           @"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages"))
+                {
+                    if (packages == null) return null;
+                    string[] packageNames = packages.GetSubKeyNames();
+                    Array.Sort(packageNames, StringComparer.OrdinalIgnoreCase);
+                    Array.Reverse(packageNames);
+                    string windowsApps = Path.Combine(programFiles, "WindowsApps");
+                    foreach (string packageName in packageNames)
+                    {
+                        if (!packageName.StartsWith("OpenAI.CodexPrimaryRuntime.", StringComparison.OrdinalIgnoreCase)) continue;
+                        string candidate = Path.Combine(windowsApps, packageName, "dependencies", "native", "powershell", "pwsh.exe");
+                        if (File.Exists(candidate)) return candidate;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Keep the caller's failure message secret-safe and independent of registry details.
+            }
+
+            return null;
         }
 
         private static bool TryDecodeVaultDatabaseUrl(string base64, out string value)
@@ -2946,6 +3063,135 @@ namespace RAV.Editor
                 error = "Could not read local security configuration: " + Sanitize(exception.Message);
                 return false;
             }
+        }
+
+        internal static bool TryGetClientTargetSettings(
+            ClientTarget target,
+            out string apiBase,
+            out string commonName,
+            out string caPath,
+            out string error)
+        {
+            apiBase = target == ClientTarget.Local ? LocalApiUrl : NetcupApiUrl;
+            commonName = string.Empty;
+            caPath = string.Empty;
+            error = ValidateSelection();
+            if (!string.IsNullOrEmpty(error))
+            {
+                return false;
+            }
+
+            if (target == ClientTarget.Local)
+            {
+                string clientEnvironmentPath = Path.Combine(LocalSecurityPath, "client-transport.env");
+                if (!TryReadEnvironmentFile(clientEnvironmentPath, out Dictionary<string, string> values, out error))
+                {
+                    return false;
+                }
+
+                commonName = GetEnvironmentValue(values, "RAV_UTP_SERVER_COMMON_NAME", "WOM_UTP_SERVER_COMMON_NAME");
+                caPath = GetEnvironmentValue(values, "RAV_UTP_CA_CERTIFICATE", "WOM_UTP_CA_CERTIFICATE");
+            }
+            else
+            {
+                commonName = NetcupCommonName;
+                caPath = NetcupCaPath;
+            }
+
+            if (string.IsNullOrWhiteSpace(commonName)
+                || commonName.IndexOfAny(new[] { '\r', '\n', '=' }) >= 0
+                || string.IsNullOrWhiteSpace(caPath)
+                || !File.Exists(caPath))
+            {
+                error = target + " Client DTLS common name or public CA certificate is missing. Secure client startup is blocked.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(apiBase) || apiBase.IndexOfAny(new[] { '\r', '\n', '=' }) >= 0)
+            {
+                error = target + " Client API URL is invalid.";
+                return false;
+            }
+
+            return true;
+        }
+
+        internal static bool TryWriteClientRuntimeConfiguration(string buildDirectory, ClientTarget target, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrWhiteSpace(buildDirectory))
+            {
+                error = "Client build output directory is missing.";
+                return false;
+            }
+
+            if (!TryGetClientTargetSettings(target, out string apiBase, out string commonName, out string caPath, out error))
+            {
+                return false;
+            }
+
+            try
+            {
+                string fullBuildDirectory = Path.GetFullPath(buildDirectory);
+                Directory.CreateDirectory(fullBuildDirectory);
+                const string certificateFileName = "RAV-Client-DTLS-CA.crt";
+                string bundledCertificatePath = Path.Combine(fullBuildDirectory, certificateFileName);
+                if (!string.Equals(Path.GetFullPath(caPath), Path.GetFullPath(bundledCertificatePath), StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Copy(caPath, bundledCertificatePath, true);
+                }
+
+                string[] lines =
+                {
+                    "RAV_CLIENT_TARGET=" + target,
+                    "RAV_API_BASE=" + apiBase,
+                    "RAV_UTP_SERVER_COMMON_NAME=" + commonName,
+                    "RAV_UTP_CA_CERTIFICATE=" + certificateFileName
+                };
+                File.WriteAllLines(
+                    Path.Combine(fullBuildDirectory, ClientRuntimeConfiguration.FileName),
+                    lines,
+                    new UTF8Encoding(false));
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = "Could not package the Client runtime configuration: " + Sanitize(exception.Message);
+                return false;
+            }
+        }
+
+        private static string FindLatestClientBuild(string root, ClientTarget target)
+        {
+            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+            {
+                return string.Empty;
+            }
+
+            string latest = string.Empty;
+            DateTime latestWrite = DateTime.MinValue;
+            string[] directories = Directory.GetDirectories(root);
+            for (int i = 0; i < directories.Length; i++)
+            {
+                string candidate = Path.Combine(directories[i], "RAVClient.exe");
+                string configurationPath = Path.Combine(directories[i], ClientRuntimeConfiguration.FileName);
+                if (!File.Exists(candidate)
+                    || !TryReadEnvironmentFile(configurationPath, out Dictionary<string, string> values, out _)
+                    || !values.TryGetValue("RAV_CLIENT_TARGET", out string configuredTarget)
+                    || !string.Equals(configuredTarget, target.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                DateTime write = File.GetLastWriteTimeUtc(candidate);
+                if (write > latestWrite)
+                {
+                    latestWrite = write;
+                    latest = candidate;
+                }
+            }
+
+            return latest;
         }
 
         private static bool TryApplyClientEnvironment(string reason, out Dictionary<string, string> environment, out string error)

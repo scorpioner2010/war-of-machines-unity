@@ -9,6 +9,7 @@ using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Transporting;
 using RAV.Scripts.API;
+using RAV.Scripts.Diagnostics;
 using RAV.Scripts.Networking.Sessions;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -21,7 +22,11 @@ namespace RAV.Scripts.Networking.Authentication
     {
         private const float AuthenticationTimeoutSeconds = 10f;
         private const string RedeemEndpoint = "/connection-tickets/redeem";
+        private const string RenewEndpoint = "/connection-tickets/renew";
+        private const float TokenRenewalCheckIntervalSeconds = 30f;
+        private const int TokenRenewalLeadMinutes = 5;
         private readonly HashSet<int> _pendingConnections = new HashSet<int>();
+        private float _nextTokenRenewalCheckTime;
 
         public override event Action<NetworkConnection, bool> OnAuthenticationResult;
 
@@ -41,6 +46,31 @@ namespace RAV.Scripts.Networking.Authentication
             }
 
             StartCoroutine(AuthenticationTimeout(connection));
+        }
+
+        private void Update()
+        {
+            if (NetworkManager == null
+                || !NetworkManager.IsServerStarted
+                || Time.realtimeSinceStartup < _nextTokenRenewalCheckTime)
+            {
+                return;
+            }
+
+            _nextTokenRenewalCheckTime = Time.realtimeSinceStartup + TokenRenewalCheckIntervalSeconds;
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            DateTimeOffset renewBefore = now.AddMinutes(TokenRenewalLeadMinutes);
+            ServerPlayerSession[] sessions = ServerPlayerSessions.GetAuthenticatedSnapshot();
+            for (int i = 0; i < sessions.Length; i++)
+            {
+                ServerPlayerSession session = sessions[i];
+                if (session != null
+                    && session.IsConnected
+                    && session.TryBeginTokenRefresh(renewBefore, now))
+                {
+                    RefreshDelegatedTokenAsync(session).Forget();
+                }
+            }
         }
 
         private void OnClientConnectionState(ClientConnectionStateArgs args)
@@ -97,7 +127,9 @@ namespace RAV.Scripts.Networking.Authentication
         {
             bool accepted = false;
             int userId = 0;
+            Guid userSessionId = Guid.Empty;
             string delegatedAccessToken = string.Empty;
+            DateTimeOffset delegatedTokenExpiresAtUtc = DateTimeOffset.MinValue;
 
             if (!string.IsNullOrWhiteSpace(ticket)
                 && TryGetServerCredentials(out string serverId, out string credential))
@@ -134,8 +166,11 @@ namespace RAV.Scripts.Networking.Authentication
                         if (response != null
                             && response.accepted
                             && response.userId > 0
+                            && Guid.TryParse(response.sessionId, out userSessionId)
                             && string.Equals(response.serverId, serverId, StringComparison.Ordinal)
-                            && string.IsNullOrWhiteSpace(response.accessToken) == false)
+                            && string.IsNullOrWhiteSpace(response.accessToken) == false
+                            && DateTimeOffset.TryParse(response.accessTokenExpiresAtUtc, out delegatedTokenExpiresAtUtc)
+                            && delegatedTokenExpiresAtUtc > DateTimeOffset.UtcNow)
                         {
                             accepted = true;
                             userId = response.userId;
@@ -155,7 +190,7 @@ namespace RAV.Scripts.Networking.Authentication
             _pendingConnections.Remove(connection.ClientId);
             if (accepted)
             {
-                ServerPlayerSessions.SetAuthenticated(connection, userId, delegatedAccessToken);
+                ServerPlayerSessions.SetAuthenticated(connection, userId, userSessionId, delegatedAccessToken, delegatedTokenExpiresAtUtc);
             }
 
             NetworkManager.ServerManager.Broadcast(connection, new ConnectionTicketAuthenticationResponse
@@ -168,6 +203,88 @@ namespace RAV.Scripts.Networking.Authentication
             {
                 connection.Disconnect(true);
             }
+        }
+
+        private async UniTaskVoid RefreshDelegatedTokenAsync(ServerPlayerSession session)
+        {
+            if (!TryGetServerCredentials(out string serverId, out string credential))
+            {
+                session.EndTokenRefresh(DateTimeOffset.UtcNow.AddMinutes(1));
+                return;
+            }
+
+            string payload = JsonUtility.ToJson(new RenewDelegatedTokenRequest { sessionId = session.SessionId.ToString("D") });
+            byte[] body = Encoding.UTF8.GetBytes(payload);
+            string[] apiBases = HttpLink.GetBaseCandidates();
+            long lastStatusCode = 0;
+            UnityWebRequest.Result lastResult = UnityWebRequest.Result.InProgress;
+
+            for (int i = 0; i < apiBases.Length; i++)
+            {
+                string apiBase = apiBases[i];
+                using (UnityWebRequest request = new UnityWebRequest(apiBase + RenewEndpoint, UnityWebRequest.kHttpVerbPOST))
+                {
+                    request.uploadHandler = new UploadHandlerRaw(body);
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.timeout = 10;
+                    request.SetRequestHeader("Content-Type", "application/json");
+                    request.SetRequestHeader("X-Server-Id", serverId);
+                    request.SetRequestHeader("X-Server-Credential", credential);
+
+                    try
+                    {
+                        await request.SendWebRequest();
+                    }
+                    catch (UnityWebRequestException)
+                    {
+                        lastStatusCode = request.responseCode;
+                        lastResult = request.result;
+                        continue;
+                    }
+
+                    lastStatusCode = request.responseCode;
+                    lastResult = request.result;
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        continue;
+                    }
+
+                    DelegatedTokenRenewalResponse response = JsonUtility.FromJson<DelegatedTokenRenewalResponse>(request.downloadHandler.text);
+                    if (response == null
+                        || string.IsNullOrWhiteSpace(response.accessToken)
+                        || !DateTimeOffset.TryParse(response.accessTokenExpiresAtUtc, out DateTimeOffset expiresAtUtc)
+                        || expiresAtUtc <= DateTimeOffset.UtcNow)
+                    {
+                        lastResult = UnityWebRequest.Result.DataProcessingError;
+                        continue;
+                    }
+
+                    bool updated = ServerPlayerSessions.UpdateDelegatedToken(
+                        session.ClientId,
+                        session.SessionId,
+                        response.accessToken,
+                        expiresAtUtc);
+                    if (updated)
+                    {
+                        HttpLink.SetResolvedBase(apiBase);
+                        GameplayRuntimeDiagnostics.Record(
+                            "server_delegated_token_renewed",
+                            "user_id", session.UserId,
+                            "expires_at", expiresAtUtc.ToString("O"));
+                        return;
+                    }
+
+                    lastResult = UnityWebRequest.Result.DataProcessingError;
+                    break;
+                }
+            }
+
+            session.EndTokenRefresh(DateTimeOffset.UtcNow.AddMinutes(1));
+            GameplayRuntimeDiagnostics.Record(
+                "server_delegated_token_renewal_failed",
+                "user_id", session.UserId,
+                "status_code", lastStatusCode,
+                "result", lastResult);
         }
 
         private IEnumerator AuthenticationTimeout(NetworkConnection connection)
@@ -218,5 +335,19 @@ namespace RAV.Scripts.Networking.Authentication
         public string sessionId;
         public string serverId;
         public string accessToken;
+        public string accessTokenExpiresAtUtc;
+    }
+
+    [Serializable]
+    public sealed class RenewDelegatedTokenRequest
+    {
+        public string sessionId;
+    }
+
+    [Serializable]
+    public sealed class DelegatedTokenRenewalResponse
+    {
+        public string accessToken;
+        public string accessTokenExpiresAtUtc;
     }
 }

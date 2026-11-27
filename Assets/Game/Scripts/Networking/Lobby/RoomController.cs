@@ -34,6 +34,21 @@ namespace RAV.Scripts.Networking.Lobby
                 cancel.onClick.AddListener(Cancel);
             }
         }
+
+        private void OnEnable()
+        {
+            MatchmakingStatusView.OnGameTransitionReady += HandleGameTransitionReady;
+        }
+
+        private void OnDisable()
+        {
+            MatchmakingStatusView.OnGameTransitionReady -= HandleGameTransitionReady;
+        }
+
+        private void HandleGameTransitionReady()
+        {
+            lobbyManager?.MatchmakingPresentationReadyServerRpc();
+        }
         
         public static void UpdateTimer(float time, List<Player> players)
         {
@@ -42,11 +57,29 @@ namespace RAV.Scripts.Networking.Lobby
                 return;
             }
 
+            int realPlayerCount = 0;
+
+            if (players != null)
+            {
+                foreach (Player player in players)
+                {
+                    if (player != null && !player.isBot)
+                    {
+                        realPlayerCount++;
+                    }
+                }
+            }
+
+            if (realPlayerCount == 0)
+            {
+                return;
+            }
+
             foreach (Player player in players)
             {
-                if (player.isBot == false)
+                if (player != null && !player.isBot && player.Connection != null)
                 {
-                    _in.UpdateTimerTargetRpc(player.Connection, time, players.Count);
+                    _in.UpdateTimerTargetRpc(player.Connection, time, realPlayerCount);
                 }
             }
         }
@@ -62,6 +95,7 @@ namespace RAV.Scripts.Networking.Lobby
             if (ClientMenuTestMode.IsEnabled)
             {
                 SoundCaller.PlayUi(AudioEventNames.UiSearchStarted);
+                MatchmakingStatusView.BeginSearch();
                 MatchmakingStatusView.UpdateInfo(0f, 1);
                 MenuManager.OpenMenu(MenuType.Matchmaking);
                 return;
@@ -72,6 +106,7 @@ namespace RAV.Scripts.Networking.Lobby
                 return;
             }
 
+            MatchmakingStatusView.BeginSearch();
             lobbyManager.FindMatchServerRpc(currentMap.ToString());
             SoundCaller.PlayUi(AudioEventNames.UiSearchStarted);
             MenuManager.OpenMenu(MenuType.Matchmaking);
@@ -82,6 +117,7 @@ namespace RAV.Scripts.Networking.Lobby
             if (ClientMenuTestMode.IsEnabled)
             {
                 SoundCaller.PlayUi(AudioEventNames.UiSearchCancelled);
+                MatchmakingStatusView.CancelSearch();
                 MenuManager.OpenMenu(MenuType.MainMenu);
                 return;
             }
@@ -92,6 +128,7 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             lobbyManager.CancelFindRoomServerRpc();
+            MatchmakingStatusView.CancelSearch();
             SoundCaller.PlayUi(AudioEventNames.UiSearchCancelled);
         }
     }

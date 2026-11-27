@@ -41,6 +41,10 @@ namespace RAV.Scripts.Audio
                 return;
             }
 
+            isPointerDown = false;
+            isPointerInside = false;
+            isSelected = EventSystem.current != null && EventSystem.current.currentSelectedGameObject == button.gameObject;
+            wasInteractable = button.IsInteractable();
             button.onClick.AddListener(PlayClickSound);
             ApplyChildGraphicColors(true, GetChildGraphicState());
         }
@@ -51,6 +55,11 @@ namespace RAV.Scripts.Audio
             {
                 button.onClick.RemoveListener(PlayClickSound);
             }
+
+            isPointerDown = false;
+            isPointerInside = false;
+            isSelected = false;
+            wasInteractable = false;
         }
 
         private void Update()

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -6,17 +8,52 @@ namespace RAV.Scripts.UI.Helpers
     public class StandardLoadingOverlay : MonoBehaviour
     {
         private static StandardLoadingOverlay _in;
-        private static int _pendingRequestCount;
-        private static bool _manuallyVisible;
+        private static readonly HashSet<LoadingRequest> ActiveRequests = new HashSet<LoadingRequest>();
+        private static bool _sceneLoadingSuppressed;
 
         public static bool IsOpen { get; private set; }
-        
+
         public GameObject standardLoading;
-        
+
+        public sealed class LoadingRequest : IDisposable
+        {
+            private bool _ended;
+
+            internal LoadingRequest()
+            {
+            }
+
+            public bool IsActive => !_ended;
+
+            public void End()
+            {
+                if (_ended)
+                {
+                    return;
+                }
+
+                _ended = true;
+                EndRequest(this);
+            }
+
+            public void Dispose()
+            {
+                End();
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetState()
+        {
+            ActiveRequests.Clear();
+            _in = null;
+            _sceneLoadingSuppressed = false;
+            IsOpen = false;
+        }
+
         private void Awake()
         {
             _in = this;
-            _manuallyVisible = false;
             RefreshVisibility();
         }
 
@@ -25,35 +62,27 @@ namespace RAV.Scripts.UI.Helpers
             if (_in == this)
             {
                 _in = null;
-                IsOpen = false;
+                IsOpen = ActiveRequests.Count > 0 && !_sceneLoadingSuppressed;
             }
         }
-        
-        public static void Show()
+
+        public static LoadingRequest BeginRequest()
         {
-            _manuallyVisible = true;
+            LoadingRequest request = new LoadingRequest();
+            ActiveRequests.Add(request);
+            RefreshVisibility();
+            return request;
+        }
+
+        public static void SetSceneLoadingSuppressed(bool suppressed)
+        {
+            _sceneLoadingSuppressed = suppressed;
             RefreshVisibility();
         }
 
-        public static void Hide()
+        private static void EndRequest(LoadingRequest request)
         {
-            _manuallyVisible = false;
-            RefreshVisibility();
-        }
-
-        public static void BeginRequest()
-        {
-            _pendingRequestCount++;
-            RefreshVisibility();
-        }
-
-        public static void EndRequest()
-        {
-            if (_pendingRequestCount > 0)
-            {
-                _pendingRequestCount--;
-            }
-
+            ActiveRequests.Remove(request);
             RefreshVisibility();
         }
 
@@ -67,10 +96,10 @@ namespace RAV.Scripts.UI.Helpers
 
         private static void RefreshVisibility()
         {
-            bool active = _manuallyVisible || _pendingRequestCount > 0;
+            bool active = ActiveRequests.Count > 0 && !_sceneLoadingSuppressed;
+            IsOpen = active;
             if (_in == null || _in.standardLoading == null)
             {
-                IsOpen = false;
                 return;
             }
 
@@ -79,8 +108,6 @@ namespace RAV.Scripts.UI.Helpers
             {
                 _in.standardLoading.transform.SetAsLastSibling();
             }
-
-            IsOpen = active;
         }
     }
 }

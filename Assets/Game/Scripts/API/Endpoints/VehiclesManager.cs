@@ -157,7 +157,7 @@ namespace RAV.Scripts.API
 
         private static string FormatRequestError(string apiBase, UnityWebRequest request)
         {
-            return "Vehicles API is not available at " + apiBase + ": " + request.responseCode + " " + request.error;
+            return HttpLink.FormatApiFailure(request);
         }
 
         private static bool ShouldTryNextBase(UnityWebRequest request, string response)

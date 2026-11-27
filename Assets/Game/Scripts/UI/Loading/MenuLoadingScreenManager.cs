@@ -2,11 +2,12 @@ using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing.Scened;
 using RAV.Scripts.MenuController;
+using RAV.Scripts.UI.Helpers;
+using RAV.Scripts.UI.Lobby;
 using RAV.Scripts.UI.MainMenu;
 using System.Collections;
 using System;
 using UnityEngine;
-using StandardLoading = RAV.Scripts.UI.Helpers.StandardLoadingOverlay;
 
 namespace RAV.Scripts.UI.Loading
 {
@@ -28,11 +29,14 @@ namespace RAV.Scripts.UI.Loading
 
         private bool _isSubscribed;
         private bool _sceneLoadCompleted;
+        private bool _sceneLoadingPresentationStarted;
+        private bool _waitingForMatchmakingPresentation;
         private LoadQueueData _activeSceneLoad;
         private float _sceneLoadingStartedAt;
         private int _sceneLoadingVersion;
         private static string _connectionStatusText = DefaultConnectionStatus;
         private static int _connectionLoadingVersion;
+        private static StandardLoadingOverlay.LoadingRequest _connectionLoadingRequest;
 
         public static MenuLoadingScreenMode CurrentMode { get; private set; } = MenuLoadingScreenMode.SceneLoading;
         public static event Action SceneLoadingHidden;
@@ -50,6 +54,7 @@ namespace RAV.Scripts.UI.Loading
         private void OnDestroy()
         {
             _sceneLoadingVersion++;
+            EndConnectionLoadingRequest();
             Unsubscribe();
         }
 
@@ -62,6 +67,7 @@ namespace RAV.Scripts.UI.Loading
 
             InstanceFinder.SceneManager.OnLoadEnd += OnGameplayLoadEnd;
             InstanceFinder.SceneManager.OnLoadStart += OnGameplayLoadStart;
+            MatchmakingStatusView.OnGameTransitionReady += OnMatchmakingPresentationReady;
             _isSubscribed = true;
         }
 
@@ -74,6 +80,7 @@ namespace RAV.Scripts.UI.Loading
 
             InstanceFinder.SceneManager.OnLoadEnd -= OnGameplayLoadEnd;
             InstanceFinder.SceneManager.OnLoadStart -= OnGameplayLoadStart;
+            MatchmakingStatusView.OnGameTransitionReady -= OnMatchmakingPresentationReady;
             _isSubscribed = false;
         }
         
@@ -81,11 +88,20 @@ namespace RAV.Scripts.UI.Loading
         {
             _activeSceneLoad = args.QueueData;
             _sceneLoadCompleted = false;
+            _sceneLoadingPresentationStarted = false;
+            _waitingForMatchmakingPresentation = false;
             _sceneLoadingStartedAt = Time.unscaledTime;
             _sceneLoadingVersion++;
             loadingProgressBar?.SetProgress(0f);
-            ShowLoading();
-            RunSceneLoadingPresentationAsync(args.QueueData, _sceneLoadingVersion).Forget();
+            MatchmakingStatusView.BeginGameTransition();
+
+            if (MatchmakingStatusView.IsPresentationPending)
+            {
+                _waitingForMatchmakingPresentation = true;
+                return;
+            }
+
+            StartSceneLoadingPresentation(args.QueueData, _sceneLoadingVersion);
         }
 
         private void OnGameplayLoadEnd(SceneLoadEndEventArgs args)
@@ -101,7 +117,41 @@ namespace RAV.Scripts.UI.Loading
             }
 
             _sceneLoadCompleted = true;
+
+            if (!_sceneLoadingPresentationStarted)
+            {
+                return;
+            }
+
             PrepareGameplayUnderLoadingOverlay();
+        }
+
+        private void OnMatchmakingPresentationReady()
+        {
+            if (!_waitingForMatchmakingPresentation || _activeSceneLoad == null)
+            {
+                return;
+            }
+
+            _waitingForMatchmakingPresentation = false;
+            StartSceneLoadingPresentation(_activeSceneLoad, _sceneLoadingVersion);
+
+            if (_sceneLoadCompleted)
+            {
+                PrepareGameplayUnderLoadingOverlay();
+            }
+        }
+
+        private void StartSceneLoadingPresentation(LoadQueueData sceneLoad, int loadingVersion)
+        {
+            if (_sceneLoadingPresentationStarted)
+            {
+                return;
+            }
+
+            _sceneLoadingPresentationStarted = true;
+            ShowLoading();
+            RunSceneLoadingPresentationAsync(sceneLoad, loadingVersion).Forget();
         }
 
         private async UniTask RunSceneLoadingPresentationAsync(LoadQueueData sceneLoad, int loadingVersion)
@@ -177,7 +227,8 @@ namespace RAV.Scripts.UI.Loading
 
         private void PrepareGameplayUnderLoadingOverlay()
         {
-            RobotView.Despawn();
+            MenuManager.CloseMenuImmediate(MenuType.MainMenu);
+            RobotView.HideForGameplay();
 
             if (MainMenu.MainMenu.In != null)
             {
@@ -197,7 +248,8 @@ namespace RAV.Scripts.UI.Loading
         public static void ShowLoading()
         {
             CurrentMode = MenuLoadingScreenMode.SceneLoading;
-            StandardLoading.Hide();
+            EndConnectionLoadingRequest();
+            StandardLoadingOverlay.SetSceneLoadingSuppressed(true);
             MenuManager.OpenMenu(MenuType.LoadScreen);
         }
 
@@ -205,8 +257,12 @@ namespace RAV.Scripts.UI.Loading
         {
             _connectionLoadingVersion++;
             CurrentMode = MenuLoadingScreenMode.Connection;
+            StandardLoadingOverlay.SetSceneLoadingSuppressed(false);
             SetConnectionStatus(string.IsNullOrWhiteSpace(statusText) ? DefaultConnectionStatus : statusText);
-            StandardLoading.Show();
+            if (_connectionLoadingRequest == null || !_connectionLoadingRequest.IsActive)
+            {
+                _connectionLoadingRequest = StandardLoadingOverlay.BeginRequest();
+            }
         }
 
         public static void SetConnectionStatus(string statusText)
@@ -239,9 +295,20 @@ namespace RAV.Scripts.UI.Loading
 
         private static void HideConnectionLoadingNow()
         {
-            StandardLoading.Hide();
+            EndConnectionLoadingRequest();
             CurrentMode = MenuLoadingScreenMode.SceneLoading;
             _connectionStatusText = DefaultConnectionStatus;
+        }
+
+        private static void EndConnectionLoadingRequest()
+        {
+            if (_connectionLoadingRequest == null)
+            {
+                return;
+            }
+
+            _connectionLoadingRequest.End();
+            _connectionLoadingRequest = null;
         }
 
         public static void HideLoading()

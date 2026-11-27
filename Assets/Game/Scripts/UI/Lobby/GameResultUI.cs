@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using RAV.Scripts.Audio;
 using RAV.Scripts.API.ServerManagers;
+using RAV.Scripts.Diagnostics;
 using RAV.Scripts.MenuController;
 using RAV.Scripts.Networking.Lobby;
 using TMPro;
@@ -204,6 +206,17 @@ namespace RAV.Scripts.UI.Lobby
         {
             ResultData? closed = _current;
             _current = null;
+            string profileFlowId = closed.HasValue ? Guid.NewGuid().ToString("N") : null;
+
+            if (closed.HasValue)
+            {
+                GameplayRuntimeDiagnostics.Record(
+                    "game_result_closed_client",
+                    "flow_id", profileFlowId,
+                    "room_id", closed.Value.RoomId,
+                    "result", closed.Value.Result,
+                    "rewards_available", closed.Value.RewardsAvailable);
+            }
 
             if (closed.HasValue && GameplaySpawner.In != null)
             {
@@ -215,7 +228,7 @@ namespace RAV.Scripts.UI.Lobby
                 SoundCaller.PlayUi(AudioEventNames.UiRewardsReceived);
             }
 
-            ProfileServer.UpdateProfile();
+            ProfileServer.UpdateProfile(profileFlowId);
 
             if (PendingResults.Count > 0)
             {

@@ -6,6 +6,10 @@ Current owner scripts:
 - `Assets/Game/Scripts/Networking/Lobby/LobbyManager.cs`
   - High-level lobby/network flow.
   - Sends the server-settings snapshot both during client startup and immediately before every additive battle scene load, so a persistent client/lobby scene cannot carry stale `RemoteServerSettings` into a later battle.
+- `Assets/Game/Scripts/Networking/Lobby/RoomController.cs`
+  - Client/server bridge for matchmaking actions and authoritative real-player count/timer delivery.
+- `Assets/Game/Scripts/UI/Lobby/MatchmakingStatusView.cs`
+  - Owns matchmaking count/progress presentation and the one-second completion transition before the matchmaking menu closes.
 - `Assets/Game/Scripts/Networking/Lobby/LobbyRooms.cs`
   - Static room registry and room lookup helpers.
 - `Assets/Game/Scripts/Networking/Lobby/ServerRoom.cs`
@@ -68,7 +72,7 @@ Current owner scripts:
   - The VehicleTest `Bots` tab adds random ally/enemy bot `Player` records and uses `MatchVehicleSpawner.SpawnBotAsync` instead of custom bot instantiation.
 
 Spawn flow:
-1. Room is created for real players. It starts immediately when `maxPlayersForFindRoom` real players arrive or after the configured search window, currently 30 seconds (`ServerSettings.findRoomSeconds`); if bots are enabled, the server then adds `maxPlayersForFindRoom - realPlayerCount` bots.
+1. Room is created for real players. The server publishes the remaining search time and real-player count immediately after each add/remove and on each timer tick. It starts immediately when `maxPlayersForFindRoom` real players arrive or after the configured search window, currently 30 seconds (`ServerSettings.findRoomSeconds`); if bots are enabled, the server then adds `maxPlayersForFindRoom - realPlayerCount` bots. Clients complete the visible matchmaking progress over one unscaled second and acknowledge presentation readiness before the additive scene-load request is sent. If a stale/early scene-load notification reaches the client first, `MenuLoadingScreenManager` defers `MenuLoadingScreen` until the same presentation-ready event, so `FindGame` remains visible for the full final fill.
 2. `GameplaySpawner` loads the selected map scene additively for the room.
 3. The room receives a scene slot and scene offset so multiple matches can exist at once.
 4. `MatchVehicleSpawner` chooses a free `SpawnPoint` for each player/bot team.

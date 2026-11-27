@@ -1,11 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using RAV.Scripts.Networking.Authentication;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace RAV.Scripts.API
 {
     public abstract class HttpLink
     {
+        private static readonly Regex ValidationErrorsPattern = new Regex("\\\"errors\\\"\\s*:\\s*\\{(?<errors>[^}]*)\\}", RegexOptions.Singleline);
+        private static readonly Regex ValidationFieldPattern = new Regex("\\\"(?:\\\\.|[^\\\"\\\\])*\\\"\\s*:\\s*\\[(?<messages>[^\\]]*)\\]", RegexOptions.Singleline);
+        private static readonly Regex JsonStringPattern = new Regex("\\\"(?:\\\\.|[^\\\"\\\\])*\\\"", RegexOptions.Singleline);
+
         private const string ApiBaseEnvironmentVariable = "RAV_API_BASE";
         private const string LegacyApiBaseEnvironmentVariable = "WOM_API_BASE";
         private const string ApiBaseFallbackEnvironmentVariable = "API_BASE";
@@ -19,6 +26,13 @@ namespace RAV.Scripts.API
         private static bool _hasExplicitApiBaseOverride;
         private static string _explicitApiBaseOverride = string.Empty;
         private static HashSet<string> _productionApiBases;
+
+        static HttpLink()
+        {
+            // Resolve packaged Local/Netcup configuration before any API endpoint
+            // reads APIBase directly during its startup sequence.
+            ApplyRuntimeConfig();
+        }
 
         public static bool IsLocal
         {
@@ -153,6 +167,37 @@ namespace RAV.Scripts.API
 
             _runtimeConfigApplied = true;
 
+#if !UNITY_EDITOR
+            // A player's build target is selected in the Editor and packaged beside
+            // the executable. Keep that choice authoritative even when the machine
+            // has stale API environment variables from a different run.
+            if (ClientRuntimeConfiguration.TryGetBundledValue("RAV_CLIENT_TARGET", out string bundledTarget))
+            {
+                if ((!string.Equals(bundledTarget, "Local", StringComparison.OrdinalIgnoreCase)
+                     && !string.Equals(bundledTarget, "Netcup", StringComparison.OrdinalIgnoreCase))
+                    || !ClientRuntimeConfiguration.TryGetBundledValue(ApiBaseEnvironmentVariable, out string bundledApiBase))
+                {
+                    _hasExplicitApiBaseOverride = true;
+                    _explicitApiBaseOverride = string.Empty;
+                    APIBase = string.Empty;
+                    return;
+                }
+
+                _hasExplicitApiBaseOverride = true;
+                _explicitApiBaseOverride = NormalizeBase(bundledApiBase);
+                if (string.IsNullOrWhiteSpace(_explicitApiBaseOverride)
+                    || !IsAllowedBase(_explicitApiBaseOverride))
+                {
+                    _explicitApiBaseOverride = string.Empty;
+                    APIBase = string.Empty;
+                    return;
+                }
+
+                APIBase = _explicitApiBaseOverride;
+                return;
+            }
+#endif
+
             string apiBase = GetCommandLineValue("-apiBase");
             if (string.IsNullOrWhiteSpace(apiBase))
             {
@@ -174,13 +219,49 @@ namespace RAV.Scripts.API
                 apiBase = Environment.GetEnvironmentVariable(ApiBaseFallbackEnvironmentVariable);
             }
 
+            string clientTarget = Environment.GetEnvironmentVariable("RAV_CLIENT_TARGET");
+            if (string.IsNullOrWhiteSpace(clientTarget))
+            {
+                ClientRuntimeConfiguration.TryGetBundledValue("RAV_CLIENT_TARGET", out clientTarget);
+            }
+
+            if (string.IsNullOrWhiteSpace(apiBase))
+            {
+                ClientRuntimeConfiguration.TryGetBundledValue(ApiBaseEnvironmentVariable, out apiBase);
+            }
+
+            // A client packaged for the Netcup staging environment must never fall
+            // through to the production API if its explicit staging config is missing.
+            if (string.Equals(clientTarget, "Netcup", StringComparison.OrdinalIgnoreCase)
+                && string.IsNullOrWhiteSpace(apiBase))
+            {
+                _hasExplicitApiBaseOverride = true;
+                _explicitApiBaseOverride = string.Empty;
+                APIBase = string.Empty;
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(apiBase) == false)
             {
                 _hasExplicitApiBaseOverride = true;
                 _explicitApiBaseOverride = NormalizeBase(apiBase);
+                if (string.IsNullOrWhiteSpace(_explicitApiBaseOverride)
+                    || IsAllowedBase(_explicitApiBaseOverride) == false)
+                {
+                    APIBase = string.Empty;
+                    return;
+                }
+
+                APIBase = _explicitApiBaseOverride;
+                return;
             }
 
-            SetResolvedBase(apiBase);
+            if (string.Equals(clientTarget, "Netcup", StringComparison.OrdinalIgnoreCase))
+            {
+                _hasExplicitApiBaseOverride = true;
+                _explicitApiBaseOverride = string.Empty;
+                APIBase = string.Empty;
+            }
         }
 
         private static string GetCommandLineValue(string key)
@@ -277,6 +358,237 @@ namespace RAV.Scripts.API
             return uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
         }
 
+        public static string FormatApiFailure(UnityWebRequest request)
+        {
+            if (request == null)
+            {
+                return "The API request could not be created.";
+            }
+
+            string endpoint = "API";
+            if (Uri.TryCreate(request.url, UriKind.Absolute, out Uri requestUri))
+            {
+                endpoint = requestUri.AbsolutePath;
+            }
+
+            long statusCode = request.responseCode;
+            string reason;
+            if (statusCode == 401)
+            {
+                reason = GetSafeClientErrorBody(request.downloadHandler != null ? request.downloadHandler.text : string.Empty);
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    reason = "The game session has expired or is no longer valid. Sign in again.";
+                }
+            }
+            else if (statusCode == 403)
+            {
+                reason = GetSafeClientErrorBody(request.downloadHandler != null ? request.downloadHandler.text : string.Empty);
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    reason = "The account is not allowed to perform this action.";
+                }
+            }
+            else if (statusCode == 404)
+            {
+                reason = GetSafeClientErrorBody(request.downloadHandler != null ? request.downloadHandler.text : string.Empty);
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    reason = "The requested API resource was not found or is unavailable.";
+                }
+            }
+            else if (statusCode == 409)
+            {
+                reason = GetSafeClientErrorBody(request.downloadHandler != null ? request.downloadHandler.text : string.Empty);
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    reason = "The request conflicts with the current account or game state.";
+                }
+            }
+            else if (statusCode == 429)
+            {
+                reason = GetSafeClientErrorBody(request.downloadHandler != null ? request.downloadHandler.text : string.Empty);
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    reason = "The API is rate-limiting requests. Wait briefly and try again.";
+                }
+            }
+            else if (statusCode >= 500)
+            {
+                reason = "The API encountered an internal error.";
+            }
+            else if (statusCode > 0)
+            {
+                reason = GetSafeClientErrorBody(request.downloadHandler != null ? request.downloadHandler.text : string.Empty);
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    reason = statusCode == 400
+                        ? "The API rejected the request because its data was invalid."
+                        : "The API rejected the request.";
+                }
+
+                return endpoint + " failed: " + reason + " (HTTP " + statusCode + ").";
+            }
+            else if (request.result == UnityWebRequest.Result.ConnectionError)
+            {
+                string requestError = request.error ?? string.Empty;
+                if (requestError.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    reason = "The API did not respond before the request timed out.";
+                }
+                else if (requestError.IndexOf("certificate", StringComparison.OrdinalIgnoreCase) >= 0
+                         || requestError.IndexOf("SSL", StringComparison.OrdinalIgnoreCase) >= 0
+                         || requestError.IndexOf("TLS", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    reason = "The secure API connection failed certificate verification.";
+                }
+                else if (requestError.IndexOf("resolve host", StringComparison.OrdinalIgnoreCase) >= 0
+                         || requestError.IndexOf("DNS", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    reason = "The API host could not be resolved.";
+                }
+                else
+                {
+                    reason = "A network connection to the API could not be established.";
+                }
+            }
+            else if (request.result == UnityWebRequest.Result.DataProcessingError)
+            {
+                reason = "The API response could not be read.";
+            }
+            else
+            {
+                reason = "The API request failed before a response was received.";
+            }
+
+            return statusCode > 0
+                ? endpoint + " failed: " + reason + " (HTTP " + statusCode + ")."
+                : endpoint + " failed: " + reason;
+        }
+
+        private static string GetSafeClientErrorBody(string body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                return string.Empty;
+            }
+
+            string trimmed = body.Trim();
+            if (trimmed.StartsWith("{", StringComparison.Ordinal))
+            {
+                string validationMessages = ExtractValidationMessages(trimmed);
+                if (!string.IsNullOrWhiteSpace(validationMessages))
+                {
+                    return validationMessages;
+                }
+
+                try
+                {
+                    ApiErrorMessage payload = JsonUtility.FromJson<ApiErrorMessage>(trimmed);
+                    if (payload != null)
+                    {
+                        string message = !string.IsNullOrWhiteSpace(payload.detail) ? payload.detail
+                            : !string.IsNullOrWhiteSpace(payload.message) ? payload.message
+                            : !string.IsNullOrWhiteSpace(payload.error) ? payload.error
+                            : payload.title;
+
+                        if (!string.IsNullOrWhiteSpace(message)
+                            && !string.Equals(message, "One or more validation errors occurred.", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return SanitizeDisplayMessage(message);
+                        }
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    // Do not display malformed JSON or server implementation details.
+                }
+
+                return string.Empty;
+            }
+
+            return SanitizeDisplayMessage(trimmed);
+        }
+
+        private static string SanitizeDisplayMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            string trimmed = message.Trim();
+            if (trimmed.Length > 240)
+            {
+                trimmed = trimmed.Substring(0, 237) + "...";
+            }
+
+            char[] characters = trimmed.ToCharArray();
+            for (int i = 0; i < characters.Length; i++)
+            {
+                if (char.IsControl(characters[i]))
+                {
+                    characters[i] = ' ';
+                }
+            }
+
+            return new string(characters);
+        }
+
+        [Serializable]
+        private sealed class ApiErrorMessage
+        {
+            public string title;
+            public string detail;
+            public string message;
+            public string error;
+        }
+
+        [Serializable]
+        private sealed class ApiErrorString
+        {
+            public string value;
+        }
+
+        private static string ExtractValidationMessages(string json)
+        {
+            Match errorsMatch = ValidationErrorsPattern.Match(json);
+            if (!errorsMatch.Success)
+            {
+                return string.Empty;
+            }
+
+            List<string> messages = new List<string>();
+            MatchCollection fields = ValidationFieldPattern.Matches(errorsMatch.Groups["errors"].Value);
+            for (int i = 0; i < fields.Count; i++)
+            {
+                MatchCollection values = JsonStringPattern.Matches(fields[i].Groups["messages"].Value);
+                for (int j = 0; j < values.Count; j++)
+                {
+                    try
+                    {
+                        ApiErrorString payload = JsonUtility.FromJson<ApiErrorString>("{\"value\":" + values[j].Value + "}");
+                        if (payload != null && !string.IsNullOrWhiteSpace(payload.value))
+                        {
+                            messages.Add(payload.value.Trim());
+                        }
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Ignore malformed individual validation strings; keep other useful messages.
+                    }
+                }
+            }
+
+            if (messages.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            string combined = string.Join(" ", messages);
+            return combined.Length <= 240 ? combined : combined.Substring(0, 237) + "...";
+        }
+
         public static bool IsDevelopmentConfiguration
         {
             get
@@ -319,6 +631,12 @@ namespace RAV.Scripts.API
         private static bool IsExplicitStagingBase(string normalizedBase)
         {
             string configuredStagingBase = NormalizeBase(Environment.GetEnvironmentVariable(ApiBaseEnvironmentVariable));
+            if (string.IsNullOrWhiteSpace(configuredStagingBase))
+            {
+                ClientRuntimeConfiguration.TryGetBundledValue(ApiBaseEnvironmentVariable, out string bundledApiBase);
+                configuredStagingBase = NormalizeBase(bundledApiBase);
+            }
+
             if (string.IsNullOrWhiteSpace(normalizedBase)
                 || !string.Equals(normalizedBase, configuredStagingBase, StringComparison.OrdinalIgnoreCase)
                 || !Uri.TryCreate(normalizedBase, UriKind.Absolute, out Uri uri))

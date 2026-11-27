@@ -99,56 +99,39 @@ namespace RAV.Scripts.API.Endpoints
 
                     if (ShouldTryNextBase(request, response))
                     {
-                        lastResponse = FormatFailureMessage(request.responseCode, request.result, response, request.error);
+                        lastResponse = FormatFailureMessage(request, response);
                         continue;
                     }
 
                     HttpLink.SetResolvedBase(apiBase);
-                    return (true, false, FormatFailureMessage(request.responseCode, request.result, response, request.error));
+                    return (true, false, FormatFailureMessage(request, response));
                 }
             }
 
             return (false, false, string.IsNullOrWhiteSpace(lastResponse)
-                ? "Could not reach the selected server. Check your connection and try again."
+                ? "No response was received from any configured API endpoint."
                 : lastResponse);
         }
 
-        private static string FormatFailureMessage(long responseCode, UnityWebRequest.Result result, string response, string requestError)
+        private static string FormatFailureMessage(UnityWebRequest request, string response)
         {
+            long responseCode = request.responseCode;
             string body = response != null ? response.Trim() : string.Empty;
             if (string.IsNullOrWhiteSpace(body))
             {
-                if (result == UnityWebRequest.Result.ConnectionError)
+                if (request.result == UnityWebRequest.Result.ConnectionError)
                 {
-                    if (!string.IsNullOrWhiteSpace(requestError))
-                    {
-                        if (requestError.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            return "The server did not respond before the request timed out. Please try again.";
-                        }
-
-                        if (requestError.IndexOf("certificate", StringComparison.OrdinalIgnoreCase) >= 0
-                            || requestError.IndexOf("SSL", StringComparison.OrdinalIgnoreCase) >= 0
-                            || requestError.IndexOf("TLS", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            return "The secure connection to the server failed certificate verification.";
-                        }
-
-                        if (requestError.IndexOf("resolve host", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            return "The server address could not be resolved. Check the selected API endpoint.";
-                        }
-                    }
-
-                    return "Could not connect to the server. Check your connection and try again.";
+                    return HttpLink.FormatApiFailure(request);
                 }
 
                 if (responseCode > 0)
                 {
-                    return GetHttpFailureMessage(responseCode);
+                    return responseCode == 401 || responseCode == 409 || responseCode == 429
+                        ? GetHttpFailureMessage(responseCode)
+                        : HttpLink.FormatApiFailure(request);
                 }
 
-                return "The request could not be completed. Check your connection and try again.";
+                return HttpLink.FormatApiFailure(request);
             }
 
             if (body[0] == '{')

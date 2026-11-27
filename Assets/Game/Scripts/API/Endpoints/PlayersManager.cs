@@ -1,6 +1,8 @@
 using System.Text;
+using System;
 using Cysharp.Threading.Tasks;
 using RAV.Scripts.API;
+using RAV.Scripts.Diagnostics;
 using RAV.Scripts.API.Models;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -11,8 +13,13 @@ namespace RAV.Scripts
     {
         private const float DefaultViewRange = 100f;
 
-        public static async UniTask<(bool isSuccess, string message, PlayerProfile profile)> GetMyProfile(string token)
+        public static async UniTask<(bool isSuccess, string message, PlayerProfile profile)> GetMyProfile(
+            string token,
+            string correlationId = null,
+            string flowId = null)
         {
+            string requestId = ResolveRequestId(correlationId);
+            string resolvedFlowId = ResolveRequestId(flowId ?? requestId);
             string url = HttpLink.APIBase + "/players/me";
 
             var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET)
@@ -21,10 +28,23 @@ namespace RAV.Scripts
             };
 
             req.SetRequestHeader("Authorization", "Bearer " + token);
+            req.SetRequestHeader("X-RAV-Request-Id", requestId);
+            req.SetRequestHeader("X-RAV-Flow-Id", resolvedFlowId);
 
+            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
+            stopwatch.Stop();
 
             string resp = req.downloadHandler?.text ?? string.Empty;
+            GameplayRuntimeDiagnostics.Record(
+                "api_profile_http_completed",
+                "request_id", requestId,
+                "flow_id", resolvedFlowId,
+                "status_code", req.responseCode,
+                "result", req.result,
+                "duration_ms", stopwatch.ElapsedMilliseconds,
+                "response_bytes", req.downloadHandler?.data?.Length ?? 0,
+                "error_category", req.result == UnityWebRequest.Result.Success ? "none" : GetErrorCategory(req));
 
             if (req.result == UnityWebRequest.Result.Success)
             {
@@ -33,7 +53,38 @@ namespace RAV.Scripts
                 return (true, resp, profile);
             }
 
-            return (false, resp, default);
+            return (false, HttpLink.FormatApiFailure(req), default);
+        }
+
+        private static string ResolveRequestId(string correlationId)
+        {
+            return Guid.TryParse(correlationId, out Guid parsed)
+                ? parsed.ToString("N")
+                : Guid.NewGuid().ToString("N");
+        }
+
+        private static string GetErrorCategory(UnityWebRequest request)
+        {
+            if (request.result == UnityWebRequest.Result.ConnectionError)
+            {
+                return string.IsNullOrWhiteSpace(request.error)
+                    ? "connection_error"
+                    : request.error.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? "timeout"
+                        : "connection_error";
+            }
+
+            if (request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                return "http_error";
+            }
+
+            if (request.result == UnityWebRequest.Result.DataProcessingError)
+            {
+                return "response_processing_error";
+            }
+
+            return "unknown";
         }
 
         public static async UniTask<(bool isSuccess, string message, PlayerStatisticsDto statistics)> GetMyStatistics(string token)
@@ -62,7 +113,7 @@ namespace RAV.Scripts
                 return (statistics != null, resp, statistics);
             }
 
-            return (false, resp, null);
+            return (false, HttpLink.FormatApiFailure(req), null);
         }
 
         public static async UniTask<(bool isSuccess, string message)> SetActiveVehicle(int vehicleId, string token)
@@ -81,7 +132,7 @@ namespace RAV.Scripts
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
             string resp = req.downloadHandler?.text ?? string.Empty;
-            return (req.result == UnityWebRequest.Result.Success, resp);
+            return (req.result == UnityWebRequest.Result.Success, req.result == UnityWebRequest.Result.Success ? resp : HttpLink.FormatApiFailure(req));
         }
 
         private static void NormalizeProfile(PlayerProfile profile)

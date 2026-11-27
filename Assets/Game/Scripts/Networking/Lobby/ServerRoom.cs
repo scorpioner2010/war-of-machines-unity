@@ -35,6 +35,9 @@ namespace RAV.Scripts.Networking.Lobby
         public int matchId;
 
         private MatchVisibilityService _visibility;
+        private readonly HashSet<int> _matchmakingPresentationReadyClientIds = new HashSet<int>();
+        private float _matchmakingTimeRemaining;
+        private bool _matchmakingTimerStarted;
 
         public bool IsEmpty => players.Count == 0;
         public bool IsActiveMatch => isInGame && !matchRewardsSent;
@@ -117,22 +120,30 @@ namespace RAV.Scripts.Networking.Lobby
         private void SyncedTimeOnChange(float newTime)
         {
             RemoveNullPlayers();
-            RoomController.UpdateTimer(newTime, players);
+            _matchmakingTimeRemaining = newTime;
+            PublishMatchmakingState();
         }
 
         public void StartMatchmakingTimer()
         {
+            _matchmakingTimeRemaining = ServerSettings.GetFindRoomSeconds();
+            _matchmakingTimerStarted = true;
             RunMatchmakingTimer().Forget();
         }
 
         private async UniTask RunMatchmakingTimer()
         {
-            float currentTime = ServerSettings.GetFindRoomSeconds();
+            float currentTime = _matchmakingTimeRemaining > 0f
+                ? _matchmakingTimeRemaining
+                : ServerSettings.GetFindRoomSeconds();
+
+            _matchmakingTimeRemaining = currentTime;
             
             while (currentTime > 0 && !isInGame)
             {
                 await UniTask.Delay(1000);
                 currentTime--;
+                _matchmakingTimeRemaining = currentTime;
                 SyncedTimeOnChange(currentTime);
             }
 
@@ -150,6 +161,11 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             players.Add(player);
+
+            if (!isInGame)
+            {
+                PublishMatchmakingState();
+            }
         }
 
         public void RemovePlayer(Player player)
@@ -159,6 +175,24 @@ namespace RAV.Scripts.Networking.Lobby
             {
                 players.Remove(player);
             }
+
+            if (!isInGame)
+            {
+                PublishMatchmakingState();
+            }
+        }
+
+        private void PublishMatchmakingState()
+        {
+            if (isInGame)
+            {
+                return;
+            }
+
+            float timeRemaining = _matchmakingTimerStarted
+                ? _matchmakingTimeRemaining
+                : ServerSettings.GetFindRoomSeconds();
+            RoomController.UpdateTimer(timeRemaining, players);
         }
         
         public int PlayersCount()
@@ -179,6 +213,28 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             return count;
+        }
+
+        public bool MarkMatchmakingPresentationReady(NetworkConnection connection)
+        {
+            if (!isInGame || connection == null)
+            {
+                return false;
+            }
+
+            Player player = GetPlayerByConnection(connection);
+            if (player == null || player.isBot)
+            {
+                return false;
+            }
+
+            return _matchmakingPresentationReadyClientIds.Add(connection.ClientId);
+        }
+
+        public bool AreAllRealPlayersReadyForPresentation()
+        {
+            int realPlayers = RealPlayersCount();
+            return realPlayers > 0 && _matchmakingPresentationReadyClientIds.Count >= realPlayers;
         }
 
         public bool HasPlayer(NetworkConnection connection)

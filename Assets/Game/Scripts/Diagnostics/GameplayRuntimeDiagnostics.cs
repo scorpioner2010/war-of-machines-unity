@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,8 +12,17 @@ namespace RAV.Scripts.Diagnostics
     {
         private const string RelativeLogPath = "Logs/GameplayRuntimeDiagnostics.log";
         private const string LogPathEnvironmentVariable = "RAV_GAMEPLAY_DIAGNOSTICS_PATH";
+        private const long MaxLogBytes = 5 * 1024 * 1024;
+        private const int RetainedLogFiles = 2;
         private static readonly object Sync = new object();
         private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false);
+        private static readonly string ProcessSessionId = Guid.NewGuid().ToString("N");
+        private static readonly Regex BearerSecret = new Regex(
+            @"\bBearer\s+[^\s,;]+",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private static readonly Regex InlineSecret = new Regex(
+            @"\b(password|pwd|secret|token|credential|authorization)\b\s*[:=]\s*[^\s,;]+",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private static string _logPath;
         private static bool _headerWritten;
         private static bool _writeFailureReported;
@@ -36,7 +46,9 @@ namespace RAV.Scripts.Diagnostics
                 .Append(" scene=")
                 .Append(Sanitize(SceneManager.GetActiveScene().name))
                 .Append(" process=")
-                .Append(Application.isBatchMode ? "batch" : "interactive");
+                .Append(Application.isBatchMode ? "batch" : "interactive")
+                .Append(" session_id=")
+                .Append(ProcessSessionId);
 
             if (fields != null)
             {
@@ -51,7 +63,7 @@ namespace RAV.Scripts.Diagnostics
                     line.Append(' ')
                         .Append(Sanitize(key))
                         .Append('=')
-                        .Append(Sanitize(FormatValue(fields[i + 1])));
+                        .Append(SanitizeFieldValue(key, fields[i + 1]));
                 }
             }
 
@@ -70,6 +82,8 @@ namespace RAV.Scripts.Diagnostics
                     {
                         Directory.CreateDirectory(directory);
                     }
+
+                    RotateIfNeeded(logPath);
 
                     using (FileStream stream = new FileStream(
                                logPath,
@@ -100,6 +114,66 @@ namespace RAV.Scripts.Diagnostics
                 _writeFailureReported = true;
                 Debug.LogWarning($"[GameplayDiag] Failed to write {RelativeLogPath}: {exception.Message}");
             }
+        }
+
+        private static void RotateIfNeeded(string logPath)
+        {
+            if (!File.Exists(logPath) || new FileInfo(logPath).Length < MaxLogBytes)
+            {
+                return;
+            }
+
+            string oldestBackup = logPath + "." + RetainedLogFiles.ToString(CultureInfo.InvariantCulture);
+            if (File.Exists(oldestBackup))
+            {
+                File.Delete(oldestBackup);
+            }
+
+            for (int index = RetainedLogFiles - 1; index >= 1; index--)
+            {
+                string source = logPath + "." + index.ToString(CultureInfo.InvariantCulture);
+                string destination = logPath + "." + (index + 1).ToString(CultureInfo.InvariantCulture);
+                if (File.Exists(source))
+                {
+                    File.Move(source, destination);
+                }
+            }
+
+            File.Move(logPath, logPath + ".1");
+            _headerWritten = false;
+        }
+
+        private static string SanitizeFieldValue(string key, object value)
+        {
+            string normalizedKey = key.Replace("_", string.Empty).Replace("-", string.Empty);
+            if (normalizedKey.IndexOf("token", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("password", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("secret", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("credential", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("authorization", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("cookie", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("privatekey", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("connectionstring", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return "[REDACTED]";
+            }
+
+            string formatted = FormatValue(value);
+            if (formatted.Length > 512)
+            {
+                formatted = formatted.Substring(0, 512) + "_truncated";
+            }
+
+            if (normalizedKey.IndexOf("reason", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("message", StringComparison.OrdinalIgnoreCase) >= 0
+                || normalizedKey.IndexOf("exception", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                formatted = BearerSecret.Replace(formatted, "Bearer_[REDACTED]");
+                formatted = InlineSecret.Replace(formatted, "$1=[REDACTED]");
+            }
+
+            return Sanitize(formatted);
         }
 
         private static string GetLogPath()

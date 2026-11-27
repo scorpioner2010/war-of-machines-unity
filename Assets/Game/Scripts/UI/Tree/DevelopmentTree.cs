@@ -11,6 +11,7 @@ using RAV.Scripts.Audio;
 using RAV.Scripts.Core.Helpers;
 using RAV.Scripts.Core.Resources;
 using RAV.Scripts.Core.Services;
+using RAV.Scripts.Diagnostics;
 using RAV.Scripts.MenuController;
 using RAV.Scripts.Networking.Sessions;
 using RAV.Scripts.Player.Data;
@@ -28,6 +29,8 @@ namespace RAV.Scripts.UI.Tree
 {
     public class DevelopmentTree : NetworkBehaviour
     {
+        private const float VehicleMutationTimeoutSeconds = 10f;
+
         [Header("Runtime tree")]
         [SerializeField] private Transform treeHost;
         [SerializeField] private FactionTreeView factionTreePrefab;
@@ -48,6 +51,8 @@ namespace RAV.Scripts.UI.Tree
         private bool _isInitializing;
         private TreeItem _selectedTreeItem;
         private int _selectedVehicleId;
+        private int _vehicleMutationRequestVersion;
+        private StandardLoadingOverlay.LoadingRequest _vehicleMutationLoadingRequest;
 
         private readonly List<FactionView> _views = new List<FactionView>();
         private readonly List<FactionButtonView> _factionButtons = new List<FactionButtonView>();
@@ -79,6 +84,13 @@ namespace RAV.Scripts.UI.Tree
             }
         }
 
+        public override void OnStopClient()
+        {
+            _vehicleMutationRequestVersion++;
+            EndVehicleMutationLoading();
+            base.OnStopClient();
+        }
+
         [Button]
         public void Init()
         {
@@ -93,24 +105,24 @@ namespace RAV.Scripts.UI.Tree
             }
 
             _isInitializing = true;
-            StandardLoadingOverlay.BeginRequest();
-
-            try
+            using (StandardLoadingOverlay.BeginRequest())
             {
-                if (!isInitialized)
+                try
                 {
-                    isInitialized = await LoadDataFromServer();
-                }
+                    if (!isInitialized)
+                    {
+                        isInitialized = await LoadDataFromServer();
+                    }
 
-                if (isInitialized)
-                {
-                    await UpdateUI();
+                    if (isInitialized)
+                    {
+                        await UpdateUI();
+                    }
                 }
-            }
-            finally
-            {
-                _isInitializing = false;
-                StandardLoadingOverlay.EndRequest();
+                finally
+                {
+                    _isInitializing = false;
+                }
             }
         }
 
@@ -728,8 +740,20 @@ namespace RAV.Scripts.UI.Tree
                 Color.green,
                 () =>
                 {
-                    Helpers.StandardLoadingOverlay.Show();
-                    ResearchVehicleServerRpc(progress.Node.id, progress.PredecessorVehicleId);
+                    int requestVersion = BeginVehicleMutationLoading();
+                    try
+                    {
+                        ResearchVehicleServerRpc(progress.Node.id, progress.PredecessorVehicleId, requestVersion);
+                        WaitForVehicleMutationTimeoutAsync(requestVersion).Forget();
+                    }
+                    catch (Exception exception)
+                    {
+                        GameplayRuntimeDiagnostics.Record(
+                            "vehicle_research_failed",
+                            "reason", exception.Message);
+                        Popup.ShowText("Unable to research robot.", Color.red);
+                        EndVehicleMutationLoading(requestVersion);
+                    }
                 },
                 PopupType.Confirm);
         }
@@ -767,103 +791,216 @@ namespace RAV.Scripts.UI.Tree
                 Color.green,
                 () =>
                 {
-                    Helpers.StandardLoadingOverlay.Show();
-                    BuyVehicleServerRpc(vehicle.code);
+                    int requestVersion = BeginVehicleMutationLoading();
+                    try
+                    {
+                        BuyVehicleServerRpc(vehicle.code, requestVersion);
+                        WaitForVehicleMutationTimeoutAsync(requestVersion).Forget();
+                    }
+                    catch (Exception exception)
+                    {
+                        GameplayRuntimeDiagnostics.Record(
+                            "vehicle_purchase_failed",
+                            "reason", exception.Message);
+                        Popup.ShowText("Unable to buy robot.", Color.red);
+                        EndVehicleMutationLoading(requestVersion);
+                    }
                 },
                 PopupType.Confirm);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void BuyVehicleServerRpc(string code, NetworkConnection sender = null)
+        private void BuyVehicleServerRpc(string code, int requestVersion, NetworkConnection sender = null)
         {
-            if (ServerPlayerSessions.TryGetAuthenticated(sender, out _))
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
-                BuyVehicleAsync(sender, code).Forget();
+                TargetRpcBuy(sender, requestVersion, false, "Not logged in.");
+                return;
             }
+
+            BuyVehicleAsync(sender, code, requestVersion).Forget();
         }
 
-        private async UniTask BuyVehicleAsync(NetworkConnection sender, string code)
+        private async UniTask BuyVehicleAsync(NetworkConnection sender, string code, int requestVersion)
         {
-            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+            try
             {
-                TargetRpcBuy(sender, false, "Not logged in.");
-                return;
-            }
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                {
+                    TargetRpcBuy(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
 
-            string token = session.Token;
-            if (string.IsNullOrEmpty(token))
+                string token = session.Token;
+                if (string.IsNullOrEmpty(token))
+                {
+                    TargetRpcBuy(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
+
+                (bool ok, string message) validation = await ValidateVehiclePurchaseAsync(token, code);
+                if (!validation.ok)
+                {
+                    TargetRpcBuy(sender, requestVersion, false, validation.message);
+                    return;
+                }
+
+                (bool ok, string message, BuyVehicleResult _) result = await UserVehiclesManager.Buy(code, token);
+                TargetRpcBuy(sender, requestVersion, result.ok, result.message);
+            }
+            catch (Exception)
             {
-                TargetRpcBuy(sender, false, "Not logged in.");
-                return;
+                TargetRpcBuy(sender, requestVersion, false, "Unable to buy robot.");
             }
-
-            (bool ok, string message) validation = await ValidateVehiclePurchaseAsync(token, code);
-            if (!validation.ok)
-            {
-                TargetRpcBuy(sender, false, validation.message);
-                return;
-            }
-
-            (bool ok, string message, BuyVehicleResult _) result = await UserVehiclesManager.Buy(code, token);
-            TargetRpcBuy(sender, result.ok, result.message);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void ResearchVehicleServerRpc(int vehicleId, int predecessorVehicleId, NetworkConnection sender = null)
+        private void ResearchVehicleServerRpc(int vehicleId, int predecessorVehicleId, int requestVersion, NetworkConnection sender = null)
         {
-            if (ServerPlayerSessions.TryGetAuthenticated(sender, out _))
+            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out _))
             {
-                ResearchVehicleAsync(sender, vehicleId, predecessorVehicleId).Forget();
+                TargetRpcResearch(sender, requestVersion, false, "Not logged in.");
+                return;
             }
+
+            ResearchVehicleAsync(sender, vehicleId, predecessorVehicleId, requestVersion).Forget();
         }
 
-        private async UniTask ResearchVehicleAsync(NetworkConnection sender, int vehicleId, int predecessorVehicleId)
+        private async UniTask ResearchVehicleAsync(NetworkConnection sender, int vehicleId, int predecessorVehicleId, int requestVersion)
         {
-            if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+            try
             {
-                TargetRpcResearch(sender, false, "Not logged in.");
-                return;
-            }
+                if (!ServerPlayerSessions.TryGetAuthenticated(sender, out ServerPlayerSession session))
+                {
+                    TargetRpcResearch(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
 
-            string token = session.Token;
-            if (string.IsNullOrEmpty(token))
+                string token = session.Token;
+                if (string.IsNullOrEmpty(token))
+                {
+                    TargetRpcResearch(sender, requestVersion, false, "Not logged in.");
+                    return;
+                }
+
+                (bool ok, string message, ResearchVehicleResult _) result = await UserVehiclesManager.Research(vehicleId, predecessorVehicleId, token);
+                TargetRpcResearch(sender, requestVersion, result.ok, result.message);
+            }
+            catch (Exception)
             {
-                TargetRpcResearch(sender, false, "Not logged in.");
-                return;
+                TargetRpcResearch(sender, requestVersion, false, "Unable to research robot.");
             }
-
-            (bool ok, string message, ResearchVehicleResult _) result = await UserVehiclesManager.Research(vehicleId, predecessorVehicleId, token);
-            TargetRpcResearch(sender, result.ok, result.message);
-        }
-
-        [TargetRpc]
-        private void TargetRpcResearch(NetworkConnection target, bool success, string errorMessage)
-        {
-            if (success)
-            {
-                SoundCaller.PlayUi(AudioEventNames.UiRobotResearched);
-                ProfileServer.UpdateProfile();
-                return;
-            }
-
-            Popup.ShowText(errorMessage, Color.red);
-            Helpers.StandardLoadingOverlay.Hide();
         }
 
         [TargetRpc]
-        private void TargetRpcBuy(NetworkConnection target, bool success, string errorMessage)
+        private void TargetRpcResearch(NetworkConnection target, int requestVersion, bool success, string errorMessage)
         {
-            if (success)
+            if (requestVersion != _vehicleMutationRequestVersion)
             {
-                SoundCaller.PlayUi(AudioEventNames.UiRobotPurchased);
-                ProfileServer.UpdateProfile();
+                if (success)
+                {
+                    ProfileServer.UpdateProfile();
+                }
+
+                return;
             }
-            else
+
+            try
             {
+                if (success)
+                {
+                    SoundCaller.PlayUi(AudioEventNames.UiRobotResearched);
+                    ProfileServer.UpdateProfile();
+                    return;
+                }
+
                 Popup.ShowText(errorMessage, Color.red);
             }
+            finally
+            {
+                EndVehicleMutationLoading(requestVersion);
+            }
+        }
 
-            Helpers.StandardLoadingOverlay.Hide();
+        [TargetRpc]
+        private void TargetRpcBuy(NetworkConnection target, int requestVersion, bool success, string errorMessage)
+        {
+            if (requestVersion != _vehicleMutationRequestVersion)
+            {
+                if (success)
+                {
+                    ProfileServer.UpdateProfile();
+                }
+
+                return;
+            }
+
+            try
+            {
+                if (success)
+                {
+                    SoundCaller.PlayUi(AudioEventNames.UiRobotPurchased);
+                    ProfileServer.UpdateProfile();
+                }
+                else
+                {
+                    Popup.ShowText(errorMessage, Color.red);
+                }
+            }
+            finally
+            {
+                EndVehicleMutationLoading(requestVersion);
+            }
+        }
+
+        private int BeginVehicleMutationLoading()
+        {
+            if (_vehicleMutationLoadingRequest != null && _vehicleMutationLoadingRequest.IsActive)
+            {
+                return _vehicleMutationRequestVersion;
+            }
+
+            _vehicleMutationRequestVersion++;
+            _vehicleMutationLoadingRequest = StandardLoadingOverlay.BeginRequest();
+            return _vehicleMutationRequestVersion;
+        }
+
+        private void EndVehicleMutationLoading()
+        {
+            if (_vehicleMutationLoadingRequest == null)
+            {
+                return;
+            }
+
+            _vehicleMutationLoadingRequest.End();
+            _vehicleMutationLoadingRequest = null;
+        }
+
+        private void EndVehicleMutationLoading(int requestVersion)
+        {
+            if (requestVersion != _vehicleMutationRequestVersion)
+            {
+                return;
+            }
+
+            EndVehicleMutationLoading();
+        }
+
+        private async UniTask WaitForVehicleMutationTimeoutAsync(int requestVersion)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(VehicleMutationTimeoutSeconds), ignoreTimeScale: true);
+            if (this == null
+                || requestVersion != _vehicleMutationRequestVersion
+                || _vehicleMutationLoadingRequest == null)
+            {
+                return;
+            }
+
+            GameplayRuntimeDiagnostics.Record(
+                "vehicle_mutation_failed",
+                "reason", "timeout");
+            Popup.ShowText("Robot operation timed out.", Color.red);
+            EndVehicleMutationLoading(requestVersion);
         }
 
         private async UniTask<(bool ok, string message)> ValidateVehiclePurchaseAsync(string token, string code)
@@ -1001,6 +1138,8 @@ namespace RAV.Scripts.UI.Tree
 
         private void OnDestroy()
         {
+            _vehicleMutationRequestVersion++;
+            EndVehicleMutationLoading();
             Singleton<DevelopmentTree>.Unregister(this);
         }
     }

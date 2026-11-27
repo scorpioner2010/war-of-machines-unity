@@ -32,7 +32,7 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, data);
             }
 
-            return (false, resp, null);
+            return (false, HttpLink.FormatApiFailure(req), null);
         }
 
         public static async UniTask<(bool ok, string msg)> SetActive(int vehicleId, string token)
@@ -50,7 +50,7 @@ namespace RAV.Scripts.API.Endpoints
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
             string resp = req.downloadHandler?.text ?? string.Empty;
-            return (req.result == UnityWebRequest.Result.Success, resp);
+            return (req.result == UnityWebRequest.Result.Success, req.result == UnityWebRequest.Result.Success ? resp : HttpLink.FormatApiFailure(req));
         }
 
         public static async UniTask<(bool ok, string msg)> Remove(int vehicleId, string token)
@@ -66,7 +66,7 @@ namespace RAV.Scripts.API.Endpoints
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
             string resp = req.downloadHandler?.text ?? string.Empty;
-            return (req.result == UnityWebRequest.Result.Success, resp);
+            return (req.result == UnityWebRequest.Result.Success, req.result == UnityWebRequest.Result.Success ? resp : HttpLink.FormatApiFailure(req));
         }
 
         public static async UniTask<(bool ok, string msg)> ConvertFreeXp(int vehicleId, int amount, string token)
@@ -85,7 +85,7 @@ namespace RAV.Scripts.API.Endpoints
             try { await req.SendWebRequest(); } catch (UnityWebRequestException) { }
 
             string resp = req.downloadHandler?.text ?? string.Empty;
-            return (req.result == UnityWebRequest.Result.Success, resp);
+            return (req.result == UnityWebRequest.Result.Success, req.result == UnityWebRequest.Result.Success ? resp : HttpLink.FormatApiFailure(req));
         }
 
         public static async UniTask<(bool ok, string msg, ResearchVehicleResult data)> Research(int vehicleId, int predecessorVehicleId, string token)
@@ -111,7 +111,7 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, data);
             }
 
-            return (false, resp, null);
+            return (false, HttpLink.FormatApiFailure(req), null);
         }
 
         public static async UniTask<(bool ok, string msg, VehicleXpResponse data)> GetXpInfo(string token)
@@ -135,7 +135,7 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, data);
             }
 
-            return (false, resp, null);
+            return (false, HttpLink.FormatApiFailure(req), null);
         }
 
         public static async UniTask<(bool ok, string msg, BuyVehicleResult data)> Buy(string code, string token)
@@ -159,7 +159,7 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, data);
             }
 
-            return (false, resp, null);
+            return (false, HttpLink.FormatApiFailure(req), null);
         }
 
         public static async UniTask<(bool ok, string msg, SellVehicleResult data)> Sell(int vehicleId, string token)
@@ -183,7 +183,7 @@ namespace RAV.Scripts.API.Endpoints
                 return (true, resp, data);
             }
 
-            return (false, resp, null);
+            return (false, HttpLink.FormatApiFailure(req), null);
         }
 
         private static void NormalizeUserVehicleResponse(UserVehicleResponse response)

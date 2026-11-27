@@ -854,19 +854,37 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             List<PlayerBattleResultDelivery> deliveries = await MatchResultService.EndMatchAndBuildDeliveries(serverRoom);
+            int queuedCount = 0;
+            int sentCount = 0;
+            int rewardsAvailableCount = 0;
             for (int i = 0; i < deliveries.Count; i++)
             {
                 PlayerBattleResultDelivery delivery = deliveries[i];
+                if (delivery.Result.RewardsAvailable)
+                {
+                    rewardsAvailableCount++;
+                }
+
                 if (delivery.Connection == null)
                 {
                     PendingBattleResults.Enqueue(delivery.UserId, delivery.Result);
+                    queuedCount++;
                     continue;
                 }
 
                 SendGameResult(delivery.Connection, delivery.Result);
+                sentCount++;
             }
 
             serverRoom.matchRewardsSent = true;
+            GameplayRuntimeDiagnostics.Record(
+                "battle_result_delivery_completed_server",
+                "room_id", serverRoom.roomId,
+                "match_id", serverRoom.matchId,
+                "delivery_count", deliveries.Count,
+                "sent_count", sentCount,
+                "queued_count", queuedCount,
+                "rewards_available_count", rewardsAvailableCount);
 
             if (_abandonedRoomIdsAwaitingResult.Remove(serverRoom.roomId))
             {
@@ -984,6 +1002,13 @@ namespace RAV.Scripts.Networking.Lobby
             int mmrDelta,
             bool rewardsAvailable)
         {
+            GameplayRuntimeDiagnostics.Record(
+                "battle_result_received_client",
+                "room_id", roomId,
+                "result", result,
+                "rewards_available", rewardsAvailable,
+                "kills", kills,
+                "damage", damage);
             GameResultUI.Enqueue(roomId, result, kills, damage, xpEarned, bolts, freeXp, mmrDelta, rewardsAvailable);
         }
 

@@ -5,6 +5,7 @@ using RAV.Scripts.Audio;
 using RAV.Scripts.Core.Services;
 using RAV.Scripts.MenuController;
 using RAV.Scripts.UI;
+using RAV.Scripts.UI.Helpers;
 using RAV.Scripts.UI.Tree;
 using TMPro;
 using UnityEngine;
@@ -64,13 +65,28 @@ namespace RAV.Scripts.UI.MainMenu
                 profileButton.onClick.AddListener(ShowProfileStatisticsPopup);
             }
 
-            MenuManager.OnEnable += type =>
+            MenuManager.OnEnable += HandleMenuEnabled;
+        }
+
+        private void OnDestroy()
+        {
+            MenuManager.OnEnable -= HandleMenuEnabled;
+            if (In == this)
             {
-                if (type == MenuType.MainMenu)
-                {
-                    ProfileServer.UpdateProfile();
-                }
-            };
+                In = null;
+            }
+        }
+
+        private void HandleMenuEnabled(MenuType type)
+        {
+            if (type != MenuType.MainMenu)
+            {
+                return;
+            }
+
+            RobotView.ShowForMainMenu();
+            StandardLoadingOverlay.SetSceneLoadingSuppressed(false);
+            ProfileServer.UpdateProfile();
         }
 
         public void ShowProfileStatisticsPopup()
@@ -160,6 +176,8 @@ namespace RAV.Scripts.UI.MainMenu
             
             if (isActive)
             {
+                RobotView.ShowForMainMenu();
+                StandardLoadingOverlay.SetSceneLoadingSuppressed(false);
                 AudioListenerRoot.SetTarget(mainMenuCamera);
                 MenuManager.OpenMenu(MenuType.MainMenu);
             }

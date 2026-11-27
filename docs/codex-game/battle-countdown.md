@@ -8,6 +8,7 @@
 - `GameplaySpawner` opens the server room lock before robot spawn; `BattleCountdownAuthority` owns the network-side completion acknowledgement and releases it after every connected real player reports the completed countdown.
 - Robot input, movement, and weapon classes only consume the gate; turret aim remains in `VehicleInputController` and is not gated by the countdown. While the server gate is active, `VehicleMovementController` keeps a gravity-only `CharacterController.Move` pass so a robot can land; horizontal movement and hull rotation remain suppressed.
 - `GunCrosshair` and `SniperScopeOverlay` own their own reticle presentation response to the client countdown state: they hide immediately and reveal over two unscaled seconds after the gate ends. `GunCrosshair` includes the standalone `Back` and `Back2` opacity groups in this transition while preserving the configured reticle opacity. Countdown logic does not manipulate reticle geometry or aiming state.
+- The serialized `BattleCountdownView` number in `Assets/Game/Scenes/Client.unity` uses white text for every countdown tick.
 
 ## Timing
 

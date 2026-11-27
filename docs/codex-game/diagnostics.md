@@ -7,9 +7,10 @@ Read this file before changing diagnostics code or responding to lag, freezes, s
 Current owner scripts:
 - `Assets/Game/Scripts/Diagnostics/DiagnosticsManager.cs`
 - `Assets/Game/Scripts/Diagnostics/GameplayRuntimeDiagnostics.cs`
-  - Writes append-only lifecycle events to `Logs/GameplayRuntimeDiagnostics.log` beside the Unity executable/project data directory.
-  - Events include login/profile readiness, FishNet connection state, additive scene load/acknowledgement, player/bot spawn failures and completion, owner-camera binding, bot brain lifecycle, authoritative shot validation/resolution, and battle completion.
-  - It records identifiers, codes, positions, counts, and failure reasons only; access tokens and passwords must never be passed to it.
+  - Writes lifecycle events to `Logs/GameplayRuntimeDiagnostics.log` beside the Unity executable/project data directory; rotates at 5 MiB and retains two archives.
+  - Each process run has a `session_id`; match-result profile refreshes share a `flow_id`, and their API calls include a matching `request_id` for API/server correlation.
+  - Match-end records include HTTP status/result, elapsed time, response size, error category, reward fallback, and client delivery/receipt state.
+  - It records identifiers, codes, counts, and bounded failure categories; known credential fields and bearer/inline secrets are redacted. Access tokens and passwords must never be passed to it.
 - `Assets/Game/Scripts/Diagnostics/ClientDiagnosticsCollector.cs`
 - `Assets/Game/Scripts/Diagnostics/ServerDiagnosticsCollector.cs`
 - `Assets/Game/Scripts/Diagnostics/NetworkDiagnosticsCollector.cs`

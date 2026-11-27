@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using FishNet.Connection;
 using RAV.Scripts.API.Models;
@@ -54,13 +55,41 @@ namespace RAV.Scripts.Networking.Sessions
             return session.IsAuthenticated;
         }
 
-        public static void SetAuthenticated(NetworkConnection connection, int userId, string delegatedToken)
+        public static void SetAuthenticated(NetworkConnection connection, int userId, Guid sessionId, string delegatedToken, DateTimeOffset tokenExpiresAtUtc)
         {
             ServerPlayerSession session = UpsertConnection(connection);
             if (session != null)
             {
-                session.SetAuthenticated(userId, delegatedToken);
+                session.SetAuthenticated(userId, sessionId, delegatedToken, tokenExpiresAtUtc);
             }
+        }
+
+        public static ServerPlayerSession[] GetAuthenticatedSnapshot()
+        {
+            List<ServerPlayerSession> sessions = new List<ServerPlayerSession>(SessionsByClientId.Count);
+            foreach (ServerPlayerSession session in SessionsByClientId.Values)
+            {
+                if (session != null && session.IsLoggedIn)
+                {
+                    sessions.Add(session);
+                }
+            }
+
+            return sessions.ToArray();
+        }
+
+        public static bool UpdateDelegatedToken(int clientId, Guid sessionId, string token, DateTimeOffset tokenExpiresAtUtc)
+        {
+            if (!SessionsByClientId.TryGetValue(clientId, out ServerPlayerSession session)
+                || session == null
+                || session.SessionId != sessionId
+                || !session.IsConnected)
+            {
+                return false;
+            }
+
+            session.SetDelegatedToken(token, tokenExpiresAtUtc);
+            return true;
         }
 
         public static void SetProfile(NetworkConnection connection, PlayerProfile profile)

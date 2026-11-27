@@ -13,12 +13,15 @@ using RAV.Scripts.MenuController;
 using RAV.Scripts.Networking.Sessions;
 using RAV.Scripts.Server;
 using RAV.Scripts.Testing;
+using RAV.Scripts.UI.Lobby;
 using UnityEngine;
 
 namespace RAV.Scripts.Networking.Lobby
 {
     public class LobbyManager : NetworkBehaviour
     {
+        private const float MatchmakingPresentationReadyTimeoutSeconds = 5f;
+
         [SerializeField] private ServerRoom serverRoomPrefab;
 
         private readonly MatchBotPopulationService _botPopulationService = new MatchBotPopulationService();
@@ -288,7 +291,12 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             ServerRoom room = LobbyRooms.GetRoomByConnection(sender);
-            if (room != null && !room.isInGame)
+            if (room != null && room.isInGame)
+            {
+                return;
+            }
+
+            if (room != null)
             {
                 Player player = room.GetPlayerByConnection(sender);
                 if (player != null)
@@ -298,6 +306,27 @@ namespace RAV.Scripts.Networking.Lobby
             }
 
             TargetMatchmakingCancelledRpc(sender);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void MatchmakingPresentationReadyServerRpc(NetworkConnection sender = null)
+        {
+            if (sender == null || !ServerPlayerSessions.TryGetAuthenticated(sender, out _))
+            {
+                return;
+            }
+
+            ServerRoom room = LobbyRooms.GetRoomByConnection(sender);
+            if (room == null || !room.MarkMatchmakingPresentationReady(sender))
+            {
+                return;
+            }
+
+            GameplayRuntimeDiagnostics.Record(
+                "matchmaking_presentation_ready",
+                "room_id", room.roomId,
+                "client_id", sender.ClientId,
+                "all_clients_ready", room.AreAllRealPlayersReadyForPresentation());
         }
 
         private void StartGame(ServerRoom room)
@@ -314,6 +343,7 @@ namespace RAV.Scripts.Networking.Lobby
                 return;
             }
 
+            bool requiresMatchmakingCompletion = room.RealPlayersCount() < room.maxPlayers;
             GameplayRuntimeDiagnostics.Record(
                 "match_starting",
                 "room_id", room.roomId,
@@ -336,7 +366,55 @@ namespace RAV.Scripts.Networking.Lobby
             room.isInGame = true;
             room.AssignTeams();
             StartApiMatch(room).Forget();
+            NotifyMatchStarting(connections);
+            ContinueStartingGameAsync(room, requiresMatchmakingCompletion).Forget();
+        }
+
+        private async UniTask ContinueStartingGameAsync(ServerRoom room, bool waitForMatchmakingCompletion)
+        {
+            if (waitForMatchmakingCompletion)
+            {
+                await WaitForMatchmakingPresentationAsync(room);
+            }
+
+            if (room == null || !room.isInGame)
+            {
+                return;
+            }
+
+            List<NetworkConnection> connections = GetRealPlayerConnections(room);
+            if (connections.Count == 0)
+            {
+                LobbyRooms.RemoveRoom(room);
+                return;
+            }
+
             LoadScene(room, connections);
+        }
+
+        private static async UniTask WaitForMatchmakingPresentationAsync(ServerRoom room)
+        {
+            float deadline = Time.realtimeSinceStartup + MatchmakingPresentationReadyTimeoutSeconds;
+            while (room != null && room.isInGame && !room.AreAllRealPlayersReadyForPresentation() && Time.realtimeSinceStartup < deadline)
+            {
+                await UniTask.Delay(TimeSpan.FromMilliseconds(50), ignoreTimeScale: true);
+            }
+
+            if (room != null && !room.AreAllRealPlayersReadyForPresentation())
+            {
+                GameplayRuntimeDiagnostics.Record(
+                    "matchmaking_presentation_ready_timeout",
+                    "room_id", room.roomId,
+                    "real_players", room.RealPlayersCount());
+            }
+        }
+
+        private void NotifyMatchStarting(List<NetworkConnection> connections)
+        {
+            for (int i = 0; i < connections.Count; i++)
+            {
+                TargetStartGameResponseRpc(connections[i]);
+            }
         }
 
         private async UniTask StartApiMatch(ServerRoom room)
@@ -411,7 +489,6 @@ namespace RAV.Scripts.Networking.Lobby
             for (int i = 0; i < connections.Count; i++)
             {
                 SendServerSettings(connections[i]);
-                TargetStartGameResponseRpc(connections[i]);
             }
 
             GameplayRuntimeDiagnostics.Record(
@@ -426,6 +503,7 @@ namespace RAV.Scripts.Networking.Lobby
         [TargetRpc]
         private void TargetMatchmakingCancelledRpc(NetworkConnection target)
         {
+            MatchmakingStatusView.CancelSearch();
             MenuManager.OpenMenu(MenuType.MainMenu);
         }
 
@@ -437,7 +515,7 @@ namespace RAV.Scripts.Networking.Lobby
                 "client_id", target != null ? target.ClientId : -1);
             SoundCaller.PlayUi(AudioEventNames.UiMatchFound);
             SoundCaller.StartBattleAudio();
-            MenuManager.CloseMenu(MenuType.Matchmaking);
+            MatchmakingStatusView.BeginGameTransition();
         }
 
         private List<NetworkConnection> GetRealPlayerConnections(ServerRoom room)
