@@ -41,16 +41,22 @@ namespace RAV.Scripts.UI.MainMenu
         private int _vehicleSelectionRequestVersion;
         private StandardLoadingOverlay.LoadingRequest _vehicleSelectionLoadingRequest;
         private bool _hiddenForGameplay;
+        private bool _hiddenForMatchmaking;
+        private bool _wasActiveBeforeMatchmaking;
 
         private static RobotView _in;
 
         private void Awake()
         {
             _in = this;
+            MenuManager.OnEnable += HandleMenuEnabled;
+            MenuManager.OnDisable += HandleMenuDisabled;
         }
 
         private void OnDestroy()
         {
+            MenuManager.OnEnable -= HandleMenuEnabled;
+            MenuManager.OnDisable -= HandleMenuDisabled;
             _vehicleSelectionRequestVersion++;
             EndVehicleSelectionLoading();
             if (_in == this)
@@ -58,6 +64,52 @@ namespace RAV.Scripts.UI.MainMenu
                 _buildVersion++;
                 _spawnVersion++;
                 _in = null;
+            }
+        }
+
+        private void HandleMenuEnabled(MenuType type)
+        {
+            if (type == MenuType.Matchmaking)
+            {
+                HideForMatchmaking();
+                return;
+            }
+
+            RestoreAfterMatchmaking();
+        }
+
+        private void HandleMenuDisabled(MenuType type)
+        {
+            if (type == MenuType.Matchmaking)
+            {
+                RestoreAfterMatchmaking();
+            }
+        }
+
+        private void HideForMatchmaking()
+        {
+            if (_hiddenForMatchmaking)
+            {
+                return;
+            }
+
+            _wasActiveBeforeMatchmaking = gameObject.activeSelf;
+            _hiddenForMatchmaking = true;
+            gameObject.SetActive(false);
+        }
+
+        private void RestoreAfterMatchmaking()
+        {
+            if (!_hiddenForMatchmaking)
+            {
+                return;
+            }
+
+            bool shouldBeActive = _wasActiveBeforeMatchmaking;
+            _hiddenForMatchmaking = false;
+            if (gameObject.activeSelf != shouldBeActive)
+            {
+                gameObject.SetActive(shouldBeActive);
             }
         }
 

@@ -5523,6 +5523,22 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Status:** COMPLETED
 - **Completed:** 2026-11-28 (Asia/Manila).
 
+## 2026-11-28 - Show loading overlay while opening profile
+- **Status:** IN_PROGRESS
+- **User request:** Show `StandardLoadingOverlay` when the profile opens from the main menu.
+- **Scope:** Trace the profile-opening lifecycle and existing loading-overlay ownership, then wire the existing overlay without duplicating loading state or changing unrelated menu transitions.
+- **Acceptance:** Profile opening visibly starts `StandardLoadingOverlay`, the overlay is dismissed by the existing profile-load completion/error path, and focused builds/tests pass.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Next:** Locate the profile entry point, overlay API, and completion callbacks before editing implementation files.
+- **Discovery:** `ProfileStatisticsPopup.Open()` only sets its own loading text and calls `ProfileServer.RequestProfileStatistics()`. The server manager has loading scopes for the general profile and Free XP flows, but the statistics RPC had no `StandardLoadingOverlay` scope and no timeout cleanup.
+- **Decision:** Keep loading ownership in `ProfileServer`, which owns the statistics RPC lifecycle. Add one guarded statistics loading request, close it on local/offline completion, target-RPC success/error, service failure, and timeout.
+- **Implementation:** Added `_profileStatisticsLoadingRequest` with request-version guarding and a four-second timeout. `RequestProfileStatistics()` now starts the overlay scope, duplicate requests reuse the active scope, and all completion/error paths end it. Added `ProfileStatisticsLoadingPlayModeTests` and documented the ownership in `docs/codex-game/api-resources.md`.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` built with 0 errors after the test was converted to the project's reflection-based test pattern. `git diff --check` passed with only line-ending normalization warnings.
+- **Result:** Opening the profile now displays `StandardLoadingOverlay` while statistics are requested; the overlay closes on response, immediate offline/local result, service/RPC error, timeout, or client teardown.
+- **Remaining limitation:** PlayMode execution was not started because the user's Unity Editor is currently open for this project; running batch mode concurrently would risk `Library` conflicts. The focused regression test is compiled and ready to run after the Editor is closed.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).
+
 ## 2026-11-28 - Close prior battle-list reset task
 - **Status:** COMPLETED
 - **Result:** The explicit battle reset and duplicate-row prevention were implemented and validated in the preceding task; this closure records the completed state without rewriting the append-only history.
@@ -5542,5 +5558,20 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` built with 0 errors. Unity PlayMode `RAV.Tests.PlayMode.GameplayPlayerListHudPlayModeTests` ran the current tests and passed 2/2 with `UNITY_EXIT=0`; `git diff --check` passed with only line-ending normalization warnings; no Unity process remained running.
 - **Result:** Local vehicle despawn no longer has a separate row-retention or roster-reset path. The existing dead-ally scan preserves the controlled robot until `BeginBattle()` clears the roster at the next battle boundary.
 - **Remaining limitation:** Automated coverage exercises the HUD lifecycle directly; a manual networked visual session was not required for this focused lifecycle correction.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Disable robot view while search window is open
+- **Status:** IN_PROGRESS
+- **User request:** When the matchmaking search window is open, disable `RobotViewGenerator`.
+- **Scope:** Trace the `MenuType.Matchmaking` lifecycle and the `RobotView` scene object, then disable the existing generator only while matchmaking is open and restore its previous active state when the search closes.
+- **Acceptance:** Opening matchmaking disables `RobotViewGenerator`, leaving matchmaking restores its prior state, and focused builds/tests pass without changing unrelated menu transitions.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Discovery:** `RobotViewGenerator` is the scene object containing `RobotView`; the search window is the `MenuType.Matchmaking` route opened by `RoomController`. Menu transitions raise `MenuManager.OnEnable`, while explicit matchmaking closes raise `MenuManager.OnDisable`.
+- **Decision:** Keep search visibility ownership in `RobotView`, subscribe to both menu lifecycle events while the component exists, remember the generator's active state once per search session, and restore it on every non-matchmaking menu transition or explicit matchmaking close.
+- **Implementation:** `RobotView` now subscribes to `MenuManager.OnEnable` and `MenuManager.OnDisable`, disables its own `RobotViewGenerator` GameObject for `MenuType.Matchmaking`, and restores the exact pre-search active state on exit. Added `RobotViewMatchmakingPlayModeTests` and documented the lifecycle in `docs/codex-game/menus-settings-progression.md`.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` built with 0 errors; `git diff --check` passed with only existing line-ending normalization warnings. The focused PlayMode test was not run because Unity Editor is open for this project (`rav-unity - Client`); batch mode would risk a `Library` conflict.
+- **Result:** Opening the matchmaking search now disables the complete `RobotViewGenerator` object. Returning to another menu or explicitly closing matchmaking restores exactly the active/inactive state it had before the search.
+- **Remaining limitation:** Runtime PlayMode execution and a visual menu session remain pending until the open Unity Editor is closed.
 - **Status:** COMPLETED
 - **Completed:** 2026-11-28 (Asia/Manila).

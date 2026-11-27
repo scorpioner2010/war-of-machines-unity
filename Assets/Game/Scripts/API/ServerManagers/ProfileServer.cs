@@ -24,6 +24,7 @@ namespace RAV.Scripts.API.ServerManagers
     {
         private const float ProfileRetryDelaySeconds = 0.5f;
         private const float ProfileRequestTimeoutSeconds = 4f;
+        private const float ProfileStatisticsTimeoutSeconds = 4f;
         private const float FreeXpConversionTimeoutSeconds = 10f;
         private const int MaxProfileRefreshAttempts = 120;
 
@@ -34,7 +35,9 @@ namespace RAV.Scripts.API.ServerManagers
         private bool _profileRefreshQueued;
         private bool _profileRequestInFlight;
         private StandardLoadingOverlay.LoadingRequest _profileLoadingRequest;
+        private StandardLoadingOverlay.LoadingRequest _profileStatisticsLoadingRequest;
         private StandardLoadingOverlay.LoadingRequest _freeXpLoadingRequest;
+        private int _profileStatisticsRequestVersion;
         private int _freeXpRequestVersion;
         private int _profileRefreshAttempt;
         private string _profileFlowId;
@@ -56,6 +59,8 @@ namespace RAV.Scripts.API.ServerManagers
         public override void OnStopClient()
         {
             StopQueuedProfileRefresh();
+            _profileStatisticsRequestVersion++;
+            EndProfileStatisticsLoadingScope();
             _freeXpRequestVersion++;
             EndFreeXpLoadingScope();
             base.OnStopClient();
@@ -64,6 +69,8 @@ namespace RAV.Scripts.API.ServerManagers
         private void OnDestroy()
         {
             StopQueuedProfileRefresh();
+            _profileStatisticsRequestVersion++;
+            EndProfileStatisticsLoadingScope();
             _freeXpRequestVersion++;
             EndFreeXpLoadingScope();
             if (_in == this)
@@ -349,12 +356,14 @@ namespace RAV.Scripts.API.ServerManagers
         {
             if (ClientMenuTestMode.TryCreateProfileStatistics(out PlayerStatisticsDto localTestStatistics))
             {
+                _in?.EndProfileStatisticsLoadingScope();
                 MainMenu.In?.UpdateProfileStatistics(localTestStatistics);
                 return;
             }
 
             if (ClientMenuTestMode.IsEnabled)
             {
+                _in?.EndProfileStatisticsLoadingScope();
                 ProfileStatisticsPopup.In?.ShowUnavailable("Server statistics are unavailable in offline menu test mode.");
                 return;
             }
@@ -365,8 +374,74 @@ namespace RAV.Scripts.API.ServerManagers
                 return;
             }
 
+            if (_in._profileStatisticsLoadingRequest != null
+                && _in._profileStatisticsLoadingRequest.IsActive)
+            {
+                ProfileStatisticsPopup.In?.ShowLoading();
+                return;
+            }
+
             ProfileStatisticsPopup.In?.ShowLoading();
-            _in.GetProfileStatisticsServerRpc();
+            int requestVersion = _in.BeginProfileStatisticsLoadingScope();
+            try
+            {
+                _in.GetProfileStatisticsServerRpc();
+                _in.WaitForProfileStatisticsTimeoutAsync(requestVersion).Forget();
+            }
+            catch (Exception exception)
+            {
+                _in.EndProfileStatisticsLoadingScope(requestVersion);
+                GameplayRuntimeDiagnostics.Record("profile_statistics_failed", "reason", exception.Message);
+                ProfileStatisticsPopup.In?.ShowError("Unable to load profile statistics.");
+            }
+        }
+
+        private int BeginProfileStatisticsLoadingScope()
+        {
+            if (_profileStatisticsLoadingRequest != null && _profileStatisticsLoadingRequest.IsActive)
+            {
+                return _profileStatisticsRequestVersion;
+            }
+
+            _profileStatisticsRequestVersion++;
+            _profileStatisticsLoadingRequest = StandardLoadingOverlay.BeginRequest();
+            return _profileStatisticsRequestVersion;
+        }
+
+        private void EndProfileStatisticsLoadingScope()
+        {
+            if (_profileStatisticsLoadingRequest == null)
+            {
+                return;
+            }
+
+            _profileStatisticsLoadingRequest.End();
+            _profileStatisticsLoadingRequest = null;
+        }
+
+        private void EndProfileStatisticsLoadingScope(int requestVersion)
+        {
+            if (requestVersion != _profileStatisticsRequestVersion)
+            {
+                return;
+            }
+
+            EndProfileStatisticsLoadingScope();
+        }
+
+        private async UniTask WaitForProfileStatisticsTimeoutAsync(int requestVersion)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(ProfileStatisticsTimeoutSeconds), ignoreTimeScale: true);
+            if (this == null
+                || requestVersion != _profileStatisticsRequestVersion
+                || _profileStatisticsLoadingRequest == null)
+            {
+                return;
+            }
+
+            GameplayRuntimeDiagnostics.Record("profile_statistics_failed", "reason", "timeout");
+            EndProfileStatisticsLoadingScope(requestVersion);
+            MainMenu.In?.ShowProfileStatisticsError("Profile statistics request timed out.");
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -576,6 +651,7 @@ namespace RAV.Scripts.API.ServerManagers
         [TargetRpc]
         private void TargetRpcUpdateProfileStatistics(NetworkConnection target, bool success, string errorMessage, PlayerStatisticsDto statistics)
         {
+            EndProfileStatisticsLoadingScope();
             if (success && statistics != null)
             {
                 MainMenu.In?.UpdateProfileStatistics(statistics);
