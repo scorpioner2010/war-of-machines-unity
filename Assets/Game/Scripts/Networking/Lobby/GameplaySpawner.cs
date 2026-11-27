@@ -296,14 +296,16 @@ namespace RAV.Scripts.Networking.Lobby
             NotifyServerSceneLoaded();
         }
         
-        private void HandleClientLoadEnd(SceneLoadEndEventArgs args)
-        {
-            if (IsServerInitialized)
-            {
-                return;
-            }
+    private void HandleClientLoadEnd(SceneLoadEndEventArgs args)
+    {
+        GameplayPlayerListHud.In?.BeginBattle();
 
-            GameplayMapVisibilityState.Clear();
+        if (IsServerInitialized)
+        {
+            return;
+        }
+
+        GameplayMapVisibilityState.Clear();
 
             byte[] cp = args.QueueData.SceneLoadData.Params.ClientParams;
             int offset = (cp != null && cp.Length >= 4) ? BitConverter.ToInt32(cp, 0) : 0;

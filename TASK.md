@@ -5479,3 +5479,68 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - Limitations: the validation is automated Unity PlayMode coverage against the serialized prefabs and runtime speed resolver; no manual visual driving session was required.
 - Final status: COMPLETED.
 - Completed: 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Analyze stale destroyed-enemy entries after second battle
+- Status: IN_PROGRESS
+- User request: Find the cause of destroyed enemies disappearing visually but remaining in the enemy list when entering the second battle; describe the cause without applying a fix yet.
+- Scope: Trace enemy-list ownership, enemy death/despawn cleanup, battle/session reset, and the first-versus-second-battle lifecycle. Preserve implementation files unless the user explicitly asks for a fix.
+- Acceptance: Identify the exact stale-state owner and lifecycle path that leaves destroyed enemies in the list, explain why the first battle appears correct and the second exposes it, and cite the relevant code locations.
+- Start: 2026-11-28 (Asia/Manila).
+- Next: Search enemy-list and battle lifecycle code, then compare cleanup and reinitialization paths.
+- Discovery: `GameplayPlayerListHud.RefreshFromSpawnedVehiclesInternal` treats every unseen enemy row as a destroyed row and calls `RetainDestroyedVehicleRow` instead of removing it. That method intentionally clears the vehicle/health binding but leaves the UI row in `_rows`, with zero HP and dead state.
+- Discovery: `Clear()` is the only full list reset, reached from HUD disable/destroy, manual initialization, auto-track re-enable, or a `LocalPlayerVehicleChanged(null)` event. There is no explicit battle-start reset owned by the list HUD.
+- Discovery: row identity is built from `characterInit.LoginName` and a retained row with the same player ID is found on the next spawn. The scan then still appends that already-existing row to `_rows`, so the second battle can reuse/duplicate stale row state instead of starting from a clean battle roster.
+- Decision: the reported issue is caused by stale enemy-row retention across the battle lifecycle, not by the destroyed vehicle failing to despawn. No implementation fix is being applied because the user requested diagnosis only.
+- Result: exact cause identified in the enemy HUD retention/reset lifecycle; the screenshot behavior is explained by dead rows intentionally remaining in the active HUD session and being available for reuse when the next battle starts.
+- Validation: read-only inspection of the HUD, vehicle death/despawn, active-vehicle registry, menu/battle transition, prior task history, and HUD documentation completed. No implementation build/test was run because no implementation change was requested.
+- Remaining limitation: the exact live transition path that failed to invoke `Clear()` was not reproduced interactively; the code has no explicit battle-start reset, and stale-row retention plus player-ID reuse is sufficient to explain the second-battle symptom.
+- Status: COMPLETED.
+- Completed: 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Reset enemy list before rebuilding a new battle
+- Status: IN_PROGRESS
+- User request: Fix the stale destroyed-enemy list bug by clearing the player list before constructing the roster for a new battle.
+- Scope: Add an explicit new-battle reset at the player-list lifecycle boundary, prevent retained rows from being appended twice during vehicle replacement, add focused regression coverage, and preserve the prior behavior of showing dead enemies during the current battle.
+- Acceptance: A new local battle vehicle starts with an empty list state; the first scan builds only current-battle rows; destroyed rows may remain during the active battle; repeated player IDs cannot duplicate a row; focused builds/tests pass.
+- Start: 2026-11-28 (Asia/Manila).
+- Next: Inspect existing test patterns and implement the smallest HUD-owned lifecycle reset.
+- Decision: keep destroyed enemy rows visible during the current battle, but make the client gameplay-scene load the explicit new-battle boundary. `GameplaySpawner` orchestrates that lifecycle call while `GameplayPlayerListHud` owns the row reset.
+- Implementation: added `GameplayPlayerListHud.BeginBattle()` and invoke it from `GameplaySpawner.HandleClientLoadEnd` before vehicle spawning. Changed roster construction so a row found by player ID is rebound but not appended again. Added `GameplayPlayerListHudPlayModeTests` for clearing rows and all row indexes before a new battle.
+
+## 2026-11-28 - Preserve the controlled robot in the player list
+- **Status:** IN_PROGRESS
+- **User request:** Find why the locally controlled robot disappears from the player list, then fix the root cause.
+- **Scope:** Trace local-player row creation, refresh/rebuild filtering, vehicle replacement, and list reset behavior; preserve the existing enemy-row lifecycle while ensuring the controlled vehicle remains represented.
+- **Acceptance:** The local controlled robot is included in the first roster build and remains present through refreshes and vehicle replacement; focused regression coverage and builds pass.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Next:** Inspect `GameplayPlayerListHud` local-player handling and every path that removes or skips rows.
+- **Discovery:** `VehicleRoot.OnDestroy` clears `LocalPlayerVehicle`, which emits `LocalPlayerVehicleChanged(null)`. `GameplayPlayerListHud.OnLocalPlayerVehicleChanged` responded by calling `Clear()`, deleting the controlled robot row and every other row immediately at local despawn instead of waiting for the battle boundary.
+- **Decision:** Keep battle reset ownership in `GameplayPlayerListHud.BeginBattle`; treat local vehicle despawn as a dead-row transition, not as a roster reset. Remember the local row by its stable player ID so its vehicle/health binding can be released without losing its final dead presentation.
+- **Implementation:** Added local-player ID tracking during roster scans, replaced `Clear()` on `LocalPlayerVehicleChanged(null)` with `RetainLocalPlayerRow()`, and updated the HUD mechanic documentation. Added `LocalVehicleDespawnKeepsItsDeadRowUntilTheNextBattle` alongside the battle-reset regression.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` built with 0 errors; Unity batch PlayMode `RAV.Tests.PlayMode.GameplayPlayerListHudPlayModeTests` passed 2/2 with `UNITY_EXIT=0`; `git diff --check` passed with only existing line-ending normalization warnings; no Unity process remained running.
+- **Result:** The controlled robot now remains in the ally list as a dead row after its network object despawns and is cleared normally at the next gameplay-scene/battle reset. Existing enemy retention and roster cleanup behavior remain intact.
+- **Remaining limitation:** Automated coverage exercises the HUD lifecycle boundary directly; a manual networked first-battle visual session was not required for this focused fix.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Close prior battle-list reset task
+- **Status:** COMPLETED
+- **Result:** The explicit battle reset and duplicate-row prevention were implemented and validated in the preceding task; this closure records the completed state without rewriting the append-only history.
+- **Validation:** Focused builds and PlayMode coverage passed in the preceding task.
+- **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Simplify controlled-robot list lifecycle
+- **Status:** IN_PROGRESS
+- **User request:** Replace the controlled-robot list fix with a root-cause, non-special-case implementation.
+- **Scope:** Remove redundant local-player ID retention state, let the existing dead-row policy handle local despawn, and preserve explicit battle reset.
+- **Acceptance:** A dead local row survives local despawn during the active battle; the next battle clears the roster; no local-specific row index state remains; focused builds/tests pass.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Next:** Simplify `GameplayPlayerListHud`, update regression coverage/docs, and validate the lifecycle.
+- **Discovery:** The previous fix introduced `_localPlayerId` and a dedicated retention path, but the real root cause was the local vehicle `null` event being treated as a roster reset. The HUD already retains dead ally rows during its normal vehicle scan.
+- **Decision:** Remove the local-player-specific state and let `OnLocalPlayerVehicleChanged` trigger the normal scan for both spawn and despawn. Keep `BeginBattle()` as the only explicit roster reset between battles.
+- **Implementation:** Removed `_localPlayerId`, `RememberLocalPlayerId()`, and `RetainLocalPlayerRow()`. Updated the regression test to seed the row in its normal dead state and updated `docs/codex-game/ui-hud.md` to document the shared policy.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` built with 0 errors. Unity PlayMode `RAV.Tests.PlayMode.GameplayPlayerListHudPlayModeTests` ran the current tests and passed 2/2 with `UNITY_EXIT=0`; `git diff --check` passed with only line-ending normalization warnings; no Unity process remained running.
+- **Result:** Local vehicle despawn no longer has a separate row-retention or roster-reset path. The existing dead-ally scan preserves the controlled robot until `BeginBattle()` clears the roster at the next battle boundary.
+- **Remaining limitation:** Automated coverage exercises the HUD lifecycle directly; a manual networked visual session was not required for this focused lifecycle correction.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).

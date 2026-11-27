@@ -121,6 +121,11 @@ namespace RAV.Scripts.UI.HUD
             LayoutRows();
         }
 
+        public void BeginBattle()
+        {
+            Clear();
+        }
+
         public void SetPlayerHealth(string playerId, float currentHealth, float maxHealth)
         {
             PlayerListRow row = FindRowById(playerId);
@@ -249,11 +254,13 @@ namespace RAV.Scripts.UI.HUD
                 PlayerListRow row = FindRow(vehicleRoot);
                 if (row == null)
                 {
+                    bool isNewRow = false;
                     string playerId = BuildVehiclePlayerId(vehicleRoot);
                     row = FindRowById(playerId);
                     if (row == null)
                     {
                         row = CreateRow(playerId, relation, vehicleRoot);
+                        isNewRow = row != null;
                     }
 
                     if (row == null)
@@ -261,8 +268,11 @@ namespace RAV.Scripts.UI.HUD
                         continue;
                     }
 
-                    _rows.Add(row);
-                    IndexRow(row);
+                    if (isNewRow)
+                    {
+                        _rows.Add(row);
+                        IndexRow(row);
+                    }
                 }
 
                 row.Seen = true;
@@ -800,12 +810,6 @@ namespace RAV.Scripts.UI.HUD
 
             if (!autoTrackSpawnedVehicles)
             {
-                return;
-            }
-
-            if (vehicleRoot == null)
-            {
-                Clear();
                 return;
             }
 
