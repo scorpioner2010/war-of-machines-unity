@@ -2901,13 +2901,13 @@ MonoBehaviour:
   turnWhileMovingSpeed: 0.4
   leftWheels:
   - transform: {fileID: 7958549963707566845}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 9124648087505369950}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 934809687439535334}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 5113666235795913845}
-    rotationSpeed: 900
+    rotationSpeed: -900
   rightWheels:
   - transform: {fileID: 6332839073100036775}
     rotationSpeed: -900

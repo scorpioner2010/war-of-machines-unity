@@ -106,23 +106,29 @@ namespace RAV.Scripts.Gameplay.Robots.t2
             out float leftSpeed,
             out float rightSpeed)
         {
+            float forwardBackwardMagnitude = Mathf.Abs(forwardBackwardSpeed);
+            float turnInPlaceMagnitude = Mathf.Abs(turnInPlaceSpeed);
+            float turnWhileMovingMagnitude = Mathf.Abs(turnWhileMovingSpeed);
+
             leftSpeed = 0f;
             rightSpeed = 0f;
 
             if (Mathf.Abs(forwardInput) > InputThreshold && Mathf.Abs(turnInput) < InputThreshold)
             {
-                leftSpeed = forwardInput * forwardBackwardSpeed;
-                rightSpeed = forwardInput * forwardBackwardSpeed;
+                leftSpeed = forwardInput * forwardBackwardMagnitude;
+                rightSpeed = forwardInput * forwardBackwardMagnitude;
             }
             else if (Mathf.Abs(forwardInput) < InputThreshold && Mathf.Abs(turnInput) > InputThreshold)
             {
-                leftSpeed = turnInput * turnInPlaceSpeed;
-                rightSpeed = -turnInput * turnInPlaceSpeed;
+                leftSpeed = turnInput * turnInPlaceMagnitude;
+                rightSpeed = -turnInput * turnInPlaceMagnitude;
             }
             else if (Mathf.Abs(forwardInput) > InputThreshold && Mathf.Abs(turnInput) > InputThreshold)
             {
-                leftSpeed = (forwardInput + turnInput) * turnWhileMovingSpeed;
-                rightSpeed = (forwardInput - turnInput) * turnWhileMovingSpeed;
+                float boundedTurnInput = Mathf.Sign(turnInput)
+                    * Mathf.Min(Mathf.Abs(turnInput), Mathf.Abs(forwardInput));
+                leftSpeed = (forwardInput + boundedTurnInput) * turnWhileMovingMagnitude;
+                rightSpeed = (forwardInput - boundedTurnInput) * turnWhileMovingMagnitude;
                 EnsureMovingInnerTrackSpeed(forwardInput, ref leftSpeed, ref rightSpeed);
             }
         }

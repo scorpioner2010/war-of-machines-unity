@@ -1226,17 +1226,17 @@ MonoBehaviour:
   turnWhileMovingSpeed: 0.4
   leftWheels:
   - transform: {fileID: 4063346932147833081}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 1544214001174525515}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 4931892493448761946}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 4158032463484515478}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 75572040973657170}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 3156087656804225970}
-    rotationSpeed: 900
+    rotationSpeed: -900
   rightWheels:
   - transform: {fileID: 5988076873653790141}
     rotationSpeed: -900

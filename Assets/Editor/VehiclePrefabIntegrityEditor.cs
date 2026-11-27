@@ -565,8 +565,6 @@ namespace RAV.Scripts.Editor
             TrackedVehicleAnimator.Wheel[] current = left ? animator.leftWheels : animator.rightWheels;
             List<TrackedVehicleAnimator.Wheel> expected = new List<TrackedVehicleAnimator.Wheel>(expectedTransforms.Count);
             HashSet<Transform> assigned = new HashSet<Transform>();
-            float defaultSpeed = left ? 900f : -900f;
-
             if (current != null)
             {
                 for (int i = 0; i < current.Length; i++)
@@ -577,11 +575,13 @@ namespace RAV.Scripts.Editor
                         continue;
                     }
 
-                    float magnitude = Mathf.Abs(wheel.rotationSpeed);
+                    float authoredSpeed = wheel.rotationSpeed;
                     expected.Add(new TrackedVehicleAnimator.Wheel
                     {
                         transform = wheel.transform,
-                        rotationSpeed = magnitude > 0.001f ? Mathf.Sign(defaultSpeed) * magnitude : defaultSpeed
+                        rotationSpeed = Mathf.Abs(authoredSpeed) > 0.001f
+                            ? authoredSpeed
+                            : GetDefaultWheelRotationSpeed(animator, wheel.transform)
                     });
                 }
             }
@@ -594,7 +594,7 @@ namespace RAV.Scripts.Editor
                     expected.Add(new TrackedVehicleAnimator.Wheel
                     {
                         transform = transform,
-                        rotationSpeed = defaultSpeed
+                        rotationSpeed = GetDefaultWheelRotationSpeed(animator, transform)
                     });
                 }
             }
@@ -624,6 +624,58 @@ namespace RAV.Scripts.Editor
 
             report.AddAppliedRepair(description);
             return true;
+        }
+
+        private static float GetDefaultWheelRotationSpeed(
+            TrackedVehicleAnimator animator,
+            Transform wheelTransform)
+        {
+            float referenceRollSign = GetReferencePhysicalRollSign(animator);
+            if (Mathf.Abs(referenceRollSign) <= 0.001f)
+            {
+                return -900f;
+            }
+
+            Vector3 wheelAxis = wheelTransform.TransformDirection(Vector3.forward);
+            float wheelGeometrySign = Mathf.Sign(Vector3.Dot(
+                Vector3.Cross(wheelAxis, animator.transform.up),
+                animator.transform.forward));
+            if (Mathf.Abs(wheelGeometrySign) <= 0.001f)
+            {
+                return -900f;
+            }
+
+            return referenceRollSign * wheelGeometrySign > 0f ? 900f : -900f;
+        }
+
+        private static float GetReferencePhysicalRollSign(TrackedVehicleAnimator animator)
+        {
+            if (animator.rightWheels == null)
+            {
+                return 0f;
+            }
+
+            for (int i = 0; i < animator.rightWheels.Length; i++)
+            {
+                TrackedVehicleAnimator.Wheel wheel = animator.rightWheels[i];
+                if (wheel == null || wheel.transform == null || Mathf.Abs(wheel.rotationSpeed) <= 0.001f)
+                {
+                    continue;
+                }
+
+                Vector3 wheelAxis = wheel.transform.TransformDirection(Vector3.forward);
+                float wheelGeometrySign = Mathf.Sign(Vector3.Dot(
+                    Vector3.Cross(wheelAxis, animator.transform.up),
+                    animator.transform.forward));
+                if (Mathf.Abs(wheelGeometrySign) <= 0.001f)
+                {
+                    continue;
+                }
+
+                return Mathf.Sign(wheel.rotationSpeed) * wheelGeometrySign;
+            }
+
+            return 0f;
         }
 
         private static bool WheelArrayMatches(

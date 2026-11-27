@@ -5396,3 +5396,86 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Result:** `ClientVehicleTestMode` now bypasses countdown locks at the gate owner, including stale locks and new client/server lock attempts. Movement, firing, reload, and server shot validation no longer reject test-mode input; production countdown locks remain active.
 - **Status:** COMPLETED.
 - **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Reduce tracked-robot texture scrolling speed
+- **Status:** IN_PROGRESS
+- **User request:** Explain how to reduce the scrolling/rotation speed of the track texture on tracked robots.
+- **Scope:** Locate the material/UV scrolling owner used by tracked robots, identify the speed parameter, and provide the exact adjustment path; make an implementation change only if the request clearly requires it.
+- **Acceptance:** The responsible speed value and its units/relationship to movement are identified, with a safe project-specific edit path or concise Unity Inspector instructions.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Next:** Search the project for track, tread, texture offset, and UV-scroll logic.
+- **Discovery:** `Assets/Game/Scripts/Gameplay/Robots/t2/TrackedVehicleAnimator.cs:130-146` updates each track material's `mainTextureOffset.y` from the resolved left/right track speed every frame. The same resolved speed also drives movement logic, so lowering `forwardBackwardSpeed`, `turnInPlaceSpeed`, or `turnWhileMovingSpeed` would incorrectly affect vehicle animation behavior beyond the texture.
+- **Discovery:** The animator is configured on four Iron Alliance prefabs: `IA_L1_Starter`, `IA_L2_Scout`, `IA_L2_Guardian`, and `IA_L2_Colossus`; their current movement speed values are serialized in each prefab, but no separate texture-scroll multiplier exists.
+- **Decision:** Because the user asked how to adjust the value rather than explicitly requesting a repository edit, do not modify implementation or prefab files. Recommend multiplying only the offset delta by a factor such as `0.25` (or exposing that factor as a serialized Inspector field) so wheel rotation and robot movement remain unchanged.
+- **Result:** Exact project-specific adjustment path identified; no implementation files changed by this task.
+- **Validation:** Read-only source and prefab inspection completed. No build/test run was needed because no implementation change was made.
+- **Remaining limitation:** The recommended multiplier has not been applied; it requires an explicit request to edit the project.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Preserve wheel rotation speed signs
+- **Status:** IN_PROGRESS
+- **User request:** Fix the tracked-robot wheel bug where negative `rotationSpeed` values are overwritten or normalized, so a configured `-900` remains negative and a configured positive value remains positive.
+- **Scope:** Inspect the wheel animation owner, prefab serialization, editor validation/repair tools, and tests; remove only the unintended sign overwrite while preserving intentional left/right wheel direction.
+- **Acceptance:** Inspector/prefab values keep their authored sign; wheel rotation uses that sign consistently; no production wheel or track behavior is changed unintentionally; focused validation passes.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Next:** Inspect the wheel animator and all code that writes or repairs `rotationSpeed`.
+- **Discovery:** `Assets/Editor/VehiclePrefabIntegrityEditor.cs:580-584` was the overwrite source. It computed `Mathf.Abs(wheel.rotationSpeed)` and reapplied `Mathf.Sign(defaultSpeed)`, forcing every left wheel positive and every right wheel negative whenever the repair pass ran.
+- **Implementation:** Changed the repair to preserve the authored signed value when its magnitude is non-zero; the side-specific default is now used only for zero-valued wheel entries. Updated `docs/codex-game/robot-control.md` to document the preserved-sign contract.
+- **Next:** Build the runtime/editor assemblies, run focused whitespace validation, and inspect the final diff for unintended prefab changes.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` all built successfully with 0 errors; existing System.Net.Http and TMP deprecation warnings remain unrelated. `git diff --check` passed with only line-ending normalization warnings. Static scan confirms the side-sign rewrite `Mathf.Sign(defaultSpeed) * magnitude` is gone and the existing IA prefabs retain their authored `+900`/`-900` values.
+- **Unrelated working-tree changes:** `Assets/Game/Scenes/Client.unity` and the current `IA_L1_Starter.prefab` edits were present/changed outside the focused code patch and were left untouched.
+- **Runtime limitation:** Unity Editor is open for this project, so no parallel batch import or Play Mode run was started. The fix is validated by source inspection and successful runtime/editor/test-assembly compilation; the user should reselect or re-enter the wheel value in the open Inspector after recompilation.
+- **Result:** Editor auto-repair no longer removes an authored minus sign from `TrackedVehicleAnimator.Wheel.rotationSpeed`; non-zero signed values now survive repair, while zero entries still receive the side default.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Analyze tracked-wheel rotation directions
+- **Status:** IN_PROGRESS
+- **User request:** Fully explain when left and right tracked-robot wheels should rotate forward or backward for straight motion, reverse, turning, and combined movement.
+- **Scope:** Trace the input convention, track/wheel speed equations, wheel transform rotation axis, authored left/right wheel signs, and visual direction assumptions. Produce a complete direction table without changing implementation files.
+- **Acceptance:** Every relevant movement combination is described with left/right wheel signs and physical vehicle response, including pivot turns, forward/reverse steering, and neutral/stop behavior; code-derived facts are separated from visual-orientation assumptions.
+- **Start:** 2026-11-28 (Asia/Manila).
+- **Next:** Inspect movement input production, `TrackedVehicleAnimator`, wheel hierarchy orientation, and current prefab signs.
+- **Discovery:** Input mapping is `A=-1`, `D=+1`, `W=+1`, `S=-1` in `VehicleInputController`; `turnInput` equals `movement.x` while moving forward and `-movement.x` while reversing. `TrackedVehicleAnimator` resolves wheel commands from the original forward input, while track UV texture commands use the negated forward input.
+- **Derived wheel behavior:** With positive speed magnitudes and canonical wheel signs, straight forward is `L+ / R+`, straight reverse is `L- / R-`, pivot-left is `L- / R+`, pivot-right is `L+ / R-`; forward/reverse combined turns keep both tracks in the travel direction but make the outer track faster. The moving-inner-track rule prevents the inner track from reaching zero and keeps it at least one-third of the outer magnitude.
+- **Important current state:** The working-tree `IA_L1_Starter.prefab` currently has a negative `forwardBackwardSpeed` while the other IA prefabs use positive values. That flips straight wheel/track animation signs for this prefab; the sign should represent movement input, not be stored in the speed magnitude. No fix was applied because the user requested analysis only.
+- **Result:** Complete code-derived direction table is ready for the user; no implementation, prefab, or documentation changes were made for this analysis task.
+- **Validation:** Source, movement input, animator formulas, wheel signs, and IA prefab values were inspected. No build/test was run because no files were changed.
+- **Status:** COMPLETED
+- **Completed:** 2026-11-28 (Asia/Manila).
+
+## 2026-11-28 - Normalize tracked-robot wheel sides and movement logic
+- Status: IN_PROGRESS
+- User request: Inspect all four tracked robots, determine left/right wheel groups relative to the tank center and front, implement the agreed tracked movement table, and configure all four robots consistently.
+- Scope: Verify wheel hierarchy/orientation and serialized signs for IA_L1_Starter, IA_L2_Scout, IA_L2_Guardian, and IA_L2_Colossus; fix the focused tracked-wheel owner and only the required prefab configuration.
+- Acceptance: Every robot uses left/right groups consistently; forward/reverse/pivot/combined turns follow the agreed table; authored wheel signs are not overwritten; focused builds/tests and static prefab validation pass.
+- Start: 2026-11-28 (Asia/Manila).
+- Next: Inspect repository state, wheel hierarchy, mesh orientation, and all four animator configurations before editing.
+- Discovery: IA_L1_Starter uses LeftWhels1 at the negative combined local X side and RightWhels1 at the positive combined local X side; IA_L2_Scout uses TrackLeft at negative X and TrackRight at positive X; IA_L2_Guardian resolves the same negative/positive combined X sides through TrackLeft/TrackRight and child wheel groups; IA_L2_Colossus uses LeftWhels1 at negative X and RightWhels1 at positive X.
+- Discovery: All four animator arrays already point to the correct side groups and use left +900/right -900 mirrored wheel signs. IA_L1_Starter alone has a negative serialized forwardBackwardSpeed, which reverses straight wheel/track animation.
+- Decision: Keep side ownership in TrackedVehicleAnimator and the existing prefab hierarchy; use absolute values for serialized speed magnitudes at runtime, restore IA_L1_Starter to the common positive 1.4 tuning, and preserve signed per-wheel rotationSpeed values.
+- Next: Patch the focused animator, L1 prefab tuning, and tracked-robot mechanic documentation, then validate all four prefab arrays and builds.
+- Implementation: `TrackedVehicleAnimator.ResolveTrackSpeeds` now treats all serialized movement-speed fields as magnitudes, bounds combined-turn input so a moving turn cannot reverse the inner side, and retains the agreed pivot signs. `IA_L1_Starter.forwardBackwardSpeed` is restored to `1.4`; all four IA prefabs now use positive movement magnitudes and left `+900`/right `-900` wheel signs.
+- Documentation: Updated `docs/codex-game/robot-control.md` with the verified side ownership, hierarchy rule, and movement command contract.
+- Next: Build runtime/editor/test assemblies, run diff/static checks, then close the journal with exact validation results.
+- Validation: `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` all build with 0 errors; existing System.Net.Http/TMP warnings remain unrelated. Static validation confirms positive movement magnitudes and `+900` left/`-900` right wheel counts of 4/6/4/4 per side for the four IA prefabs. `git diff --check` passes with only line-ending normalization warnings.
+- Runtime limitation: Unity Editor is open, so no parallel batch Play Mode run was started. Runtime ownership and formulas were verified by source inspection, compilation, and prefab hierarchy/configuration checks.
+- Result: All four tracked robots now share the agreed left/right movement contract; IA_L1 no longer has a negative straight-animation magnitude; signed wheel rotation values remain authored and preserved.
+- Status: COMPLETED
+- Completed: 2026-11-28 (Asia/Manila).
+## 2026-11-28 - Fix left tracked-wheel runtime direction
+- Status: IN_PROGRESS
+- User request: Right wheels are correct; left wheels are wrong. Identify the root cause, fix the left-wheel behavior without regressing the right side, and test all movement directions for all four tracked robots.
+- Scope: Reproduce the actual runtime wheel command and mesh-axis behavior, compare it with the agreed movement table, fix the true owner or prefab sign mismatch, and run focused builds plus Unity runtime checks.
+- Acceptance: Forward, reverse, left, right, and pivot turns match the table for all four robots; the right side remains correct; runtime evidence is recorded; do not close the task before the checks pass.
+- Start: 2026-11-28 (Asia/Manila).
+- Discovery: the right-side signs form a consistent physical-roll reference, but the left-side signs were not derived from each wheel parent's local axis. `IA_L1_Starter`, `IA_L2_Scout`, and `IA_L2_Colossus` had left wheel parents aligned like the right side while using the opposite sign; `IA_L2_Guardian` has left wheel parents rotated to `-90` degrees around Y and therefore keeps its `+900` left sign.
+- Decision: keep authored non-zero signs intact during repair, but derive defaults from the wheel axis and configured right-side reference. Add a prefab-level regression test that checks actual physical roll parity for every IA tracked prefab.
+- Next: Run the focused Unity test, then verify all movement command combinations and compile/static checks.
+- Implementation: corrected the authored left-wheel rotation signs for `IA_L1_Starter`, `IA_L2_Scout`, and `IA_L2_Colossus` to match their actual wheel-parent axes; preserved `IA_L2_Guardian`'s `+900` left sign because its left wheel axis is mirrored. Updated editor repair logic to derive missing/zero signs from wheel geometry and the right-side physical-roll reference without overwriting non-zero authored signs.
+- Regression coverage: added `TrackedVehicleAnimatorPlayModeTests` covering physical left/right wheel-roll parity and forward, reverse, pivot-left, pivot-right, and combined-turn command signs for all four IA tracked prefabs.
+- Validation: Unity batch PlayMode test passed `2/2`; `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` built with `0 Error(s)`; `git diff --check` passed. Static prefab verification confirms the expected left/right signs for all four robots and no Unity process remained running after the test.
+- Limitations: the validation is automated Unity PlayMode coverage against the serialized prefabs and runtime speed resolver; no manual visual driving session was required.
+- Final status: COMPLETED.
+- Completed: 2026-11-28 (Asia/Manila).

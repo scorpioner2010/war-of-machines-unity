@@ -2431,7 +2431,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 5
+  <PrefabId>k__BackingField: 1
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 3525213289470481327
   <SceneId>k__BackingField: 0
@@ -2928,17 +2928,17 @@ MonoBehaviour:
   - {fileID: 8055744890484631355}
   - {fileID: 1300806574265684783}
   forwardBackwardSpeed: 1.4
-  turnInPlaceSpeed: 0.5
-  turnWhileMovingSpeed: 0.4
+  turnInPlaceSpeed: 0.4
+  turnWhileMovingSpeed: 0.3
   leftWheels:
   - transform: {fileID: 3060763187875525021}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 368580435567994018}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 6821012429809865724}
-    rotationSpeed: 900
+    rotationSpeed: -900
   - transform: {fileID: 137674330097645004}
-    rotationSpeed: 900
+    rotationSpeed: -900
   rightWheels:
   - transform: {fileID: 4540694746441800716}
     rotationSpeed: -900
