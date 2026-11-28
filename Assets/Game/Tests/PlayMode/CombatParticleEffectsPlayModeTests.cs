@@ -121,7 +121,7 @@ namespace RAV.Tests.PlayMode
         public void RobotDestructionFireLifetimeIsThirtySeconds()
         {
             GameObject robot = LoadPrefab(
-                "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/IA_L1_Starter.prefab");
+                "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/TZ-18.prefab");
             Component controller = robot.GetComponent("RobotDestructionParticleController");
 
             Assert.IsNotNull(controller);
@@ -162,14 +162,14 @@ namespace RAV.Tests.PlayMode
         {
             string[] robotPaths =
             {
-                "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/IA_L1_Starter.prefab",
-                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Colossus/IA_L2_Colossus.prefab",
-                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Guardian/IA_L2_Guardian.prefab",
-                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Scout/IA_L2_Scout.prefab",
-                "Assets/Game/Content/Robots/NovaSyndicate/NV_L1_Starter/NV_L1_Starter.prefab",
-                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Colossus/NV_L2_Colossus.prefab",
-                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Guardian/NV_L2_Guardian.prefab",
-                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Scout/NV_L2_Scout.prefab"
+                "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/TZ-18.prefab",
+                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Colossus/YUG Titan.prefab",
+                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Guardian/TZ-42.prefab",
+                "Assets/Game/Content/Robots/IronAlliance/IA_L2_Scout/TZ-23 101F.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L1_Starter/N-16 Whitecap.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Colossus/Cormorant 8C.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Guardian/ARGUS-7B.prefab",
+                "Assets/Game/Content/Robots/NovaSyndicate/NV_L2_Scout/N-17.prefab"
             };
 
             for (int i = 0; i < robotPaths.Length; i++)

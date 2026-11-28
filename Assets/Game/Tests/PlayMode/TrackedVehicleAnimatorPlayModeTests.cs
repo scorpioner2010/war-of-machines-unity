@@ -17,10 +17,10 @@ namespace RAV.Tests.PlayMode
 
         private static readonly string[] IronAlliancePrefabPaths =
         {
-            "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/IA_L1_Starter.prefab",
-            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Scout/IA_L2_Scout.prefab",
-            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Guardian/IA_L2_Guardian.prefab",
-            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Colossus/IA_L2_Colossus.prefab"
+            "Assets/Game/Content/Robots/IronAlliance/IA_L1_Starter/TZ-18.prefab",
+            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Scout/TZ-23 101F.prefab",
+            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Guardian/TZ-42.prefab",
+            "Assets/Game/Content/Robots/IronAlliance/IA_L2_Colossus/YUG Titan.prefab"
         };
 
         [Test]

@@ -933,7 +933,7 @@ GameObject:
   - component: {fileID: 2032205363470895643}
   - component: {fileID: -9001000000000000008}
   m_Layer: 0
-  m_Name: NV_L2_Scout
+  m_Name: N-17
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1000,7 +1000,7 @@ MonoBehaviour:
   _teleportThreshold: 1
   <PrefabId>k__BackingField: 8
   <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 12598642678317689236
+  <AssetPathHash>k__BackingField: 16223049987079967410
   <SceneId>k__BackingField: 0
   SerializedTransformProperties:
     Position: {x: 0, y: 0, z: 0}

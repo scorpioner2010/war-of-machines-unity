@@ -2339,7 +2339,7 @@ GameObject:
   - component: {fileID: 4242374831339781522}
   - component: {fileID: -9001000000000000002}
   m_Layer: 0
-  m_Name: IA_L2_Colossus
+  m_Name: YUG Titan
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2406,7 +2406,7 @@ MonoBehaviour:
   _teleportThreshold: 1
   <PrefabId>k__BackingField: 0
   <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 7424952671496206088
+  <AssetPathHash>k__BackingField: 6291892297073497446
   <SceneId>k__BackingField: 0
   SerializedTransformProperties:
     Position: {x: 0, y: 0, z: 0}

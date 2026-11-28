@@ -5650,3 +5650,86 @@ The persistent task journal workflow is installed. Future tasks must start with 
 - **Follow-up discovery:** The environment prefabs used by `Map` keep their physics collider on the same object as the visible renderer; their optional visual `MeshCollider` is disabled intentionally for impact-surface lookup. The loaded diagnostics show `scene=Map offset=0`, so the concurrent-scene offset path is not the cause of this reproduced case, although moving static map roots for a non-zero offset remains a separate risk to validate independently.
 - **Change:** Removed the scene-added hidden `Cube` and its enabled `BoxCollider` from `Assets/Game/Scenes/Map.unity`. Added `MapCollisionIntegrityPlayModeTests` to reject future direct solid map colliders without enabled visible geometry.
 - **Validation so far:** Static scene scan finds no direct active solid collider other than the trigger; `dotnet build RAV.PlayMode.Tests.csproj --no-restore` passes with 0 warnings and 0 errors. Unity runtime movement/bot-route validation is still pending because the project Editor is currently open.
+
+## 2026-11-28 — Visualize the current robot progression tree — COMPLETED
+- **User request:** Analyze the current robot research tree and produce a visual representation showing which robot unlocks which, including concept/ghost robots, so the user can design a revised progression later.
+- **Scope:** Read the authoritative progression data and presentation layout; create a readable current-state diagram only. Do not change game data, database schema, migrations, robot stats, or runtime logic.
+- **Acceptance:** The artifact lists all progression nodes with their tiers/status and depicts every current prerequisite edge, clearly distinguishing playable robots from ghost/concept entries. Verify node and edge counts against source data and save an accessible preview/artifact.
+- **Start:** 2026-11-28 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Result:** Captured the current graph from the read-only staging API endpoint `GET /vehicles/graph` and cross-checked it against Unity's graph presentation and API seed data. The inline diagram in the task response shows all current unlock paths, costs, tiers, and playable/concept status. No database, catalog, migration, or runtime files were changed.
+- **Validation:** 21 nodes and 19 unique edges; 8 playable (`isVisible=true`) and 13 concept/unavailable (`isVisible=false`). Iron Alliance: 10 nodes (4 playable, 6 concepts); Nova Syndicate: 11 (4 playable, 7 concepts). There are two level-1 roots, one per faction; every node is reachable and all edge endpoints resolve.
+- **Limitation:** This records the currently served staging progression. The requested redesign and database migration have not started.
+- **Completed:** 2026-11-28 (Asia/Manila).
+## 2026-11-28 — Synchronize robot identities across API, staging database, and Unity — IN_PROGRESS
+- **User request:** Apply 21 selected technical robot designations to the existing 21 API/database robots, omit one name by judgment, align Unity names/files safely, keep Unity vehicle association data-driven/generic so model identity, stats, and tier mapping remain correct. Use a professional, reference-safe implementation.
+- **Scope:** Preserve stable vehicle Codes/IDs, stats, player ownership/research records, and Unity asset GUIDs/references. Apply the approved research layout to API seed and staging database; rename Unity presentation assets only after tracing GUID, Resources/Addressables, serialization, prefab, and file-path use. No production, commit, or push.
+- **Acceptance:** Exactly 21 unique catalog names, 21 unchanged vehicle identities/stats, approved 17-edge tree, matching API seed/staging rows, Unity display/name mappings sourced by stable vehicle code, safely renamed selected assets if not path-dependent, API and Unity compile/import validation, focused API checks, `git diff --check` in both repositories.
+- **Start:** 2026-11-28 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Existing state:** Unity working tree already has user changes to TASK.md and scene/test work; preserve them. API working tree contains prior task journal change and untracked generated `deploy/staging/api/RavApi/obj/`; do not modify or include generated artifacts.
+- **Owner clarification:** omit `N-19 Brimstone` (the non-existent extra concept); use the remaining 21 names for the existing catalog. Keep API vehicle codes and Unity registry keys as stable generic identity. The API remains the authority for level, stats, price, visibility, and display name; do not hard-code these per model in Unity. Apply the approved 21-node tree with the speculative node removed.
+- **Status:** IN_PROGRESS. No Unity implementation or asset rename has been performed yet.
+
+## 2026-11-28 — Vehicle catalog rename continuation — COMPLETED
+- Renamed the 8 existing playable prefab asset files and their root object names through Unity AssetDatabase/PrefabUtility. Stable AssetDatabase GUIDs were verified unchanged, and all 8 RobotRegistry code-to-prefab lookups still resolve.
+- Updated the 8 prefab instance names in `Vehicles.unity`, explicit prefab paths in the relevant Editor/PlayMode test sources, and the current robot-control asset reference. Kept code folders, registry keys, FishNet prefab identities, and API-driven stats/levels unchanged.
+- The 13 hidden concept robots have no playable prefab files; they remain represented by stable codes in the registry and receive their updated names/tree from API data.
+- Unity 6000.3.13f1 batch import/compilation passed with exit code 0 and no compiler errors. No gameplay/PlayMode suite or client rebuild was run.
+- Other existing user changes and unrelated in-progress scene work remain untouched.
+## 2026-11-28 — Analyze overlapping progression-tree arrows — IN_PROGRESS
+- **User request:** Перевірити скрін дерева роботів, визначити причину перетинання стрілок і сказати, чи можна побудувати дерево чітко, без неоднозначності та багів.
+- **Scope:** Оглянути прикріплений скрін, знайти код/дані побудови дерева, відокремити проблему даних від проблеми layout/рендерингу; без змін implementation-файлів до підтвердження причини.
+- **Acceptance criteria:** Підтверджена причина перетинів; описаний реалістичний спосіб виправлення, який зберігає всі залежності; зафіксовані обмеження і наступний крок.
+- **Status:** IN_PROGRESS
+- **Inspection:** The screenshot shows a single Nova faction tree with long green orthogonal routes overlapping in the gaps between rows and same-row links running on the node row.
+- **Finding:** `DevelopmentTree` groups nodes only by `node.level`, sorts each row by `node.code`, and relies on a fixed `GridLayoutGroup`; it does not order siblings from graph topology or reserve space for edges.
+- **Finding:** `TreeArrowRouteBuilder` uses one midpoint `channelY` for every edge between the same two rows. `ArrowDrawer` draws every edge independently, without segment/node collision checks, lane allocation, or crossing detection. This makes shared horizontal spans and crossings deterministic for the current graph.
+- **Data check:** The API contract correctly returns `fromId` as predecessor and `toId` as successor. The current Nova graph intentionally contains both same-level links and level-skipping links, so a level-only visual layout cannot represent it clearly.
+- **Decision:** Do not change research data to hide the visual defect. The fix belongs in a focused graph layout/route-planning owner: topology-aware sibling ordering, dedicated non-overlapping edge lanes, obstacle avoidance around node rectangles, and regression tests for crossings/overlaps.
+- **Validation:** Read the attached screenshot, Unity tree scripts/prefabs/settings, current API graph contract, and the reviewed Nova research edges. No implementation files, scenes, prefabs, database data, or API files were changed.
+- **Result:** The issue is fully fixable without changing who inherits from whom. A simple `channelY` offset is not sufficient for a no-bug guarantee; the planner must detect/reserve routes and test the actual graph.
+- **Remaining limitation:** The proposed layout was not implemented or runtime-tested because the request asked for analysis/feasibility, not an implementation change.
+- **Completed:** 2026-11-28 (Asia/Manila).
+- **Status:** COMPLETED
+
+## 2026-11-28 — Implement non-overlapping progression-tree layout — IN_PROGRESS
+- **User request:** Архітектурно виправити дерево досліджень роботів, щоб стрілки не перетиналися і залежності читалися однозначно.
+- **Scope:** Змінити лише Unity presentation/layout path дерева; зберегти API graph, vehicle IDs, research edges, current robot renames, scenes, prefabs, and unrelated working-tree changes.
+- **Acceptance criteria:** Graph-aware node ordering; deterministic routes that avoid node cards and previously routed arrows for the current faction graphs; focused edit-mode regression coverage; Unity/C# compilation and diff validation.
+- **Ownership decision:** Keep `DevelopmentTree` as orchestration, add a focused graph ordering owner and a focused route-planning owner, and keep `ArrowDrawer` responsible only for rendering planned routes.
+- **Status:** IN_PROGRESS
+- **Implementation:** Added `TreeGraphNodeOrderer` for topology-aware per-level ordering and `TreeArrowRoutePlanner` for deterministic orthogonal routing with stable ports, node obstacles, route spacing, and fallback paths. `DevelopmentTree` now supplies graph edges to ordering, while `ArrowDrawer` renders planner output only.
+- **Regression coverage:** Added edit-mode checks for graph ordering and a current-style graph asserting routes exist, avoid cards, and do not intersect each other.
+- **Documentation:** Updated `docs/codex-game/menus-settings-progression.md` with ownership boundaries and the reason the legacy single-channel builder is not used for runtime drawing.
+- **Validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` build successfully with 0 errors; `git diff --check` reports no whitespace errors.
+- **Runtime limitation:** Unity batch tests were not started because the same project is open in the Unity Editor; running a second Unity process could corrupt or lock `Library`. The focused tests are ready to run after closing the Editor.
+- **Result:** COMPLETED. The fix is presentation-only and preserves API graph semantics, vehicle IDs, research edges, and existing unrelated working-tree changes.
+- **Completed:** 2026-11-28 (Asia/Manila).
+- **Status:** COMPLETED
+
+## 2026-11-28 � Rebuild vertical progression-tree test scene and routing � IN_PROGRESS
+- **User request:** Replace the previous unsatisfactory arrow layout with a locally reproducible test scene for one server progression branch, where vertical branches grow from bottom to top and every dependency arrow is visually unambiguous.
+- **Scope:** Create an isolated Unity test scene containing only the progression tree, feed it a local copy of one server graph response, rebuild layout/routing for bottom-to-top branches, and iterate algorithmically until automated crossing checks pass and the scene is suitable for visual inspection. Preserve API graph semantics and unrelated working-tree changes.
+- **Acceptance criteria:** A dedicated scene initializes itself on load; local fixture data matches a real faction graph; node levels increase upward; edges do not cross nodes or one another; tests fail when geometry is invalid and pass for the fixture; runtime and compilation validation are recorded.
+- **Architecture:** Keep the test scene as orchestration, use focused fixture/layout/route-validation owners, and keep rendering separate from graph/layout decisions.
+- **Start:** 2026-11-28 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Discovery:** The Nova server graph is a DAG, not a simple level-row tree: server `level` repeats along chains (`nv_l2_scout -> nv_l2_guardian -> nv_l2_colossus`) and `nv_l4_colossus_eclipse` has two predecessors. Grouping by server level therefore forces real vertical dependencies into horizontal links and makes the old route planner solve the wrong geometry.
+- **Decision:** Visual rank will be graph depth from the root, independent of the displayed server level. Nodes will be ordered per rank by iterative parent/child barycenters; arrows will leave the lower card upward, use a dedicated lane in the exact inter-rank gap, and enter the upper card from below.
+- **Test strategy:** Build an isolated scene from a local copy of the Nova graph fixture, render the same card/arrow prefabs, run geometry validation at initialization, and only then wire the layout into `DevelopmentTree`.
+- **Implementation:** Added `TreeGraphLayoutPlanner` for bottom-to-top graph-depth placement, `TreeArrowRoutePlanner` for dedicated inter-rank orthogonal lanes, `TreeArrowRouteValidator` for node/route intersection checks, and `TreeArrowRouteRenderer` for presentation-only drawing. `DevelopmentTree` now uses the same graph-depth layout in the client tree.
+- **Fixture and scene:** Added `TreeGraphTestFixture` with the 11 Nova nodes and 11 server edges copied from the API migration, plus `Assets/Game/Scenes/ProgressionTreeTest.unity`. `TreeGraphTestScene` builds the local graph on `Start`, validates all routes, and renders only after validation succeeds.
+- **Regression coverage:** Added tests for graph-depth ordering, the complete Nova route set, and scene initialization/prefab wiring. Unity EditMode tests passed: `PlansServerNovaGraphWithoutRouteIntersections`, `OrdersNovaSnapshotByGraphDepthInsteadOfServerLevel`, and `NovaTestSceneInitializesAndValidatesAllRoutes`; scene log reports `11 routes, bottom-to-top graph depth`.
+- **Build validation:** `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`, and `RAV.PlayMode.Tests.csproj` build with 0 errors; `git diff --check` reports no whitespace errors. Existing dependency/obsolete API warnings remain unchanged.
+- **Visual inspection note:** The scene itself initializes and passes deterministic geometry validation. Direct automated screenshot inspection was blocked by Unity's recovery-backups modal during a GUI launch, so no visual screenshot is claimed as evidence; the isolated scene is ready to open manually at `Assets/Game/Scenes/ProgressionTreeTest.unity`.
+- **Result:** COMPLETED. The production path now lays the progression graph bottom-to-top by topology instead of server level, and invalid routes are rejected before rendering.
+- **Completed:** 2026-11-28 (Asia/Manila). **Status:** COMPLETED
+## 2026-11-28 — Keep shared-child branches adjacent in progression tree — IN_PROGRESS
+- **User request:** Swap the left/right robots shown in the second progression-tree screenshot and change the graph layout so robots with the same parent stay adjacent above that parent.
+- **Scope:** Fix deterministic sibling ordering in the focused graph-layout owner and preserve the no-crossing routing, server graph semantics, node IDs, and unrelated working-tree changes.
+- **Acceptance:** The two R42 children appear in the requested left/right order, shared-parent children occupy adjacent positions in their visual layer, regression coverage proves the invariant for the local Nova fixture, and Unity/C# validation passes.
+- **Architecture:** Keep the change inside `TreeGraphLayoutPlanner`; do not add ordering policy to `DevelopmentTree`, `ArrowDrawer`, or the renderer.
+- **Start:** 2026-11-28 (Asia/Manila).- **Discovery:** The authoritative Iron graph does not have two direct children of R42. Its relevant links are `TZ-42 -> YUG Titan`, `BR-174 Deadlock -> R30-Halberd`, and `R42-Glaive 7B -> V-88/R Northstar`; the confusing screenshot came from layer ordering and routes, not from a missing shared-parent relationship.
+- **Implementation:** `TreeGraphLayoutPlanner` now builds contiguous neighbor blocks and orders every layer once from bottom to top by actual parent positions. The backward child pass was removed because it could move a long branch behind its parent order and reintroduce crossings.
+- **Regression coverage:** Added the exact local Iron server snapshot, asserts the depth-three order `YUG Titan`, `R30-Halberd`, `V-88/R Northstar`, and validates all Iron routes alongside the existing Nova fixture.
+- **Validation:** Unity EditMode `TreeGraphNodeOrdererEditModeTests` 2/2 passed; `TreeArrowRouteBuilderEditModeTests` 5/5 passed; `ProgressionTreeTestSceneEditModeTests` 1/1 passed. `Assembly-CSharp`, `Assembly-CSharp-Editor`, and `RAV.PlayMode.Tests` built with 0 errors; `git diff --check` passed with only line-ending warnings.
+- **Result:** COMPLETED. Parent-relative bottom-to-top ordering keeps each branch visually over its real predecessor and the tested Iron/Nova routes have no intersections. Remaining limitation: the server graph must remain authoritative; the UI must not invent an R42 -> R30 link.
+- **Completed:** 2026-11-28 (Asia/Manila).

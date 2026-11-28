@@ -57,6 +57,7 @@ namespace RAV.Scripts.UI.Tree
         private readonly List<FactionView> _views = new List<FactionView>();
         private readonly List<FactionButtonView> _factionButtons = new List<FactionButtonView>();
         private readonly Dictionary<string, string> _factionNameByCode = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly TreeGraphLayoutPlanner _layoutPlanner = new TreeGraphLayoutPlanner();
 
         public bool isInitialized;
 
@@ -305,25 +306,28 @@ namespace RAV.Scripts.UI.Tree
 
             Dictionary<int, RectTransform> nodeMap = new Dictionary<int, RectTransform>();
             Dictionary<int, TreeItem> itemMap = new Dictionary<int, TreeItem>();
-            Dictionary<int, List<VehicleNode>> nodesByLevel = GroupNodesByLevel(graph.nodes);
-            List<int> levels = GetSortedLevels(nodesByLevel);
+            Vector2 nodeSize = GetTreeItemSize();
+            TreeGraphLayout layout = _layoutPlanner.Plan(graph, nodeSize, 32f, 80f);
+            List<int> depths = GetSortedDepths(layout);
+            DisableLayout(root.RowsContainer);
             TreeItem defaultTreeItem = null;
             VehicleResearchProgress defaultProgress = null;
 
-            for (int i = 0; i < levels.Count; i++)
+            for (int i = 0; i < depths.Count; i++)
             {
-                int level = levels[i];
+                int depth = depths[i];
                 RectTransform row = Instantiate(levelRowPrefab, root.RowsContainer);
-                row.name = $"Level_{level}";
-                row.SetAsFirstSibling();
+                row.name = $"GraphDepth_{depth}";
+                ConfigureManualRow(row, root.RowsContainer, layout, depth, nodeSize);
 
-                List<VehicleNode> nodes = nodesByLevel[level];
-                nodes.Sort(CompareNodesByCode);
+                List<int> nodeIds = layout.NodeIdsByDepth[depth];
 
-                for (int nodeIndex = 0; nodeIndex < nodes.Count; nodeIndex++)
+                for (int nodeIndex = 0; nodeIndex < nodeIds.Count; nodeIndex++)
                 {
+                    TreeGraphNodePlacement placement = layout.Placements[nodeIds[nodeIndex]];
                     VehicleResearchProgress itemProgress;
-                    TreeItem item = CreateTreeItem(row, nodes[nodeIndex], nodeMap, itemMap, progressResolver, out itemProgress);
+                    TreeItem item = CreateTreeItem(row, placement.Node, nodeMap, itemMap, progressResolver, out itemProgress);
+                    SetManualItemPosition(item, placement.Position.x, nodeSize);
                     if (i == 0 && defaultTreeItem == null && item != null && itemProgress != null)
                     {
                         defaultTreeItem = item;
@@ -534,62 +538,81 @@ namespace RAV.Scripts.UI.Tree
             arrowDrawer.Draw(view.Edges, view.NodeMap, view.Root.ArrowsLayer);
         }
 
-        private static Dictionary<int, List<VehicleNode>> GroupNodesByLevel(VehicleNode[] nodes)
+        private Vector2 GetTreeItemSize()
         {
-            Dictionary<int, List<VehicleNode>> nodesByLevel = new Dictionary<int, List<VehicleNode>>();
-
-            for (int i = 0; i < nodes.Length; i++)
+            RectTransform itemTransform = treeItemPrefab != null
+                ? treeItemPrefab.rectTransform
+                : null;
+            if (itemTransform == null && treeItemPrefab != null)
             {
-                VehicleNode node = nodes[i];
-                if (node == null)
-                {
-                    continue;
-                }
-
-                int level = Mathf.Max(1, node.level);
-                if (!nodesByLevel.TryGetValue(level, out List<VehicleNode> levelNodes))
-                {
-                    levelNodes = new List<VehicleNode>();
-                    nodesByLevel.Add(level, levelNodes);
-                }
-
-                levelNodes.Add(node);
+                itemTransform = treeItemPrefab.GetComponent<RectTransform>();
             }
 
-            return nodesByLevel;
+            return itemTransform != null && itemTransform.sizeDelta.x > 0f && itemTransform.sizeDelta.y > 0f
+                ? itemTransform.sizeDelta
+                : new Vector2(284f, 100f);
         }
 
-        private static List<int> GetSortedLevels(Dictionary<int, List<VehicleNode>> nodesByLevel)
+        private static List<int> GetSortedDepths(TreeGraphLayout layout)
         {
-            List<int> levels = new List<int>(nodesByLevel.Keys);
-            levels.Sort();
-            return levels;
+            List<int> depths = new List<int>(layout.NodeIdsByDepth.Keys);
+            depths.Sort();
+            return depths;
         }
 
-        private static int CompareNodesByCode(VehicleNode left, VehicleNode right)
+        private static void ConfigureManualRow(
+            RectTransform row,
+            RectTransform rowsContainer,
+            TreeGraphLayout layout,
+            int depth,
+            Vector2 nodeSize)
         {
-            if (left == null && right == null)
+            DisableLayout(row);
+            row.anchorMin = row.anchorMax = row.pivot = new Vector2(0.5f, 0.5f);
+            row.anchoredPosition = new Vector2(0f, layout.Placements[layout.NodeIdsByDepth[depth][0]].Position.y);
+            row.sizeDelta = new Vector2(
+                Mathf.Max(rowsContainer.rect.width, nodeSize.x * layout.NodeIdsByDepth[depth].Count),
+                nodeSize.y);
+        }
+
+        private static void SetManualItemPosition(TreeItem item, float x, Vector2 nodeSize)
+        {
+            if (item == null)
             {
-                return 0;
+                return;
             }
 
-            if (left == null)
+            RectTransform itemTransform = item.rectTransform != null
+                ? item.rectTransform
+                : item.GetComponent<RectTransform>();
+            if (itemTransform == null)
             {
-                return 1;
+                return;
             }
 
-            if (right == null)
+            itemTransform.anchorMin = itemTransform.anchorMax = itemTransform.pivot = new Vector2(0.5f, 0.5f);
+            itemTransform.anchoredPosition = new Vector2(x, 0f);
+            itemTransform.sizeDelta = nodeSize;
+        }
+
+        private static void DisableLayout(RectTransform transform)
+        {
+            if (transform == null)
             {
-                return -1;
+                return;
             }
 
-            int codeCompare = string.Compare(left.code, right.code, StringComparison.Ordinal);
-            if (codeCompare != 0)
+            LayoutGroup layoutGroup = transform.GetComponent<LayoutGroup>();
+            if (layoutGroup != null)
             {
-                return codeCompare;
+                layoutGroup.enabled = false;
             }
 
-            return left.id.CompareTo(right.id);
+            ContentSizeFitter contentSizeFitter = transform.GetComponent<ContentSizeFitter>();
+            if (contentSizeFitter != null)
+            {
+                contentSizeFitter.enabled = false;
+            }
         }
 
         private static string[] BuildFactionCodes(VehicleLite[] items)

@@ -644,7 +644,7 @@ GameObject:
   - component: {fileID: 505520212982930825}
   - component: {fileID: -9001000000000000004}
   m_Layer: 0
-  m_Name: IA_L2_Scout
+  m_Name: TZ-23 101F
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -711,7 +711,7 @@ MonoBehaviour:
   _teleportThreshold: 1
   <PrefabId>k__BackingField: 4
   <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 13200377686614616395
+  <AssetPathHash>k__BackingField: 14597586347349378763
   <SceneId>k__BackingField: 0
   SerializedTransformProperties:
     Position: {x: 0, y: 1.067, z: 0}

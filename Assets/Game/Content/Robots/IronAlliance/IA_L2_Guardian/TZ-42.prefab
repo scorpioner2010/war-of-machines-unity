@@ -300,7 +300,7 @@ GameObject:
   - component: {fileID: 8881528971353424999}
   - component: {fileID: -9001000000000000003}
   m_Layer: 0
-  m_Name: IA_L2_Guardian
+  m_Name: TZ-42
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -368,7 +368,7 @@ MonoBehaviour:
   _teleportThreshold: 1
   <PrefabId>k__BackingField: 7
   <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 6256461653735200602
+  <AssetPathHash>k__BackingField: 5286488369521522836
   <SceneId>k__BackingField: 0
   SerializedTransformProperties:
     Position: {x: 0, y: 0, z: 0}

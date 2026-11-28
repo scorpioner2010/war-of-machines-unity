@@ -341,7 +341,7 @@ PrefabInstance:
     - target: {fileID: 1215269598981264953, guid: dfce3186216336b45bb48f8b762166c9,
         type: 3}
       propertyPath: m_Name
-      value: NV_L2_Guardian
+      value: ARGUS-7B
       objectReference: {fileID: 0}
     - target: {fileID: 2704454267964940208, guid: dfce3186216336b45bb48f8b762166c9,
         type: 3}
@@ -414,7 +414,7 @@ PrefabInstance:
     - target: {fileID: 1215269598981264953, guid: e0b271687de69cb43bc5e977485e1e6e,
         type: 3}
       propertyPath: m_Name
-      value: NV_L1_Starter
+      value: N-16 Whitecap
       objectReference: {fileID: 0}
     - target: {fileID: 2704454267964940208, guid: e0b271687de69cb43bc5e977485e1e6e,
         type: 3}
@@ -487,7 +487,7 @@ PrefabInstance:
     - target: {fileID: 1215269598981264953, guid: c6af3c31fe1b98d4a88b83239ea15633,
         type: 3}
       propertyPath: m_Name
-      value: NV_L2_Scout
+      value: N-17
       objectReference: {fileID: 0}
     - target: {fileID: 2704454267964940208, guid: c6af3c31fe1b98d4a88b83239ea15633,
         type: 3}
@@ -854,7 +854,7 @@ PrefabInstance:
     - target: {fileID: 8378397268045645118, guid: dd4c216603401ee458dba1606a42cbeb,
         type: 3}
       propertyPath: m_Name
-      value: IA_L1_Starter
+      value: TZ-18
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -877,7 +877,7 @@ PrefabInstance:
     - target: {fileID: 7389821364265542770, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
         type: 3}
       propertyPath: m_Name
-      value: IA_L2_Colossus
+      value: YUG Titan
       objectReference: {fileID: 0}
     - target: {fileID: 7495309176809113960, guid: 3206b4fa47e6aaa46b14cc77ba1dd194,
         type: 3}
@@ -945,7 +945,7 @@ PrefabInstance:
     - target: {fileID: 1484790940563788304, guid: 54685c43c2a3ae34cb1ce2b5e537b34e,
         type: 3}
       propertyPath: m_Name
-      value: IA_L2_Guardian
+      value: TZ-42
       objectReference: {fileID: 0}
     - target: {fileID: 5485903720018983550, guid: 54685c43c2a3ae34cb1ce2b5e537b34e,
         type: 3}
@@ -1018,7 +1018,7 @@ PrefabInstance:
     - target: {fileID: 2531642004132441329, guid: ac1b924d03aecd345bf53cded32574e3,
         type: 3}
       propertyPath: m_Name
-      value: IA_L2_Scout
+      value: TZ-23 101F
       objectReference: {fileID: 0}
     - target: {fileID: 4104888723081217272, guid: ac1b924d03aecd345bf53cded32574e3,
         type: 3}
@@ -1091,7 +1091,7 @@ PrefabInstance:
     - target: {fileID: 1215269598981264953, guid: 01db652032c3cb641b90c7d2b0327e58,
         type: 3}
       propertyPath: m_Name
-      value: NV_L2_Colossus
+      value: Cormorant 8C
       objectReference: {fileID: 0}
     - target: {fileID: 2704454267964940208, guid: 01db652032c3cb641b90c7d2b0327e58,
         type: 3}

@@ -11,7 +11,8 @@ namespace RAV.Scripts.UI.Tree
         [SerializeField] private Image segmentPrefab;
         [SerializeField] private Image arrowHeadPrefab;
 
-        private readonly TreeArrowRouteBuilder _routeBuilder = new TreeArrowRouteBuilder();
+        private readonly TreeArrowRoutePlanner _routePlanner = new TreeArrowRoutePlanner();
+        private readonly TreeArrowRouteRenderer _routeRenderer = new TreeArrowRouteRenderer();
         private readonly List<DrawRequest> _drawRequests = new List<DrawRequest>();
         private bool _hasRuntimeAppearance;
         private float _lastShaftThickness;
@@ -55,7 +56,10 @@ namespace RAV.Scripts.UI.Tree
             }
         }
 
-        public void Draw(IEnumerable<VehicleEdge> edges, Dictionary<int, RectTransform> nodeById, RectTransform layer)
+        public void Draw(
+            IEnumerable<VehicleEdge> edges,
+            Dictionary<int, RectTransform> nodeById,
+            RectTransform layer)
         {
             if (layer == null)
             {
@@ -79,133 +83,31 @@ namespace RAV.Scripts.UI.Tree
             RectTransform layer,
             GameplayRuntimeSettings settings)
         {
-            ClearLayer(layer);
-
             if (segmentPrefab == null || arrowHeadPrefab == null || edges == null || nodeById == null)
             {
+                _routeRenderer.Clear(layer);
                 return;
             }
 
-            foreach (VehicleEdge edge in edges)
-            {
-                if (edge == null
-                    || !nodeById.TryGetValue(edge.fromId, out RectTransform from)
-                    || !nodeById.TryGetValue(edge.toId, out RectTransform to))
-                {
-                    continue;
-                }
+            IReadOnlyList<TreeArrowRoute> routes = _routePlanner.Plan(
+                edges,
+                nodeById,
+                layer,
+                settings.treeArrowItemOffset,
+                settings.treeArrowShaftThickness);
 
-                DrawRoute(
-                    _routeBuilder.Build(from, to, layer, settings.treeArrowItemOffset),
-                    layer,
-                    settings.treeArrowShaftThickness,
-                    settings.treeArrowColor,
-                    settings.treeArrowHeadColor,
-                    settings.treeArrowHeadHeight,
-                    settings.treeArrowHeadScale,
-                    settings.treeArrowHeadOffset);
-            }
-
+            _routeRenderer.Draw(
+                routes,
+                layer,
+                segmentPrefab,
+                arrowHeadPrefab,
+                settings.treeArrowShaftThickness,
+                settings.treeArrowColor,
+                settings.treeArrowHeadColor,
+                settings.treeArrowHeadHeight,
+                settings.treeArrowHeadScale,
+                settings.treeArrowHeadOffset);
             StoreRuntimeAppearance(settings);
-        }
-
-        private void DrawRoute(
-            IReadOnlyList<Vector2> points,
-            RectTransform layer,
-            float currentShaftThickness,
-            Color currentArrowColor,
-            Color currentArrowHeadColor,
-            float currentArrowHeadHeight,
-            float currentArrowHeadScale,
-            float currentArrowHeadOffset)
-        {
-            if (points == null || points.Count < 2)
-            {
-                return;
-            }
-
-            for (int segmentIndex = 0; segmentIndex < points.Count - 1; segmentIndex++)
-            {
-                CreateSegment(
-                    points[segmentIndex],
-                    points[segmentIndex + 1],
-                    layer,
-                    segmentIndex,
-                    currentShaftThickness,
-                    currentArrowColor);
-            }
-
-            Vector2 direction = points[points.Count - 1] - points[points.Count - 2];
-            if (direction.sqrMagnitude > Mathf.Epsilon)
-            {
-                CreateArrowHead(
-                    points[points.Count - 1],
-                    direction.normalized,
-                    layer,
-                    currentArrowHeadColor,
-                    currentArrowHeadHeight,
-                    currentArrowHeadScale,
-                    currentArrowHeadOffset);
-            }
-        }
-
-        private void CreateSegment(
-            Vector2 start,
-            Vector2 end,
-            RectTransform layer,
-            int segmentIndex,
-            float currentShaftThickness,
-            Color currentArrowColor)
-        {
-            Vector2 direction = end - start;
-            float length = direction.magnitude;
-            if (length <= Mathf.Epsilon)
-            {
-                return;
-            }
-
-            Image image = Instantiate(segmentPrefab, layer);
-            image.name = $"TreeArrowSegment_{segmentIndex}";
-            image.raycastTarget = false;
-            image.color = currentArrowColor;
-
-            RectTransform rectTransform = image.rectTransform;
-            rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            rectTransform.localScale = Vector3.one;
-            rectTransform.anchoredPosition = (start + end) * 0.5f;
-            rectTransform.sizeDelta = new Vector2(length, currentShaftThickness);
-            rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
-        }
-
-        private void CreateArrowHead(
-            Vector2 endpoint,
-            Vector2 direction,
-            RectTransform layer,
-            Color currentArrowColor,
-            float currentArrowHeadHeight,
-            float currentArrowHeadScale,
-            float currentArrowHeadOffset)
-        {
-            Image image = Instantiate(arrowHeadPrefab, layer);
-            image.name = "TreeArrowHead";
-            image.raycastTarget = false;
-            image.color = currentArrowColor;
-
-            RectTransform rectTransform = image.rectTransform;
-            rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            rectTransform.pivot = new Vector2(0.5f, 1f);
-            rectTransform.localScale = Vector3.one * currentArrowHeadScale;
-            rectTransform.anchoredPosition = endpoint + direction * currentArrowHeadOffset;
-
-            float aspect = image.sprite == null || image.sprite.rect.height <= Mathf.Epsilon
-                ? 1f
-                : image.sprite.rect.width / image.sprite.rect.height;
-            rectTransform.sizeDelta = new Vector2(currentArrowHeadHeight * aspect, currentArrowHeadHeight);
-            rectTransform.localRotation = Quaternion.Euler(
-                0f,
-                0f,
-                Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
-            rectTransform.SetAsLastSibling();
         }
 
         private DrawRequest GetOrCreateRequest(RectTransform layer)
@@ -253,24 +155,6 @@ namespace RAV.Scripts.UI.Tree
                 && Mathf.Approximately(left.g, right.g)
                 && Mathf.Approximately(left.b, right.b)
                 && Mathf.Approximately(left.a, right.a);
-        }
-
-        private static void ClearLayer(RectTransform layer)
-        {
-            for (int childIndex = layer.childCount - 1; childIndex >= 0; childIndex--)
-            {
-                Transform child = layer.GetChild(childIndex);
-                child.gameObject.SetActive(false);
-
-                if (Application.isPlaying)
-                {
-                    Destroy(child.gameObject);
-                }
-                else
-                {
-                    DestroyImmediate(child.gameObject);
-                }
-            }
         }
     }
 }
